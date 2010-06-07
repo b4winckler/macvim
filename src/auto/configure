@@ -1361,11 +1361,13 @@ Optional Features:
   --enable-carbon-check   If auto-select GUI, check for Carbon default=yes
   --enable-macvim-check   If auto-select GUI, check for MacVim default=yes
   --disable-gtktest       Do not try to compile and run a test GTK program
+  --disable-uimfep        Don't support UIMFEP.
   --disable-largefile     omit support for large files
   --disable-acl           Don't check for ACL support.
   --disable-gpm           Don't use gpm (Linux mouse daemon).
   --disable-sysmouse    Don't use sysmouse (mouse in *BSD console).
   --disable-nls           Don't support NLS (gettext()).
+  --disable-migemo        Don't support C/Migemo.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -10345,6 +10347,28 @@ _ACEOF
   fi
 fi
 
+{ echo "$as_me:$LINENO: checking --disable-uimfep argument" >&5
+echo $ECHO_N "checking --disable-uimfep argument... $ECHO_C" >&6; }
+# Check whether --enable-uimfep was given.
+if test "${enable_uimfep+set}" = set; then
+  enableval=$enable_uimfep;
+else
+  enable_uimfep="yes"
+fi
+
+if test "$enable_uimfep" = "yes"; then
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+  cat >>confdefs.h <<\_ACEOF
+#define FEAT_UIMFEP 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+fi
+
+
 
 { echo "$as_me:$LINENO: checking whether toupper is broken" >&5
 echo $ECHO_N "checking whether toupper is broken... $ECHO_C" >&6; }
@@ -11054,6 +11078,7 @@ fi
 
 
 
+
 for ac_header in stdarg.h stdint.h stdlib.h string.h \
 	sys/select.h sys/utsname.h termcap.h fcntl.h \
 	sgtty.h sys/ioctl.h sys/time.h sys/types.h \
@@ -11063,7 +11088,8 @@ for ac_header in stdarg.h stdint.h stdlib.h string.h \
 	libc.h sys/statfs.h poll.h sys/poll.h pwd.h \
 	utime.h sys/param.h libintl.h libgen.h \
 	util/debug.h util/msg18n.h frame.h sys/acl.h \
-	sys/access.h sys/sysinfo.h wchar.h wctype.h
+	sys/access.h sys/sysinfo.h wchar.h wctype.h \
+	migemo.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -18282,6 +18308,91 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
     { echo "$as_me:$LINENO: result: no \"po/Makefile\" - disabled" >&5
 echo "${ECHO_T}no \"po/Makefile\" - disabled" >&6; };
   fi
+else
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+fi
+
+{ echo "$as_me:$LINENO: checking --disable-migemo argument" >&5
+echo $ECHO_N "checking --disable-migemo argument... $ECHO_C" >&6; }
+# Check whether --enable-migemo was given.
+if test "${enable_migemo+set}" = set; then
+  enableval=$enable_migemo;
+else
+  enable_migemo="yes"
+fi
+
+if test "$enable_migemo" = "yes"; then
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+  { echo "$as_me:$LINENO: checking for migemo_open in -lmigemo" >&5
+echo $ECHO_N "checking for migemo_open in -lmigemo... $ECHO_C" >&6; }
+if test "${ac_cv_lib_migemo_migemo_open+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmigemo  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char migemo_open ();
+int
+main ()
+{
+return migemo_open ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_migemo_migemo_open=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_migemo_migemo_open=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_migemo_migemo_open" >&5
+echo "${ECHO_T}$ac_cv_lib_migemo_migemo_open" >&6; }
+if test $ac_cv_lib_migemo_migemo_open = yes; then
+  LIBS="$LIBS -lmigemo"; cat >>confdefs.h <<\_ACEOF
+#define HAVE_MIGEMO 1
+_ACEOF
+
+fi
+
 else
   { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
