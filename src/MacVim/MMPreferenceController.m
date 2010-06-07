@@ -158,22 +158,32 @@ NSString *kOdbEditorIdentifierWriteRoom = @"com.hogbaysoftware.WriteRoom";
 {
     loadSymbols();
 
+    NSString *generalLabel = NSLocalizedString(@"General", nil);
+    NSString *integrationLabel = NSLocalizedString(@"Integration", nil);
+    NSString *advancedLabel = NSLocalizedString(@"Advanced", nil);
+
     if (nsImageNamePreferencesGeneral != NULL) {
         [self addView:generalPreferences
-                label:@"General"
+                label:generalLabel
                 image:[NSImage imageNamed:nsImageNamePreferencesGeneral]];
     } else {
-        [self addView:generalPreferences label:@"General"];
+        [self addView:generalPreferences
+		label:generalLabel
+		image:[NSImage imageNamed:@"General"]];
     }
 
-    [self addView:integrationPreferences label:@"Integration"];
+    [self addView:integrationPreferences
+		label:integrationLabel
+		image:[NSImage imageNamed:@"Integration"]];
 
     if (nsImageNamePreferencesAdvanced != NULL) {
         [self addView:advancedPreferences
-                label:@"Advanced"
+                label:advancedLabel
                 image:[NSImage imageNamed:nsImageNamePreferencesAdvanced]];
     } else {
-        [self addView:advancedPreferences label:@"Advanced"];
+        [self addView:advancedPreferences
+		label:advancedLabel
+		image:[NSImage imageNamed:@"Advanced"]];
     }
 
 }
@@ -236,7 +246,7 @@ NSString *kOdbEditorIdentifierWriteRoom = @"com.hogbaysoftware.WriteRoom";
         && [[NSWorkspace sharedWorkspace] isFilePackageAtPath:ODBEDITOR_PATH];
 
     // enable/disable buttons
-    [installOdbButton setTitle:@"Install"];
+    [installOdbButton setTitle:NSLocalizedString(@"Install", nil)];
     if (odbIsInstalled) {
         [uninstallOdbButton setEnabled:YES];
         [editors setEnabled:YES];
@@ -247,20 +257,21 @@ NSString *kOdbEditorIdentifierWriteRoom = @"com.hogbaysoftware.WriteRoom";
                                   options:NSNumericSearch]) {
         case NSOrderedAscending:
             versionString = [NSString stringWithFormat:
-                @"Latest version is %@, you have %@.",
+                NSLocalizedString(@"Latest version is %@, you have %@.", nil),
                 installVersion, installedVersion];
-            [installOdbButton setTitle:@"Update"];
+            [installOdbButton setTitle:NSLocalizedString(@"Update", nil)];
             [installOdbButton setEnabled:YES];
             break;
         case NSOrderedSame:
             versionString = [NSString stringWithFormat:
-                @"Latest version is %@. You have the latest version.",
+                NSLocalizedString(
+                    @"Latest version is %@. You have the latest version.", nil),
                 installVersion];
             [installOdbButton setEnabled:NO];
             break;
         case NSOrderedDescending:
             versionString = [NSString stringWithFormat:
-                @"Latest version is %@, you have %@.",
+		NSLocalizedString(@"Latest version is %@, you have %@.", nil),
                 installVersion, installedVersion];
             [installOdbButton setEnabled:NO];
             break;
@@ -271,7 +282,8 @@ NSString *kOdbEditorIdentifierWriteRoom = @"com.hogbaysoftware.WriteRoom";
         [editors setEnabled:NO];
 
         versionString = [NSString
-            stringWithFormat:@"Latest version is %@. It is not installed.",
+            stringWithFormat:NSLocalizedString(
+                @"Latest version is %@. It is not installed.", nil),
                       [self odbBundleInstallVersion]];
     }
 

@@ -30,6 +30,20 @@
 # undef HAVE_FCNTL_H
 #endif
 
+#if defined(DYNAMIC_PYTHON) && !defined(_WIN32)
+typedef void *HINSTANCE;
+typedef void *FARPROC;
+# include <dlfcn.h>
+# define LoadLibrary(a) dlopen(a,RTLD_NOW|RTLD_GLOBAL)
+# define FreeLibrary(a) dlclose(a)
+# define GetProcAddress dlsym
+# if defined(MACOS_X_UNIX)
+#  define DYNAMIC_PYTHON_DLL "/System/Library/Frameworks/Python.framework/Versions/Current/Python"
+# else
+#  define DYNAMIC_PYTHON_DLL "libpython.so"
+# endif
+#endif
+
 #ifdef _DEBUG
 # undef _DEBUG
 #endif
@@ -234,12 +248,14 @@ static PyObject *imp_PyExc_IndexError;
 static PyObject *imp_PyExc_KeyboardInterrupt;
 static PyObject *imp_PyExc_TypeError;
 static PyObject *imp_PyExc_ValueError;
+static PyObject *imp_PyExc_IOError;
 
 # define PyExc_AttributeError imp_PyExc_AttributeError
 # define PyExc_IndexError imp_PyExc_IndexError
 # define PyExc_KeyboardInterrupt imp_PyExc_KeyboardInterrupt
 # define PyExc_TypeError imp_PyExc_TypeError
 # define PyExc_ValueError imp_PyExc_ValueError
+# define PyExc_IOError imp_PyExc_IOError
 
 /*
  * Table of name to function pointer of python.
@@ -367,7 +383,16 @@ python_runtime_link_init(char *libname, int verbose)
     int
 python_enabled(int verbose)
 {
-    return python_runtime_link_init(DYNAMIC_PYTHON_DLL, verbose) == OK;
+    int ret = FAIL;
+    int mustfree = FALSE;
+    char *s = (char *)vim_getenv((char_u *)"PYTHON_DLL", &mustfree);
+    if (s != NULL)
+        ret = python_runtime_link_init(s, verbose);
+    if (mustfree)
+        vim_free(s);
+    if (ret == FAIL)
+        ret = python_runtime_link_init(DYNAMIC_PYTHON_DLL, verbose);
+    return (ret == OK);
 }
 
 /* Load the standard Python exceptions - don't import the symbols from the
@@ -385,11 +410,13 @@ get_exceptions()
     imp_PyExc_KeyboardInterrupt = PyDict_GetItemString(exdict, "KeyboardInterrupt");
     imp_PyExc_TypeError = PyDict_GetItemString(exdict, "TypeError");
     imp_PyExc_ValueError = PyDict_GetItemString(exdict, "ValueError");
+    imp_PyExc_IOError = PyDict_GetItemString(exdict, "IOError");
     Py_XINCREF(imp_PyExc_AttributeError);
     Py_XINCREF(imp_PyExc_IndexError);
     Py_XINCREF(imp_PyExc_KeyboardInterrupt);
     Py_XINCREF(imp_PyExc_TypeError);
     Py_XINCREF(imp_PyExc_ValueError);
+    Py_XINCREF(imp_PyExc_IOError);
     Py_XDECREF(exmod);
 }
 #endif /* DYNAMIC_PYTHON */

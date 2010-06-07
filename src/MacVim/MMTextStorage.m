@@ -41,6 +41,8 @@
 #define MM_TS_PARANOIA_LOG 1
 
 
+#define FIX_HALFWIDE_KATAKANA
+
 
 // TODO: What does DRAW_TRANSP flag do?  If the background isn't drawn when
 // this flag is set, then sometimes the character after the cursor becomes
@@ -52,6 +54,7 @@
 #define DRAW_ITALIC               0x10    /* draw italic text */
 #define DRAW_CURSOR               0x20
 #define DRAW_WIDE                 0x40    /* draw wide text */
+#define DRAW_TUNDERL              0x100   /* draw thick underline text */
 
 
 static NSString *MMWideCharacterAttributeName = @"MMWideChar";
@@ -65,6 +68,12 @@ static NSString *MMWideCharacterAttributeName = @"MMWideChar";
 - (void)fixInvalidCharactersInRange:(NSRange)range;
 @end
 
+
+#ifdef FIX_HALFWIDE_KATAKANA
+@interface NSString (Private)
+- (NSRange)rangeOfComposedCharacterSequenceAtIndexEx:(NSUInteger)anIndex;
+@end
+#endif
 
 
 @implementation MMTextStorage
@@ -292,6 +301,12 @@ static NSString *MMWideCharacterAttributeName = @"MMWideChar";
 
     if (flags & DRAW_UNDERL) {
         NSNumber *value = [NSNumber numberWithInt:(NSUnderlineStyleSingle
+                | NSUnderlinePatternSolid)]; // | NSUnderlineByWordMask
+        [attributes setObject:value forKey:NSUnderlineStyleAttributeName];
+    }
+
+    if (flags & DRAW_TUNDERL) {
+        NSNumber *value = [NSNumber numberWithInt:(NSUnderlineStyleThick
                 | NSUnderlinePatternSolid)]; // | NSUnderlineByWordMask
         [attributes setObject:value forKey:NSUnderlineStyleAttributeName];
     }
@@ -1098,7 +1113,11 @@ static NSString *MMWideCharacterAttributeName = @"MMWideChar";
         while (col > i) {
             if (idx >= stringLen)
                 return NSMakeRange(NSNotFound, 0);
+#ifdef FIX_HALFWIDE_KATAKANA
+            r = [string rangeOfComposedCharacterSequenceAtIndexEx:idx];
+#else
             r = [string rangeOfComposedCharacterSequenceAtIndex:idx];
+#endif
 
             // Wide chars take up two display cells.
             if ([attribString attribute:MMWideCharacterAttributeName
@@ -1137,7 +1156,11 @@ static NSString *MMWideCharacterAttributeName = @"MMWideChar";
     for (i = 0; i < cells; ++i) {
         if (idx >= stringLen)
             return NSMakeRange(NSNotFound, 0);
+#ifdef FIX_HALFWIDE_KATAKANA
+        r = [string rangeOfComposedCharacterSequenceAtIndexEx:idx];
+#else
         r = [string rangeOfComposedCharacterSequenceAtIndex:idx];
+#endif
 
         // Wide chars take up two display cells.
         if ([attribString attribute:MMWideCharacterAttributeName
@@ -1208,3 +1231,25 @@ static NSString *MMWideCharacterAttributeName = @"MMWideChar";
 }
 
 @end // MMTextStorage (Private)
+
+
+#ifdef FIX_HALFWIDE_KATAKANA
+@implementation NSString (Private)
+
+- (NSRange)rangeOfComposedCharacterSequenceAtIndexEx:(NSUInteger)anIndex
+{
+    NSRange r;
+    unichar c = [self characterAtIndex:anIndex];
+    unichar tc = anIndex < [self length] - 1 ?
+        [self characterAtIndex:(anIndex + 1)] : 0;
+    if ((c >= 0xff61 && c <= 0xff9f) || (tc >= 0xff61 && tc <= 0xff9f)) {
+        r.location = anIndex;
+        r.length = 1;
+    } else {
+        r = [self rangeOfComposedCharacterSequenceAtIndex:anIndex];
+    }
+    return r;
+}
+
+@end // NSString (Private)
+#endif

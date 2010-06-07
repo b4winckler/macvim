@@ -566,6 +566,7 @@ EXTERN char_u	*p_imak;	/* 'imactivatekey' */
 #ifdef USE_IM_CONTROL
 EXTERN int	p_imcmdline;	/* 'imcmdline' */
 EXTERN int	p_imdisable;	/* 'imdisable' */
+EXTERN int	p_imdisableactivate;	/* 'imdisableactivate' */
 #endif
 EXTERN int	p_is;		/* 'incsearch' */
 EXTERN int	p_im;		/* 'insertmode' */

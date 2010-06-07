@@ -46,6 +46,7 @@
 #define DRAW_ITALIC               0x10    /* draw italic text */
 #define DRAW_CURSOR               0x20
 #define DRAW_WIDE                 0x40    /* draw wide text */
+#define DRAW_TUNDERL              0x100   /* draw double underline text */
 
 
 #define BLUE(argb)      ((argb & 0xff)/255.0f)
@@ -1126,7 +1127,13 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
 
     if (flags & DRAW_UNDERL) {
         // Draw underline
-        CGRect rect = { {x, y+0.4*fontDescent}, {cells*cellSize.width, 1} };
+        CGRect rect = { {x, y}, {cells*cellSize.width, 1} };
+        CGContextSetRGBFillColor(context, RED(sp), GREEN(sp), BLUE(sp),
+                                 ALPHA(sp));
+        CGContextFillRect(context, rect);
+    } else if (flags & DRAW_TUNDERL) {
+        // Draw underline
+        CGRect rect = { {x, y}, {cells*cellSize.width, 2} };
         CGContextSetRGBFillColor(context, RED(sp), GREEN(sp), BLUE(sp),
                                  ALPHA(sp));
         CGContextFillRect(context, rect);

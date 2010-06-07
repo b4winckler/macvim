@@ -26,6 +26,20 @@
 # define RUBYEXTERN extern
 #endif
 
+#if defined(DYNAMIC_RUBY) && !defined(_WIN32)
+typedef void *HINSTANCE;
+typedef void *FARPROC;
+# include <dlfcn.h>
+# define LoadLibrary(a) dlopen(a,RTLD_NOW|RTLD_GLOBAL)
+# define FreeLibrary(a) dlclose(a)
+# define GetProcAddress dlsym
+# if defined(MACOS_X_UNIX)
+#  define DYNAMIC_RUBY_DLL "/System/Library/Frameworks/Ruby.framework/Versions/Current/Ruby"
+# else
+#  define DYNAMIC_RUBY_DLL "libruby.so"
+# endif
+#endif
+
 /*
  * This is tricky.  In ruby.h there is (inline) function rb_class_of()
  * definition.  This function use these variables.  But we want function to
@@ -164,6 +178,11 @@ static void ruby_vim_init(void);
 #define rb_lastline_get			dll_rb_lastline_get
 #define rb_lastline_set			dll_rb_lastline_set
 #define rb_load_protect			dll_rb_load_protect
+#if defined(__LP64__)
+#define rb_fix2int			dll_rb_fix2int
+#define rb_num2int			dll_rb_num2int
+#define rb_num2uint			dll_rb_num2uint
+#endif
 #define rb_num2long			dll_rb_num2long
 #define rb_num2ulong			dll_rb_num2ulong
 #define rb_obj_alloc			dll_rb_obj_alloc
@@ -208,16 +227,23 @@ static void ruby_vim_init(void);
 # define ruby_init_stack		dll_ruby_init_stack
 #endif
 
+#ifdef FEAT_EVAL
+# define rb_ary_new				dll_rb_ary_new
+# define rb_float_new			dll_rb_float_new
+# define rb_string_value_ptr	dll_rb_string_value_ptr
+# define rb_ary_push			dll_rb_ary_push
+#endif
+
 /*
  * Pointers for dynamic link
  */
 static VALUE (*dll_rb_assoc_new) (VALUE, VALUE);
-static VALUE *dll_rb_cFalseClass;
-static VALUE *dll_rb_cFixnum;
-static VALUE *dll_rb_cNilClass;
-static VALUE *dll_rb_cObject;
-static VALUE *dll_rb_cSymbol;
-static VALUE *dll_rb_cTrueClass;
+VALUE (*dll_rb_cFalseClass);
+VALUE (*dll_rb_cFixnum);
+VALUE (*dll_rb_cNilClass);
+static VALUE (*dll_rb_cObject);
+VALUE (*dll_rb_cSymbol);
+VALUE (*dll_rb_cTrueClass);
 static void (*dll_rb_check_type) (VALUE,int);
 static VALUE (*dll_rb_class_path) (VALUE);
 static VALUE (*dll_rb_data_object_alloc) (VALUE, void*, RUBY_DATA_FUNC, RUBY_DATA_FUNC);
@@ -244,6 +270,11 @@ static VALUE (*dll_rb_int2inum) (long);
 static VALUE (*dll_rb_lastline_get) (void);
 static void (*dll_rb_lastline_set) (VALUE);
 static void (*dll_rb_load_protect) (VALUE, int, int*);
+#if defined(__LP64__)
+static long (*dll_rb_fix2int) (VALUE);
+static long (*dll_rb_num2int) (VALUE);
+static unsigned long (*dll_rb_num2uint) (VALUE);
+#endif
 static long (*dll_rb_num2long) (VALUE);
 static unsigned long (*dll_rb_num2ulong) (VALUE);
 static VALUE (*dll_rb_obj_alloc) (VALUE);
@@ -267,7 +298,9 @@ static VALUE *dll_ruby_errinfo;
 #endif
 static void (*dll_ruby_init) (void);
 static void (*dll_ruby_init_loadpath) (void);
+#ifdef _WIN32
 static void (*dll_NtInitialize) (int*, char***);
+#endif
 #if defined(DYNAMIC_RUBY_VER) && DYNAMIC_RUBY_VER >= 18
 static char * (*dll_rb_string_value_ptr) (volatile VALUE*);
 static VALUE (*dll_rb_float_new) (double);
@@ -299,6 +332,13 @@ static VALUE rb_int2big_stub(SIGNED_VALUE x)
 {
     return dll_rb_int2big(x);
 }
+#endif
+
+#ifdef FEAT_EVAL
+static VALUE (*dll_rb_ary_new) (void);
+static VALUE (*dll_rb_float_new) (double);
+static char *(*dll_rb_string_value_ptr) (volatile VALUE*);
+static VALUE (*dll_rb_ary_push) (VALUE, VALUE);
 #endif
 
 static HINSTANCE hinstRuby = 0; /* Instance of ruby.dll */
@@ -345,6 +385,11 @@ static struct
     {"rb_lastline_get", (RUBY_PROC*)&dll_rb_lastline_get},
     {"rb_lastline_set", (RUBY_PROC*)&dll_rb_lastline_set},
     {"rb_load_protect", (RUBY_PROC*)&dll_rb_load_protect},
+#if defined(__LP64__)
+    {"rb_fix2int", (RUBY_PROC*)&dll_rb_fix2int},
+    {"rb_num2int", (RUBY_PROC*)&dll_rb_num2int},
+    {"rb_num2uint", (RUBY_PROC*)&dll_rb_num2uint},
+#endif
     {"rb_num2long", (RUBY_PROC*)&dll_rb_num2long},
     {"rb_num2ulong", (RUBY_PROC*)&dll_rb_num2ulong},
     {"rb_obj_alloc", (RUBY_PROC*)&dll_rb_obj_alloc},
@@ -367,13 +412,11 @@ static struct
 #endif
     {"ruby_init", (RUBY_PROC*)&dll_ruby_init},
     {"ruby_init_loadpath", (RUBY_PROC*)&dll_ruby_init_loadpath},
-    {
-#if defined(DYNAMIC_RUBY_VER) && DYNAMIC_RUBY_VER < 19
-    "NtInitialize",
+#if defined(_WIN32) && defined(DYNAMIC_RUBY_VER) && DYNAMIC_RUBY_VER < 19
+    {"NtInitialize", (RUBY_PROC*)&dll_NtInitialize},
 #else
-    "ruby_sysinit",
+    //{"ruby_sysinit", (RUBY_PROC*)&dll_ruby_sysinit},
 #endif
-			(RUBY_PROC*)&dll_NtInitialize},
 #if defined(DYNAMIC_RUBY_VER) && DYNAMIC_RUBY_VER >= 18
     {"rb_w32_snprintf", (RUBY_PROC*)&dll_rb_w32_snprintf},
 #endif
@@ -391,6 +434,12 @@ static struct
     {"rb_enc_str_new", (RUBY_PROC*)&dll_rb_enc_str_new},
     {"rb_sprintf", (RUBY_PROC*)&dll_rb_sprintf},
     {"ruby_init_stack", (RUBY_PROC*)&dll_ruby_init_stack},
+#endif
+#ifdef FEAT_EVAL
+    {"rb_ary_new", (RUBY_PROC*)&dll_rb_ary_new},
+    {"rb_float_new", (RUBY_PROC*)&dll_rb_float_new},
+    {"rb_string_value_ptr", (RUBY_PROC*)&dll_rb_string_value_ptr},
+    {"rb_ary_push", (RUBY_PROC*)&dll_rb_ary_push},
 #endif
     {"", NULL},
 };
@@ -451,7 +500,16 @@ ruby_runtime_link_init(char *libname, int verbose)
 ruby_enabled(verbose)
     int		verbose;
 {
-    return ruby_runtime_link_init(DYNAMIC_RUBY_DLL, verbose) == OK;
+    int ret = FAIL;
+    int mustfree = FALSE;
+    char *s = (char *)vim_getenv((char_u *)"RUBY_DLL", &mustfree);
+    if (s != NULL)
+        ret = ruby_runtime_link_init(s, verbose);
+    if (mustfree)
+        vim_free(s);
+    if (ret == FAIL)
+        ret = ruby_runtime_link_init(DYNAMIC_RUBY_DLL, verbose);
+    return (ret == OK);
 }
 #endif /* defined(DYNAMIC_RUBY) || defined(PROTO) */
 

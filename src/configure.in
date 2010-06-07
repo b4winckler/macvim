@@ -3270,7 +3270,7 @@ AC_ARG_ENABLE(migemo,
 if test "$enable_migemo" = "yes"; then
   AC_MSG_RESULT(no)
   AC_CHECK_LIB(migemo, migemo_open,
-	[LIBS="$LIBS -lmigemo" AC_DEFINE(HAVE_MIGEMO)],,)
+	[LIBS="$LIBS -lmigemo"; AC_DEFINE(HAVE_MIGEMO)],,)
 else
   AC_MSG_RESULT(yes)
 fi

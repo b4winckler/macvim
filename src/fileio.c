@@ -194,6 +194,7 @@ filemess(buf, name, s, attr)
     msg_scrolled_ign = FALSE;
 }
 
+#if 0
 typedef struct encode_state encode_state;
 typedef int (*encode_check)(encode_state* state, char_u d);
 struct encode_state
@@ -427,6 +428,9 @@ guess_encode(char_u** fenc, int* fenc_alloced, char_u* fname)
     }
     return 1;
 }
+#else
+extern int guess_encode(char_u** fenc, int* fenc_alloced, char_u* fname);
+#endif
 
 /*
  * Read lines from file "fname" into the buffer after line "from".

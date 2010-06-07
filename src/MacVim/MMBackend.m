@@ -59,7 +59,7 @@ static id evalExprCocoa(NSString * expr, NSString ** errstr);
 extern void im_preedit_start_macvim();
 extern void im_preedit_end_macvim();
 extern void im_preedit_abandon_macvim();
-extern void im_preedit_changed_macvim(char *preedit_string, int cursor_index);
+extern void im_preedit_changed_macvim(char *preedit_string, int start_index, int cursor_index);
 
 enum {
     MMBlinkStateNone = 0,
@@ -2849,21 +2849,22 @@ static void netbeansReadCallback(CFSocketRef s,
 - (void)handleMarkedText:(NSData *)data
 {
     const void *bytes = [data bytes];
+    unsigned textlen = *((unsigned*)bytes);  bytes += sizeof(unsigned);
     int32_t pos = *((int32_t*)bytes);  bytes += sizeof(int32_t);
     unsigned len = *((unsigned*)bytes);  bytes += sizeof(unsigned);
     char *chars = (char *)bytes;
 
-    ASLogDebug(@"pos=%d len=%d chars=%s", pos, len, chars);
+    ASLogDebug(@"textlen=%d pos=%d len=%d chars=%s", textlen, pos, len, chars);
 
     if (pos < 0) {
         im_preedit_abandon_macvim();
-    } else if (len == 0) {
+    } else if (textlen == 0) {
 	im_preedit_end_macvim();
     } else {
         if (!preedit_get_status())
             im_preedit_start_macvim();
 
-	im_preedit_changed_macvim(chars, pos);
+	im_preedit_changed_macvim(chars, pos, pos + len);
     }
 }
 

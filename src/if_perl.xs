@@ -76,6 +76,20 @@
 # define EXTERN_C
 #endif
 
+#if defined(DYNAMIC_PERL) && !defined(_WIN32)
+typedef void *HANDLE;
+typedef void *FARPROC;
+# include <dlfcn.h>
+# define LoadLibraryEx(a0,a1,a2) dlopen(a0,RTLD_NOW|RTLD_GLOBAL)
+# define FreeLibrary(a) dlclose(a)
+# define GetProcAddress dlsym
+# if defined(MACOS_X_UNIX)
+#  define DYNAMIC_PERL_DLL "/System/Library/Perl/lib/5.10/libperl.dylib"
+# else
+#  define DYNAMIC_PERL_DLL "libperl.so"
+# endif
+#endif
+
 /* Compatibility hacks over */
 
 static PerlInterpreter *perl_interp = NULL;
@@ -190,6 +204,7 @@ EXTERN_C void boot_DynaLoader __ARGS((pTHX_ CV*));
 # define Perl_call_list dll_Perl_call_list
 # define Perl_Iscopestack_ix_ptr dll_Perl_Iscopestack_ix_ptr
 # define Perl_Iunitcheckav_ptr dll_Perl_Iunitcheckav_ptr
+# define Perl_Gthr_key_ptr dll_Perl_Gthr_key_ptr
 
 #ifndef DYNAMIC_PERL /* just generating prototypes */
 typedef int HANDLE;
@@ -280,6 +295,7 @@ static GV** (*Perl_Idefgv_ptr)(register PerlInterpreter*);
 static GV** (*Perl_Ierrgv_ptr)(register PerlInterpreter*);
 static SV* (*Perl_Isv_yes_ptr)(register PerlInterpreter*);
 static void (*boot_DynaLoader)_((pTHX_ CV*));
+static perl_key* (*Perl_Gthr_key_ptr)(void *);
 
 #if (PERL_REVISION == 5) && (PERL_VERSION >= 10)
 static void (*Perl_sv_free2)(pTHX_ SV*);
@@ -407,7 +423,10 @@ static struct {
     {"Perl_Idefgv_ptr", (PERL_PROC*)&Perl_Idefgv_ptr},
     {"Perl_Ierrgv_ptr", (PERL_PROC*)&Perl_Ierrgv_ptr},
     {"Perl_Isv_yes_ptr", (PERL_PROC*)&Perl_Isv_yes_ptr},
+#if !defined(MACOS_X_UNIX)
     {"boot_DynaLoader", (PERL_PROC*)&boot_DynaLoader},
+#endif
+    {"Perl_Gthr_key_ptr", (PERL_PROC*)&Perl_Gthr_key_ptr},
     {"", NULL},
 };
 
@@ -457,7 +476,16 @@ perl_runtime_link_init(char *libname, int verbose)
 perl_enabled(verbose)
     int		verbose;
 {
-    return perl_runtime_link_init(DYNAMIC_PERL_DLL, verbose) == OK;
+    int ret = FAIL;
+    int mustfree = FALSE;
+    char *s = (char *)vim_getenv((char_u *)"PERL_DLL", &mustfree);
+    if (s != NULL)
+        ret = perl_runtime_link_init(s, verbose);
+    if (mustfree)
+        vim_free(s);
+    if (ret == FAIL)
+        ret = perl_runtime_link_init(DYNAMIC_PERL_DLL, verbose);
+    return (ret == OK);
 }
 #endif /* DYNAMIC_PERL */
 
@@ -896,8 +924,10 @@ xs_init(pTHX)
 {
     char *file = __FILE__;
 
+#if !defined(MACOS_X_UNIX)
     /* DynaLoader is a special case */
     newXS("DynaLoader::boot_DynaLoader", boot_DynaLoader, file);
+#endif
     newXS("VIM::bootstrap", boot_VIM, file);
 }
 

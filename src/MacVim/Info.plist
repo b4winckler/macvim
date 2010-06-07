@@ -1202,7 +1202,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>52</string>
+	<string>20100330</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
@@ -1248,7 +1248,7 @@
 		</dict>
 	</array>
 	<key>SUFeedURL</key>
-	<string>http://bjorn.winckler.googlepages.com/macvim_latest.xml</string>
+	<string>http://macvim-kaoriya.googlecode.com/svn/wiki/latest.xml</string>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
 

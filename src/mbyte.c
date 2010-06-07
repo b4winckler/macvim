@@ -4253,6 +4253,7 @@ init_preedit_start_col(void)
 
 static int im_is_active	       = FALSE;	/* IM is enabled for current mode    */
 static int preedit_is_active   = FALSE;
+static int im_preedit_start    = 0;	/* start offset in characters        */
 static int im_preedit_cursor   = 0;	/* cursor offset in characters       */
 static int im_preedit_trailing = 0;	/* number of characters after cursor */
 
@@ -4281,6 +4282,15 @@ im_set_active(int active)
 
     if (im_is_active != was_active)
 	xim_reset();
+}
+# else /* FEAT_GUI_MACVIM */
+    void
+im_set_active(int active)
+{
+    if (gui.in_use)
+	gui_im_set_active(active);
+    else
+	uimfep_set_active(active);
 }
 # endif
 
@@ -4602,7 +4612,7 @@ im_preedit_abandon_macvim()
 im_preedit_changed_cb(GtkIMContext *context, gpointer data UNUSED)
 # else
     void
-im_preedit_changed_macvim(char *preedit_string, int cursor_index)
+im_preedit_changed_macvim(char *preedit_string, int start_index, int cursor_index)
 # endif
 {
 # ifndef FEAT_GUI_MACVIM
@@ -4618,6 +4628,8 @@ im_preedit_changed_macvim(char *preedit_string, int cursor_index)
     gtk_im_context_get_preedit_string(context,
 				      &preedit_string, NULL,
 				      &cursor_index);
+# else
+    im_preedit_start = start_index;
 # endif
 
 #ifdef XIM_DEBUG
@@ -4790,7 +4802,10 @@ im_get_feedback_attr(int col)
 
     return char_attr;
 # else
-    return HL_UNDERLINE;
+    if (col >= im_preedit_start && col < im_preedit_cursor)
+	return HL_THICKUNDERLINE;
+    else
+	return HL_UNDERLINE;
 # endif
 }
 
@@ -5158,6 +5173,15 @@ im_get_status(void)
 	return uimfep_get_status();
 #endif
     return im_is_active;
+}
+# else /* FEAT_GUI_MACVIM */
+    int
+im_get_status(void)
+{
+    if (gui.in_use)
+	return gui_im_get_status();
+    else
+	return uimfep_get_status();
 }
 # endif
 
@@ -7113,13 +7137,27 @@ uimfep_get_status(void)
     void
 im_set_active(int active)
 {
+#  if defined(FEAT_GUI_MAC) || defined(FEAT_GUI_MACVIM)
+    if (gui.in_use)
+	gui_im_set_active(active);
+    else
+	uimfep_set_active(active);
+#  else // FEAT_GUI_MAC || FEAT_GUI_MACVIM
     uimfep_set_active(active);
+#  endif // FEAT_GUI_MAC || FEAT_GUI_MACVIM
 }
 
     int
 im_get_status(void)
 {
+#  if defined(FEAT_GUI_MAC) || defined(FEAT_GUI_MACVIM)
+    if (gui.in_use)
+	return gui_im_get_status();
+    else
+	return uimfep_get_status();
+#  else // FEAT_GUI_MAC || FEAT_GUI_MACVIM
     return uimfep_get_status();
+#  endif // FEAT_GUI_MAC || FEAT_GUI_MACVIM
 }
 # endif
 

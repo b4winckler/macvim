@@ -662,7 +662,12 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define HL_UNDERLINE		0x08
 #define HL_UNDERCURL		0x10
 #define HL_STANDOUT		0x20
-#define HL_ALL			0x3f
+#if defined(FEAT_GUI_MACVIM)
+# define HL_THICKUNDERLINE	0x40
+# define HL_ALL			0x7f
+#else
+# define HL_ALL			0x3f
+#endif
 
 /* special attribute addition: Put message in history */
 #define MSG_HIST		0x1000

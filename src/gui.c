@@ -2215,6 +2215,12 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
     /* Do we underline the text? */
     if (hl_mask_todo & HL_UNDERLINE)
 	draw_flags |= DRAW_UNDERL;
+
+# if defined(FEAT_GUI_MACVIM)
+    /* Do we thick underline the text? */
+    if (hl_mask_todo & HL_THICKUNDERLINE)
+	draw_flags |= DRAW_TUNDERL;
+# endif
 #else
     /* Do we underline the text? */
     if ((hl_mask_todo & HL_UNDERLINE)
