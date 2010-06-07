@@ -58,6 +58,7 @@ char_u *gui_mch_browsedir __ARGS((char_u *title, char_u *initdir));
 char_u *gui_mch_browse __ARGS((int saving, char_u *title, char_u *dflt, char_u *ext, char_u *initdir, char_u *filter));
 int get_cmd_args __ARGS((char *prog, char *cmdline, char ***argvp, char **tofree));
 int gui_is_win32s __ARGS((void));
+void gui_mch_show_caption __ARGS((int show));
 void gui_mch_set_parent __ARGS((char *title));
 void gui_mch_prepare __ARGS((int *argc, char **argv));
 int gui_mch_init __ARGS((void));
@@ -67,6 +68,7 @@ void gui_mch_set_font __ARGS((GuiFont font));
 void gui_mch_set_fg_color __ARGS((guicolor_T color));
 void gui_mch_set_bg_color __ARGS((guicolor_T color));
 void gui_mch_set_sp_color __ARGS((guicolor_T color));
+void gui_mch_set_transparency __ARGS((int alpha));
 void im_set_font __ARGS((LOGFONT *lf));
 void im_set_position __ARGS((int row, int col));
 void im_set_active __ARGS((int active));
@@ -94,4 +96,5 @@ BalloonEval *gui_mch_create_beval_area __ARGS((void *target, char_u *mesg, void 
 void gui_mch_destroy_beval_area __ARGS((BalloonEval *beval));
 void netbeans_draw_multisign_indicator __ARGS((int row));
 void netbeans_init_winsock __ARGS((void));
+int gui_mch_get_charwidth __ARGS((int c));
 /* vim: set ft=c : */

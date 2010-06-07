@@ -540,10 +540,19 @@ typedef unsigned long u8char_T;	    /* long should be 32 bits or more */
  * Check input method control.
  */
 #if defined(FEAT_XIM) \
+    || defined(FEAT_UIMFEP) \
     || (defined(FEAT_GUI) && (defined(FEAT_MBYTE_IME) || defined(GLOBAL_IME))) \
     || (defined(FEAT_GUI_MAC) && defined(FEAT_MBYTE)) \
     || defined(FEAT_GUI_MACVIM)
 # define USE_IM_CONTROL
+#endif
+
+/*
+ * Whether 'ambiwidth' supports "auto".  Currently, only for Win32.
+ */
+#if defined(FEAT_MBYTE) && defined(FEAT_GUI) && \
+    (defined(FEAT_GUI_W32))
+# define USE_AMBIWIDTH_AUTO
 #endif
 
 /*
@@ -892,6 +901,9 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define SEARCH_MARK  0x200  /* set previous context mark */
 #define SEARCH_KEEP  0x400  /* keep previous search pattern */
 #define SEARCH_PEEK  0x800  /* peek for typed char, cancel search */
+#ifdef USE_MIGEMO
+# define SEARCH_MIGEMO	0x1000	/* use migemo for search */
+#endif
 
 /* Values for find_ident_under_cursor() */
 #define FIND_IDENT	1	/* find identifier (word) */

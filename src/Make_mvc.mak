@@ -145,9 +145,9 @@ TARGETOS = BOTH
 # interfaces.
 # If you change something else, do "make clean" first!
 !if "$(GUI)" == "yes"
-OBJDIR = .\ObjG
+OBJDIR = .\Obj\G
 !else
-OBJDIR = .\ObjC
+OBJDIR = .\Obj\C
 !endif
 !if "$(OLE)" == "yes"
 OBJDIR = $(OBJDIR)O
@@ -586,6 +586,14 @@ GETTEXT = yes
 CFLAGS = $(CFLAGS) -DDYNAMIC_GETTEXT
 !endif
 
+#
+# Support Migemo
+#
+!ifdef MIGEMO
+!message Migemo supported - will be dynamic linked.
+CFLAGS = $(CFLAGS) -DDYNAMIC_MIGEMO
+!endif
+
 # TCL interface
 !ifdef TCL
 !ifndef TCL_VER
@@ -826,6 +834,7 @@ $(VIM).exe: $(OUTDIR) $(OBJ) $(GUI_OBJ) $(OLE_OBJ) $(OLE_IDL) $(MZSCHEME_OBJ) \
 		$(MZSCHEME_OBJ) $(PERL_OBJ) $(PYTHON_OBJ) $(RUBY_OBJ) \
 		$(TCL_OBJ) $(SNIFF_OBJ) $(CSCOPE_OBJ) $(NETBEANS_OBJ) \
 		$(XPM_OBJ) $(OUTDIR)\version.obj $(LINKARGS2)
+	IF EXIST $@.manifest mt -nologo -manifest $@.manifest kaoriya.mnf -outputresource:$@;1
 
 $(VIM): $(VIM).exe
 
@@ -840,14 +849,17 @@ install.exe: dosinst.c
 
 uninstal.exe: uninstal.c
 	$(CC) /nologo -DNDEBUG -DWIN32 uninstal.c shell32.lib advapi32.lib
+	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
 
 vimrun.exe: vimrun.c
 	$(CC) /nologo -DNDEBUG vimrun.c
+	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
 
 xxd/xxd.exe: xxd/xxd.c
 	cd xxd
 	$(MAKE) /NOLOGO -f Make_mvc.mak
 	cd ..
+	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
 
 GvimExt/gvimext.dll: GvimExt/gvimext.cpp GvimExt/gvimext.rc GvimExt/gvimext.h
 	cd GvimExt
@@ -865,6 +877,7 @@ clean:
 	- if exist $(OUTDIR)/nul $(DEL_TREE) $(OUTDIR)
 	- if exist *.obj del *.obj
 	- if exist $(VIM).exe del $(VIM).exe
+	- if exist $(VIM).exe.manifest del $(VIM).exe.manifest
 	- if exist $(VIM).ilk del $(VIM).ilk
 	- if exist $(VIM).pdb del $(VIM).pdb
 	- if exist $(VIM).map del $(VIM).map

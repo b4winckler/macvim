@@ -825,7 +825,7 @@ while s:idlist != ""
 endwhile
 
 " Add hyperlinks
-%s+\(https\=://\S\{-}\)\(\([.,;:}]\=\(\s\|$\)\)\|[\\"'<>]\|&gt;\|&lt;\|&quot;\)+<a href="\1">\1</a>\2+ge
+%s+\(\%(https\=\|ftp\)://\S\{-}\)\(\([.,;:}]\=\(\s\|$\)\)\|[\\"'<>]\|&gt;\|&lt;\|&quot;\)+<a href="\1">\1</a>\2+ge
 
 " The DTD
 if exists("use_xhtml")
