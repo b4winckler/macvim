@@ -132,6 +132,7 @@ typedef int LONG;
 static void _OnPaint( HWND hwnd);
 static void clear_rect(RECT *rcp);
 static int gui_mswin_get_menu_height(int fix_window);
+static int get_caption_height(void);
 
 static WORD		s_dlgfntheight;		/* height of the dialog font */
 static WORD		s_dlgfntwidth;		/* width of the dialog font */
@@ -1291,7 +1292,7 @@ GetFontSize(GuiFont font)
     TEXTMETRIC tm;
 
     GetTextMetrics(hdc, &tm);
-    gui.char_width = tm.tmAveCharWidth + tm.tmOverhang;
+    gui.char_width = tm.tmAveCharWidth + tm.tmOverhang + p_charspace;
 
     gui.char_height = tm.tmHeight
 #ifndef MSWIN16_FASTTEXT
@@ -2886,7 +2887,7 @@ gui_mswin_get_valid_dimensions(
 	+ GetSystemMetrics(SM_CXFRAME) * 2;
     base_height = gui_get_base_height()
 	+ GetSystemMetrics(SM_CYFRAME) * 2
-	+ GetSystemMetrics(SM_CYCAPTION)
+	+ get_caption_height()
 #ifdef FEAT_MENU
 	+ gui_mswin_get_menu_height(FALSE)
 #endif
@@ -3182,7 +3183,7 @@ gui_mch_newfont()
 			- GetSystemMetrics(SM_CXFRAME) * 2,
 		     rect.bottom - rect.top
 			- GetSystemMetrics(SM_CYFRAME) * 2
-			- GetSystemMetrics(SM_CYCAPTION)
+			- get_caption_height()
 #ifdef FEAT_MENU
 			- gui_mswin_get_menu_height(FALSE)
 #endif
@@ -3273,28 +3274,24 @@ mch_set_mouse_shape(int shape)
 
 # if defined(FEAT_MBYTE) && defined(WIN3264)
 /*
- * Wide version of convert_filter().  Keep in sync!
+ * Wide version of convert_filter().  Keep to using convert_filter().
  */
     static WCHAR *
 convert_filterW(char_u *s)
 {
-    WCHAR	*res;
-    unsigned	s_len = (unsigned)STRLEN(s);
-    unsigned	i;
+    /* Pre-declaration is required. */
+    char_u * convert_filter(char_u *s);
 
-    res = (WCHAR *)alloc((s_len + 3) * sizeof(WCHAR));
-    if (res != NULL)
-    {
-	for (i = 0; i < s_len; ++i)
-	    if (s[i] == '\t' || s[i] == '\n')
-		res[i] = '\0';
-	    else
-		res[i] = s[i];
-	res[s_len] = NUL;
-	/* Add two extra NULs to make sure it's properly terminated. */
-	res[s_len + 1] = NUL;
-	res[s_len + 2] = NUL;
-    }
+    WCHAR	*res;
+    char_u	*tmp;
+    int		len;
+
+    tmp = convert_filter(s);
+    if (tmp == NULL)
+	return NULL;
+    len = STRLEN(s) + 3;
+    res = enc_to_utf16(tmp, &len);
+    vim_free(tmp);
     return res;
 }
 

@@ -2997,7 +2997,7 @@ msgid "--remote <files>\tEdit <files> in a Vim server if possible"
 msgstr "--remote <files>\t可能ならばVimサーバで <files> を編集する"
 
 msgid "--remote-silent <files>  Same, don't complain if there is no server"
-msgstr "--remote-silnet <files>  同上, サーバが無くても警告文を出力しない"
+msgstr "--remote-silent <files>  同上, サーバが無くても警告文を出力しない"
 
 msgid ""
 "--remote-wait <files>  As --remote but wait for files to have been edited"
@@ -3645,7 +3645,7 @@ msgid ""
 msgstr ""
 "読込専用で開く(&O)\n"
 "とにかく編集する(&E)\n"
-"復活させる(&R)ecover\n"
+"復活させる(&R)\n"
 "終了する(&Q)\n"
 "中止する(&A)"
 
@@ -3659,7 +3659,7 @@ msgid ""
 msgstr ""
 "読込専用で開く(&O)\n"
 "とにかく編集する(&E)\n"
-"復活させる(&R)ecover\n"
+"復活させる(&R)\n"
 "削除する(&D)\n"
 "終了する(&Q)\n"
 "中止する(&A)"
@@ -4055,7 +4055,7 @@ msgstr "%ld 列; "
 
 #, c-format
 msgid "Selected %s%ld of %ld Lines; %ld of %ld Words; %ld of %ld Bytes"
-msgstr "選択 %s%ld / %ld 行; %ld / %ld 単語; %ld / %ld 文字"
+msgstr "選択 %s%ld / %ld 行; %ld / %ld 単語; %ld / %ld バイト"
 
 #, c-format
 msgid ""
@@ -4065,7 +4065,7 @@ msgstr "選択 %s%ld / %ld 行; %ld / %ld 単語; %ld / %ld 文字; %ld / %ld バイト"
 
 #, c-format
 msgid "Col %s of %s; Line %ld of %ld; Word %ld of %ld; Byte %ld of %ld"
-msgstr "列 %s / %s; 行 %ld of %ld; 単語 %ld / %ld; 文字 %ld / %ld"
+msgstr "列 %s / %s; 行 %ld of %ld; 単語 %ld / %ld; バイト %ld / %ld"
 
 #, c-format
 msgid ""

@@ -42,3 +42,7 @@ gvimext.lib
 *.mo
 *.swp
 *~
+
+# KaoriYa
+src/Obj/*/pathdef.c
+src/if_perl.c

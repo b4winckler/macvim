@@ -6219,7 +6219,12 @@ nv_search(cap)
 	return;
     }
 
+#ifdef USE_MIGEMO
+    cap->searchbuf = getcmdline(cap->cmdchar,
+	    (cap->nchar == 'g' ? -cap->count1 : cap->count1), 0);
+#else
     cap->searchbuf = getcmdline(cap->cmdchar, cap->count1, 0);
+#endif
 
     if (cap->searchbuf == NULL)
     {
@@ -6228,6 +6233,9 @@ nv_search(cap)
     }
 
     normal_search(cap, cap->cmdchar, cap->searchbuf,
+#ifdef USE_MIGEMO
+	    (cap->nchar == 'g' ? SEARCH_MIGEMO : 0) |
+#endif
 						(cap->arg ? 0 : SEARCH_MARK));
 }
 
@@ -8160,7 +8168,9 @@ nv_g_cmd(cap)
     case '~':
     case 'u':
     case 'U':
+#ifndef USE_MIGEMO
     case '?':
+#endif
     case '@':
 	nv_operator(cap);
 	break;
@@ -8256,6 +8266,25 @@ nv_g_cmd(cap)
 	    undo_time(cap->nchar == '-' ? -cap->count1 : cap->count1,
 								FALSE, FALSE);
 	break;
+
+#ifdef USE_MIGEMO
+    case '/':
+	cap->cmdchar = '/';
+	cap->nchar = 'g';
+	nv_search(cap);
+	break;
+
+    case '?':
+	if (curbuf->b_p_migemo)
+	{
+	    cap->cmdchar = '?';
+	    cap->nchar = 'g';
+	    nv_search(cap);
+	}
+	else
+	    nv_operator(cap);
+	break;
+#endif
 
     default:
 	clearopbeep(oap);

@@ -2346,12 +2346,28 @@ mch_print_start_line(margin, page_line)
     int
 mch_print_text_out(char_u *p, int len)
 {
+    int do_out = 1;
 #ifdef FEAT_PROPORTIONAL_FONTS
     SIZE	sz;
 #endif
 
-    TextOut(prt_dlg.hDC, prt_pos_x + prt_left_margin,
-					  prt_pos_y + prt_top_margin, p, len);
+    /* A space character without background color is not needed to be drawn.
+     * This is expected to reduce data size and speed up when printing. */
+    if (GetBkMode(prt_dlg.hDC) == TRANSPARENT)
+    {
+	int i;
+
+	do_out = 0;
+	for (i = 0; i < len; ++i)
+	    if (p[i] != ' ')
+	    {
+		do_out = 1;
+		break;
+	    }
+    }
+    if (do_out)
+	TextOut(prt_dlg.hDC, prt_pos_x + prt_left_margin, prt_pos_y +
+		prt_top_margin, p, len);
 #ifndef FEAT_PROPORTIONAL_FONTS
     prt_pos_x += len * prt_tm.tmAveCharWidth;
     return (prt_pos_x + prt_left_margin + prt_tm.tmAveCharWidth

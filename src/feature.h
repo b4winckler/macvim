@@ -1307,3 +1307,13 @@
 #ifdef FEAT_NORMAL
 # define FEAT_PERSISTENT_UNDO
 #endif
+
+/*
+ * +migemo		Regexp pattern expansion.  See:
+ * 				http://migemo.namazu.org/
+ * 				http://www.kaoriya.net/
+ */
+/* Use migemo_open() when it's available */
+#if (defined(HAVE_MIGEMO_H) && defined(HAVE_MIGEMO)) || defined(DYNAMIC_MIGEMO)
+# define USE_MIGEMO
+#endif
