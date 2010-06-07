@@ -36,7 +36,6 @@
 		1D80FBD40CBBD3B700102A1C /* MMFullscreenWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 1D80FBD00CBBD3B700102A1C /* MMFullscreenWindow.m */; };
 		1D80FBD60CBBD3B700102A1C /* MMVimView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1D80FBD20CBBD3B700102A1C /* MMVimView.m */; };
 		1D8B5A53104AF9FF002E59D5 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D8B5A52104AF9FF002E59D5 /* Carbon.framework */; };
-		1D8BEA74104992290069B072 /* FindAndReplace.nib in Resources */ = {isa = PBXBuildFile; fileRef = 1D8BEA73104992290069B072 /* FindAndReplace.nib */; };
 		1D9918490D299F9900A96335 /* MMAtsuiTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1D9918470D299F9900A96335 /* MMAtsuiTextView.m */; };
 		1D9C60520EF79C0C0034AD44 /* MacVim.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1D9C602E0EF79C0C0034AD44 /* MacVim.icns */; };
 		1DCD00BF0E50B2B700460166 /* Attention.png in Resources */ = {isa = PBXBuildFile; fileRef = 1DCD00AA0E50B2B700460166 /* Attention.png */; };
@@ -73,6 +72,11 @@
 		1DE9B9500D341AB8008FEDD4 /* MMWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 1DE9B94E0D341AB8008FEDD4 /* MMWindow.m */; };
 		1DED78600C6DE43D0079945F /* vimrc in Copy Vim Runtime Files */ = {isa = PBXBuildFile; fileRef = 1DED785F0C6DE43D0079945F /* vimrc */; };
 		1DFE25A50C527BC4003000F7 /* PSMTabBarControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D493DB90C52533B00AB718C /* PSMTabBarControl.framework */; };
+		5260A93C11BD18A600EE97ED /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5260A93B11BD18A600EE97ED /* Localizable.strings */; };
+		5260A94311BD191500EE97ED /* FindAndReplace.nib in Resources */ = {isa = PBXBuildFile; fileRef = 5260A94211BD191500EE97ED /* FindAndReplace.nib */; };
+		5260A94811BD19D100EE97ED /* FindAndReplace.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5260A94611BD19D100EE97ED /* FindAndReplace.strings */; };
+		5260A94E11BD1BBC00EE97ED /* MainMenu.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5260A94C11BD1BBC00EE97ED /* MainMenu.strings */; };
+		5260A95811BD1E3300EE97ED /* Preferences.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5260A95611BD1E3300EE97ED /* Preferences.strings */; };
 		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
@@ -259,6 +263,17 @@
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		32CA4F630368D1EE00C91783 /* MacVim_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MacVim_Prefix.pch; sourceTree = "<group>"; };
+		5260A93911BD189D00EE97ED /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/Localizable.strings; sourceTree = "<group>"; };
+		5260A93D11BD18AD00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Japanese; path = Japanese.lproj/Localizable.strings; sourceTree = "<group>"; };
+		5260A94411BD191C00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = Japanese; path = Japanese.lproj/FindAndReplace.nib; sourceTree = "<group>"; };
+		5260A94711BD19D100EE97ED /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/FindAndReplace.strings; sourceTree = "<group>"; };
+		5260A94A11BD19DF00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Japanese; path = Japanese.lproj/FindAndReplace.strings; sourceTree = "<group>"; };
+		5260A94D11BD1BBC00EE97ED /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/MainMenu.strings; sourceTree = "<group>"; };
+		5260A94F11BD1C0600EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Japanese; path = Japanese.lproj/MainMenu.strings; sourceTree = "<group>"; };
+		5260A95011BD1C7500EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = Japanese; path = Japanese.lproj/MainMenu.nib; sourceTree = "<group>"; };
+		5260A95711BD1E3300EE97ED /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/Preferences.strings; sourceTree = "<group>"; };
+		5260A95911BD1E3B00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Japanese; path = Japanese.lproj/Preferences.strings; sourceTree = "<group>"; };
+		5260A95A11BD1E4A00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = Japanese; path = Japanese.lproj/Preferences.nib; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* MacVim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacVim.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BD476E2B0DAAD74400F08A5C /* RBSplitSubview.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RBSplitSubview.h; sourceTree = "<group>"; };
@@ -477,9 +492,13 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				5260A95611BD1E3300EE97ED /* Preferences.strings */,
+				5260A94C11BD1BBC00EE97ED /* MainMenu.strings */,
+				5260A94611BD19D100EE97ED /* FindAndReplace.strings */,
+				5260A93B11BD18A600EE97ED /* Localizable.strings */,
 				1D384A0D100D671700D3C22F /* KeyBinding.plist */,
 				1D9C602E0EF79C0C0034AD44 /* MacVim.icns */,
-				1D8BEA73104992290069B072 /* FindAndReplace.nib */,
+				5260A94211BD191500EE97ED /* FindAndReplace.nib */,
 				0395A8A90D72D88B00881434 /* General.png */,
 				0395A9590D74D47B00881434 /* Integration.png */,
 				1D22374A0E45DF4800E6FFFF /* Advanced.png */,
@@ -633,9 +652,13 @@
 				1DCD00D10E50B2B700460166 /* SaveSesn.png in Resources */,
 				1DCD00D20E50B2B700460166 /* TagJump.png in Resources */,
 				1DCD00D30E50B2B700460166 /* Undo.png in Resources */,
-				1D8BEA74104992290069B072 /* FindAndReplace.nib in Resources */,
+				5260A94311BD191500EE97ED /* FindAndReplace.nib in Resources */,
 				1D9C60520EF79C0C0034AD44 /* MacVim.icns in Resources */,
 				1D384A0E100D671700D3C22F /* KeyBinding.plist in Resources */,
+				5260A93C11BD18A600EE97ED /* Localizable.strings in Resources */,
+				5260A94811BD19D100EE97ED /* FindAndReplace.strings in Resources */,
+				5260A94E11BD1BBC00EE97ED /* MainMenu.strings in Resources */,
+				5260A95811BD1E3300EE97ED /* Preferences.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -717,18 +740,11 @@
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
-		1D8BEA73104992290069B072 /* FindAndReplace.nib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				1D6008820E96886D003763F0 /* English */,
-			);
-			name = FindAndReplace.nib;
-			sourceTree = "<group>";
-		};
 		1DE3F8E50D50F80500052B9E /* Preferences.nib */ = {
 			isa = PBXVariantGroup;
 			children = (
 				1DE3F8E60D50F80500052B9E /* English */,
+				5260A95A11BD1E4A00EE97ED /* Japanese */,
 			);
 			name = Preferences.nib;
 			sourceTree = "<group>";
@@ -737,8 +753,54 @@
 			isa = PBXVariantGroup;
 			children = (
 				29B97319FDCFA39411CA2CEA /* English */,
+				5260A95011BD1C7500EE97ED /* Japanese */,
 			);
 			name = MainMenu.nib;
+			sourceTree = "<group>";
+		};
+		5260A93B11BD18A600EE97ED /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5260A93911BD189D00EE97ED /* English */,
+				5260A93D11BD18AD00EE97ED /* Japanese */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		5260A94211BD191500EE97ED /* FindAndReplace.nib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				1D6008820E96886D003763F0 /* English */,
+				5260A94411BD191C00EE97ED /* Japanese */,
+			);
+			name = FindAndReplace.nib;
+			sourceTree = "<group>";
+		};
+		5260A94611BD19D100EE97ED /* FindAndReplace.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5260A94711BD19D100EE97ED /* English */,
+				5260A94A11BD19DF00EE97ED /* Japanese */,
+			);
+			name = FindAndReplace.strings;
+			sourceTree = "<group>";
+		};
+		5260A94C11BD1BBC00EE97ED /* MainMenu.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5260A94D11BD1BBC00EE97ED /* English */,
+				5260A94F11BD1C0600EE97ED /* Japanese */,
+			);
+			name = MainMenu.strings;
+			sourceTree = "<group>";
+		};
+		5260A95611BD1E3300EE97ED /* Preferences.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5260A95711BD1E3300EE97ED /* English */,
+				5260A95911BD1E3B00EE97ED /* Japanese */,
+			);
+			name = Preferences.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
