@@ -2,7 +2,7 @@
 "
 " Menu Translations:	Japanese (UTF-8)
 " Translated By:	MURAOKA Taro  <koron@tka.att.ne.jp>
-" Last Change:		31-Aug-2009.
+" Last Change:		10-Jun-2010.
 
 " Quit when menu translations have already been done.
 if exists("did_menu_trans")
@@ -203,28 +203,28 @@ let g:menutrans_no_file = "[無題]"
 
 " Window menu
 menutrans &Window			ウインドウ
-menutrans &New<Tab>^Wn			新規作成<Tab>^Wn
-menutrans S&plit<Tab>^Ws		分割<Tab>^Ws
-menutrans Sp&lit\ To\ #<Tab>^W^^	裏バッファへ分割<Tab>^W^^
-menutrans Split\ &Vertically<Tab>^Wv	垂直分割<Tab>^Wv
-menutrans Split\ File\ E&xplorer	ファイルエクスプローラ
-menutrans &Close<Tab>^Wc		閉じる<Tab>^Wc
-menutrans Move\ &To			移動
-menutrans &Top<Tab>^WK			上<Tab>^WK
-menutrans &Bottom<Tab>^WJ		下<Tab>^WJ
-menutrans &Left\ side<Tab>^WH		左<Tab>^WH
-menutrans &Right\ side<Tab>^WL		右<Tab>^WL
-menutrans Close\ &Other(s)<Tab>^Wo	他を閉じる<Tab>^Wo
-menutrans Ne&xt<Tab>^Ww			次へ<Tab>^Ww
-menutrans P&revious<Tab>^WW		前へ<Tab>^WW
-menutrans &Equal\ Size<Tab>^W=	同じ高さに<Tab>^W=
-menutrans &Max\ Height<Tab>^W_		最大高に<Tab>^W_
-menutrans M&in\ Height<Tab>^W1_		最小高に<Tab>^W1_
-menutrans Max\ &Width<Tab>^W\|		最大幅に<Tab>^W\|
-menutrans Min\ Widt&h<Tab>^W1\|		最小幅に<Tab>^W1\|
-menutrans Rotate\ &Up<Tab>^WR		上にローテーション<Tab>^WR
-menutrans Rotate\ &Down<Tab>^Wr		下にローテーション<Tab>^Wr
-menutrans Select\ Fo&nt\.\.\.		フォント設定\.\.\.
+"menutrans &New<Tab>^Wn			新規作成<Tab>^Wn
+"menutrans S&plit<Tab>^Ws		分割<Tab>^Ws
+"menutrans Sp&lit\ To\ #<Tab>^W^^	裏バッファへ分割<Tab>^W^^
+"menutrans Split\ &Vertically<Tab>^Wv	垂直分割<Tab>^Wv
+"menutrans Split\ File\ E&xplorer	ファイルエクスプローラ
+"menutrans &Close<Tab>^Wc		閉じる<Tab>^Wc
+"menutrans Move\ &To			移動
+"menutrans &Top<Tab>^WK			上<Tab>^WK
+"menutrans &Bottom<Tab>^WJ		下<Tab>^WJ
+"menutrans &Left\ side<Tab>^WH		左<Tab>^WH
+"menutrans &Right\ side<Tab>^WL		右<Tab>^WL
+"menutrans Close\ &Other(s)<Tab>^Wo	他を閉じる<Tab>^Wo
+"menutrans Ne&xt<Tab>^Ww			次へ<Tab>^Ww
+"menutrans P&revious<Tab>^WW		前へ<Tab>^WW
+"menutrans &Equal\ Size<Tab>^W=	同じ高さに<Tab>^W=
+"menutrans &Max\ Height<Tab>^W_		最大高に<Tab>^W_
+"menutrans M&in\ Height<Tab>^W1_		最小高に<Tab>^W1_
+"menutrans Max\ &Width<Tab>^W\|		最大幅に<Tab>^W\|
+"menutrans Min\ Widt&h<Tab>^W1\|		最小幅に<Tab>^W1\|
+"menutrans Rotate\ &Up<Tab>^WR		上にローテーション<Tab>^WR
+"menutrans Rotate\ &Down<Tab>^Wr		下にローテーション<Tab>^Wr
+"menutrans Select\ Fo&nt\.\.\.		フォント設定\.\.\.
 
 " The popup menu
 menutrans &Undo			取り消す
@@ -299,39 +299,39 @@ if has('iconv')
   let support_jisx0213 = (iconv("\x87\x64\x87\x6a", 'cp932', 'euc-jisx0213') ==# "\xad\xc5\xad\xcb") ? 1 : 0
   "
   " 読み込み
-  an 10.395 ファイル.-SEPICONV- <Nop>
-  an 10.396.100.100 ファイル.エンコード指定\.\.\..開く\.\.\..SJIS<Tab>fenc=cp932 :browse confirm e ++enc=cp932<CR>
+  an 10.395 &File.-SEPICONV- <Nop>
+  an 10.396.100.100 &File.エンコード指定\.\.\..開く\.\.\..SJIS<Tab>fenc=cp932 :browse confirm e ++enc=cp932<CR>
   if !support_jisx0213
-    an 10.396.100.110 ファイル.エンコード指定\.\.\..開く\.\.\..EUC<Tab>fenc=euc-jp :browse confirm e ++enc=euc-jp<CR>
-    an 10.396.100.120 ファイル.エンコード指定\.\.\..開く\.\.\..JIS<Tab>fenc=iso-2022-jp :browse confirm e ++enc=iso-2022-jp<CR>
+    an 10.396.100.110 &File.エンコード指定\.\.\..開く\.\.\..EUC<Tab>fenc=euc-jp :browse confirm e ++enc=euc-jp<CR>
+    an 10.396.100.120 &File.エンコード指定\.\.\..開く\.\.\..JIS<Tab>fenc=iso-2022-jp :browse confirm e ++enc=iso-2022-jp<CR>
   else
-    an 10.396.100.110 ファイル.エンコード指定\.\.\..開く\.\.\..EUC<Tab>fenc=euc-jisx0213 :browse confirm e ++enc=euc-jisx0213<CR>
-    an 10.396.100.120 ファイル.エンコード指定\.\.\..開く\.\.\..JIS<Tab>fenc=iso-2022-jp-3 :browse confirm e ++enc=iso-2022-jp-3<CR>
+    an 10.396.100.110 &File.エンコード指定\.\.\..開く\.\.\..EUC<Tab>fenc=euc-jisx0213 :browse confirm e ++enc=euc-jisx0213<CR>
+    an 10.396.100.120 &File.エンコード指定\.\.\..開く\.\.\..JIS<Tab>fenc=iso-2022-jp-3 :browse confirm e ++enc=iso-2022-jp-3<CR>
   endif
-  an 10.396.100.130 ファイル.エンコード指定\.\.\..開く\.\.\..UTF-8<Tab>fenc=utf-8 :browse confirm e ++enc=utf-8<CR>
+  an 10.396.100.130 &File.エンコード指定\.\.\..開く\.\.\..UTF-8<Tab>fenc=utf-8 :browse confirm e ++enc=utf-8<CR>
 
   " 再読込
-  an 10.396.110.100 ファイル.エンコード指定\.\.\..再読込\.\.\..SJIS<Tab>fenc=cp932 :e ++enc=cp932<CR>
+  an 10.396.110.100 &File.エンコード指定\.\.\..再読込\.\.\..SJIS<Tab>fenc=cp932 :e ++enc=cp932<CR>
   if !support_jisx0213
-    an 10.396.110.110 ファイル.エンコード指定\.\.\..再読込\.\.\..EUC<Tab>fenc=euc-jp :e ++enc=euc-jp<CR>
-    an 10.396.110.120 ファイル.エンコード指定\.\.\..再読込\.\.\..JIS<Tab>fenc=iso-2022-jp :e ++enc=iso-2022-jp<CR>
+    an 10.396.110.110 &File.エンコード指定\.\.\..再読込\.\.\..EUC<Tab>fenc=euc-jp :e ++enc=euc-jp<CR>
+    an 10.396.110.120 &File.エンコード指定\.\.\..再読込\.\.\..JIS<Tab>fenc=iso-2022-jp :e ++enc=iso-2022-jp<CR>
   else
-    an 10.396.110.110 ファイル.エンコード指定\.\.\..再読込\.\.\..EUC<Tab>fenc=euc-jisx0213 :e ++enc=euc-jisx0213<CR>
-    an 10.396.110.120 ファイル.エンコード指定\.\.\..再読込\.\.\..JIS<Tab>fenc=iso-2022-jp-3 :e ++enc=iso-2022-jp-3<CR>
+    an 10.396.110.110 &File.エンコード指定\.\.\..再読込\.\.\..EUC<Tab>fenc=euc-jisx0213 :e ++enc=euc-jisx0213<CR>
+    an 10.396.110.120 &File.エンコード指定\.\.\..再読込\.\.\..JIS<Tab>fenc=iso-2022-jp-3 :e ++enc=iso-2022-jp-3<CR>
   endif
-  an 10.396.110.130 ファイル.エンコード指定\.\.\..再読込\.\.\..UTF-8<Tab>fenc=utf-8 :e ++enc=utf-8<CR>
+  an 10.396.110.130 &File.エンコード指定\.\.\..再読込\.\.\..UTF-8<Tab>fenc=utf-8 :e ++enc=utf-8<CR>
 
   " 保存
-  an 10.396.115 ファイル.エンコード指定\.\.\..-SEP1- <Nop>
-  an 10.396.120.100 ファイル.エンコード指定\.\.\..保存\.\.\..SJIS<Tab>fenc=cp932 :set fenc=cp932 \| w<CR>
+  an 10.396.115 &File.エンコード指定\.\.\..-SEP1- <Nop>
+  an 10.396.120.100 &File.エンコード指定\.\.\..保存\.\.\..SJIS<Tab>fenc=cp932 :set fenc=cp932 \| w<CR>
   if !support_jisx0213
-    an 10.396.120.110 ファイル.エンコード指定\.\.\..保存\.\.\..EUC<Tab>fenc=euc-jp :set fenc=euc-jp \| w<CR>
-    an 10.396.120.120 ファイル.エンコード指定\.\.\..保存\.\.\..JIS<Tab>fenc=iso-2022-jp :set fenc=iso-2022-jp \| w<CR>
+    an 10.396.120.110 &File.エンコード指定\.\.\..保存\.\.\..EUC<Tab>fenc=euc-jp :set fenc=euc-jp \| w<CR>
+    an 10.396.120.120 &File.エンコード指定\.\.\..保存\.\.\..JIS<Tab>fenc=iso-2022-jp :set fenc=iso-2022-jp \| w<CR>
   else
-    an 10.396.120.110 ファイル.エンコード指定\.\.\..保存\.\.\..EUC<Tab>fenc=euc-jisx0213 :set fenc=euc-jisx0213 \| w<CR>
-    an 10.396.120.120 ファイル.エンコード指定\.\.\..保存\.\.\..JIS<Tab>fenc=iso-2022-jp-3 :set fenc=iso-2022-jp-3 \| w<CR>
+    an 10.396.120.110 &File.エンコード指定\.\.\..保存\.\.\..EUC<Tab>fenc=euc-jisx0213 :set fenc=euc-jisx0213 \| w<CR>
+    an 10.396.120.120 &File.エンコード指定\.\.\..保存\.\.\..JIS<Tab>fenc=iso-2022-jp-3 :set fenc=iso-2022-jp-3 \| w<CR>
   endif
-  an 10.396.120.130 ファイル.エンコード指定\.\.\..保存\.\.\..UTF-8<Tab>fenc=utf-8 :set fenc=utf-8 \| w<CR>
+  an 10.396.120.130 &File.エンコード指定\.\.\..保存\.\.\..UTF-8<Tab>fenc=utf-8 :set fenc=utf-8 \| w<CR>
 endif
 
 
@@ -368,11 +368,11 @@ menut Minimize\ All		すべてをしまう
 menut Zoom			拡大／縮小
 menut Zoom\ All			すべてを拡大
 menut Toggle\ Full\ Screen\ Mode	フルスクリーンモード切り替え
-an <silent> 9998.331 ウインドウ.次のウインドウ	<Nop>
+an <silent> 9998.331 &Window.次のウインドウ	<Nop>
 macm ウインドウ.次のウインドウ  key=<D-]>	action=selectNextWindow:
-an <silent> 9998.332 ウインドウ.前のウインドウ	<Nop>
+an <silent> 9998.332 &Window.前のウインドウ	<Nop>
 macm ウインドウ.前のウインドウ  key=<D-[>	action=selectPreviousWindow:
-an 9998.333 ウインドウ.-SEP2-			<Nop>
+an 9998.333 &Window.-SEP2-			<Nop>
 menut Select\ Next\ Tab		次のタブを選択
 menut Select\ Previous\ Tab	前のタブを選択
 menut Bring\ All\ To\ Front	すべてを手前に移動
@@ -380,9 +380,9 @@ menut Bring\ All\ To\ Front	すべてを手前に移動
 " Help menu
 menut MacVim\ Help		MacVim\ ヘルプ
 menut MacVim\ Website		MacVim\ Webサイト
-an <silent> 9999.4 ヘルプ.MacVim-KaoriYa\ Webサイト	<Nop>
+an <silent> 9999.4 &Help.MacVim-KaoriYa\ Webサイト	<Nop>
 macm ヘルプ.MacVim-KaoriYa\ Webサイト		action=openWebsiteKaoriYa:
-an 9999.5 &ヘルプ.-sep0-			<Nop>
+an 9999.5 &Help.-sep0-			<Nop>
 
 
 " filler to avoid the line above being recognized as a modeline
