@@ -1249,6 +1249,8 @@
 	</array>
 	<key>SUFeedURL</key>
 	<string>http://macvim-kaoriya.googlecode.com/svn/wiki/latest.xml</string>
+	<key>SUPublicDSAKeyFile</key>
+	<string>dsa_pub.pem</string>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
 

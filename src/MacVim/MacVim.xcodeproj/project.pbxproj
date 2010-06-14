@@ -77,6 +77,9 @@
 		5260A94811BD19D100EE97ED /* FindAndReplace.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5260A94611BD19D100EE97ED /* FindAndReplace.strings */; };
 		5260A94E11BD1BBC00EE97ED /* MainMenu.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5260A94C11BD1BBC00EE97ED /* MainMenu.strings */; };
 		5260A95811BD1E3300EE97ED /* Preferences.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5260A95611BD1E3300EE97ED /* Preferences.strings */; };
+		52AA566D11C5C50500D57D62 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52AA566C11C5C50500D57D62 /* Sparkle.framework */; };
+		52AA577311C5C88800D57D62 /* Sparkle.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 52AA566C11C5C50500D57D62 /* Sparkle.framework */; };
+		52AA577811C5D8E600D57D62 /* dsa_pub.pem in Resources */ = {isa = PBXBuildFile; fileRef = 52AA577711C5D8E600D57D62 /* dsa_pub.pem */; };
 		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
@@ -152,6 +155,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				1D493DBA0C52534300AB718C /* PSMTabBarControl.framework in Copy Frameworks */,
+				52AA577311C5C88800D57D62 /* Sparkle.framework in Copy Frameworks */,
 			);
 			name = "Copy Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -274,6 +278,8 @@
 		5260A95711BD1E3300EE97ED /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/Preferences.strings; sourceTree = "<group>"; };
 		5260A95911BD1E3B00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Japanese; path = Japanese.lproj/Preferences.strings; sourceTree = "<group>"; };
 		5260A95A11BD1E4A00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = Japanese; path = Japanese.lproj/Preferences.nib; sourceTree = "<group>"; };
+		52AA566C11C5C50500D57D62 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
+		52AA577711C5D8E600D57D62 /* dsa_pub.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = dsa_pub.pem; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* MacVim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacVim.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BD476E2B0DAAD74400F08A5C /* RBSplitSubview.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RBSplitSubview.h; sourceTree = "<group>"; };
@@ -302,6 +308,7 @@
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
 				0395A9C30D75D04D00881434 /* Security.framework in Frameworks */,
 				1D8B5A53104AF9FF002E59D5 /* Carbon.framework in Frameworks */,
+				52AA566D11C5C50500D57D62 /* Sparkle.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -390,6 +397,7 @@
 			isa = PBXGroup;
 			children = (
 				1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */,
+				52AA566C11C5C50500D57D62 /* Sparkle.framework */,
 			);
 			name = "Linked Frameworks";
 			sourceTree = "<group>";
@@ -492,6 +500,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				52AA577711C5D8E600D57D62 /* dsa_pub.pem */,
 				5260A95611BD1E3300EE97ED /* Preferences.strings */,
 				5260A94C11BD1BBC00EE97ED /* MainMenu.strings */,
 				5260A94611BD19D100EE97ED /* FindAndReplace.strings */,
@@ -659,6 +668,7 @@
 				5260A94811BD19D100EE97ED /* FindAndReplace.strings in Resources */,
 				5260A94E11BD1BBC00EE97ED /* MainMenu.strings in Resources */,
 				5260A95811BD1E3300EE97ED /* Preferences.strings in Resources */,
+				52AA577811C5D8E600D57D62 /* dsa_pub.pem in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -815,8 +825,10 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1)",
+					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_2)",
 				);
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1 = "\"$(SRCROOT)\"";
+				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_2 = "\"$(SRCROOT)\"";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -845,8 +857,10 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1)",
+					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_2)",
 				);
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1 = "\"$(SRCROOT)\"";
+				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_2 = "\"$(SRCROOT)\"";
 				GCC_DYNAMIC_NO_PIC = YES;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
