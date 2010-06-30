@@ -595,7 +595,7 @@ main
      */
     if (recoverymode && fname == NULL)
     {
-	recover_names(NULL, TRUE, 0);
+	recover_names(NULL, TRUE, 0, NULL);
 	mch_exit(0);
     }
 
@@ -3345,8 +3345,8 @@ time_diff(then, now)
 }
 
     void
-time_msg(msg, tv_start)
-    char	*msg;
+time_msg(mesg, tv_start)
+    char	*mesg;
     void	*tv_start;  /* only for do_source: start time; actually
 			       (struct timeval *) */
 {
@@ -3355,7 +3355,7 @@ time_msg(msg, tv_start)
 
     if (time_fd != NULL)
     {
-	if (strstr(msg, "STARTING") != NULL)
+	if (strstr(mesg, "STARTING") != NULL)
 	{
 	    gettimeofday(&start, NULL);
 	    prev_timeval = start;
@@ -3373,7 +3373,7 @@ time_msg(msg, tv_start)
 	fprintf(time_fd, "  ");
 	time_diff(&prev_timeval, &now);
 	prev_timeval = now;
-	fprintf(time_fd, ": %s\n", msg);
+	fprintf(time_fd, ": %s\n", mesg);
     }
 }
 
