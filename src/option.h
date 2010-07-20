@@ -548,7 +548,7 @@ EXTERN int	p_icon;		/* 'icon' */
 EXTERN char_u	*p_iconstring;	/* 'iconstring' */
 #endif
 EXTERN int	p_ic;		/* 'ignorecase' */
-#if defined(FEAT_XIM) && (defined(FEAT_GUI_GTK))
+#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
 EXTERN char_u	*p_imak;	/* 'imactivatekey' */
 #endif
 #ifdef USE_IM_CONTROL
@@ -592,6 +592,10 @@ EXTERN int	p_magic;	/* 'magic' */
 #ifdef FEAT_QUICKFIX
 EXTERN char_u	*p_mef;		/* 'makeef' */
 EXTERN char_u	*p_mp;		/* 'makeprg' */
+#endif
+#ifdef FEAT_SYN_HL
+EXTERN char_u   *p_cc;		/* 'colorcolumn' */
+EXTERN int      p_cc_cols[256]; /* array for 'colorcolumn' columns */
 #endif
 EXTERN long	p_mat;		/* 'matchtime' */
 #ifdef FEAT_MBYTE
@@ -801,7 +805,7 @@ static char *(p_toolbar_values[]) = {"text", "icons", "tooltips", "horiz", NULL}
 # define TOOLBAR_TOOLTIPS	0x04
 # define TOOLBAR_HORIZ		0x08
 #endif
-#if defined(FEAT_TOOLBAR) && defined(FEAT_GUI_GTK) && defined(HAVE_GTK2)
+#if defined(FEAT_TOOLBAR) && defined(FEAT_GUI_GTK)
 EXTERN char_u	*p_tbis;	/* 'toolbariconsize' */
 EXTERN unsigned tbis_flags;
 # ifdef IN_OPTION_C
@@ -1083,6 +1087,7 @@ enum
 #ifdef FEAT_SYN_HL
     , WV_CUC
     , WV_CUL
+    , WV_CC
 #endif
 #ifdef FEAT_STL_OPT
     , WV_STL

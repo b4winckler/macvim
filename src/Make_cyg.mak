@@ -14,6 +14,9 @@
 # PYTHON	define to path to Python dir to get PYTHON support (not defined)
 #   PYTHON_VER	    define to version of Python being used (22)
 #   DYNAMIC_PYTHON  no or yes: use yes to load the Python DLL dynamically (yes)
+# PYTHON3	define to path to Python3 dir to get PYTHON3 support (not defined)
+#   PYTHON3_VER	    define to version of Python3 being used (22)
+#   DYNAMIC_PYTHON3  no or yes: use yes to load the Python3 DLL dynamically (yes)
 # TCL		define to path to TCL dir to get TCL support (not defined)
 #   TCL_VER	define to version of TCL being used (83)
 #   DYNAMIC_TCL no or yes: use yes to load the TCL DLL dynamically (yes)
@@ -24,6 +27,9 @@
 #   MZSCHEME_VER      define to version of MzScheme being used (209_000)
 #   DYNAMIC_MZSCHEME  no or yes: use yes to load the MzScheme DLLs dynamically (yes)
 #   MZSCHEME_DLLS     path to MzScheme DLLs (libmzgc and libmzsch), for "static" build.
+# LUA	define to path to Lua dir to get Lua support (not defined)
+#   LUA_VER	    define to version of Lua being used (51)
+#   DYNAMIC_LUA  no or yes: use yes to load the Lua DLL dynamically (yes)
 # GETTEXT	no or yes: set to yes for dynamic gettext support (yes)
 # ICONV		no or yes: set to yes for dynamic iconv support (yes)
 # MBYTE		no or yes: set to yes to include multibyte support (yes)
@@ -37,7 +43,8 @@
 # USEDLL	no or yes: set to yes to use the Runtime library DLL (no)
 #		For USEDLL=yes the cygwin1.dll is required to run Vim.
 #		"no" does not work with latest version of Cygwin, use
-#		Make_ming.mak instead.  Or set CC to gcc-3.
+#		Make_ming.mak instead.  Or set CC to gcc-3 and add
+#		-L/lib/w32api to EXTRA_LIBS.
 # POSTSCRIPT	no or yes: set to yes for PostScript printing (no)
 # FEATURES	TINY, SMALL, NORMAL, BIG or HUGE (BIG)
 # WINVER	Lowest Win32 version to support.  (0x0400)
@@ -135,7 +142,6 @@ endif
 ##############################
 ifdef PYTHON
 DEFINES += -DFEAT_PYTHON
-INCLUDES += -I$(PYTHON)/include
 EXTRA_OBJS += $(OUTDIR)/if_python.o
 
 ifndef DYNAMIC_PYTHON
@@ -150,6 +156,29 @@ ifeq (yes, $(DYNAMIC_PYTHON))
 DEFINES += -DDYNAMIC_PYTHON -DDYNAMIC_PYTHON_DLL=\"python$(PYTHON_VER).dll\"
 else
 EXTRA_LIBS += $(PYTHON)/libs/python$(PYTHON_VER).lib
+endif
+endif
+
+##############################
+# DYNAMIC_PYTHON3=yes works.
+# DYNAMIC_PYTHON3=no does not (unresolved externals on link).
+##############################
+ifdef PYTHON3
+DEFINES += -DFEAT_PYTHON3
+EXTRA_OBJS += $(OUTDIR)/if_python3.o
+
+ifndef DYNAMIC_PYTHON3
+DYNAMIC_PYTHON3 = yes
+endif
+
+ifndef PYTHON3_VER
+PYTHON3_VER = 31
+endif
+
+ifeq (yes, $(DYNAMIC_PYTHON3))
+DEFINES += -DDYNAMIC_PYTHON3 -DDYNAMIC_PYTHON3_DLL=\"python$(PYTHON3_VER).dll\"
+else
+EXTRA_LIBS += $(PYTHON3)/libs/python$(PYTHON3_VER).lib
 endif
 endif
 
@@ -268,6 +297,30 @@ DEFINES += -DDYNAMIC_TCL -DDYNAMIC_TCL_DLL=\"tcl$(TCL_VER).dll\"
 EXTRA_LIBS += $(TCL)/lib/tclstub$(TCL_VER).lib
 else
 EXTRA_LIBS += $(TCL)/lib/tcl$(TCL_VER).lib
+endif
+endif
+
+##############################
+# DYNAMIC_LUA=yes works.
+# DYNAMIC_LUA=no does not (unresolved externals on link).
+##############################
+ifdef LUA
+DEFINES += -DFEAT_LUA
+INCLUDES += -I$(LUA)/include
+EXTRA_OBJS += $(OUTDIR)/if_lua.o
+
+ifndef DYNAMIC_LUA
+DYNAMIC_LUA = yes
+endif
+
+ifndef LUA_VER
+LUA_VER = 51
+endif
+
+ifeq (yes, $(DYNAMIC_LUA))
+DEFINES += -DDYNAMIC_LUA -DDYNAMIC_LUA_DLL=\"lua$(LUA_VER).dll\"
+else
+EXTRA_LIBS += $(LUA)/lib/lua$(LUA_VER).lib
 endif
 endif
 
@@ -535,6 +588,12 @@ $(OUTDIR)/if_cscope.o:	if_cscope.c $(INCL) if_cscope.h
 $(OUTDIR)/if_ole.o:	if_ole.cpp $(INCL)
 	$(CC) -c $(CFLAGS) if_ole.cpp -o $(OUTDIR)/if_ole.o
 
+$(OUTDIR)/if_python.o : if_python.c $(INCL)
+	$(CC) -c $(CFLAGS) -I$(PYTHON)/include $< -o $@
+
+$(OUTDIR)/if_python3.o : if_python3.c $(INCL)
+	$(CC) -c $(CFLAGS) -I$(PYTHON3)/include $< -o $@
+
 if_perl.c: if_perl.xs typemap
 	$(PERL)/bin/perl `cygpath -d $(PERL)/lib/ExtUtils/xsubpp` \
 		-prototypes -typemap \
@@ -584,3 +643,4 @@ else
 	@echo char_u *compiled_user = (char_u *)"$(USERNAME)"; >> pathdef.c
 	@echo char_u *compiled_sys = (char_u *)"$(USERDOMAIN)"; >> pathdef.c
 endif
+

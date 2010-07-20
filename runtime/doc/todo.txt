@@ -30,10 +30,15 @@ be worked on, but only if you sponsor Vim development.  See |sponsor|.
 							*known-bugs*
 -------------------- Known bugs and current work -----------------------
 
+GTK: torn-off menu doesn't work.
+
 Cursor positioning wrong with 0x200e character. (John Becket, 2010 May 6)
 
-E315 when trying to change a file in FileChangedRO autocommand event.
-(Dominique Pelle, 2010 Apr 30)
+Test 69 breaks on MS-Windows, both 32 and 64 builds. (George Reilly, 2010 Feb
+26)
+
+Bug: searching for tags file uses 'suffixesadd', should not happen. (Dominique
+Pelle, 2010 June 28)
 
 When directory "/tmp/tags" contains "tags1" and "tags2", setting 'tags' to
 "/tmp/tags/*" doesn't pick up these files.  (Simon Ruggier, 2010 Mar 17)
@@ -74,6 +79,9 @@ Looks like only bash can do it. (Yakov Lerner)
 Need for CursorHold that retriggers.  Use a key that doesn't do anything, or a
 function that resets did_cursorhold.
 
+Cscope "cs add" stopped working somewhat before 7.2.438. (Gary Johnson, 2010
+Jun 29)  Caused by 7.2.433?
+
 I often see pasted text (from Firefox, to Vim in xterm) appear twice.
 Also, Vim in xterm sometimes loses copy/paste ability (probably after running
 an external command).
@@ -82,6 +90,8 @@ Jumplist doesn't work properly in Insert mode? (Jean Johner, 2010 Mar 20)
 
 Problem with transparent cmdline.  Also: Terminal title is wrong with
 non-ASCII character. (Lily White, 2010 Mar 7)
+
+Patch for horizontal mouse wheel. (Bjorn Winckler, 2010 Jul 18)
 
 iconv() doesn't fail on an illegal character, as documented. (Yongwei Wu, 2009
 Nov 15, example Nov 26)  Add argument to specify whether iconv() should fail
@@ -94,9 +104,6 @@ Use format year-month-day hr:min:sec.
 Shell not recognized properly if it ends in "csh -f". (James Vega, 2009 Nov 3)
 Find tail?  Might have a / in argument.  Find space?  Might have space in
 path.
-
-Test 69 breaks on MS-Windows, both 32 and 64 builds. (George Reilly, 2010 Feb
-26)
 
 ":function f(x) keepjumps" creates a function where every command is executed
 like it has ":keepjumps" before it.
@@ -557,11 +564,6 @@ character typed. (Tyler Spivey, 2008 Sep 3)  Only redraw cmdline for
 'arabicshape' when there is a character on the command line for which
 (ARABIC_CHAR(u8c)) is TRUE.
 
-Replace ccomplete.vim by cppcomplete.vim from www.vim.org?  script 1520
-by Vissale Neang.  (Martin Stubenschrott)
-Asked Vissale to make the scripts more friendly for the Vim distribution.
-New version received 2008 Jan 6.
-
 Cheng Fang made javacomplete. (2007 Aug 11)
 Asked about latest version: 0.77.1 is on www.vim.org.
 
@@ -984,8 +986,6 @@ visible.
 GTK: when setting 'columns' in a startup script and doing ":vertical diffsplit"
 the window isn't redrawn properly, see two vertical bars.
 
-GTK: file chooser is disabled.  Patch by Tim Starling, 2009 Nov 13.
-
 The magic clipboard format "VimClipboard2" appears in several places.  Should
 be only one.
 
@@ -1009,7 +1009,7 @@ Win32: When running ":make" and 'encoding' differs from the system locale, the
 output should be converted.  Esp. when 'encoding' is "utf-8". (Yongwei Wu)
 Should we use 'termencoding' for this?
 
-Win32, NTFS: When editing an specific infostream directly and 'backupcopy' is
+Win32, NTFS: When editing a specific infostream directly and 'backupcopy' is
 "auto" should detect this situation and work like 'backupcopy' is "yes".  File
 name is something like "c:\path\foo.txt:bar", includes a colon.  (Alex
 Jakushev, 2008 Feb 1)
@@ -1083,99 +1083,19 @@ When switching between windows the cursor is often put in the middle.
 Remember the relative position and restore that, just like lnum and col are
 restored. (Luc St-Louis)
 
+Patch to support horizontal scroll wheel in GTK. Untested. (Bjorn Winckler,
+2010 Jun 30)
 
-Vim 7.3:
-- using NSIS 2.46: install on Windows 7 works, but no "Edit with Vim" menu.
-   Use register_shell_extension()? (George Reilly, 2010 May 26)
-   Ron's version: http://dev.ronware.org/p/vim/finfo?name=gvim.nsi
-- Patch for conceal feature from Vince, 2010 June 16.
-  Needs some more testing.
-- undofile: keep markers where the file was written/read, so that it's easy to
-  go back to a saved version of the file:  ":earlier 1f" (f for file)?
-  Also add ":earlier 1d" (d for day).
-  Something like changenr() to see the "file saved" marker?
-  Show "file saved" marker in :undolist
-- Function to get undo tree: undotree().  List of lists.  Each entry is a
-  dictionary: {'nr': 2, 'time': 1234, 'saved': 1}
-- Remove support for GTK 1?  Patch by James Vega, Jun 11 (removes too much).
-Patches to include:
-- Patch for Lisp support with ECL (Mikael Jansson, 2008 Oct 25)
-- Minor patches from Dominique Pelle, 2010 May 15
-- Gvimext patch to support wide file names. (Szabolcs Horvat 2008 Sep 10)
-- Patch to support netbeans for Mac. (Kazuki Sakamoto, 2009 Jun 25)
-- Patch to support clipboard for Mac terminal. (Jjgod Jiang, 2009 Aug 1)
-- Patch to support :browse for more commands. (Lech Lorens, 2009 Jul 18)
-- Patch to improve javascript indenting. (Hari Kumar G, 2010 May 22)
-- Patch to use return value of 'formatexpr'. (James Vega, 2010 Jun 16)
-- Patch to make CTRL-L work better with 'ignorecase' and 'smarcase'. (Martin
-  Toft, 2010 Jun 8, Jun 16)
-- Patch to add diff functionality to 2html.vim. (Christian Brabandt, 2009 Dec
-  15)
-- Win32: patch for better font scaling. (George Reilly, 2009 Mar 26) 
-- Patch for completion of ":find" arguments. (Nazri Ramliy, 2009 Feb 22, 26)
-  8   For ":find" and ":sfind" expand files found in 'path'.
-  Update 2009 Mar 28.
-- Patch for vertical line at certain column position, 'guidecolumn' option.
-  (Pankaj Garg, 2009 Apr 14, aka Lone, Apr 15)
-  Update 2009 May 2, 'margincolumn'
-  Alternative patch. (2010 Feb 2, Gregor Uhlenheuer, update Apr 18 2010)
-  Fix by Lech Lorens, Apr 19
-- Add different highlighting for a fold line depending on the fold level.
-  Patch. (Noel Henson, 2009 Sep 13)
-- Patch to make synIDattr() work for GUI attributes in Vim without GUI
-  feature.  (Matt Wozniski, 2009 Apr 15)
-  Patch go make gui highlight settings work in Vim without +gui feature.
-  (Matt Wozniski, 2009 Mar 27)
-- Patch for supporting #rrggbb in color terminals.  (Matt Wozniski)
-6   In the quickfix window statusline add the command used to get the list of
-    errors, e.g. ":make foo", ":grep something *.c".
-    Patch by Lech Lorens, 2009 Mar 23.
-    Comments from Andreas Bernauer 24th, Dominique Pelle 24th
-    Docs patch by Dominique Pelle, Mar 25
-    Update 2009 Mar 28.
-    Fix for invalid memory access. (Lech Lorens, 2009 Apr 17)
-- Make do_do_join() work faster.  Could at least do a binary search way of
-  doing this.  Hint from Dominique Pelle, Dec 10; Lee Naish, Dec 11.
-  Patch from Milan Vancura, 2010 May 16.
-- Fix for test29. (Milan Vancura, 2010 May 16)
-- Disable setting 'encoding' from a modeline?  It usually causes problems,
-  can't do any good.  (Patch from Patrick Texier, 2008 Dec 9)
-- Redraw problem when appending digraph causes line to wrap. (James Vega, 2007
-  Sep 18)  Patch by Ian Kelling, 2008 Aug 8.
-- Patch for colorscheme submenu. (Juergen Kraemer, 2008 Aug 20)
-- 9   Make it possible to drag a tab page label to another position with the
-    mouse.
-  Patch by Paul B. Mahol, 2008 Aug 29.
-- Mac: Patch to disable antialias. (LC Mi, 2008 Aug 23)  Tested on 10.5 and
-  10.4.
-- Patch for adding "J" flag to 'cinoptions': placement of jump label.  (Manuel
-  Konig, 2010 Feb 19)  Update by Lech Lorens, Feb 22.
--   Add Lua interface? (Wolfgang Oertl) patch by Luis Carvalho, 2008 Sep 5
-	Patch for Make_ming.mak from Paul Moore (2008 Sep 1)
-      http://code.google.com/p/vim-iflua/  Download  vim72-lua-0.7.patch.gz
-Needs some work:
-- Have a look at patch to enable screen access from Python. (Marko Mahnic,
-  2010 Apr 12)
-- Patch for Python 3 support. (Roland Puntaier, 2009 Sep 22)
-  Includes changes for omnicompletion.
-  Needs some more testing.
-  Update 2010 Apr 20, patch by Andy Kittner, May 16
-  Build the MS-Windows version with Python 2.6.5 and 3.1.2?
--   Easier/standard way to disable default plugins.
--   ":{range}source": source the lines from the current file.
-	You can already yank lines and use :@" to execute them.
-	Most of do_source() would not be used, need a new function.
-	It's easy when not doing breakpoints or profiling.
-Probably not now:
-- Use timestamps for undo, so that a version a certain time ago can be found
-  and info before some time/date can be flushed. 'undopersist' gives maximum
-  time to keep undo: "3h", "1d", "2w", "1y", etc.
-Before (beta) release:
-- Add fixes for 7.2 to version7.txt
+
+Before (beta) release 7.3:
+- Documentation for Python 3 support.
+
+Before release 7.3:
 - Rename vim73 branch to default (hints: Xavier de Gaye, 2010 May 23)
 
-
 More patches:
+-   Another patch for Javascript indenting. (Hari Kumar, 2010 Jul 11)
+    Needs a few tests.
 -   Add 'cscopeignorecase' option. (Liang Wenzhi, 2006 Sept 3)
 -   Argument for feedkeys() to prepend to typeahead (Yakov Lerner, 2006 Oct
     21)
@@ -1205,6 +1125,20 @@ More patches:
     Sep 13)
 -   Patch for adding "space" item in 'listchars'. (Jérémie Roquet, 2009 Oct 29,
     Docs patch Oct 30)
+-   Patch for supporting #rrggbb in color terminals.  (Matt Wozniski)
+    Where is a recent version of this patch?  Or use CSApprox plugin?
+-   Replace ccomplete.vim by cppcomplete.vim from www.vim.org?  script 1520 by
+    Vissale Neang.  (Martin Stubenschrott) Asked Vissale to make the scripts
+    more friendly for the Vim distribution.
+    New version received 2008 Jan 6.
+    No maintenance in two years...
+6   In the quickfix window statusline add the command used to get the list of
+    errors, e.g. ":make foo", ":grep something *.c".
+    Patch by Lech Lorens, 2009 Apri 17.
+    Comments from Andreas Bernauer 24th, Dominique Pelle 24th
+    Docs patch by Dominique Pelle, Mar 25
+    Can we put the strings in a window-local variable?
+-   Patch to access screen under Python. (Marko Mahni, 2010 Jul 18)
 
 
 Awaiting updated patches:
@@ -1258,8 +1192,8 @@ Awaiting updated patches:
 			Search in 'runtimepath'?
 			More docs needed about how to use this.
 			How to get the messages into the .po files?
-    charlen()		Like strlen() but counting characters instead of
-			bytes.
+    strchars()		Like strlen() and strwidth() but counting characters
+			instead of bytes.
     confirm()		add "flags" argument, with 'v' for vertical
 			    layout and 'c' for console dialog. (Haegg)
 			    Flemming Madsen has a patch for the 'c' flag
@@ -1360,16 +1294,6 @@ Vi incompatibility:
 6   Vi compatibility (optional): make "ia<CR><ESC>10." do the same strange
     thing.  (only repeat insert for the first line).
 
-
-GTK+ 1 (OK in GTK 2):
-8   When using "gvim -geom 40x30" or setting 'columns' in .gvimrc or with a
-    GUIEnter autocommand, the width is still set to fit the toolbar.  Also
-    happens when changing the font.  How to avoid that the toolbar specifies
-    the minimal window width?
-8   When using a theme with different scrollbars (gtkstep), the scrollbars can
-    be too narrow. (Drazen Kacar)
-8   Font "7x14" has a bold version "7x14bold".  Try to find the bold font by
-    appending "bold" when there are not 14 dashes.
 
 GTK+ GUI known bugs:
 9   Crash with X command server over ssh. (Ciaran McCreesh, 2006 Feb 6)
@@ -1901,7 +1825,7 @@ Macintosh:
     - Add a flag in 'printoptions' to add an empty page to make the total
       number even.  "addempty"? (Mike Williams)
     - Respect 'linebreak'.  Perhaps also 'showbreak'?
-    - Should interpreted CTRL-L as a page break.
+    - Should interpret CTRL-L as a page break.
     - Grey line numbers are not always readable.  Add field in 'printoptions'.
       Default to black when no syntax highlighting.
     - Be able to print a window in diff mode.
@@ -2438,8 +2362,6 @@ Folding:
 	edit version.c
     Can editing version.c twice be avoided?
 -   'foldmethod' "textobject": fold on sections and paragraph text objects.
--   Add 'hidecomment' option: don't display comments in /* */ and after //.
-    Or is the conceal patch from Vince Negri a more generic solution?
 -   "zuf": undo change in manual fold. "zUf" redo change in manual fold.  How
     to implement this?
 -   "zJ" command: add the line or fold below the fold in the fold under the
@@ -2726,6 +2648,12 @@ Built-in script language:
 -   Add ":let var ?= value", conditional assignment.  Patch by Dave Eggum,
     2006 Dec 11.
 -   range for ":exec", pass it on to the executed command.  (Webb)
+8   ":{range}source": source the lines from the current file.
+	You can already yank lines and use :@" to execute them.
+	Most of do_source() would not be used, need a new function.
+	It's easy when not doing breakpoints or profiling.
+    Requires copying the lines into a list and then creating a function to
+    execute lines from the list.  Similar to getnextac().
 7   ":include" command: just like ":source" but doesn't start a new scriptID?
     Will be tricky for the list of script names.
 8   Have a look at VSEL.  Would it be useful to include? (Bigham)
@@ -2849,6 +2777,7 @@ Performance:
     buffer a lot slower than re-editing the file.  Can the memline be locked
     so that we don't need to make a copy?  Or avoid invoking ml_updatechunk(),
     that is taking a lot of time.  (Ralf Wildenhues, 2008 Jul 7)
+    With a patch, but does it work?
 8   Instead of loading rgb.txt every time a color wasn't recognized load it
     once and keep it in memory.  Move the code to a common place to avoid
     repeating it in various system files.
@@ -3068,7 +2997,7 @@ Tags:
 8   For 'tags' wildcard in the file name is not supported, only in the path.
     This is due to it using |file-searching|. Suboptimal solution would be to
     make the filename or the whole option use |wildcards| globing, better
-    would be to merge the 2 kinds of globing. originall (Erik Falor, 2008
+    would be to merge the 2 kinds of globing. originally (Erik Falor, 2008
     April 18), updated (Ian Kelling, 2008 July 4)
 8   Use a mechanism similar to omni completion to figure out the kind of tab
     for CTRL-] and jump to the appropriate matching tag (if there are
@@ -3978,6 +3907,11 @@ Searching:
 Undo:
 9   After undo/redo, in the message show whether the buffer is modified or
     not.
+8   Use timestamps for undo, so that a version a certain time ago can be found
+    and info before some time/date can be flushed. 'undopersist' gives maximum
+    time to keep undo: "3h", "1d", "2w", "1y", etc.
+8   Search for pattern in undo tree, showing when it happened and the text
+    state, so that you can jump to it.
 8   Undo tree: visually show the tree somehow (Damian Conway)
     Show only the leaves, indicating how many changed from the branch and the
     timestamp?
@@ -3988,8 +3922,10 @@ Undo:
     was changed outside of Vim.
     Would require doing a diff between the buffer text and the file and
     storing the differences.
-8   Search for pattern in undo tree, showing when it happened and the text
-    state, so that you can jump to it.
+    Alternative: before reloading a buffer, store it somewhere.  Keep a list
+    of about 10 last reloaded buffers.
+    OR: before unloading, write a backup file with the current text, as if
+    doing ":w" twice before reloading.
 -   Make it possible to undo all the commands from a mapping, including a
     trailing unfinished command, e.g. for ":map K iX^[r".
 -   When accidentally hitting "R" instead of Ctrl-R, further Ctrl-R is not

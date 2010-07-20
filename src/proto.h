@@ -110,16 +110,25 @@ int
 _RTLENTRYF
 #  endif
 smsg __ARGS((char_u *, ...));
+
 int
 #  ifdef __BORLANDC__
 _RTLENTRYF
 #  endif
 smsg_attr __ARGS((int, char_u *, ...));
+
+int
+#  ifdef __BORLANDC__
+_RTLENTRYF
+#  endif
+vim_snprintf_add __ARGS((char *, size_t, char *, ...));
+
 int
 #  ifdef __BORLANDC__
 _RTLENTRYF
 #  endif
 vim_snprintf __ARGS((char *, size_t, char *, ...));
+
 #  if defined(HAVE_STDARG_H)
 int vim_vsnprintf(char *str, size_t str_m, char *fmt, va_list ap, typval_T *tvs);
 #  endif
@@ -165,12 +174,20 @@ void qsort __ARGS((void *base, size_t elm_count, size_t elm_size, int (*cmp)(con
 # include "version.pro"
 # include "window.pro"
 
+# ifdef FEAT_LUA
+#  include "if_lua.pro"
+# endif
+
 # ifdef FEAT_MZSCHEME
 #  include "if_mzsch.pro"
 # endif
 
 # ifdef FEAT_PYTHON
 #  include "if_python.pro"
+# endif
+
+# ifdef FEAT_PYTHON3
+#  include "if_python3.pro"
 # endif
 
 # ifdef FEAT_TCL
@@ -267,6 +284,13 @@ extern char *vim_SelFile __ARGS((Widget toplevel, char *prompt, char *init_path,
 
 #ifdef MACOS_CONVERT
 # include "os_mac_conv.pro"
+#endif
+#if defined(MACOS_X_UNIX) && defined(FEAT_CLIPBOARD) && !defined(FEAT_GUI)
+/* functions in os_macosx.m */
+void clip_mch_lose_selection(VimClipboard *cbd);
+int clip_mch_own_selection(VimClipboard *cbd);
+void clip_mch_request_selection(VimClipboard *cbd);
+void clip_mch_set_selection(VimClipboard *cbd);
 #endif
 
 #ifdef __BORLANDC__

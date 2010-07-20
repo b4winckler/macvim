@@ -38,7 +38,10 @@
 #	  could be lost.
 #	- Uncomment one or more of these lines to include an interface;
 #	  each makes Vim quite a bit bigger:
+#		--enable-luainterp	for Lua interpreter
+#		--enable-mzschemeinterp	for MzScheme interpreter
 #		--enable-perlinterp	for Perl interpreter
+#		--enable-python3interp	for Python3 interpreter
 #		--enable-pythoninterp	for Python interpreter
 #		--enable-rubyinterp	for Ruby interpreter
 #		--enable-tclinterp	for Tcl interpreter
@@ -325,9 +328,7 @@ CClink = $(CC)
 # Uncomment one of these lines if you have that GUI but don't want to use it.
 # The automatic check will use another one that can be found.
 # Gnome is disabled by default, it may cause trouble.
-#CONF_OPT_GUI = --disable-gtk-check
 #CONF_OPT_GUI = --disable-gtk2-check
-#CONF_OPT_GUI = --enable-gnome-check
 #CONF_OPT_GUI = --enable-gnome2-check
 #CONF_OPT_GUI = --disable-motif-check
 #CONF_OPT_GUI = --disable-athena-check
@@ -339,6 +340,7 @@ CClink = $(CC)
 #
 # GTK versions that are known not to work 100% are rejected.
 # Use "--disable-gtktest" to accept them anyway.
+# Only GTK 2 is supported, for GTK 1 use Vim 7.2.
 #
 # GNOME means GTK with Gnome support.  If using GTK and --enable-gnome-check
 # is used then GNOME will automatically be used if it is found.  If you have
@@ -346,11 +348,8 @@ CClink = $(CC)
 # --enable-gui=gtk or leave out --enable-gnome-check.
 #
 # If the selected GUI isn't found, the GUI is disabled automatically
-#CONF_OPT_GUI = --enable-gui=gtk
-#CONF_OPT_GUI = --enable-gui=gtk --disable-gtktest
 #CONF_OPT_GUI = --enable-gui=gtk2
 #CONF_OPT_GUI = --enable-gui=gtk2 --disable-gtktest
-#CONF_OPT_GUI = --enable-gui=gnome
 #CONF_OPT_GUI = --enable-gui=gnome2
 #CONF_OPT_GUI = --enable-gui=gnome2 --disable-gtktest
 #CONF_OPT_GUI = --enable-gui=motif
@@ -370,6 +369,20 @@ CClink = $(CC)
 #CONF_OPT_DARWIN = --with-mac-arch=ppc
 #CONF_OPT_DARWIN = --with-mac-arch=both
 
+# LUA
+# Uncomment this when you want to include the Lua interface.
+#CONF_OPT_LUA = --enable-luainterp
+# Lua installation dir (when not set uses $LUA_PREFIX or defaults to /usr)
+#CONF_OPT_LUA_PREFIX = --with-lua-prefix=/usr/local
+
+# MZSCHEME
+# Uncomment this when you want to include the MzScheme interface.
+#CONF_OPT_MZSCHEME = --enable-mzschemeinterp
+# PLT/mrscheme/drscheme Home dir; the PLTHOME environment variable also works
+#CONF_OPT_PLTHOME  = --with-plthome=/usr/local/plt
+#CONF_OPT_PLTHOME  = --with-plthome=/usr/local/drscheme
+#CONF_OPT_PLTHOME  = --with-plthome=/home/me/mz
+
 # PERL
 # Uncomment this when you want to include the Perl interface.
 # The Perl option sometimes causes problems, because it adds extra flags
@@ -386,26 +399,23 @@ CClink = $(CC)
 # NOTE: This may cause threading to be enabled, which has side effects (such
 # as using different libraries and debugging becomes more difficult).
 # NOTE: Using this together with Perl may cause a crash in initialization.
+# For Python3 support make a symbolic link in /usr/local/bin: 
+#	ln -s python3 python3.1
+# If both python2.x and python3.x are enabled then the linking will be via
+# dlopen(), dlsym(), dlclose(), i.e. pythonX.Y.so must be available
 #CONF_OPT_PYTHON = --enable-pythoninterp
+CONF_OPT_PYTHON3 = --enable-python3interp
+
+# RUBY
+# Uncomment this when you want to include the Ruby interface.
+# Note: you need the development package (e.g., ruby1.9.1-dev on Ubuntu).
+#CONF_OPT_RUBY = --enable-rubyinterp
+#CONF_OPT_RUBY = --enable-rubyinterp --with-ruby-command=ruby1.9.1
 
 # TCL
 # Uncomment this when you want to include the Tcl interface.
 #CONF_OPT_TCL = --enable-tclinterp
 #CONF_OPT_TCL = --enable-tclinterp --with-tclsh=tclsh8.4
-
-# RUBY
-# Uncomment this when you want to include the Ruby interface.
-# Note: you need the development package (e.g., ruby1.9.1-dev on Ubuntu).
-# CONF_OPT_RUBY = --enable-rubyinterp
-# CONF_OPT_RUBY = --enable-rubyinterp --with-ruby-command=ruby1.9.1
-
-# MZSCHEME
-# Uncomment this when you want to include the MzScheme interface.
-#CONF_OPT_MZSCHEME = --enable-mzschemeinterp
-# PLT/mrscheme/drscheme Home dir; the PLTHOME environment variable also works
-#CONF_OPT_PLTHOME  = --with-plthome=/usr/local/plt
-#CONF_OPT_PLTHOME  = --with-plthome=/usr/local/drscheme
-#CONF_OPT_PLTHOME  = --with-plthome=/home/me/mz
 
 # CSCOPE
 # Uncomment this when you want to include the Cscope interface.
@@ -536,7 +546,8 @@ CClink = $(CC)
 #CFLAGS = -g -O2 '-DSTARTUPTIME="vimstartup"' -fno-strength-reduce -Wall -Wmissing-prototypes
 
 # Use this with GCC to check for mistakes, unused arguments, etc.
-#CFLAGS = -g -Wall -Wextra -Wmissing-prototypes -Wunreachable-code -D_FORTIFY_SOURCE=1
+#CFLAGS = -g -Wall -Wextra -Wmissing-prototypes -Wunreachable-code -D_FORTIFY_SOURCE=1 -DU_DEBUG
+#CFLAGS = -g -O2 -Wall -Wextra -Wmissing-prototypes -D_FORTIFY_SOURCE=1 -DU_DEBUG
 #PYTHON_CFLAGS_EXTRA = -Wno-missing-field-initializers
 #MZSCHEME_CFLAGS_EXTRA = -Wno-unreachable-code -Wno-unused-parameter
 
@@ -1283,10 +1294,6 @@ CPP_DEPEND = $(CC) -I$(srcdir) -M$(CPP_MM) \
 #     -D"foo()=" is not supported by all compilers so do not use it
 NO_ATTR=
 #
-#     maybe the "/usr/bin/cc -E" has to be adjusted for some systems
-# This is for cproto 3.5 patchlevel 3:
-# PROTO_FLAGS = -f4 -m__ARGS -d -E"$(CPP)" $(NO_ATTR)
-#
 # Use this for cproto 3 patchlevel 6 or below (use "cproto -V" to check):
 # PROTO_FLAGS = -f4 -m__ARGS -d -E"$(CPP)" $(NO_ATTR)
 #
@@ -1304,28 +1311,38 @@ SHELL = /bin/sh
 .SUFFIXES: .c .o .pro
 
 PRE_DEFS = -Iproto $(DEFS) $(GUI_DEFS) $(GUI_IPATH) $(CPPFLAGS) $(EXTRA_IPATHS)
-POST_DEFS = $(X_CFLAGS) $(MZSCHEME_CFLAGS) $(PERL_CFLAGS) $(PYTHON_CFLAGS) $(TCL_CFLAGS) $(RUBY_CFLAGS) $(EXTRA_DEFS)
-NOPROTO_DEFS = $(PYTHON_NOPROTO)
+POST_DEFS = $(X_CFLAGS) $(LUA_CFLAGS) $(MZSCHEME_CFLAGS) $(PERL_CFLAGS) $(ECL_CFLAGS) $(TCL_CFLAGS) $(RUBY_CFLAGS) $(EXTRA_DEFS)
 
-ALL_CFLAGS = $(PRE_DEFS) $(CFLAGS) $(PROFILE_CFLAGS) $(POST_DEFS) $(NOPROTO_DEFS)
+ALL_CFLAGS = $(PRE_DEFS) $(CFLAGS) $(PROFILE_CFLAGS) $(POST_DEFS)
 
 # Exclude $CFLAGS for osdef.sh, for Mac 10.4 some flags don't work together
 # with "-E".
 OSDEF_CFLAGS = $(PRE_DEFS) $(POST_DEFS)
 
-LINT_CFLAGS = -DLINT -I. $(PRE_DEFS) $(POST_DEFS) -Dinline= -D__extension__= -Dalloca=alloca
+LINT_CFLAGS = -DLINT -I. $(PRE_DEFS) $(POST_DEFS) $(PYTHON_CFLAGS) -Dinline= -D__extension__= -Dalloca=alloca
 
 LINT_EXTRA = -DUSE_SNIFF -DHANGUL_INPUT -D"__attribute__(x)="
 
 DEPEND_CFLAGS = -DPROTO -DDEPEND -DFEAT_GUI $(LINT_CFLAGS)
 
-# If you have problems with flags that cproto doesn't support, and you are
-# using GNU make, you can try using the other line to filter out arguments.
-#PFLAGS = $(PROTO_FLAGS) -DPROTO $(filter -D% -I%, $(LINT_CFLAGS))
-PFLAGS = $(PROTO_FLAGS) -DPROTO $(LINT_CFLAGS)
-
 ALL_LIB_DIRS = $(GUI_LIBS_DIR) $(X_LIBS_DIR)
-ALL_LIBS = $(GUI_LIBS1) $(GUI_X_LIBS) $(GUI_LIBS2) $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS) $(LIBS) $(EXTRA_LIBS) $(MZSCHEME_LIBS) $(PERL_LIBS) $(PYTHON_LIBS) $(TCL_LIBS) $(RUBY_LIBS) $(PROFILE_LIBS)
+ALL_LIBS = \
+	   $(GUI_LIBS1) \
+	   $(GUI_X_LIBS) \
+	   $(GUI_LIBS2) \
+	   $(X_PRE_LIBS) \
+	   $(X_LIBS) \
+	   $(X_EXTRA_LIBS) \
+	   $(LIBS) \
+	   $(EXTRA_LIBS) \
+	   $(LUA_LIBS) \
+	   $(MZSCHEME_LIBS) \
+	   $(PERL_LIBS) \
+	   $(PYTHON_LIBS) \
+	   $(PYTHON3_LIBS) \
+	   $(TCL_LIBS) \
+	   $(RUBY_LIBS) \
+	   $(PROFILE_LIBS)
 
 # abbreviations
 DEST_BIN = $(DESTDIR)$(BINDIR)
@@ -1428,15 +1445,24 @@ BASIC_SRC = \
 	window.c \
 	$(OS_EXTRA_SRC)
 
-SRC =	$(BASIC_SRC) $(GUI_SRC) $(HANGULIN_SRC) $(MZSCHEME_SRC) \
-	$(PERL_SRC) $(PYTHON_SRC) $(TCL_SRC) $(RUBY_SRC) \
-	$(SNIFF_SRC) $(WORKSHOP_SRC) $(WSDEBUG_SRC)
+SRC =	$(BASIC_SRC) \
+	$(GUI_SRC) \
+	$(HANGULIN_SRC) \
+	$(LUA_SRC) \
+	$(MZSCHEME_SRC) \
+	$(PERL_SRC) \
+	$(PYTHON_SRC) $(PYTHON3_SRC) \
+	$(TCL_SRC) \
+	$(RUBY_SRC) \
+	$(SNIFF_SRC) \
+	$(WORKSHOP_SRC) \
+	$(WSDEBUG_SRC)
 
 TAGS_SRC = *.c *.cpp if_perl.xs
 
-EXTRA_SRC = hangulin.c if_mzsch.c auto/if_perl.c if_perlsfio.c \
-	    if_python.c if_tcl.c if_ruby.c if_sniff.c gui_beval.c \
-	    workshop.c wsdebug.c integration.c netbeans.c
+EXTRA_SRC = hangulin.c if_lua.c if_mzsch.c auto/if_perl.c if_perlsfio.c \
+	    if_python.c if_python3.c if_tcl.c if_ruby.c if_sniff.c \
+	    gui_beval.c workshop.c wsdebug.c integration.c netbeans.c
 
 # All sources, also the ones that are not configured
 ALL_SRC = $(BASIC_SRC) $(ALL_GUI_SRC) $(EXTRA_SRC)
@@ -1444,7 +1470,7 @@ ALL_SRC = $(BASIC_SRC) $(ALL_GUI_SRC) $(EXTRA_SRC)
 # Which files to check with lint.  Select one of these three lines.  ALL_SRC
 # checks more, but may not work well for checking a GUI that wasn't configured.
 # The perl sources also don't work well with lint.
-LINT_SRC = $(BASIC_SRC) $(GUI_SRC) $(HANGULIN_SRC) $(PYTHON_SRC) $(TCL_SRC) \
+LINT_SRC = $(BASIC_SRC) $(GUI_SRC) $(HANGULIN_SRC) $(PYTHON_SRC) $(PYTHON3_SRC) $(TCL_SRC) \
 	$(SNIFF_SRC) $(WORKSHOP_SRC) $(WSDEBUG_SRC) $(NETBEANS_SRC)
 #LINT_SRC = $(SRC)
 #LINT_SRC = $(ALL_SRC)
@@ -1501,9 +1527,11 @@ OBJ = \
 	objects/undo.o \
 	objects/window.o \
 	$(GUI_OBJ) \
+	$(LUA_OBJ) \
 	$(MZSCHEME_OBJ) \
 	$(PERL_OBJ) \
 	$(PYTHON_OBJ) \
+	$(PYTHON3_OBJ) \
 	$(TCL_OBJ) \
 	$(RUBY_OBJ) \
 	$(OS_EXTRA_OBJ) \
@@ -1533,6 +1561,7 @@ PRO_AUTO = \
 	if_cscope.pro \
 	if_xcmdsrv.pro \
 	if_python.pro \
+	if_python3.pro \
 	if_ruby.pro \
 	main.pro \
 	mark.pro \
@@ -1594,13 +1623,14 @@ config auto/config.mk: auto/configure config.mk.in config.h.in
 		CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" \
 		LDFLAGS="$(LDFLAGS)" $(CONF_SHELL) srcdir="$(srcdir)" \
 		./configure $(CONF_OPT_GUI) $(CONF_OPT_X) $(CONF_OPT_XSMP) \
-		$(CONF_OPT_DARWIN) $(CONF_OPT_PERL) $(CONF_OPT_PYTHON) \
+		$(CONF_OPT_DARWIN) $(CONF_OPT_PERL) $(CONF_OPT_PYTHON) $(CONF_OPT_PYTHON3) \
 		$(CONF_OPT_TCL) $(CONF_OPT_RUBY) $(CONF_OPT_NLS) \
 		$(CONF_OPT_CSCOPE) $(CONF_OPT_MULTIBYTE) $(CONF_OPT_INPUT) \
 		$(CONF_OPT_OUTPUT) $(CONF_OPT_GPM) $(CONF_OPT_WORKSHOP) \
 		$(CONF_OPT_SNIFF) $(CONF_OPT_FEAT) $(CONF_TERM_LIB) \
 		$(CONF_OPT_COMPBY) $(CONF_OPT_ACL)  $(CONF_OPT_NETBEANS) \
 		$(CONF_ARGS) $(CONF_OPT_MZSCHEME) $(CONF_OPT_PLTHOME) \
+		$(CONF_OPT_LUA) $(CONF_OPT_LUA_PREFIX) \
 		$(CONF_OPT_SYSMOUSE)
 
 # Use "make reconfig" to rerun configure without cached values.
@@ -1684,46 +1714,54 @@ update-po:
 
 proto: $(PRO_AUTO) $(PRO_MANUAL)
 
+# Filter out arguments that cproto doesn't support.
+# Don't pass "-pthread" to cproto, it sees it as a list of individual flags.
+# Don't pass "-fstack-protector" to cproto, for the same reason.
+# The -E"gcc -E" argument must be separate to avoid problems with shell
+# quoting.
+CPROTO = cproto $(PROTO_FLAGS) -DPROTO \
+	 `echo '$(LINT_CFLAGS)' | sed -e 's/-pthread//g' -e 's/-fstack-protector//g'`
+
 ### Would be nice if this would work for "normal" make.
 ### Currently it only works for (Free)BSD make.
 #$(PRO_AUTO): $$(*F).c
-#	cproto $(PFLAGS) -DFEAT_GUI $(*F).c > $@
+#	$(CPROTO) -DFEAT_GUI $(*F).c > $@
 
 # Always define FEAT_GUI.  This may generate a few warnings if it's also
 # defined in auto/config.h, you can ignore that.
 .c.pro:
-	cproto $(PFLAGS) -DFEAT_GUI $< > proto/$@
+	$(CPROTO) -DFEAT_GUI $< > proto/$@
 	echo "/* vim: set ft=c : */" >> proto/$@
 
 os_amiga.pro: os_amiga.c
-	cproto $(PFLAGS) -DAMIGA -UHAVE_CONFIG_H -DBPTR=char* $< > proto/$@
+	$(CPROTO) -DAMIGA -UHAVE_CONFIG_H -DBPTR=char* $< > proto/$@
 	echo "/* vim: set ft=c : */" >> proto/$@
 
 os_msdos.pro: os_msdos.c
-	cproto $(PFLAGS) -DMSDOS -UHAVE_CONFIG_H $< > proto/$@
+	$(CPROTO) -DMSDOS -UHAVE_CONFIG_H $< > proto/$@
 	echo "/* vim: set ft=c : */" >> proto/$@
 
 os_win16.pro: os_win16.c
-	cproto $(PFLAGS) -DWIN16 -UHAVE_CONFIG_H $< > proto/$@
+	$(CPROTO) -DWIN16 -UHAVE_CONFIG_H $< > proto/$@
 	echo "/* vim: set ft=c : */" >> proto/$@
 
 os_win32.pro: os_win32.c
-	cproto $(PFLAGS) -DWIN32 -UHAVE_CONFIG_H $< > proto/$@
+	$(CPROTO) -DWIN32 -UHAVE_CONFIG_H $< > proto/$@
 	echo "/* vim: set ft=c : */" >> proto/$@
 
 os_mswin.pro: os_mswin.c
-	cproto $(PFLAGS) -DWIN16 -DWIN32 -UHAVE_CONFIG_H $< > proto/$@
+	$(CPROTO) -DWIN16 -DWIN32 -UHAVE_CONFIG_H $< > proto/$@
 	echo "/* vim: set ft=c : */" >> proto/$@
 
 os_beos.pro: os_beos.c
-	cproto $(PFLAGS) -D__BEOS__ -UHAVE_CONFIG_H $< > proto/$@
+	$(CPROTO) -D__BEOS__ -UHAVE_CONFIG_H $< > proto/$@
 	echo "/* vim: set ft=c : */" >> proto/$@
 
 os_vms.pro: os_vms.c
 # must use os_vms_conf.h for auto/config.h
 	mv auto/config.h auto/config.h.save
 	cp os_vms_conf.h auto/config.h
-	cproto $(PFLAGS) -DVMS -UFEAT_GUI_ATHENA -UFEAT_GUI_NEXTAW -UFEAT_GUI_MOTIF -UFEAT_GUI_GTK $< > proto/$@
+	$(CPROTO) -DVMS -UFEAT_GUI_ATHENA -UFEAT_GUI_NEXTAW -UFEAT_GUI_MOTIF -UFEAT_GUI_GTK $< > proto/$@
 	echo "/* vim: set ft=c : */" >> proto/$@
 	rm auto/config.h
 	mv auto/config.h.save auto/config.h
@@ -1731,7 +1769,7 @@ os_vms.pro: os_vms.c
 # if_perl.pro is special: Use the generated if_perl.c for input and remove
 # prototypes for local functions.
 if_perl.pro: auto/if_perl.c
-	cproto $(PFLAGS) -DFEAT_GUI auto/if_perl.c | sed "/_VI/d" > proto/$@
+	$(CPROTO) -DFEAT_GUI auto/if_perl.c | sed "/_VI/d" > proto/$@
 
 
 notags:
@@ -2446,6 +2484,9 @@ objects/if_cscope.o: if_cscope.c
 objects/if_xcmdsrv.o: if_xcmdsrv.c
 	$(CCC) -o $@ if_xcmdsrv.c
 
+objects/if_lua.o: if_lua.c
+	$(CCC) -o $@ if_lua.c
+
 objects/if_mzsch.o: if_mzsch.c $(MZSCHEME_EXTRA)
 	$(CCC) -o $@ $(MZSCHEME_CFLAGS_EXTRA) if_mzsch.c
  
@@ -2458,8 +2499,24 @@ objects/if_perl.o: auto/if_perl.c
 objects/if_perlsfio.o: if_perlsfio.c
 	$(CCC) -o $@ if_perlsfio.c
 
-objects/if_python.o: if_python.c
-	$(CCC) -o $@ $(PYTHON_CFLAGS_EXTRA) if_python.c
+objects/py_config.o: $(PYTHON_CONFDIR)/config.c
+	$(CCC) $(PYTHON_CFLAGS) -o $@ $(PYTHON_CONFDIR)/config.c \
+		-I$(PYTHON_CONFDIR) -DHAVE_CONFIG_H -DNO_MAIN
+
+objects/py_getpath.o: $(PYTHON_CONFDIR)/getpath.c
+	$(CCC) $(PYTHON_CFLAGS) -o $@ $(PYTHON_CONFDIR)/getpath.c \
+		-I$(PYTHON_CONFDIR) -DHAVE_CONFIG_H -DNO_MAIN \
+		$(PYTHON_GETPATH_CFLAGS)
+
+objects/py3_config.o: $(PYTHON3_CONFDIR)/config.c
+	$(CCC) $(PYTHON3_CFLAGS) -o $@ $(PYTHON3_CONFDIR)/config.c \
+		-I$(PYTHON3_CONFDIR) -DHAVE_CONFIG_H -DNO_MAIN
+
+objects/if_python.o: if_python.c 
+	$(CCC) $(PYTHON_CFLAGS) $(PYTHON_CFLAGS_EXTRA) -o $@ if_python.c
+
+objects/if_python3.o: if_python3.c 
+	$(CCC) $(PYTHON3_CFLAGS) $(PYTHON3_CFLAGS_EXTRA) -o $@ if_python3.c
 
 objects/if_ruby.o: if_ruby.c
 	$(CCC) -o $@ if_ruby.c
@@ -2518,8 +2575,8 @@ objects/os_beos.o: os_beos.c
 objects/os_qnx.o: os_qnx.c
 	$(CCC) -o $@ os_qnx.c
 
-objects/os_macosx.o: os_macosx.c
-	$(CCC) -o $@ os_macosx.c
+objects/os_macosx.o: os_macosx.m
+	$(CCC) -o $@ os_macosx.m
 
 objects/os_mac_conv.o: os_mac_conv.c
 	$(CCC) -o $@ os_mac_conv.c
@@ -2529,15 +2586,6 @@ objects/os_unix.o: os_unix.c
 
 objects/pathdef.o: auto/pathdef.c
 	$(CCC) -o $@ auto/pathdef.c
-
-objects/py_config.o: $(PYTHON_CONFDIR)/config.c
-	$(CCC) -o $@ $(PYTHON_CONFDIR)/config.c \
-		-I$(PYTHON_CONFDIR) -DHAVE_CONFIG_H -DNO_MAIN
-
-objects/py_getpath.o: $(PYTHON_CONFDIR)/getpath.c
-	$(CCC) -o $@ $(PYTHON_CONFDIR)/getpath.c \
-		-I$(PYTHON_CONFDIR) -DHAVE_CONFIG_H -DNO_MAIN \
-		$(PYTHON_GETPATH_CFLAGS)
 
 objects/pty.o: pty.c
 	$(CCC) -o $@ pty.c
@@ -2952,6 +3000,10 @@ objects/hangulin.o: hangulin.c vim.h auto/config.h feature.h os_unix.h \
  auto/osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h gui.h gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h \
  globals.h farsi.h arabic.h
+objects/if_lua.o: if_lua.c vim.h auto/config.h feature.h os_unix.h auto/osdef.h \
+ ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
+ gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
+ arabic.h
 objects/if_mzsch.o: if_mzsch.c vim.h auto/config.h feature.h os_unix.h \
  auto/osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h gui.h gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h \
@@ -2965,6 +3017,10 @@ objects/if_perlsfio.o: if_perlsfio.c vim.h auto/config.h feature.h os_unix.h \
  regexp.h gui.h gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h \
  globals.h farsi.h arabic.h
 objects/if_python.o: if_python.c vim.h auto/config.h feature.h os_unix.h \
+ auto/osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
+ regexp.h gui.h gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h \
+ globals.h farsi.h arabic.h
+objects/if_python3.o: if_python3.c vim.h auto/config.h feature.h os_unix.h \
  auto/osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h gui.h gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h \
  globals.h farsi.h arabic.h

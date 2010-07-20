@@ -1605,7 +1605,7 @@ vgetc()
 		continue;
 	    }
 #endif
-#if defined(FEAT_GUI) && defined(HAVE_GTK2) && defined(FEAT_MENU)
+#if defined(FEAT_GUI) && defined(FEAT_GUI_GTK) && defined(FEAT_MENU)
 	    /* GTK: <F10> normally selects the menu, but it's passed until
 	     * here to allow mapping it.  Intercept and invoke the GTK
 	     * behavior if it's not mapped. */
@@ -2941,7 +2941,7 @@ inchar(buf, maxlen, wait_time, tb_change_cnt)
 
 #if defined(FEAT_NETBEANS_INTG)
 	/* Process the queued netbeans messages. */
-        netbeans_parse_messages();
+	netbeans_parse_messages();
 #endif
 
 	if (got_int || (script_char = getc(scriptin[curscript])) < 0)
