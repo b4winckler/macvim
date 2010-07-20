@@ -407,6 +407,9 @@ if has("syntax")
   call append("$", "cursorline\thighlight the screen line of the cursor")
   call append("$", "\t(local to window)")
   call <SID>BinOptionL("cul")
+  call append("$", "colorcolumn\tcolumns to highlight")
+  call append("$", "\t(local to window)")
+  call <SID>OptionL("cc")
   call append("$", "spell\thighlight spelling mistakes")
   call append("$", "\t(local to window)")
   call <SID>BinOptionL("spell")
@@ -481,6 +484,11 @@ if has("scrollbind")
   call <SID>BinOptionL("scb")
   call append("$", "scrollopt\t\"ver\", \"hor\" and/or \"jump\"; list of options for 'scrollbind'")
   call <SID>OptionG("sbo", &sbo)
+endif
+if has("cursorbind")
+  call append("$", "cursorbind\tthis window's cursor moves together with other bound windows")
+  call append("$", "\t(local to window)")
+  call <SID>BinOptionL("crb")
 endif
 
 

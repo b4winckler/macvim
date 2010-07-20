@@ -115,6 +115,19 @@ struct PyMethodDef { Py_ssize_t a; };
 #  define HINSTANCE long_u		/* for generating prototypes */
 # endif
 
+#ifndef _WIN32
+# include <dlfcn.h>
+# define FARPROC void*
+# define HINSTANCE void*
+# define load_dll(n) dlopen((n),RTLD_LAZY)
+# define close_dll dlclose
+# define symbol_from_dll dlsym
+#else
+# define load_dll LoadLibrary
+# define close_dll FreeLibrary
+# define symbol_from_dll GetProcAddress
+#endif
+
 /* This makes if_python.c compile without warnings against Python 2.5
  * on Win32 and Win64. */
 #undef PyRun_SimpleString
@@ -336,7 +349,7 @@ end_dynamic_python(void)
 {
     if (hinstPython)
     {
-	FreeLibrary(hinstPython);
+	close_dll(hinstPython);
 	hinstPython = 0;
     }
 }
@@ -353,7 +366,7 @@ python_runtime_link_init(char *libname, int verbose)
 
     if (hinstPython)
 	return OK;
-    hinstPython = LoadLibrary(libname);
+    hinstPython = load_dll(libname);
     if (!hinstPython)
     {
 	if (verbose)
@@ -363,10 +376,10 @@ python_runtime_link_init(char *libname, int verbose)
 
     for (i = 0; python_funcname_table[i].ptr; ++i)
     {
-	if ((*python_funcname_table[i].ptr = GetProcAddress(hinstPython,
+	if ((*python_funcname_table[i].ptr = symbol_from_dll(hinstPython,
 			python_funcname_table[i].name)) == NULL)
 	{
-	    FreeLibrary(hinstPython);
+	    close_dll(hinstPython);
 	    hinstPython = 0;
 	    if (verbose)
 		EMSG2(_(e_loadfunc), python_funcname_table[i].name);
@@ -1192,8 +1205,8 @@ VimToPython(typval_T *our_tv, int depth, PyObject *lookupDict)
 	    || (our_tv->v_type == VAR_DICT && our_tv->vval.v_dict != NULL))
     {
 	sprintf(ptrBuf, PRINTF_DECIMAL_LONG_U,
-	        our_tv->v_type == VAR_LIST ? (long_u)our_tv->vval.v_list
-		                           : (long_u)our_tv->vval.v_dict);
+		our_tv->v_type == VAR_LIST ? (long_u)our_tv->vval.v_list
+					   : (long_u)our_tv->vval.v_dict);
 	result = PyDict_GetItemString(lookupDict, ptrBuf);
 	if (result != NULL)
 	{

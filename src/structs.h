@@ -202,6 +202,8 @@ typedef struct
 # define w_p_cuc w_onebuf_opt.wo_cuc	/* 'cursorcolumn' */
     int		wo_cul;
 # define w_p_cul w_onebuf_opt.wo_cul	/* 'cursorline' */
+    char_u	*wo_cc;
+# define w_p_cc w_onebuf_opt.wo_cc	/* 'colorcolumn' */
 #endif
 #ifdef FEAT_STL_OPT
     char_u	*wo_stl;
@@ -327,6 +329,8 @@ struct u_header
     visualinfo_T uh_visual;	/* Visual areas before undo/after redo */
 #endif
     time_t	uh_time;	/* timestamp when the change was made */
+    long	uh_save_nr;	/* set when the file was saved after the
+				   changes in this block */
 #ifdef U_DEBUG
     int		uh_magic;	/* magic number to check allocation */
 #endif
@@ -1370,8 +1374,10 @@ struct file_buffer
     int		b_u_numhead;	/* current number of headers */
     int		b_u_synced;	/* entry lists are synced */
     long	b_u_seq_last;	/* last used undo sequence number */
+    long	b_u_save_nr_last; /* counter for last file write */
     long	b_u_seq_cur;	/* hu_seq of header below which we are now */
-    time_t	b_u_seq_time;	/* uh_time of header below which we are now */
+    time_t	b_u_time_cur;	/* uh_time of header below which we are now */
+    long	b_u_save_nr_cur; /* file write nr after which we are now */
 
     /*
      * variables for "U" command in undo.c
@@ -1610,6 +1616,10 @@ struct file_buffer
 
 #ifdef FEAT_PYTHON
     void	*b_python_ref;	/* The Python reference to this buffer */
+#endif
+
+#ifdef FEAT_PYTHON3
+    void	*b_python3_ref;	/* The Python3 reference to this buffer */
 #endif
 
 #ifdef FEAT_TCL
@@ -2017,6 +2027,9 @@ struct window_S
     long_u	w_p_fde_flags;	    /* flags for 'foldexpr' */
     long_u	w_p_fdt_flags;	    /* flags for 'foldtext' */
 #endif
+#ifdef FEAT_SYN_HL
+    int		*w_p_cc_cols;	    /* array of columns to highlight or NULL */
+#endif
 
     /* transform a pointer to a "onebuf" option into a "allbuf" option */
 #define GLOBAL_WO(p)	((char *)p + sizeof(winopt_T))
@@ -2106,6 +2119,10 @@ struct window_S
 
 #ifdef FEAT_PYTHON
     void	*w_python_ref;		/* The Python value for this window */
+#endif
+
+#ifdef FEAT_PYTHON3
+    void	*w_python3_ref;		/* The Python value for this window */
 #endif
 
 #ifdef FEAT_TCL

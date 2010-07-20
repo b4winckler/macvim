@@ -2348,12 +2348,8 @@ gui_mch_draw_string(
 #ifdef FEAT_MBYTE
 	if (has_mbyte)
 	{
-	    int cell_len = 0;
-
 	    /* Compute the length in display cells. */
-	    for (n = 0; n < len; n += MB_BYTE2LEN(text[n]))
-		cell_len += (*mb_ptr2cells)(text + n);
-	    rc.right = FILL_X(col + cell_len);
+	    rc.right = FILL_X(col + mb_string2cells(text, len));
 	}
 	else
 #endif
@@ -3054,7 +3050,7 @@ dialog_callback(
 	     * codepage: use wide function and convert text. */
 	    if (os_version.dwPlatformId == VER_PLATFORM_WIN32_NT
 		    && enc_codepage >= 0 && (int)GetACP() != enc_codepage)
-            {
+	    {
 	       WCHAR  *wp = (WCHAR *)alloc(IOSIZE * sizeof(WCHAR));
 	       char_u *p;
 
@@ -4915,7 +4911,7 @@ netbeans_draw_multisign_indicator(int row)
     int x;
 
     if (!netbeans_active())
-        return;
+	return;
 
     x = 0;
     y = TEXT_Y(row);
@@ -4942,11 +4938,11 @@ netbeans_init_winsock()
     int wsaerr;
 
     if (WSInitialized)
-        return;
+	return;
 
     wsaerr = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (wsaerr == 0)
-        WSInitialized = TRUE;
+	WSInitialized = TRUE;
 }
 #endif
 

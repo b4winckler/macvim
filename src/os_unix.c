@@ -385,7 +385,7 @@ mch_inchar(buf, maxlen, wtime, tb_change_cnt)
 	    handle_resize();
 #ifdef FEAT_NETBEANS_INTG
 	    /* Process the queued netbeans messages. */
-            netbeans_parse_messages();
+	    netbeans_parse_messages();
 #endif
 	}
     }
@@ -419,7 +419,7 @@ mch_inchar(buf, maxlen, wtime, tb_change_cnt)
 
 #ifdef FEAT_NETBEANS_INTG
 	/* Process the queued netbeans messages. */
-        netbeans_parse_messages();
+	netbeans_parse_messages();
 #endif
 	/*
 	 * we want to be interrupted by the winch signal
@@ -2997,8 +2997,7 @@ mch_free_mem()
     }
 #  endif
 # endif
-    /* Don't close the display for GTK 1, it is done in exit(). */
-# if defined(FEAT_X11) && (!defined(FEAT_GUI_GTK) || defined(HAVE_GTK2))
+# if defined(FEAT_X11)
     if (x11_display != NULL
 #  ifdef FEAT_XCLIPBOARD
 	    && x11_display != xterm_dpy

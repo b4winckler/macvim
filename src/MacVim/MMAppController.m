@@ -1935,7 +1935,7 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     // If the Vim process has finished loading then the window will displayed
     // now, otherwise it will be displayed when the OpenWindowMsgID message is
     // received.
-    [[vc windowController] showWindow];
+    [[vc windowController] presentWindow:nil];
 
     // Since we've taken one controller from the cache we take the opportunity
     // to preload another.

@@ -35,12 +35,18 @@
 # LINK		name of the linker ($(BOR)\bin\ilink if OSTYPE is DOS16,
 #		$(BOR)\bin\ilink32 otherwise)
 # GUI		no or yes: set to yes if you want the GUI version (yes)
+# LUA     define to path to Lua dir to get Lua support (not defined)
+#   LUA_VER	  define to version of Lua being used (51)
+#   DYNAMIC_LUA  no or yes: set to yes to load the Lua DLL dynamically (no)
 # PERL		define to path to Perl dir to get Perl support (not defined)
 #   PERL_VER	  define to version of Perl being used (56)
 #   DYNAMIC_PERL  no or yes: set to yes to load the Perl DLL dynamically (no)
 # PYTHON	define to path to Python dir to get PYTHON support (not defined)
 #   PYTHON_VER	    define to version of Python being used (22)
 #   DYNAMIC_PYTHON  no or yes: use yes to load the Python DLL dynamically (no)
+# PYTHON3	define to path to Python3 dir to get PYTHON3 support (not defined)
+#   PYTHON3_VER	    define to version of Python3 being used (31)
+#   DYNAMIC_PYTHON3  no or yes: use yes to load the Python3 DLL dynamically (no)
 # TCL		define to path to TCL dir to get TCL support (not defined)
 #   TCL_VER	define to version of TCL being used (83)
 #   DYNAMIC_TCL no or yes: use yes to load the TCL DLL dynamically (no)
@@ -129,11 +135,17 @@ CSCOPE = yes
 NETBEANS = yes
 !endif
 
+### LUA: uncomment this line if you want lua support in vim
+# LUA=c:\lua
+
 ### PERL: uncomment this line if you want perl support in vim
 # PERL=c:\perl
 
 ### PYTHON: uncomment this line if you want python support in vim
 # PYTHON=c:\python22
+
+### PYTHON3: uncomment this line if you want python3 support in vim
+# PYTHON3=c:\python31
 
 ### RUBY: uncomment this line if you want ruby support in vim
 # RUBY=c:\ruby
@@ -199,7 +211,9 @@ ALIGN = 4
 #   Incompatible when calling external functions (like MSVC-compiled DLLs), so
 #   don't use FASTCALL when linking with external libs.
 !if ("$(FASTCALL)"=="") && \
+	("$(LUA)"=="") && \
 	("$(PYTHON)"=="") && \
+	("$(PYTHON3)"=="") && \
 	("$(PERL)"=="") && \
 	("$(TCL)"=="") && \
 	("$(RUBY)"=="") && \
@@ -292,6 +306,18 @@ INCLUDE = $(BOR)\include;.;proto
 DEFINES = -DFEAT_$(FEATURES) -DWIN32 -DHAVE_PATHDEF \
 	  -DWINVER=$(WINVER) -D_WIN32_WINNT=$(WINVER)
 
+!ifdef LUA
+INTERP_DEFINES = $(INTERP_DEFINES) -DFEAT_LUA
+INCLUDE = $(LUA)\include;$(INCLUDE)
+!  ifndef LUA_VER
+LUA_VER = 51
+!  endif
+!  if ("$(DYNAMIC_LUA)" == "yes")
+INTERP_DEFINES = $(INTERP_DEFINES) -DDYNAMIC_LUA -DDYNAMIC_LUA_DLL=\"lua$(LUA_VER).dll\"
+LUA_LIB_FLAG = /nodefaultlib:
+!  endif
+!endif
+
 !ifdef PERL
 INTERP_DEFINES = $(INTERP_DEFINES) -DFEAT_PERL
 INCLUDE = $(PERL)\lib\core;$(INCLUDE)
@@ -309,8 +335,14 @@ PERL_LIB_FLAG = /nodefaultlib:
 !endif
 
 !ifdef PYTHON
+!ifdef PYTHON3
+DYNAMIC_PYTHON=yes
+DYNAMIC_PYTHON3=yes
+!endif
+!endif
+
+!ifdef PYTHON
 INTERP_DEFINES = $(INTERP_DEFINES) -DFEAT_PYTHON
-INCLUDE = $(PYTHON)\include;$(INCLUDE)
 !ifndef PYTHON_VER
 PYTHON_VER = 22
 !endif
@@ -319,6 +351,18 @@ INTERP_DEFINES = $(INTERP_DEFINES) -DDYNAMIC_PYTHON -DDYNAMIC_PYTHON_DLL=\"pytho
 PYTHON_LIB_FLAG = /nodefaultlib:
 !endif
 !endif
+
+!ifdef PYTHON3
+INTERP_DEFINES = $(INTERP_DEFINES) -DFEAT_PYTHON3
+!ifndef PYTHON3_VER
+PYTHON3_VER = 31
+!endif
+!if "$(DYNAMIC_PYTHON3)" == "yes"
+INTERP_DEFINES = $(INTERP_DEFINES) -DDYNAMIC_PYTHON3 -DDYNAMIC_PYTHON3_DLL=\"python$(PYTHON3_VER).dll\"
+PYTHON3_LIB_FLAG = /nodefaultlib:
+!endif
+!endif
+
 
 !ifdef RUBY
 !ifndef RUBY_VER
@@ -584,6 +628,11 @@ vimobj = $(vimobj) \
 	$(OBJDIR)\if_ole.obj
 !endif
 
+!ifdef LUA
+vimobj = $(vimobj) \
+    $(OBJDIR)\if_lua.obj
+!endif
+
 !ifdef PERL
 vimobj = $(vimobj) \
     $(OBJDIR)\if_perl.obj
@@ -592,6 +641,11 @@ vimobj = $(vimobj) \
 !ifdef PYTHON
 vimobj = $(vimobj) \
     $(OBJDIR)\if_python.obj
+!endif
+
+!ifdef PYTHON3
+vimobj = $(vimobj) \
+    $(OBJDIR)\if_python3.obj
 !endif
 
 !ifdef RUBY
@@ -692,6 +746,12 @@ MSG = $(MSG) NETBEANS
 !ifdef XPM
 MSG = $(MSG) XPM
 !endif
+!ifdef LUA
+MSG = $(MSG) LUA
+! if "$(DYNAMIC_LUA)" == "yes"
+MSG = $(MSG)(dynamic)
+! endif
+!endif
 !ifdef PERL
 MSG = $(MSG) PERL
 ! if "$(DYNAMIC_PERL)" == "yes"
@@ -701,6 +761,12 @@ MSG = $(MSG)(dynamic)
 !ifdef PYTHON
 MSG = $(MSG) PYTHON
 ! if "$(DYNAMIC_PYTHON)" == "yes"
+MSG = $(MSG)(dynamic)
+! endif
+!endif
+!ifdef PYTHON3
+MSG = $(MSG) PYTHON3
+! if "$(DYNAMIC_PYTHON3)" == "yes"
 MSG = $(MSG)(dynamic)
 ! endif
 !endif
@@ -788,11 +854,17 @@ clean:
 	-@del *.ilf
 	-@del *.ils
 	-@del *.tds
+!ifdef LUA
+	-@del lua.lib
+!endif
 !ifdef PERL
 	-@del perl.lib
 !endif
 !ifdef PYTHON
 	-@del python.lib
+!endif
+!ifdef PYTHON3
+	-@del python3.lib
 !endif
 !ifdef RUBY
 	-@del ruby.lib
@@ -825,11 +897,17 @@ $(DLLTARGET): $(OBJDIR) $(vimdllobj)
 !endif
 !if ($(OSTYPE)==WIN32)
 	import32.lib+
+!ifdef LUA
+	$(LUA_LIB_FLAG)lua.lib+
+!endif
 !ifdef PERL
 	$(PERL_LIB_FLAG)perl.lib+
 !endif
 !ifdef PYTHON
 	$(PYTHON_LIB_FLAG)python.lib+
+!endif
+!ifdef PYTHON3
+	$(PYTHON3_LIB_FLAG)python3.lib+
 !endif
 !ifdef RUBY
 	$(RUBY_LIB_FLAG)ruby.lib+
@@ -874,11 +952,17 @@ $(TARGET): $(OBJDIR) $(vimobj) $(OBJDIR)\$(RESFILE)
 	ole2w32.lib +
 !endif
 	import32.lib+
+!ifdef LUA
+	$(LUA_LIB_FLAG)lua.lib+
+!endif
 !ifdef PERL
 	$(PERL_LIB_FLAG)perl.lib+
 !endif
 !ifdef PYTHON
 	$(PYTHON_LIB_FLAG)python.lib+
+!endif
+!ifdef PYTHON3
+	$(PYTHON3_LIB_FLAG)python3.lib+
 !endif
 !ifdef RUBY
 	$(RUBY_LIB_FLAG)ruby.lib+
@@ -912,6 +996,9 @@ $(OBJDIR)\ex_eval.obj:  ex_eval.c ex_cmds.h
 
 $(OBJDIR)\if_ole.obj: if_ole.cpp
 
+$(OBJDIR)\if_lua.obj: if_lua.c lua.lib
+	$(CC) $(CCARG) $(CC1) $(CC2)$@ -pc if_lua.c
+
 $(OBJDIR)\if_perl.obj: if_perl.c perl.lib
 	$(CC) $(CCARG) $(CC1) $(CC2)$@ -pc if_perl.c
 
@@ -920,7 +1007,10 @@ if_perl.c: if_perl.xs typemap
 	    $(PERL)\lib\ExtUtils\typemap if_perl.xs > $@
 
 $(OBJDIR)\if_python.obj: if_python.c python.lib
-	$(CC) $(CCARG) $(CC1) $(CC2)$@ -pc if_python.c
+	$(CC) -I$(PYTHON)\include $(CCARG) $(CC1) $(CC2)$@ -pc if_python.c
+
+$(OBJDIR)\if_python3.obj: if_python3.c python3.lib
+	$(CC) -I$(PYTHON3)\include $(CCARG) $(CC1) $(CC2)$@ -pc if_python3.c
 
 $(OBJDIR)\if_ruby.obj: if_ruby.c ruby.lib
 	$(CC) $(CCARG) $(CC1) $(CC2)$@ -pc if_ruby.c
@@ -966,11 +1056,17 @@ char_u *compiled_user = (char_u *)"$(USERNAME)";
 char_u *compiled_sys = (char_u *)"$(USERDOMAIN)";
 | auto\pathdef.c
 
+lua.lib: $(LUA)\lib\lua$(LUA_VER).lib
+	coff2omf $(LUA)\lib\lua$(LUA_VER).lib $@
+
 perl.lib: $(PERL)\lib\CORE\perl$(PERL_VER).lib
 	coff2omf $(PERL)\lib\CORE\perl$(PERL_VER).lib $@
 
 python.lib: $(PYTHON)\libs\python$(PYTHON_VER).lib
 	coff2omf $(PYTHON)\libs\python$(PYTHON_VER).lib $@
+
+python3.lib: $(PYTHON3)\libs\python$(PYTHON3_VER).lib
+	coff2omf $(PYTHON3)\libs\python$(PYTHON3_VER).lib $@
 
 ruby.lib: $(RUBY)\lib\$(RUBY_INSTALL_NAME).lib
 	coff2omf $(RUBY)\lib\$(RUBY_INSTALL_NAME).lib $@
@@ -1020,3 +1116,4 @@ $(OBJDIR)\bcc.cfg: Make_bc5.mak $(OBJDIR)
 | $@
 
 # vi:set sts=4 sw=4:
+

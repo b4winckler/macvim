@@ -30,6 +30,11 @@
 #	  is yes)
 #	Global IME support: GIME=yes (requires GUI=yes)
 #
+#	Lua interface:
+#	  LUA=[Path to Lua directory]
+#	  DYNAMIC_LUA=yes (to load the Lua DLL dynamically)
+#	  LUA_VER=[Lua version]  (default is 51)
+#
 #	MzScheme interface:
 #	  MZSCHEME=[Path to MzScheme directory]
 #	  DYNAMIC_MZSCHEME=yes (to load the MzScheme DLLs dynamically)
@@ -46,6 +51,11 @@
 #	  PYTHON=[Path to Python directory]
 #	  DYNAMIC_PYTHON=yes (to load the Python DLL dynamically)
 #	  PYTHON_VER=[Python version, eg 15, 20]  (default is 22)
+#
+#	Python3 interface:
+#	  PYTHON3=[Path to Python3 directory]
+#	  DYNAMIC_PYTHON3=yes (to load the Python3 DLL dynamically)
+#	  PYTHON3_VER=[Python3 version, eg 30, 31]  (default is 31)
 #
 #	Ruby interface:
 #	  RUBY=[Path to Ruby directory]
@@ -152,11 +162,17 @@ OBJDIR = .\Obj\C
 !if "$(OLE)" == "yes"
 OBJDIR = $(OBJDIR)O
 !endif
+!ifdef LUA
+OBJDIR = $(OBJDIR)U
+!endif
 !ifdef PERL
 OBJDIR = $(OBJDIR)L
 !endif
 !ifdef PYTHON
 OBJDIR = $(OBJDIR)Y
+!endif
+!ifdef PYTHON3
+OBJDIR = $(OBJDIR)H
 !endif
 !ifdef TCL
 OBJDIR = $(OBJDIR)T
@@ -363,6 +379,9 @@ MSVCVER = 10.0
 !endif
 !if "$(_NMAKE_VER)" == "10.00.30319.01"
 MSVCVER = 10.0
+!endif
+!if "$(_NMAKE_VER)" == "9.00.30729.01"
+MSVCVER = 9.0
 !endif
 !endif
 
@@ -617,6 +636,34 @@ TCL_LIB = $(TCL)\lib\tcl$(TCL_VER)vc.lib
 !endif
 !endif
 
+# Lua interface
+!ifdef LUA
+!ifndef LUA_VER
+LUA_VER = 51
+!endif
+!message Lua requested (version $(LUA_VER)) - root dir is "$(LUA)"
+!if "$(DYNAMIC_LUA)" == "yes"
+!message Lua DLL will be loaded dynamically
+!endif
+CFLAGS = $(CFLAGS) -DFEAT_LUA
+LUA_OBJ = $(OUTDIR)\if_lua.obj
+LUA_INC = /I "$(LUA)\include" /I "$(LUA)"
+!if "$(DYNAMIC_LUA)" == "yes"
+CFLAGS = $(CFLAGS) -DDYNAMIC_LUA \
+		-DDYNAMIC_LUA_DLL=\"lua$(LUA_VER).dll\"
+LUA_LIB = /nodefaultlib:lua$(LUA_VER).lib
+!else
+LUA_LIB = "$(LUA)\lib\lua$(LUA_VER).lib"
+!endif
+!endif
+
+!ifdef PYTHON
+!ifdef PYTHON3
+DYNAMIC_PYTHON=yes
+DYNAMIC_PYTHON3=yes
+!endif
+!endif
+
 # PYTHON interface
 !ifdef PYTHON
 !ifndef PYTHON_VER
@@ -635,6 +682,27 @@ CFLAGS = $(CFLAGS) -DDYNAMIC_PYTHON \
 PYTHON_LIB = /nodefaultlib:python$(PYTHON_VER).lib
 !else
 PYTHON_LIB = $(PYTHON)\libs\python$(PYTHON_VER).lib
+!endif
+!endif
+
+# PYTHON3 interface
+!ifdef PYTHON3
+!ifndef PYTHON3_VER
+PYTHON3_VER = 31
+!endif
+!message Python3 requested (version $(PYTHON3_VER)) - root dir is "$(PYTHON3)"
+!if "$(DYNAMIC_PYTHON3)" == "yes"
+!message Python3 DLL will be loaded dynamically
+!endif
+CFLAGS = $(CFLAGS) -DFEAT_PYTHON3
+PYTHON3_OBJ = $(OUTDIR)\if_python3.obj
+PYTHON3_INC = /I "$(PYTHON3)\Include" /I "$(PYTHON3)\PC"
+!if "$(DYNAMIC_PYTHON3)" == "yes"
+CFLAGS = $(CFLAGS) -DDYNAMIC_PYTHON3 \
+		-DDYNAMIC_PYTHON3_DLL=\"python$(PYTHON3_VER).dll\"
+PYTHON3_LIB = /nodefaultlib:python$(PYTHON3_VER).lib
+!else
+PYTHON3_LIB = $(PYTHON3)\libs\python$(PYTHON3_VER).lib
 !endif
 !endif
 
@@ -757,7 +825,11 @@ RUBY_INSTALL_NAME = mswin32-ruby$(RUBY_VER)
 !message Ruby requested (version $(RUBY_VER)) - root dir is "$(RUBY)"
 CFLAGS = $(CFLAGS) -DFEAT_RUBY
 RUBY_OBJ = $(OUTDIR)\if_ruby.obj
+!if $(RUBY_VER) >= 190
+RUBY_INC = /I "$(RUBY)\include\ruby-$(RUBY_VER_LONG)\$(RUBY_PLATFORM)" /I "$(RUBY)\include\ruby-$(RUBY_VER_LONG)"
+!else
 RUBY_INC = /I "$(RUBY)\lib\ruby\$(RUBY_VER_LONG)\$(RUBY_PLATFORM)"
+!endif
 RUBY_LIB = $(RUBY)\lib\$(RUBY_INSTALL_NAME).lib
 # Do we want to load Ruby dynamically?
 !if "$(DYNAMIC_RUBY)" == "yes"
@@ -811,7 +883,7 @@ conflags = $(conflags) /map /mapinfo:lines
 
 LINKARGS1 = $(linkdebug) $(conflags)
 LINKARGS2 = $(CON_LIB) $(GUI_LIB) $(LIBC) $(OLE_LIB)  user32.lib $(SNIFF_LIB) \
-		$(MZSCHEME_LIB) $(PERL_LIB) $(PYTHON_LIB) $(RUBY_LIB) \
+		$(LUA_LIB) $(MZSCHEME_LIB) $(PERL_LIB) $(PYTHON_LIB) $(PYTHON3_LIB) $(RUBY_LIB) \
 		$(TCL_LIB) $(NETBEANS_LIB) $(XPM_LIB) $(LINK_PDB)
 
 # Report link time code generation progress if used. 
@@ -827,11 +899,12 @@ all:	$(VIM).exe vimrun.exe install.exe uninstal.exe xxd/xxd.exe \
 		GvimExt/gvimext.dll
 
 $(VIM).exe: $(OUTDIR) $(OBJ) $(GUI_OBJ) $(OLE_OBJ) $(OLE_IDL) $(MZSCHEME_OBJ) \
-		$(PERL_OBJ) $(PYTHON_OBJ) $(RUBY_OBJ) $(TCL_OBJ) $(SNIFF_OBJ) \
-		$(CSCOPE_OBJ) $(NETBEANS_OBJ) $(XPM_OBJ) version.c version.h
+		$(LUA_OBJ) $(PERL_OBJ) $(PYTHON_OBJ) $(PYTHON3_OBJ) $(RUBY_OBJ) $(TCL_OBJ) \
+		$(SNIFF_OBJ) $(CSCOPE_OBJ) $(NETBEANS_OBJ) $(XPM_OBJ) \
+		version.c version.h
 	$(CC) $(CFLAGS) version.c
 	$(link) $(LINKARGS1) -out:$(VIM).exe $(OBJ) $(GUI_OBJ) $(OLE_OBJ) \
-		$(MZSCHEME_OBJ) $(PERL_OBJ) $(PYTHON_OBJ) $(RUBY_OBJ) \
+		$(LUA_OBJ) $(MZSCHEME_OBJ) $(PERL_OBJ) $(PYTHON_OBJ) $(PYTHON3_OBJ) $(RUBY_OBJ) \
 		$(TCL_OBJ) $(SNIFF_OBJ) $(CSCOPE_OBJ) $(NETBEANS_OBJ) \
 		$(XPM_OBJ) $(OUTDIR)\version.obj $(LINKARGS2)
 	IF EXIST $@.manifest mt -nologo -manifest $@.manifest kaoriya.mnf -outputresource:$@;1
@@ -974,6 +1047,9 @@ $(OUTDIR)/gui_w32.obj:	$(OUTDIR) gui_w32.c gui_w48.c $(INCL) $(GUI_INCL)
 
 $(OUTDIR)/if_cscope.obj: $(OUTDIR) if_cscope.c  $(INCL)
 
+$(OUTDIR)/if_lua.obj: $(OUTDIR) if_lua.c  $(INCL)
+	$(CC) $(CFLAGS) $(LUA_INC) if_lua.c
+
 if_perl.c : if_perl.xs typemap
 	$(PERL_EXE) $(XSUBPP) -prototypes -typemap $(XSUBPP_TYPEMAP) \
 		-typemap typemap if_perl.xs > if_perl.c
@@ -992,6 +1068,9 @@ mzscheme_base.c:
 
 $(OUTDIR)/if_python.obj: $(OUTDIR) if_python.c  $(INCL)
 	$(CC) $(CFLAGS) $(PYTHON_INC) if_python.c
+
+$(OUTDIR)/if_python3.obj: $(OUTDIR) if_python3.c  $(INCL)
+	$(CC) $(CFLAGS) $(PYTHON3_INC) if_python3.c
 
 $(OUTDIR)/if_ole.obj: $(OUTDIR) if_ole.cpp  $(INCL) if_ole.h
 
@@ -1070,8 +1149,9 @@ $(OUTDIR)/window.obj:	$(OUTDIR) window.c  $(INCL)
 $(OUTDIR)/xpm_w32.obj: $(OUTDIR) xpm_w32.c
 	$(CC) $(CFLAGS) $(XPM_INC) xpm_w32.c
 
-$(OUTDIR)/vim.res:	$(OUTDIR) vim.rc gvim.exe.mnf version.h tools.bmp tearoff.bmp \
-		vim.ico vim_error.ico vim_alert.ico vim_info.ico vim_quest.ico
+$(OUTDIR)/vim.res:	$(OUTDIR) vim.rc gvim.exe.mnf version.h tools.bmp \
+				tearoff.bmp vim.ico vim_error.ico \
+				vim_alert.ico vim_info.ico vim_quest.ico
 	$(RC) /l 0x409 /Fo$(OUTDIR)/vim.res $(RCFLAGS) vim.rc
 
 iid_ole.c if_ole.h vim.tlb: if_ole.idl

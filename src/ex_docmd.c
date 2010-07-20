@@ -129,8 +129,12 @@ static int	getargopt __ARGS((exarg_T *eap));
 static int	check_more __ARGS((int, int));
 static linenr_T get_address __ARGS((char_u **, int skip, int to_other_file));
 static void	get_flags __ARGS((exarg_T *eap));
-#if !defined(FEAT_PERL) || !defined(FEAT_PYTHON) || !defined(FEAT_TCL) \
-	|| !defined(FEAT_RUBY) || !defined(FEAT_MZSCHEME)
+#if !defined(FEAT_PERL) \
+	|| !defined(FEAT_PYTHON) || !defined(FEAT_PYTHON3) \
+	|| !defined(FEAT_TCL) \
+	|| !defined(FEAT_RUBY) \
+	|| !defined(FEAT_LUA) \
+	|| !defined(FEAT_MZSCHEME)
 # define HAVE_EX_SCRIPT_NI
 static void	ex_script_ni __ARGS((exarg_T *eap));
 #endif
@@ -250,6 +254,11 @@ static void	ex_popup __ARGS((exarg_T *eap));
 # define ex_rundo		ex_ni
 # define ex_wundo		ex_ni
 #endif
+#ifndef FEAT_LUA
+# define ex_lua			ex_script_ni
+# define ex_luado		ex_ni
+# define ex_luafile		ex_ni
+#endif
 #ifndef FEAT_MZSCHEME
 # define ex_mzscheme		ex_script_ni
 # define ex_mzfile		ex_ni
@@ -261,6 +270,10 @@ static void	ex_popup __ARGS((exarg_T *eap));
 #ifndef FEAT_PYTHON
 # define ex_python		ex_script_ni
 # define ex_pyfile		ex_ni
+#endif
+#ifndef FEAT_PYTHON3
+# define ex_python3		ex_script_ni
+# define ex_py3file		ex_ni
 #endif
 #ifndef FEAT_TCL
 # define ex_tcl			ex_script_ni
@@ -2550,11 +2563,13 @@ do_one_cmd(cmdlinep, sourcing,
 	    case CMD_leftabove:
 	    case CMD_let:
 	    case CMD_lockmarks:
+	    case CMD_lua:
 	    case CMD_match:
 	    case CMD_mzscheme:
 	    case CMD_perl:
 	    case CMD_psearch:
 	    case CMD_python:
+	    case CMD_python3:
 	    case CMD_return:
 	    case CMD_rightbelow:
 	    case CMD_ruby:
@@ -2817,6 +2832,10 @@ find_command(eap, full)
     {
 	while (ASCII_ISALPHA(*p))
 	    ++p;
+	/* for python 3.x support (:py3, :python3) */
+	if (eap->cmd[0] == 'p' && eap->cmd[1] == 'y')
+	    p = skipdigits(p);
+
 	/* check for non-alpha command */
 	if (p == eap->cmd && vim_strchr((char_u *)"@*!=><&~#", *p) != NULL)
 	    ++p;
@@ -3449,6 +3468,11 @@ set_one_cmd_context(xp, buff)
  */
     switch (ea.cmdidx)
     {
+	case CMD_find:
+	case CMD_sfind:
+	case CMD_tabfind:
+	    xp->xp_context = EXPAND_FILES_IN_PATH;
+	    break;
 	case CMD_cd:
 	case CMD_chdir:
 	case CMD_lcd:
@@ -8414,7 +8438,7 @@ ex_join(eap)
 	}
 	++eap->line2;
     }
-    do_do_join(eap->line2 - eap->line1 + 1, !eap->forceit);
+    (void)do_join(eap->line2 - eap->line1 + 1, !eap->forceit, TRUE);
     beginline(BL_WHITE | BL_FIX);
     ex_may_print(eap);
 }
@@ -8481,13 +8505,13 @@ ex_undo(eap)
     exarg_T	*eap UNUSED;
 {
     if (eap->addr_count == 1)	    /* :undo 123 */
-	undo_time(eap->line2, FALSE, TRUE);
+	undo_time(eap->line2, FALSE, FALSE, TRUE);
     else
 	u_undo(1);
 }
 
 #ifdef FEAT_PERSISTENT_UNDO
-    void
+    static void
 ex_wundo(eap)
     exarg_T *eap;
 {
@@ -8497,7 +8521,7 @@ ex_wundo(eap)
     u_write_undo(eap->arg, eap->forceit, curbuf, hash);
 }
 
-    void
+    static void
 ex_rundo(eap)
     exarg_T *eap;
 {
@@ -8527,6 +8551,7 @@ ex_later(eap)
 {
     long	count = 0;
     int		sec = FALSE;
+    int		file = FALSE;
     char_u	*p = eap->arg;
 
     if (*p == NUL)
@@ -8539,13 +8564,16 @@ ex_later(eap)
 	    case 's': ++p; sec = TRUE; break;
 	    case 'm': ++p; sec = TRUE; count *= 60; break;
 	    case 'h': ++p; sec = TRUE; count *= 60 * 60; break;
+	    case 'd': ++p; sec = TRUE; count *= 24 * 60 * 60; break;
+	    case 'f': ++p; file = TRUE; break;
 	}
     }
 
     if (*p != NUL)
 	EMSG2(_(e_invarg2), eap->arg);
     else
-	undo_time(eap->cmdidx == CMD_earlier ? -count : count, sec, FALSE);
+	undo_time(eap->cmdidx == CMD_earlier ? -count : count,
+							    sec, file, FALSE);
 }
 
 /*
@@ -10458,7 +10486,7 @@ put_view(fd, wp, add_edit, flagp, current_arg_idx)
 
     /* Only when part of a session: restore the argument index.  Some
      * arguments may have been deleted, check if the index is valid. */
-    if (wp->w_arg_idx != current_arg_idx && wp->w_arg_idx <= WARGCOUNT(wp)
+    if (wp->w_arg_idx != current_arg_idx && wp->w_arg_idx < WARGCOUNT(wp)
 						      && flagp == &ssop_flags)
     {
 	if (fprintf(fd, "%ldargu", (long)wp->w_arg_idx + 1) < 0

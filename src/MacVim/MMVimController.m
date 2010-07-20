@@ -549,10 +549,14 @@ static BOOL isUnsafeMessage(int msgid);
     if (OpenWindowMsgID == msgid) {
         [windowController openWindow];
 
-        // If the vim controller is preloading then the window will be
-        // displayed when it is taken off the preload cache.
+        // HACK: Delay actually presenting the window onscreen until after
+        // processing the queue since it contains drawing commands that need to
+        // be issued before presentation; otherwise the window may flash white
+        // just as it opens.
         if (!isPreloading)
-            [windowController showWindow];
+            [windowController performSelector:@selector(presentWindow:)
+                                   withObject:nil
+                                   afterDelay:0];
     } else if (BatchDrawMsgID == msgid) {
         [[[windowController vimView] textView] performBatchDrawWithData:data];
     } else if (SelectTabMsgID == msgid) {

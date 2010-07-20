@@ -382,27 +382,23 @@ fun! s:FileFormat()
   endif
 endfun
 
+
 " Setup the Edit.Color Scheme submenu
+
+" get NL separated string with file names
 let s:n = globpath(&runtimepath, "colors/*.vim")
+
+" split at NL, Ignore case for VMS and windows, sort on name
+let s:names = sort(map(split(s:n, "\n"), 'substitute(v:val, "\\c.*[/\\\\:\\]]\\([^/\\\\:]*\\)\\.vim", "\\1", "")'), 1)
+
+" define all the submenu entries
 let s:idx = 100
-while strlen(s:n) > 0
-  let s:i = stridx(s:n, "\n")
-  if s:i < 0
-    let s:name = s:n
-    let s:n = ""
-  else
-    let s:name = strpart(s:n, 0, s:i)
-    let s:n = strpart(s:n, s:i + 1, 19999)
-  endif
-  " Ignore case for VMS and windows
-  let s:name = substitute(s:name, '\c.*[/\\:\]]\([^/\\:]*\)\.vim', '\1', '')
+for s:name in s:names
   exe "an 20.450." . s:idx . ' &Edit.C&olor\ Scheme.' . s:name . " :colors " . s:name . "<CR>"
-  unlet s:name
-  unlet s:i
   let s:idx = s:idx + 10
-endwhile
-unlet s:n
-unlet s:idx
+endfor
+unlet s:name s:names s:n s:idx
+
 
 " Setup the Edit.Keymap submenu
 if has("keymap")
@@ -956,7 +952,6 @@ if has("spell")
     let [w, a] = spellbadword()
     if col('.') > curcol		" don't use word after the cursor
       let w = ''
-      call cursor(0, curcol)	" put the cursor back where it was
     endif
     if w != ''
       if a == 'caps'
@@ -964,12 +959,13 @@ if has("spell")
       else
 	let s:suglist = spellsuggest(w, 10)
       endif
-      if len(s:suglist) <= 0
-	call cursor(0, curcol)	" put the cursor back where it was
-      else
+      if len(s:suglist) > 0
 	let s:changeitem = 'change\ "' . escape(w, ' .'). '"\ to'
 	let s:fromword = w
 	let pri = 1
+	" set 'cpo' to include the <CR>
+	let cpo_save = &cpo
+	set cpo&vim
 	for sug in s:suglist
 	  exe 'anoremenu 1.5.' . pri . ' PopUp.' . s:changeitem . '.' . escape(sug, ' .')
 		\ . ' :call <SID>SpellReplace(' . pri . ')<CR>'
@@ -983,12 +979,16 @@ if has("spell")
 	exe 'anoremenu 1.7 PopUp.' . s:ignoreitem . ' :spellgood! ' . w . '<CR>'
 
 	anoremenu 1.8 PopUp.-SpellSep- :
+	let &cpo = cpo_save
       endif
     endif
+    call cursor(0, curcol)	" put the cursor back where it was
   endfunc
 
   func! <SID>SpellReplace(n)
     let l = getline('.')
+    " Move the cursor to the start of the word.
+    call spellbadword()
     call setline('.', strpart(l, 0, col('.') - 1) . s:suglist[a:n - 1]
 	  \ . strpart(l, col('.') + len(s:fromword) - 1))
   endfunc

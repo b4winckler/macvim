@@ -40,6 +40,7 @@ DOCS = \
 	helphelp.txt \
 	howto.txt \
 	if_cscop.txt \
+	if_lua.txt \
 	if_mzsch.txt \
 	if_ole.txt \
 	if_perl.txt \
@@ -168,8 +169,10 @@ HTMLS = \
 	gui_x11.html \
 	hangulin.html \
 	hebrew.html \
+	helphelp.html \
 	howto.html \
 	if_cscop.html \
+	if_lua.html \
 	if_mzsch.html \
 	if_ole.html \
 	if_perl.html \

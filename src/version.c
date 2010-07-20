@@ -321,6 +321,15 @@ static char *(features[]) =
 #else
 	"-localmap",
 #endif
+#ifdef FEAT_LUA
+# ifdef DYNAMIC_LUA
+	"+lua/dyn",
+# else
+	"+lua",
+# endif
+#else
+	"-lua",
+#endif
 #ifdef FEAT_MENU
 	"+menu",
 #else
@@ -485,6 +494,15 @@ static char *(features[]) =
 # endif
 #else
 	"-python",
+#endif
+#ifdef FEAT_PYTHON3
+# ifdef DYNAMIC_PYTHON3
+	"+python3/dyn",
+# else
+	"+python3",
+# endif
+#else
+	"-python3",
 #endif
 #ifdef FEAT_QUICKFIX
 	"+quickfix",
@@ -942,17 +960,9 @@ list_version()
 #else
 # ifdef FEAT_GUI_GTK
 #  ifdef FEAT_GUI_GNOME
-#   ifdef HAVE_GTK2
     MSG_PUTS(_("with GTK2-GNOME GUI."));
-#   else
-    MSG_PUTS(_("with GTK-GNOME GUI."));
-#   endif
 #  else
-#   ifdef HAVE_GTK2
     MSG_PUTS(_("with GTK2 GUI."));
-#   else
-    MSG_PUTS(_("with GTK GUI."));
-#   endif
 #  endif
 # else
 #  ifdef FEAT_GUI_MOTIF

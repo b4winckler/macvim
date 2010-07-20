@@ -3214,8 +3214,8 @@ prepare_crypt_read(fp)
 	return FAIL;
     method = get_crypt_method((char *)buffer,
 					CRYPT_MAGIC_LEN +
-                                        CRYPT_SEED_LEN_MAX +
-                                        CRYPT_SALT_LEN_MAX);
+					CRYPT_SEED_LEN_MAX +
+					CRYPT_SALT_LEN_MAX);
     if (method < 0 || method != curbuf->b_p_cm)
 	return FAIL;
 
@@ -5061,11 +5061,8 @@ restore_backup:
 	    STRCAT(IObuff, _(" CONVERSION ERROR"));
 	    c = TRUE;
 	    if (write_info.bw_conv_error_lnum != 0)
-	    {
-		size_t l = STRLEN(IObuff);
-		vim_snprintf((char *)IObuff + l, IOSIZE - l, _(" in line %ld;"),
+		vim_snprintf_add((char *)IObuff, IOSIZE, _(" in line %ld;"),
 			(long)write_info.bw_conv_error_lnum);
-	    }
 	}
 	else if (notconverted)
 	{
@@ -5126,6 +5123,7 @@ restore_backup:
     {
 	unchanged(buf, TRUE);
 	u_unchanged(buf);
+	u_update_save_nr(buf);
     }
 
     /*
