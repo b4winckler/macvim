@@ -587,6 +587,46 @@ update_screen(type)
 }
 
 #if defined(FEAT_CONCEAL) || defined(PROTO)
+/*
+ * Return TRUE if the cursor line in window "wp" may be concealed, according
+ * to the 'concealcursor' option.
+ */
+    int
+conceal_cursor_line(wp)
+    win_T	*wp;
+{
+    int		c;
+
+    if (*wp->w_p_cocu == NUL)
+	return FALSE;
+    if (get_real_state() & VISUAL)
+	c = 'v';
+    else if (State & INSERT)
+	c = 'i';
+    else if (State & NORMAL)
+	c = 'n';
+    else if (State & CMDLINE)
+	c = 'c';
+    else
+	return FALSE;
+    return vim_strchr(wp->w_p_cocu, c) != NULL;
+}
+
+/*
+ * Check if the cursor line needs to be redrawn because of 'concealcursor'.
+ */
+    void
+conceal_check_cursur_line_redraw()
+{
+    if (curwin->w_p_cole > 0 && conceal_cursor_line(curwin))
+    {
+	need_cursor_line_redraw = TRUE;
+	/* Need to recompute cursor column, e.g., when starting Visual mode
+	 * without concealing. */
+	curs_columns(TRUE);
+    }
+}
+
     void
 update_single_line(wp, lnum)
     win_T	*wp;
@@ -632,6 +672,7 @@ update_single_line(wp, lnum)
 	}
 # endif
     }
+    need_cursor_line_redraw = FALSE;
 }
 #endif
 
@@ -2775,12 +2816,14 @@ win_line(wp, lnum, startrow, endrow, nochange)
 
 #ifdef FEAT_CONCEAL
     int		syntax_flags	= 0;
+    int		syntax_seqnr	= 0;
+    int		prev_syntax_id	= 0;
     int		conceal_attr	= hl_attr(HLF_CONCEAL);
-    int		first_conceal	= (wp->w_p_conceal != 3);
     int		is_concealing	= FALSE;
     int		boguscols	= 0;	/* nonexistent columns added to force
 					   wrapping */
-    int		vcol_off = 0;		/* offset for concealed characters */
+    int		vcol_off	= 0;	/* offset for concealed characters */
+    int		did_wcol	= FALSE;
 # define VCOL_HLC (vcol - vcol_off)
 #else
 # define VCOL_HLC (vcol)
@@ -4028,11 +4071,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
 		    did_emsg = FALSE;
 
 		    syntax_attr = get_syntax_attr((colnr_T)v - 1,
-# ifdef FEAT_CONCEAL
-						&syntax_flags,
-# else
-						NULL,
-# endif
 # ifdef FEAT_SPELL
 						has_spell ? &can_spell :
 # endif
@@ -4055,6 +4093,14 @@ win_line(wp, lnum, startrow, endrow, nochange)
 			char_attr = syntax_attr;
 		    else
 			char_attr = hl_combine_attr(syntax_attr, char_attr);
+# ifdef FEAT_CONCEAL
+		    /* no concealing past the end of the line, it interferes
+		     * with line highlighting */
+		    if (c == NUL)
+			syntax_flags = 0;
+		    else
+			syntax_flags = get_syntax_info(&syntax_seqnr);
+# endif
 		}
 #endif
 
@@ -4377,17 +4423,20 @@ win_line(wp, lnum, startrow, endrow, nochange)
 	    }
 
 #ifdef FEAT_CONCEAL
-	    if (    wp->w_p_conceal
-		    && !area_highlighting
-		    && (lnum != wp->w_cursor.lnum
-			|| curwin != wp || wp->w_buffer->b_p_ma == FALSE)
-		    && (syntax_flags & HL_CONCEAL) != 0)
-
+	    if (   wp->w_p_cole > 0
+		&& (wp != curwin || lnum != wp->w_cursor.lnum ||
+						      conceal_cursor_line(wp))
+		&& (syntax_flags & HL_CONCEAL) != 0
+		&& !(lnum_in_visual_area
+				    && vim_strchr(wp->w_p_cocu, 'v') == NULL))
 	    {
 		char_attr = conceal_attr;
-		if (first_conceal
-			&& (syn_get_sub_char() != NUL || wp->w_p_conceal == 1))
+		if (prev_syntax_id != syntax_seqnr
+			&& (syn_get_sub_char() != NUL || wp->w_p_cole == 1)
+			&& wp->w_p_cole != 3)
 		{
+		    /* First time at this concealed item: display one
+		     * character. */
 		    if (syn_get_sub_char() != NUL)
 			c = syn_get_sub_char();
 		    else if (lcs_conceal != NUL)
@@ -4395,7 +4444,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 		    else
 			c = ' ';
 
-		    first_conceal = FALSE;
+		    prev_syntax_id = syntax_seqnr;
 
 		    if (n_extra > 0)
 			vcol_off += n_extra;
@@ -4437,11 +4486,25 @@ win_line(wp, lnum, startrow, endrow, nochange)
 	    }
 	    else
 	    {
-		first_conceal	= (wp->w_p_conceal != 3);
-		is_concealing	= FALSE;
+		prev_syntax_id = 0;
+		is_concealing = FALSE;
 	    }
 #endif /* FEAT_CONCEAL */
 	}
+
+#ifdef FEAT_CONCEAL
+	/* In the cursor line and we may be concealing characters: correct
+	 * the cursor column when we reach its position. */
+	if (!did_wcol && draw_state == WL_LINE
+		&& wp == curwin && lnum == wp->w_cursor.lnum
+		&& conceal_cursor_line(wp)
+		&& (int)wp->w_virtcol <= vcol + n_skip)
+	{
+	    wp->w_wcol = col - boguscols;
+	    wp->w_wrow = row;
+	    did_wcol = TRUE;
+	}
+#endif
 
 	/* Don't override visual selection highlighting. */
 	if (n_attr > 0
@@ -4718,6 +4781,10 @@ win_line(wp, lnum, startrow, endrow, nochange)
 			ScreenLinesUC[off] = 0;
 #endif
 		    ++col;
+		    if (draw_color_col)
+			draw_color_col = advance_color_col(VCOL_HLC,
+								 &color_cols);
+
 		    if (wp->w_p_cuc && VCOL_HLC == (long)wp->w_virtcol)
 			ScreenAttrs[off++] = hl_attr(HLF_CUC);
 		    else if (draw_color_col && VCOL_HLC == *color_cols)
@@ -4727,10 +4794,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
 
 		    if (VCOL_HLC >= rightmost_vcol)
 			break;
-
-		    if (draw_color_col)
-			draw_color_col = advance_color_col(VCOL_HLC,
-								 &color_cols);
 
 		    ++vcol;
 		}
@@ -4806,7 +4869,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 		vcol_save_attr = char_attr;
 		char_attr = hl_combine_attr(char_attr, hl_attr(HLF_CUC));
 	    }
-	    else if (draw_color_col && vcol == *color_cols)
+	    else if (draw_color_col && VCOL_HLC == *color_cols)
 	    {
 		vcol_save_attr = char_attr;
 		char_attr = hl_combine_attr(char_attr, hl_attr(HLF_MC));
@@ -4909,7 +4972,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 	    }
 	}
 #ifdef FEAT_CONCEAL
-	else if (wp->w_p_conceal > 0 && is_concealing)
+	else if (wp->w_p_cole > 0 && is_concealing)
 	{
 	    --n_skip;
 	    ++vcol_off;
@@ -7122,7 +7185,7 @@ next_search_hl(win, shl, lnum, mincol)
 		NULL
 #endif
 		);
-	if (called_emsg)
+	if (called_emsg || got_int)
 	{
 	    /* Error while handling regexp: stop using this regexp. */
 	    if (shl == &search_hl)

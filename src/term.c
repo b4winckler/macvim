@@ -4167,6 +4167,8 @@ check_termcode(max_offset, buf, buflen)
 		&& key_name[0] == (int)KS_EXTRA
 		&& (key_name[1] == (int)KE_X1MOUSE
 		    || key_name[1] == (int)KE_X2MOUSE
+		    || key_name[1] == (int)KE_MOUSELEFT
+		    || key_name[1] == (int)KE_MOUSERIGHT
 		    || key_name[1] == (int)KE_MOUSEDOWN
 		    || key_name[1] == (int)KE_MOUSEUP))
 	{
@@ -4778,6 +4780,8 @@ check_termcode(max_offset, buf, buflen)
 	    {
 		if (wheel_code & MOUSE_CTRL)
 		    modifiers |= MOD_MASK_CTRL;
+		if (wheel_code & MOUSE_ALT)
+		    modifiers |= MOD_MASK_ALT;
 		key_name[1] = (wheel_code & 1)
 					? (int)KE_MOUSEUP : (int)KE_MOUSEDOWN;
 	    }
@@ -5052,7 +5056,7 @@ replace_termcodes(from, bufp, from_part, do_lt, special)
     {
 	/*
 	 * If 'cpoptions' does not contain '<', check for special key codes,
-	 * like "<C-S-MouseLeft>"
+	 * like "<C-S-LeftMouse>"
 	 */
 	if (do_special && (do_lt || STRNCMP(src, "<lt>", 4) != 0))
 	{

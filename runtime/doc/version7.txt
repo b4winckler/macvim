@@ -1,4 +1,4 @@
-*version7.txt*  For Vim version 7.3a.  Last change: 2010 May 14
+*version7.txt*  For Vim version 7.3c.  Last change: 2010 Jul 25
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -307,7 +307,7 @@ Also see |postscript-cjk-printing|.  (Mike Williams)
 Tab pages						*new-tab-pages*
 ---------
 
-A tab page is page with one or more windows with a label (aka tab) at the top.
+A tab page is a page with one or more windows with a label (aka tab) at the top.
 By clicking on the label you can quickly switch between the tab pages.  And
 with the keyboard, using the |gt| (Goto Tab) command.  This is a convenient
 way to work with many windows.
@@ -2763,7 +2763,7 @@ Motif: default to using XpmAttributes instead of XpmAttributes_21.
 A few more changes for 64 bit MS-Windows. (George Reilly)
 
 Got ml_get errors when doing "o" and selecting in other window where there are
-less line shorter than the cursor position in the other window.  ins_mouse()
+less lines shorter than the cursor position in the other window.  ins_mouse()
 was using position in wrong window.
 
 Win32 GUI: Crash when giving a lot of messages during startup.  Allocate twice
@@ -2943,7 +2943,7 @@ another, the cursor was displayed at the end of the line instead of after the
 match.  Now show the cursor after the match while still searching for matches.
 
 GUI: The mouse shape changed on the statusline even when 'mouse' was empty and
-they can't be dragged..
+they can't be dragged.
 
 GTK2: Selecting a button in the confirm() dialog with Tab or cursor keys and
 hitting Enter didn't select that button.  Removed GTK 1 specific code. (Neil
@@ -5530,7 +5530,7 @@ Files:	    src/gui_mac.c
 
 Patch 7.1.125
 Problem:    The TermResponse autocommand event is not always triggered. (Aron
-	    Griffix)
+	    Griffis)
 Solution:   When unblocking autocommands check if v:termresponse changed and
 	    trigger the event then.
 Files:	    src/buffer.c, src/diff.c, src/ex_getln.c, src/fileio.c,
@@ -7158,8 +7158,8 @@ VERSION 7.3					*version-7.3* *version7.3*
 
 This section is about improvements made between version 7.2 and 7.3.
 
-This is a bug-fix release and there are a few new features.
-The most notable new features are:
+This release has hundreds of bug fixes and there are a few new features.  The
+most notable new features are:
 
 
 Persistent undo					*new-persistent-undo*
@@ -7167,9 +7167,13 @@ Persistent undo					*new-persistent-undo*
 
 Store undo information in a file.  Can undo to before when the file was read,
 also for unloaded buffers. See |undo-persistence| (partly by Jordan Lewis)
-Added ":earlier 1f" and ":later 1f".
-Add file save counter to undo information.
+
+Added the ":earlier 1f" and ":later 1f" commands.
+Added file save counter to undo information.
 Added the |undotree()| and |undofile()| functions.
+
+Also added the 'undoreload' option.  This makes it possible to save the
+current text when reloading the buffer, so that the reload can be undone.
 
 
 More encryption					*new-more-encryption*
@@ -7187,9 +7191,13 @@ Conceal text					*new-conceal*
 Added the |+conceal| feature.  (Vince Negri)
 This allows hiding stretches of text, based on syntax highlighting.
 It also allows replacing a stretch of text by a character |:syn-cchar|.
-The 'conceallevel' option specifies what happens.
+The 'conceallevel' option specifies what happens with text matching a syntax
+item that has the conceal attribute.
+The 'concealcursor' option specifies what happens in the cursor line.
 
 The help files conceal characters used to mark tags and examples.
+
+Added the |synconcealed()| function and use it for :TOhtml. (Benjamin Fritz)
 
 
 Lua interface					*new-lua*
@@ -7265,7 +7273,7 @@ Added the |strchars()|, |strwidth()| and |strdisplaywidth()| functions.
 
 Support GDK_SUPER_MASK for GTK on Mac. (Stephan Schulz)
 
-Made CTRL modifier work for mouse wheel. (Benjamin Haskell)
+Made CTRL and ALT modifier work for mouse wheel. (Benjamin Haskell)
 
 When the buffer is in diff mode, have :TOhtml create HTML to show the diff
 side-by-side.  (Christian Brabandt)
@@ -7304,11 +7312,18 @@ Support wide file names in gvimext. (Szabolcs Horvat)
 Improve test for joining lines. (Milan Vancura)
 Make joining a range of lines much faster. (Milan Vancura)
 
-Command line completion for :ownsyntax. (Dominique Pelle)
+Command line completion for :ownsyntax and :setfiletype. (Dominique Pelle)
+
+Command line completion for :lmap and :lunmap.
 
 Add patch to improve support of z/OS (OS/390). (Ralf Schandl)
 
 Added the helphelp.txt file.  Moved text from various.txt to it.
+
+Added "q" item for 'statusline'.  Added |w:quickfix_title|. (Lech Lorens)
+
+Added support for horizontal scroll wheel. (Bjorn Winckler)
+
 
 
 New syntax files:
@@ -7433,7 +7448,7 @@ Solution:   Sleep a bit when the selection event hasn't been received yet.
 Files:	    src/ui.c
 
 Patch 7.2.014
-Problem:    synstack() doesn't work in an emptly line.
+Problem:    synstack() doesn't work in an empty line.
 Solution:   Accept column zero as a valid position.
 Files:	    src/eval.c
 
@@ -7783,7 +7798,7 @@ Solution:   Add type cast.
 Files:	    src/spell.c
 
 Patch 7.2.070
-Problem:    Crash when a function returns a:000. (Matt Wozkiski)
+Problem:    Crash when a function returns a:000. (Matt Wozniski)
 Solution:   Don't put the function struct on the stack, allocate it.  Free it
 	    only when nothing in it is used.
 Files:	    src/eval.c
@@ -7880,7 +7895,7 @@ Files:	    src/if_python.c
 Patch 7.2.085
 Problem:    ":set <M-b>=<Esc>b" does not work when 'encoding' is utf-8.
 Solution:   Put the <M-b> character in the input buffer as valid utf-8.
-	    (partly by Matt Wosniski)
+	    (partly by Matt Wozniski)
 Files:	    src/term.c
 
 Patch 7.2.086
@@ -7891,7 +7906,7 @@ Files:	    src/diff.c
 
 Patch 7.2.087
 Problem:    Adding URL to 'path' doesn't work to edit a file.
-Solution:   Skip simplify_filename() for URLs. (Matt Wosniski)
+Solution:   Skip simplify_filename() for URLs. (Matt Wozniski)
 Files:	    src/misc2.c
 
 Patch 7.2.088 (extra)
@@ -8009,7 +8024,7 @@ Files:	    src/spell.c
 
 Patch 7.2.107
 Problem:    When using a GUI dialog and ":echo" commands the messages are
-	    deleted after the dialog. (Vicent Birebent)
+	    deleted after the dialog. (Vincent Birebent)
 Solution:   Don't call msg_end_prompt() since there was no prompt.
 Files:	    src/message.c
 
@@ -8603,7 +8618,7 @@ Solution:   Fix the makefile. (George Reilly)
 Files:	    src/Make_mvc.mak
 
 Patch 7.2.205 (extra)
-Problem:    Win32: No support for High DPI awarenes.
+Problem:    Win32: No support for High DPI awareness.
 Solution:   Fix the manifest file. (George Reilly)
 Files:	    src/Make_mvc.mak, src/gvim.exe.mnf
 
@@ -8676,7 +8691,7 @@ Files:	    src/testdir/Makefile
 
 Patch 7.2.218
 Problem:    Cannot build GTK with hangul_input feature. (Dominique Pelle)
-Solution:   Adjuste #ifdef.  (SungHyun Nam)
+Solution:   Adjust #ifdef.  (SungHyun Nam)
 Files:	    src/gui.c
 
 Patch 7.2.219 (extra)
@@ -9300,7 +9315,7 @@ Files:	    src/misc1.c
 Patch 7.2.327
 Problem:    Unused functions in Workshop.
 Solution:   Add "#if 0" and minor cleanup. (Dominique Pelle)
-Files:	    src/workshop.c, src/integration.c, src/ingegration.h
+Files:	    src/workshop.c, src/integration.c, src/integration.h
 
 Patch 7.2.328
 Problem:    has("win64") does not return 1 on 64 bit MS-Windows version.
@@ -9763,7 +9778,7 @@ Files:	    src/ex_cmds.c
 
 Patch 7.2.410
 Problem:    Highlighting directories for completion doesn't work properly.
-Solution:   Don't halve backslashes when not needed, expaned "~/".
+Solution:   Don't halve backslashes when not needed, expanded "~/".
 	    (Dominique Pelle)
 Files:	    src/ex_getln.c
 
@@ -9902,7 +9917,7 @@ Files:	    runtime/doc/autocmd.txt, src/if_cscope.c
 
 Patch 7.2.434 (after 7.2.432)
 Problem:    Compilation fails without the multi-lang feature.
-Solution:   Add #ifdefs. (Johm Marriott)
+Solution:   Add #ifdefs. (John Marriott)
 Files:	    src/menu.c
 
 Patch 7.2.435 (after 7.2.430)
@@ -10019,7 +10034,7 @@ Fixed MSVC makefile use of /Wp64 flag.
 
 Correct use of long instead of off_t for file size. (James Vega)
 
-Add a few #ifdefs to exclude functions that are not used. (Domnique Pelle)
+Add a few #ifdefs to exclude functions that are not used. (Dominique Pelle)
 
 Remove old and unused method to allocate memory for undo.
 
@@ -10029,7 +10044,26 @@ Some versions of Ruby redefine rb_str_new2 to rb_str_new_cstr.
 
 Window title not updated after file dropped.
 
-"g8" doesn't work properly on a NUL.
+Fixed crash for ":find" completion, might also happen in other path expansion
+usage.
+
+When 'searchhl' causes a hang make CTRL-C disable 'searchhl'.
+
+When resetting both 'title' and 'icon' the title would be set after a shell
+command.
+
+Reset 'title' and 'icon' in test47 to avoid the xterm title getting messed up.
+
+Fix for compiler warning about function prototype in pty.c.
+
+Added 'window' to the options window.
+
+Fixed: errors for allocating zero bytes when profiling an empty function.
+
+Remove -arch flag from build flags for Perl. (Bjorn Wickler)
+
+Fix 'autochdir' not showing up in :options window. (Dominique Pelle)
+
 
 
  vim:tw=78:ts=8:ft=help:norl:

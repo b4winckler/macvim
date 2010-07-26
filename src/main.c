@@ -670,7 +670,8 @@ main
 	if (params.use_ef != NULL)
 	    set_string_option_direct((char_u *)"ef", -1,
 					   params.use_ef, OPT_FREE, SID_CARG);
-	if (qf_init(NULL, p_ef, p_efm, TRUE) < 0)
+	vim_snprintf((char *)IObuff, IOSIZE, "cfile %s", p_ef);
+	if (qf_init(NULL, p_ef, p_efm, TRUE, IObuff) < 0)
 	{
 	    out_char('\n');
 	    mch_exit(3);
@@ -1098,7 +1099,7 @@ main_loop(cmdwin, noexmode)
 			||
 # endif
 # ifdef FEAT_CONCEAL
-			curwin->w_p_conceal
+			curwin->w_p_cole > 0
 # endif
 			)
 		 && !equalpos(last_cursormoved, curwin->w_cursor))
@@ -1109,7 +1110,7 @@ main_loop(cmdwin, noexmode)
 							       FALSE, curbuf);
 # endif
 # ifdef FEAT_CONCEAL
-		if (curwin->w_p_conceal)
+		if (curwin->w_p_cole > 0)
 		{
 		    conceal_old_cursor_line = last_cursormoved.lnum;
 		    conceal_new_cursor_line = curwin->w_cursor.lnum;
@@ -1197,9 +1198,12 @@ main_loop(cmdwin, noexmode)
 
 # if defined(FEAT_CONCEAL)
 	    if (conceal_update_lines
-		    && conceal_old_cursor_line != conceal_new_cursor_line)
+		    && (conceal_old_cursor_line != conceal_new_cursor_line
+			|| conceal_cursor_line(curwin)
+			|| need_cursor_line_redraw))
 	    {
-		update_single_line(curwin, conceal_old_cursor_line);
+		if (conceal_old_cursor_line != conceal_new_cursor_line)
+		    update_single_line(curwin, conceal_old_cursor_line);
 		update_single_line(curwin, conceal_new_cursor_line);
 		curwin->w_valid &= ~VALID_CROW;
 	    }
@@ -2470,7 +2474,7 @@ read_stdin()
     no_wait_return = TRUE;
     i = msg_didany;
     set_buflisted(TRUE);
-    (void)open_buffer(TRUE, NULL);	/* create memfile and read file */
+    (void)open_buffer(TRUE, NULL, 0);	/* create memfile and read file */
     no_wait_return = FALSE;
     msg_didany = i;
     TIME_MSG("reading stdin");
@@ -2591,7 +2595,9 @@ create_windows(parmp)
 		swap_exists_action = SEA_DIALOG;
 #endif
 		set_buflisted(TRUE);
-		(void)open_buffer(FALSE, NULL); /* create memfile, read file */
+
+		/* create memfile, read file */
+		(void)open_buffer(FALSE, NULL, 0);
 
 #if defined(HAS_SWAP_EXISTS_ACTION)
 		if (swap_exists_action == SEA_QUIT)

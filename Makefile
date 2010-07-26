@@ -68,10 +68,13 @@ all install uninstall tools config configure reconfig proto depend lint tags typ
 #    Before creating an archive first delete all backup files, *.orig, etc.
 
 MAJOR = 7
-MINOR = 3a
+MINOR = 3c
 
 # Uncomment this line if the Win32s version is to be included.
 DOSBIN_S =  dosbin_s
+
+# Uncomment this line if the 16 bit DOS version is to be included.
+# DOSBIN_D16 = dosbin_d16
 
 # CHECKLIST for creating a new version:
 #
@@ -158,8 +161,8 @@ DOSBIN_S =  dosbin_s
 # - Delete install.exe and uninstal.exe.
 # - If building the Win32s version delete vimrun.exe.
 # Win32s GUI version:
-# - Set environment for Visual C++ 4.1 (requires a new console window)
-# - "vcvars32.bat" (use the path for VC 4.1 e:\msdev\bin)
+# - Set environment for Visual C++ 4.1 (requires a new console window):
+#   "vcvars32.bat" (use the path for VC 4.1 e:\msdev\bin)
 # - "nmake -f Make_mvc.mak GUI=yes INTL=no clean" (use the path for VC 4.1)
 # - "nmake -f Make_mvc.mak GUI=yes INTL=no" (use the path for VC 4.1)
 # - Rename "gvim.exe" to "gvim_w32s.exe".
@@ -439,7 +442,7 @@ runtime_unix2dos: dosrt_unix2dos
 	cd dist/vim/$(VIMRTDIR); tar cf - * \
 		| (cd ../../../runtime/dos; tar xf -)
 
-dosbin: prepare dosbin_gvim dosbin_w32 dosbin_d32 dosbin_d16 dosbin_ole $(DOSBIN_S)
+dosbin: prepare dosbin_gvim dosbin_w32 dosbin_d32 dosbin_ole $(DOSBIN_S) $(DOSBIN_D16)
 
 # make Win32 gvim
 dosbin_gvim: dist no_title.vim dist/$(COMMENT_GVIM)

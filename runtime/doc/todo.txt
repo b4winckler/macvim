@@ -1,4 +1,4 @@
-*todo.txt*      For Vim version 7.3a.  Last change: 2010 May 15
+*todo.txt*      For Vim version 7.3c.  Last change: 2010 Jul 25
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -30,7 +30,15 @@ be worked on, but only if you sponsor Vim development.  See |sponsor|.
 							*known-bugs*
 -------------------- Known bugs and current work -----------------------
 
-GTK: torn-off menu doesn't work.
+Access to free memory with :redir command. (Dominique Pelle, 2010 Jul 25)
+
+Patch for :find completion. (Nazri Ramliy)
+But I prefer to keep term.h and include/term.h  Nazri will work on it.
+
+Move more common code from if_python.c and if_python3.c to if_py_both.h
+
+Before release 7.3:
+- Rename vim73 branch to default (hints: Xavier de Gaye, 2010 May 23)
 
 Cursor positioning wrong with 0x200e character. (John Becket, 2010 May 6)
 
@@ -60,6 +68,8 @@ accented character. (Tony Mechelynck, 2010 Apr 15)
 Better Czech keymap. (Stepnem, 2010 May 4)  Use if no response from Jiri
 Tobisek.
 
+":drop" does not respect 'autochdir'. (Peter Odding, 2010 Jul 24)
+
 Use Dutch spell files from:
 http://extensions.services.openoffice.org/en/project/dict-nl
 Looks like this is newer than the new wordlist for Dutch:
@@ -85,6 +95,9 @@ Jun 29)  Caused by 7.2.433?
 I often see pasted text (from Firefox, to Vim in xterm) appear twice.
 Also, Vim in xterm sometimes loses copy/paste ability (probably after running
 an external command).
+
+Win32: The "4913" file is sometimes not deleted.  Perhaps another program has
+opened it?  Use FILE_FLAG_DELETE_ON_CLOSE? (Craig Barkhouse, 2009 Nov 6)
 
 Jumplist doesn't work properly in Insert mode? (Jean Johner, 2010 Mar 20)
 
@@ -262,6 +275,10 @@ Win32: use different args for SearchPath()? (Yasuhiro Matsumoto, 2009 Jan 30)
 Win32: completion of file name ":e c:\!test" results in ":e c:\\!test", which
 does not work. (Nieko Maatjes, 2009 Jan 8, Ingo Karkat, 2009 Jan 22)
 
+opening/closing window causes other window with 'winfixheight' to change
+height.  Also happens when there is another window in the frame, if it's not
+very high. (Yegappan Lakshmanan, 2010 Jul 22, Michael Peeters, 2010 Jul 22)
+
 Directory wrong in session file, caused by ":lcd" in BufEnter autocommand.
 (Felix Kater, 2009 Mar 3)
 
@@ -434,9 +451,6 @@ escaping characters where the backslash is not removed later.  Asked Chris for
 an alternate solution, also for src/ex_getln.c.
 This also fails when the file or directory name contains "%". (Thoml, 2008
 July 7)
-
-Win32: The "4913" file is sometimes not deleted.  Perhaps another program has
-opened it?  Use FILE_FLAG_DELETE_ON_CLOSE? (Craig Barkhouse, 2009 Nov 6)
 
 The str2special() function doesn't handle multi-byte characters properly.
 Patch from Vladimir Vichniakov, 2007 Apr 24.
@@ -680,9 +694,6 @@ label.  (Tsakiridis, 2007 Feb 18)  Patch from Ian Kelling, 2008 Aug 6.
 Win32: using "gvim --remote-tab-silent fname" sometimes gives an empty screen
 with the more prompt.  Caused by setting the guitablabel?  (Thomas Michael
 Engelke, 2007 Dec 20 - 2008 Jan 17)
-
-Win64: diff.exe crashes on Win64. (Julianne Bailey, 2006 Dec 12)
-Build another diff.exe somehow?
 
 Win64: Seek error in swap file for a very big file (3 Gbyte).  Check storing
 pointer in long and seek offset in 64 bit var.
@@ -1071,11 +1082,6 @@ Also: Get an error message from free() in the process that owns the selection.
 Seems to happen when the selection is requested the second time, but before
 clip_x11_convert_selection_cb() is invoked, thus in X library code.
 
-Add 'lazysize' option: Above this size Vim doesn't load everything before
-starting to edit a file.  Things like 'fileencodings' only work up to this
-size, modelines only work at the top.  Useful for large log files where you
-only want to look at the first few pages.  Use zero to disable it.
-
 ":vimgrep" does not recognize a recursive symlink.  Is it possible to detect
 this, at least for Unix (using device/inode)?
 
@@ -1086,12 +1092,6 @@ restored. (Luc St-Louis)
 Patch to support horizontal scroll wheel in GTK. Untested. (Bjorn Winckler,
 2010 Jun 30)
 
-
-Before (beta) release 7.3:
-- Documentation for Python 3 support.
-
-Before release 7.3:
-- Rename vim73 branch to default (hints: Xavier de Gaye, 2010 May 23)
 
 More patches:
 -   Another patch for Javascript indenting. (Hari Kumar, 2010 Jul 11)
@@ -1125,19 +1125,11 @@ More patches:
     Sep 13)
 -   Patch for adding "space" item in 'listchars'. (Jérémie Roquet, 2009 Oct 29,
     Docs patch Oct 30)
--   Patch for supporting #rrggbb in color terminals.  (Matt Wozniski)
-    Where is a recent version of this patch?  Or use CSApprox plugin?
 -   Replace ccomplete.vim by cppcomplete.vim from www.vim.org?  script 1520 by
     Vissale Neang.  (Martin Stubenschrott) Asked Vissale to make the scripts
     more friendly for the Vim distribution.
     New version received 2008 Jan 6.
     No maintenance in two years...
-6   In the quickfix window statusline add the command used to get the list of
-    errors, e.g. ":make foo", ":grep something *.c".
-    Patch by Lech Lorens, 2009 Apri 17.
-    Comments from Andreas Bernauer 24th, Dominique Pelle 24th
-    Docs patch by Dominique Pelle, Mar 25
-    Can we put the strings in a window-local variable?
 -   Patch to access screen under Python. (Marko Mahni, 2010 Jul 18)
 
 
@@ -2320,6 +2312,7 @@ Spell checking:
 Diff mode:
 9   Instead invoking an external diff program, use builtin code.  One can be
     found here: http://www.ioplex.com/~miallen/libmba/dl/src/diff.c
+    It's quite big and badly documented though.
 8   Use diff mode to show the changes made in a buffer (compared to the file).
     Use an unnamed buffer, like doing:
 	new | set bt=nofile | r # | 0d_ | diffthis | wincmd p | diffthis
@@ -2382,6 +2375,9 @@ Multi-byte characters:
     display is messed up (Yasuhiro Matsumoto).  Should check for illegal
     double-byte characters and display them differently (display each single
     byte).
+9   'fenc' in modeline problem: add option to reload the file when 'fenc' is
+    set to a different value in a modeline?  Option can be default on.  Could
+    it be done with an autocommand?
 8   Add an item in 'fileencodings' to check the first lines of a file for
     the encoding.  See Python PEP: http://www.python.org/peps/pep-0263.html.
     To avoid getting a wrong encoding only accept something Emacs-like:
@@ -2773,6 +2769,10 @@ Robustness:
 Performance:
 7   For string variables up to 3 bytes don't allocate memory, use v_list
     itself as a character array.  Use VAR_SSTRING (short string).
+7   Add 'lazysize' option: Above this size Vim doesn't load everything before
+    starting to edit a file.  Things like 'fileencodings' only work up to this
+    size, modelines only work at the top.  Useful for large log files where
+    you only want to look at the first few pages.  Use zero to disable it.
 8   move_lines() copies every line into allocated memory, making reloading a
     buffer a lot slower than re-editing the file.  Can the memline be locked
     so that we don't need to make a copy?  Or avoid invoking ml_updatechunk(),
@@ -3924,8 +3924,6 @@ Undo:
     storing the differences.
     Alternative: before reloading a buffer, store it somewhere.  Keep a list
     of about 10 last reloaded buffers.
-    OR: before unloading, write a backup file with the current text, as if
-    doing ":w" twice before reloading.
 -   Make it possible to undo all the commands from a mapping, including a
     trailing unfinished command, e.g. for ":map K iX^[r".
 -   When accidentally hitting "R" instead of Ctrl-R, further Ctrl-R is not
@@ -4665,7 +4663,6 @@ Various improvements:
 From Elvis:
 -   Use "instman.sh" to install manpages?
 -   Add ":alias" command.
--   fontchanges recognized "\\fB" etc.
 -   Search patterns:
       \@	match word under cursor.
     but do:
@@ -4680,23 +4677,6 @@ From Elvis:
     :win name	to window editing buffer "name"
 7   ":cc" compiles a single file (default: current one).  'ccprg'   option is
     program to use with ":cc".  Use ":compile" instead of ":cc"?
-
-
-From Nvi:
--   'searchincr' option, alias for 'incsearch'?
--   'leftright' option, alias for 'nowrap'?
--   Have a look at "vi/doc/vi.chart", for Nvi specialties.
-8   Add 'keytime', time in 1/10 sec for mapping timeout?
--   Add 'filec' option as an alternative for 'wildchar'.
-6   Support Nvi command names as an alias:
-    :bg		    :hide
-    :fg	fname	    :buf fname (with 'hidden' set?)
-    :dis b	    :ls
-    :Edit fname	    :split fname
-    :Fg fname	    :sbuf fname (with 'hidden' set?)
-    :Next	    :snext (can't do this, already use :Next)
-    :Previous	    :sprevious
-    :Tag	    :stag
 
 
 From xvi:
