@@ -1248,7 +1248,7 @@
 		</dict>
 	</array>
 	<key>SUFeedURL</key>
-	<string>http://macvim-kaoriya.googlecode.com/svn/wiki/latest.xml</string>
+	<string>http://macvim-kaoriya.googlecode.com/svn/wiki/unstable73.xml</string>
 	<key>SUPublicDSAKeyFile</key>
 	<string>dsa_pub.pem</string>
 	<key>NSAppleScriptEnabled</key>
