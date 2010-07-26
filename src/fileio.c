@@ -63,7 +63,7 @@ static char_u *readfile_charconvert __ARGS((char_u *fname, char_u *fenc, int *fd
 static void check_marks_read __ARGS((void));
 #endif
 #ifdef FEAT_CRYPT
-static int get_crypt_method __ARGS((char *ptr, int len));
+static int crypt_method_from_magic __ARGS((char *ptr, int len));
 static char_u *check_for_cryptkey __ARGS((char_u *cryptkey, char_u *ptr, long *sizep, off_t *filesizep, int newfile, char_u *fname, int *did_ask));
 #endif
 #ifdef UNIX
@@ -457,6 +457,7 @@ extern int guess_encode(char_u** fenc, int* fenc_alloced, char_u* fname);
  * READ_BUFFER	read from curbuf instead of a file (converting after reading
  *		stdin)
  * READ_DUMMY	read into a dummy buffer (to check if file contents changed)
+ * READ_KEEP_UNDO  don't clear undo info or read it from a file
  *
  * return FAIL for failure, OK otherwise
  */
@@ -1439,8 +1440,12 @@ retry:
 	conv_restlen = 0;
 #endif
 #ifdef FEAT_PERSISTENT_UNDO
-	read_undo_file = (newfile && curbuf->b_ffname != NULL && curbuf->b_p_udf
-				&& !filtering && !read_stdin && !read_buffer);
+	read_undo_file = (newfile && (flags & READ_KEEP_UNDO) == 0
+				  && curbuf->b_ffname != NULL
+				  && curbuf->b_p_udf
+				  && !filtering
+				  && !read_stdin
+				  && !read_buffer);
 	if (read_undo_file)
 	    sha256_start(&sha_ctx);
 #endif
@@ -3099,7 +3104,7 @@ check_marks_read()
  * Returns -1 when no encryption used.
  */
     static int
-get_crypt_method(ptr, len)
+crypt_method_from_magic(ptr, len)
     char  *ptr;
     int   len;
 {
@@ -3136,11 +3141,11 @@ check_for_cryptkey(cryptkey, ptr, sizep, filesizep, newfile, fname, did_ask)
     char_u	*fname;		/* file name to display */
     int		*did_ask;	/* flag: whether already asked for key */
 {
-    int method = get_crypt_method((char *)ptr, *sizep);
+    int method = crypt_method_from_magic((char *)ptr, *sizep);
 
     if (method >= 0)
     {
-	curbuf->b_p_cm = method;
+	set_crypt_method(curbuf, method);
 	if (method > 0)
 	    (void)blowfish_self_test();
 	if (cryptkey == NULL && !*did_ask)
@@ -3192,7 +3197,7 @@ check_for_cryptkey(cryptkey, ptr, sizep, filesizep, newfile, fname, did_ask)
     }
     /* When starting to edit a new file which does not have encryption, clear
      * the 'key' option, except when starting up (called with -x argument) */
-    else if (newfile && *curbuf->b_p_key && !starting)
+    else if (newfile && *curbuf->b_p_key != NUL && !starting)
 	set_option_value((char_u *)"key", 0L, (char_u *)"", OPT_LOCAL);
 
     return cryptkey;
@@ -3212,11 +3217,11 @@ prepare_crypt_read(fp)
 
     if (fread(buffer, CRYPT_MAGIC_LEN, 1, fp) != 1)
 	return FAIL;
-    method = get_crypt_method((char *)buffer,
+    method = crypt_method_from_magic((char *)buffer,
 					CRYPT_MAGIC_LEN +
 					CRYPT_SEED_LEN_MAX +
 					CRYPT_SALT_LEN_MAX);
-    if (method < 0 || method != curbuf->b_p_cm)
+    if (method < 0 || method != get_crypt_method(curbuf))
 	return FAIL;
 
     crypt_push_state();
@@ -3247,8 +3252,8 @@ prepare_crypt_write(buf, lenp)
     int   *lenp;
 {
     char_u  *header;
-    int	    seed_len = crypt_seed_len[buf->b_p_cm];
-    int     salt_len = crypt_salt_len[buf->b_p_cm];
+    int	    seed_len = crypt_seed_len[get_crypt_method(buf)];
+    int     salt_len = crypt_salt_len[get_crypt_method(buf)];
     char_u  *salt;
     char_u  *seed;
 
@@ -3257,10 +3262,10 @@ prepare_crypt_write(buf, lenp)
     if (header != NULL)
     {
 	crypt_push_state();
-	use_crypt_method = buf->b_p_cm;  /* select pkzip or blowfish */
+	use_crypt_method = get_crypt_method(buf);  /* select zip or blowfish */
 	vim_strncpy(header, (char_u *)crypt_magic[use_crypt_method],
 							     CRYPT_MAGIC_LEN);
-	if (buf->b_p_cm == 0)
+	if (use_crypt_method == 0)
 	    crypt_init_keys(buf->b_p_key);
 	else
 	{
@@ -7359,6 +7364,7 @@ buf_reload(buf, orig_mode)
     buf_T	*savebuf;
     int		saved = OK;
     aco_save_T	aco;
+    int		flags = READ_NEW;
 
     /* set curwin/curbuf for "buf" and save some things */
     aucmd_prepbuf(&aco, buf);
@@ -7371,6 +7377,15 @@ buf_reload(buf, orig_mode)
 	old_cursor = curwin->w_cursor;
 	old_topline = curwin->w_topline;
 
+	if (saved == OK && (p_ur < 0 || curbuf->b_ml.ml_line_count <= p_ur))
+	{
+	    /* Save all the text, so that the reload can be undone.
+	     * Sync first so that this is a separate undo-able action. */
+	    u_sync(FALSE);
+	    saved = u_savecommon(0, curbuf->b_ml.ml_line_count + 1, 0, TRUE);
+	    flags |= READ_KEEP_UNDO;
+	}
+
 	/*
 	 * To behave like when a new file is edited (matters for
 	 * BufReadPost autocommands) we first need to delete the current
@@ -7378,7 +7393,7 @@ buf_reload(buf, orig_mode)
 	 * the old contents.  Can't use memory only, the file might be
 	 * too big.  Use a hidden buffer to move the buffer contents to.
 	 */
-	if (bufempty())
+	if (bufempty() || saved == FAIL)
 	    savebuf = NULL;
 	else
 	{
@@ -7410,7 +7425,7 @@ buf_reload(buf, orig_mode)
 #endif
 	    if (readfile(buf->b_ffname, buf->b_fname, (linenr_T)0,
 			(linenr_T)0,
-			(linenr_T)MAXLNUM, &ea, READ_NEW) == FAIL)
+			(linenr_T)MAXLNUM, &ea, flags) == FAIL)
 	    {
 #if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
 		if (!aborting())
@@ -7426,12 +7441,18 @@ buf_reload(buf, orig_mode)
 		    (void)move_lines(savebuf, buf);
 		}
 	    }
-	    else if (buf == curbuf)
+	    else if (buf == curbuf)  /* "buf" still valid */
 	    {
 		/* Mark the buffer as unmodified and free undo info. */
 		unchanged(buf, TRUE);
-		u_blockfree(buf);
-		u_clearall(buf);
+		if ((flags & READ_KEEP_UNDO) == 0)
+		{
+		    u_blockfree(buf);
+		    u_clearall(buf);
+		}
+		else
+		    /* Mark all undo states as changed. */
+		    u_unchanged(curbuf);
 	    }
 	}
 	vim_free(ea.cmd);
