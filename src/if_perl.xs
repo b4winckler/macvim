@@ -104,6 +104,11 @@ typedef int perl_key;
 #define load_dll(n) dlopen((n), RTLD_LAZY|RTLD_GLOBAL)
 #define symbol_from_dll dlsym
 #define close_dll dlclose
+# if defined(MACOS_X_UNIX)
+#  define DYNAMIC_PERL_DLL "/System/Library/Perl/lib/5.10/libperl.dylib"
+# else
+#  define DYNAMIC_PERL_DLL "libperl.so"
+# endif
 #else
 #define PERL_PROC FARPROC
 #define load_dll LoadLibrary
@@ -476,7 +481,16 @@ perl_runtime_link_init(char *libname, int verbose)
 perl_enabled(verbose)
     int		verbose;
 {
-    return perl_runtime_link_init(DYNAMIC_PERL_DLL, verbose) == OK;
+    int ret = FAIL;
+    int mustfree = FALSE;
+    char *s = (char *)vim_getenv((char_u *)"PERL_DLL", &mustfree);
+    if (s != NULL)
+        ret = perl_runtime_link_init(s, verbose);
+    if (mustfree)
+        vim_free(s);
+    if (ret == FAIL)
+        ret = perl_runtime_link_init(DYNAMIC_PERL_DLL, verbose);
+    return (ret == OK);
 }
 #endif /* DYNAMIC_PERL */
 
