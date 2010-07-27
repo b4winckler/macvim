@@ -46,6 +46,12 @@
 
 static unsigned MMServerMax = 1000;
 
+#ifdef FEAT_BEVAL
+// Seconds to delay balloon evaluation after mouse event (subtracted from
+// p_bdlay so that this effectively becomes the smallest possible delay).
+NSTimeInterval MMBalloonEvalInternalDelay = 0.1;
+#endif
+
 // TODO: Move to separate file.
 static int eventModifierFlagsToVimModMask(int modifierFlags);
 static int eventModifierFlagsToVimMouseModMask(int modifierFlags);
@@ -152,7 +158,6 @@ static struct specialkey
 extern GuiFont gui_mch_retain_font(GuiFont font);
 
 
-
 @interface NSString (MMServerNameCompare)
 - (NSComparisonResult)serverNameCompare:(NSString *)string;
 @end
@@ -192,6 +197,9 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
 - (void)redrawScreen;
 - (void)handleFindReplace:(NSDictionary *)args;
 - (void)handleMarkedText:(NSData *)data;
+#ifdef FEAT_BEVAL
+- (void)bevalCallback:(id)sender;
+#endif
 @end
 
 
@@ -268,6 +276,9 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
     [sysColorDict release];  sysColorDict = nil;
     [colorDict release];  colorDict = nil;
     [vimServerConnection release];  vimServerConnection = nil;
+#ifdef FEAT_BEVAL
+    [lastToolTip release];  lastToolTip = nil;
+#endif
 
     [super dealloc];
 }
@@ -587,6 +598,26 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
     [drawData appendBytes:&nr length:sizeof(int)];
     [drawData appendBytes:&nc length:sizeof(int)];
     [drawData appendBytes:&invert length:sizeof(int)];
+}
+
+- (void)drawSign:(NSString *)imgName
+           atRow:(int)row
+          column:(int)col
+           width:(int)width
+          height:(int)height
+{
+    int type = DrawSignDrawType;
+    [drawData appendBytes:&type length:sizeof(int)];
+
+    const char* utf8String = [imgName UTF8String];
+    int strSize = (int)strlen(utf8String) + 1;
+    [drawData appendBytes:&strSize length:sizeof(int)];
+    [drawData appendBytes:utf8String length:strSize];
+
+    [drawData appendBytes:&col length:sizeof(int)];
+    [drawData appendBytes:&row length:sizeof(int)];
+    [drawData appendBytes:&width length:sizeof(int)];
+    [drawData appendBytes:&height length:sizeof(int)];
 }
 
 - (void)update
@@ -1649,6 +1680,16 @@ static void netbeansReadCallback(CFSocketRef s,
                        kCFRunLoopCommonModes);
 }
 
+#ifdef FEAT_BEVAL
+- (void)setLastToolTip:(NSString *)toolTip
+{
+    if (toolTip != lastToolTip) {
+        [lastToolTip release];
+        lastToolTip = [toolTip copy];
+    }
+}
+#endif
+
 @end // MMBackend
 
 
@@ -1809,13 +1850,17 @@ static void netbeansReadCallback(CFSocketRef s,
         int col = *((int*)bytes);  bytes += sizeof(int);
         int flags = *((int*)bytes);  bytes += sizeof(int);
         float dy = *((float*)bytes);  bytes += sizeof(float);
+        float dx = *((float*)bytes);  bytes += sizeof(float);
 
         int button = MOUSE_5;
-        if (dy > 0) button = MOUSE_4;
+        if (dy < 0) button = MOUSE_5;
+        else if (dy > 0) button = MOUSE_4;
+        else if (dx < 0) button = MOUSE_6;
+        else if (dx > 0) button = MOUSE_7;
 
         flags = eventModifierFlagsToVimMouseModMask(flags);
 
-        int numLines = (int)round(dy);
+        int numLines = (dy != 0) ? (int)round(dy) : (int)round(dx);
         if (numLines < 0) numLines = -numLines;
         if (numLines == 0) numLines = 1;
 
@@ -1824,6 +1869,19 @@ static void netbeansReadCallback(CFSocketRef s,
 #endif
 
         gui_send_mouse_event(button, col, row, NO, flags);
+
+#ifdef FEAT_BEVAL
+        if (p_beval && balloonEval) {
+            // Update the balloon eval message after a slight delay (to avoid
+            // calling it too often).
+            [NSObject cancelPreviousPerformRequestsWithTarget:self
+                                             selector:@selector(bevalCallback:)
+                                               object:nil];
+            [self performSelector:@selector(bevalCallback:)
+                       withObject:nil
+                       afterDelay:MMBalloonEvalInternalDelay];
+        }
+#endif
     } else if (MouseDownMsgID == msgid) {
         if (!data) return;
         const void *bytes = [data bytes];
@@ -1867,6 +1925,22 @@ static void netbeansReadCallback(CFSocketRef s,
         int col = *((int*)bytes);  bytes += sizeof(int);
 
         gui_mouse_moved(col, row);
+
+#ifdef FEAT_BEVAL
+        if (p_beval && balloonEval) {
+            balloonEval->x = col;
+            balloonEval->y = row;
+
+            // Update the balloon eval message after a slight delay (to avoid
+            // calling it too often).
+            [NSObject cancelPreviousPerformRequestsWithTarget:self
+                                             selector:@selector(bevalCallback:)
+                                               object:nil];
+            [self performSelector:@selector(bevalCallback:)
+                       withObject:nil
+                       afterDelay:MMBalloonEvalInternalDelay];
+        }
+#endif
     } else if (AddInputMsgID == msgid) {
         NSString *string = [[NSString alloc] initWithData:data
                 encoding:NSUTF8StringEncoding];
@@ -2870,6 +2944,33 @@ static void netbeansReadCallback(CFSocketRef s,
 	im_preedit_changed_macvim(chars, pos, pos + len);
     }
 }
+
+#ifdef FEAT_BEVAL
+- (void)bevalCallback:(id)sender
+{
+    if (!(p_beval && balloonEval))
+        return;
+
+    if (balloonEval->msgCB != NULL) {
+        // HACK! We have no way of knowing whether the balloon evaluation
+        // worked or not, so we keep track of it using a local tool tip
+        // variable.  (The reason we need to know is due to how the Cocoa tool
+        // tips work: if there is no tool tip we must set it to nil explicitly
+        // or it might never go away.)
+        [self setLastToolTip:nil];
+
+        (*balloonEval->msgCB)(balloonEval, 0);
+
+        [[MMBackend sharedInstance] queueMessage:SetTooltipMsgID properties:
+            [NSDictionary dictionaryWithObject:(lastToolTip ? lastToolTip : @"")
+                                        forKey:@"toolTip"]];
+
+        // NOTE: We have to explicitly stop the run loop since timer events do
+        // not cause CFRunLoopRunInMode() to exit.
+        CFRunLoopStop(CFRunLoopGetCurrent());
+    }
+}
+#endif
 
 @end // MMBackend (Private)
 

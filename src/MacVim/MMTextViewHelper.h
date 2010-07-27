@@ -16,6 +16,12 @@
 #endif
 
 
+#define BLUE(argb)      ((argb & 0xff)/255.0f)
+#define GREEN(argb)     (((argb>>8) & 0xff)/255.0f)
+#define RED(argb)       (((argb>>16) & 0xff)/255.0f)
+#define ALPHA(argb)     (((argb>>24) & 0xff)/255.0f)
+
+
 enum {
     // These values are chosen so that the min text view size is not too small
     // with the default font (they only affect resizing with the mouse, you can
@@ -34,16 +40,16 @@ enum {
     NSPoint             dragPoint;
     BOOL                isAutoscrolling;
     int                 mouseShape;
-    NSTrackingRectTag   trackingRectTag;
     NSColor             *insertionPointColor;
     BOOL                interpretKeyEventsSwallowedKey;
     NSEvent             *currentEvent;
+    NSMutableDictionary *signImages;
 
     // Input Manager
     NSRange             imRange;
     NSRange             markedRange;
     NSDictionary        *markedTextAttributes;
-    NSMutableAttributedString  *markedText;
+    NSMutableAttributedString   *markedText;
     int                 preEditRow;
     int                 preEditColumn;
     BOOL                imControl;
@@ -54,6 +60,7 @@ enum {
 #endif
 }
 
+- (id)init;
 - (void)setTextView:(id)view;
 - (void)setInsertionPointColor:(NSColor *)color;
 - (NSColor *)insertionPointColor;
@@ -67,16 +74,13 @@ enum {
 - (void)mouseUp:(NSEvent *)event;
 - (void)mouseDragged:(NSEvent *)event;
 - (void)mouseMoved:(NSEvent *)event;
-- (void)mouseEntered:(NSEvent *)event;
-- (void)mouseExited:(NSEvent *)event;
-- (void)setFrame:(NSRect)frame;
-- (void)viewDidMoveToWindow;
-- (void)viewWillMoveToWindow:(NSWindow *)newWindow;
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender;
 - (NSDragOperation)draggingEntered:(id <NSDraggingInfo>)sender;
 - (NSDragOperation)draggingUpdated:(id <NSDraggingInfo>)sender;
 - (void)setMouseShape:(int)shape;
 - (void)changeFont:(id)sender;
+- (NSImage *)signImageForName:(NSString *)imgName;
+- (void)deleteImage:(NSString *)imgName;
 
 // Input Manager
 - (BOOL)hasMarkedText;

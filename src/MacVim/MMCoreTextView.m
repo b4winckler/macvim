@@ -48,14 +48,6 @@
 #define DRAW_WIDE                 0x40    /* draw wide text */
 #define DRAW_TUNDERL              0x100   /* draw double underline text */
 
-
-#define BLUE(argb)      ((argb & 0xff)/255.0f)
-#define GREEN(argb)     (((argb>>8) & 0xff)/255.0f)
-#define RED(argb)       (((argb>>16) & 0xff)/255.0f)
-#define ALPHA(argb)     (((argb>>24) & 0xff)/255.0f)
-
-
-
 @interface MMCoreTextView (Private)
 - (MMWindowController *)windowController;
 - (MMVimController *)vimController;
@@ -378,6 +370,11 @@ defaultAdvanceForFont(CTFontRef fontRef)
 
 
 
+- (void)deleteSign:(NSString *)signName
+{
+    [helper deleteImage:signName];
+}
+
 - (void)setShouldDrawInsertionPoint:(BOOL)on
 {
 }
@@ -523,32 +520,6 @@ defaultAdvanceForFont(CTFontRef fontRef)
     [helper mouseMoved:event];
 }
 
-- (void)mouseEntered:(NSEvent *)event
-{
-    [helper mouseEntered:event];
-}
-
-- (void)mouseExited:(NSEvent *)event
-{
-    [helper mouseExited:event];
-}
-
-- (void)setFrame:(NSRect)frame
-{
-    [super setFrame:frame];
-    [helper setFrame:frame];
-}
-
-- (void)viewDidMoveToWindow
-{
-    [helper viewDidMoveToWindow];
-}
-
-- (void)viewWillMoveToWindow:(NSWindow *)newWindow
-{
-    [helper viewWillMoveToWindow:newWindow];
-}
-
 - (NSMenu*)menuForEvent:(NSEvent *)event
 {
     // HACK! Return nil to disable default popup menus (Vim provides its own).
@@ -596,9 +567,6 @@ defaultAdvanceForFont(CTFontRef fontRef)
 
 - (void)drawRect:(NSRect)rect
 {
-    //ASLogTmp(@"count=%d  rect=%@", [drawData count],
-    //        NSStringFromRect(rect));
-
     NSGraphicsContext *context = [NSGraphicsContext currentContext];
     [context setShouldAntialias:antialias];
 
@@ -908,6 +876,26 @@ defaultAdvanceForFont(CTFontRef fontRef)
             [self deleteLinesFromRow:row lineCount:count
                     scrollBottom:bot left:left right:right
                            color:color];
+        } else if (DrawSignDrawType == type) {
+            int strSize = *((int*)bytes);  bytes += sizeof(int);
+            NSString *imgName =
+                [NSString stringWithUTF8String:(const char*)bytes];
+            bytes += strSize;
+
+            int col = *((int*)bytes);  bytes += sizeof(int);
+            int row = *((int*)bytes);  bytes += sizeof(int);
+            int width = *((int*)bytes);  bytes += sizeof(int);
+            int height = *((int*)bytes);  bytes += sizeof(int);
+
+            NSImage *signImg = [helper signImageForName:imgName];
+            NSRect r = [self rectForRow:row
+                                 column:col
+                                numRows:height
+                             numColumns:width];
+            [signImg drawInRect:r
+                       fromRect:NSZeroRect
+                      operation:NSCompositeSourceOver
+                       fraction:1.0];
         } else if (DrawStringDrawType == type) {
             int bg = *((int*)bytes);  bytes += sizeof(int);
             int fg = *((int*)bytes);  bytes += sizeof(int);

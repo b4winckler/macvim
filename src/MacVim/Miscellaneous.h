@@ -45,14 +45,10 @@ extern NSString *MMCurrentPreferencePaneKey;
 extern NSString *MMLoginShellCommandKey;
 extern NSString *MMLoginShellArgumentKey;
 extern NSString *MMDialogsTrackPwdKey;
-#ifdef MM_ENABLE_PLUGINS
-extern NSString *MMShowLeftPlugInContainerKey;
-#endif
 extern NSString *MMOpenLayoutKey;
 extern NSString *MMVerticalSplitKey;
 extern NSString *MMPreloadCacheSizeKey;
 extern NSString *MMLastWindowClosedBehaviorKey;
-extern NSString *MMLoadDefaultFontKey;
 #ifdef INCLUDE_OLD_IM_CODE
 extern NSString *MMUseInlineImKey;
 #endif // INCLUDE_OLD_IM_CODE

@@ -22,10 +22,10 @@
 // HACK! Used in gui.c to determine which string drawing code to use.
 int use_gui_macvim_draw_string = 1;
 
+static int use_graphical_sign = 0;
 
-// NOTE: The default font is bundled with the application.
-static NSString *MMDefaultFontName = @"DejaVu Sans Mono";
-static int MMDefaultFontSize       = 12;
+static NSString *MMDefaultFontName = @"Menlo Regular";
+static int MMDefaultFontSize       = 11;
 static int MMMinFontSize           = 6;
 static int MMMaxFontSize           = 100;
 
@@ -153,6 +153,10 @@ gui_macvim_after_fork_init()
     if (keyValid) {
         ASLogInfo(@"Use renderer=%d", val);
         use_gui_macvim_draw_string = (val != MMRendererCoreText);
+
+        // For now only the Core Text renderer knows how to render graphical
+        // signs.
+        use_graphical_sign = (val == MMRendererCoreText);
     }
 }
 
@@ -992,10 +996,8 @@ gui_macvim_font_with_name(char_u *name)
         if (size < MMMinFontSize) size = MMMinFontSize;
         if (size > MMMaxFontSize) size = MMMaxFontSize;
 
-        // If the default font is requested we don't check if NSFont can load
-        // it since the font most likely isn't loaded anyway (it may only be
-        // available to the MacVim binary).  If it is not the default font we
-        // ask NSFont if it can load it.
+        // If the default font is requested we don't need to check if NSFont
+        // can load it.  Otherwise we ask NSFont if it can load it.
         if ([fontName isEqualToString:MMDefaultFontName]
                 || [NSFont fontWithName:fontName size:size])
             return [[NSString alloc] initWithFormat:@"%@:%d", fontName, size];
@@ -2150,3 +2152,130 @@ gui_macvim_set_netbeans_socket(int socket)
 }
 
 #endif // FEAT_NETBEANS_INTG
+
+
+
+// -- Graphical Sign Support ------------------------------------------------
+
+#if defined(FEAT_SIGN_ICONS)
+    void
+gui_mch_drawsign(int row, int col, int typenr)
+{
+    if (!gui.in_use)
+        return;
+
+    NSString *imgName = (NSString *)sign_get_image(typenr);
+    if (!imgName)
+        return;
+
+    char_u *txt = sign_get_text(typenr);
+    int txtSize = txt ? strlen((char*)txt) : 2;
+
+    [[MMBackend sharedInstance] drawSign:imgName
+                                   atRow:row
+                                  column:col
+                                   width:txtSize
+                                  height:1];
+}
+
+    void *
+gui_mch_register_sign(char_u *signfile)
+{
+    if (!use_graphical_sign)
+        return NULL;
+
+    NSString *imgName = [NSString stringWithVimString:signfile];
+    NSImage *img = [[NSImage alloc] initWithContentsOfFile:imgName];
+    if (!img) {
+        EMSG(_(e_signdata));
+        return NULL;
+    }
+
+    [img release];
+
+    return (void*)[imgName retain];
+}
+
+    void
+gui_mch_destroy_sign(void *sign)
+{
+    NSString *imgName = (NSString *)sign;
+    if (!imgName)
+        return;
+
+    [[MMBackend sharedInstance]
+            queueMessage:DeleteSignMsgID
+              properties:[NSDictionary dictionaryWithObjectsAndKeys:
+                                                    imgName, @"imgName", nil]];
+    [imgName release];
+}
+
+# ifdef FEAT_NETBEANS_INTG
+    void
+netbeans_draw_multisign_indicator(int row)
+{
+}
+# endif // FEAT_NETBEANS_INTG
+
+#endif // FEAT_SIGN_ICONS
+
+
+
+// -- Balloon Eval Support ---------------------------------------------------
+
+#ifdef FEAT_BEVAL
+
+    BalloonEval *
+gui_mch_create_beval_area(target, mesg, mesgCB, clientData)
+    void	*target;
+    char_u	*mesg;
+    void	(*mesgCB)__ARGS((BalloonEval *, int));
+    void	*clientData;
+{
+    BalloonEval	*beval;
+
+    beval = (BalloonEval *)calloc(1, sizeof(BalloonEval));
+    if (NULL == beval)
+        return NULL;
+
+    beval->msg = mesg;
+    beval->msgCB = mesgCB;
+    beval->clientData = clientData;
+
+    return beval;
+}
+
+    void
+gui_mch_enable_beval_area(beval)
+    BalloonEval	*beval;
+{
+    // Set the balloon delay when enabling balloon eval.
+    float delay = p_bdlay/1000.0f - MMBalloonEvalInternalDelay;
+    if (delay < 0) delay = 0;
+    [[MMBackend sharedInstance] queueMessage:SetTooltipDelayMsgID properties:
+        [NSDictionary dictionaryWithObject:[NSNumber numberWithFloat:delay]
+                                    forKey:@"delay"]];
+}
+
+    void
+gui_mch_disable_beval_area(beval)
+    BalloonEval	*beval;
+{
+    // NOTE: An empty tool tip indicates that the tool tip window should hide.
+    [[MMBackend sharedInstance] queueMessage:SetTooltipMsgID properties:
+        [NSDictionary dictionaryWithObject:@"" forKey:@"toolTip"]];
+}
+
+/*
+ * Show a balloon with "mesg".
+ */
+    void
+gui_mch_post_balloon(beval, mesg)
+    BalloonEval	*beval;
+    char_u	*mesg;
+{
+    NSString *toolTip = [NSString stringWithVimString:mesg];
+    [[MMBackend sharedInstance] setLastToolTip:toolTip];
+}
+
+#endif // FEAT_BEVAL

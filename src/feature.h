@@ -1252,6 +1252,7 @@
 # if ((defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA)) \
 		&& defined(HAVE_X11_XPM_H)) \
 	|| defined(FEAT_GUI_GTK) \
+	|| defined(FEAT_GUI_MACVIM) \
 	|| (defined(WIN32) && defined(FEAT_GUI))
 #  define FEAT_SIGN_ICONS
 # endif
@@ -1263,6 +1264,7 @@
  *			Only for GUIs where it was implemented.
  */
 #if (defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA) \
+	|| defined(FEAT_GUI_MACVIM) \
 	|| defined(FEAT_GUI_GTK) || defined(FEAT_GUI_W32)) \
 	&& (   ((defined(FEAT_TOOLBAR) || defined(FEAT_GUI_TABLINE)) \
 		&& !defined(FEAT_GUI_GTK) && !defined(FEAT_GUI_W32)) \
@@ -1270,7 +1272,7 @@
 	    || defined(FEAT_NETBEANS_INTG) || defined(FEAT_EVAL))
 # define FEAT_BEVAL
 # if !defined(FEAT_XFONTSET) && !defined(FEAT_GUI_GTK) \
-	&& !defined(FEAT_GUI_W32)
+	&& !defined(FEAT_GUI_W32) && !defined(FEAT_GUI_MACVIM)
 #  define FEAT_XFONTSET
 # endif
 #endif

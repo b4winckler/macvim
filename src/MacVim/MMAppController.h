@@ -20,7 +20,6 @@
     NSConnection        *connection;
     NSMutableArray      *vimControllers;
     NSString            *openSelectionString;
-    ATSFontContainerRef fontContainerRef;
     NSMutableDictionary *pidArguments;
     NSMenu              *defaultMainMenu;
     NSMenuItem          *appMenuItemTemplate;
@@ -35,10 +34,6 @@
 #if (MAC_OS_X_VERSION_MAX_ALLOWED > MAC_OS_X_VERSION_10_4)
     FSEventStreamRef    fsEventStream;
 #endif
-
-#ifdef MM_ENABLE_PLUGINS
-    NSMenuItem          *plugInMenuItem;
-#endif
 }
 
 + (MMAppController *)sharedInstance;
@@ -50,12 +45,6 @@
 - (void)setMainMenu:(NSMenu *)mainMenu;
 - (NSArray *)filterOpenFiles:(NSArray *)filenames;
 - (BOOL)openFiles:(NSArray *)filenames withArguments:(NSDictionary *)args;
-
-
-#ifdef MM_ENABLE_PLUGINS
-- (void)addItemToPlugInMenu:(NSMenuItem *)item;
-- (void)removeItemFromPlugInMenu:(NSMenuItem *)item;
-#endif
 
 - (IBAction)newWindow:(id)sender;
 - (IBAction)newWindowAndActivate:(id)sender;

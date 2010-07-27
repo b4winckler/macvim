@@ -59,10 +59,12 @@
 - (NSSize)desiredSize;
 - (NSSize)minSize;
 
-
 - (BOOL)convertPoint:(NSPoint)point toRow:(int *)row column:(int *)column;
 - (NSPoint)pointForRow:(int)row column:(int)col;
 - (NSRect)rectForRow:(int)row column:(int)col numRows:(int)nr
           numColumns:(int)nc;
 
+// NOT IMPLEMENTED (only in Core Text renderer)
+- (void)deleteSign:(NSString *)signName;
+- (void)setToolTipAtMousePoint:(NSString *)string;
 @end

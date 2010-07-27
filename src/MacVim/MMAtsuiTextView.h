@@ -68,6 +68,8 @@ enum { MMMaxCellsPerChar = 2 };
 //
 // MMTextView methods
 //
+- (void)deleteSign:(NSString *)signName;
+- (void)setToolTipAtMousePoint:(NSString *)string;
 - (void)setPreEditRow:(int)row column:(int)col;
 - (void)setMouseShape:(int)shape;
 - (void)setAntialias:(BOOL)state;

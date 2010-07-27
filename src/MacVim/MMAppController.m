@@ -42,11 +42,6 @@
 #import "MMVimController.h"
 #import "MMWindowController.h"
 #import "Miscellaneous.h"
-
-#ifdef MM_ENABLE_PLUGINS
-#import "MMPlugInManager.h"
-#endif
-
 #import <unistd.h>
 #import <CoreServices/CoreServices.h>
 
@@ -135,7 +130,6 @@ typedef struct
 - (void)startWatchingVimDir;
 - (void)stopWatchingVimDir;
 - (void)handleFSEvent;
-- (void)loadDefaultFont;
 - (int)executeInLoginShell:(NSString *)path arguments:(NSArray *)args;
 - (void)reapChildProcesses:(id)sender;
 - (void)processInputQueues:(id)sender;
@@ -144,11 +138,6 @@ typedef struct
                                   toCommandLine:(NSArray **)cmdline;
 - (NSString *)workingDirectoryForArguments:(NSDictionary *)args;
 - (NSScreen *)screenContainingPoint:(NSPoint)pt;
-
-#ifdef MM_ENABLE_PLUGINS
-- (void)removePlugInMenu;
-- (void)addPlugInMenuToMenu:(NSMenu *)mainMenu;
-#endif
 @end
 
 
@@ -218,14 +207,10 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         @"",                            MMLoginShellCommandKey,
         @"",                            MMLoginShellArgumentKey,
         [NSNumber numberWithBool:YES],  MMDialogsTrackPwdKey,
-#ifdef MM_ENABLE_PLUGINS
-        [NSNumber numberWithBool:YES],  MMShowLeftPlugInContainerKey,
-#endif
         [NSNumber numberWithInt:3],     MMOpenLayoutKey,
         [NSNumber numberWithBool:NO],   MMVerticalSplitKey,
         [NSNumber numberWithInt:0],     MMPreloadCacheSizeKey,
         [NSNumber numberWithInt:0],     MMLastWindowClosedBehaviorKey,
-        [NSNumber numberWithBool:YES],  MMLoadDefaultFontKey,
 #ifdef INCLUDE_OLD_IM_CODE
         [NSNumber numberWithBool:NO],   MMUseInlineImKey,
 #endif // INCLUDE_OLD_IM_CODE
@@ -247,24 +232,11 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 {
     if (!(self = [super init])) return nil;
 
-    [self loadDefaultFont];
-
     vimControllers = [NSMutableArray new];
     cachedVimControllers = [NSMutableArray new];
     preloadPid = -1;
     pidArguments = [NSMutableDictionary new];
     inputQueues = [NSMutableDictionary new];
-
-#ifdef MM_ENABLE_PLUGINS
-    NSString *plugInTitle = NSLocalizedString(@"Plug-In",
-                                              @"Plug-In menu title");
-    plugInMenuItem = [[NSMenuItem alloc] initWithTitle:plugInTitle
-                                                action:NULL
-                                         keyEquivalent:@""];
-    NSMenu *submenu = [[NSMenu alloc] initWithTitle:plugInTitle];
-    [plugInMenuItem setSubmenu:submenu];
-    [submenu release];
-#endif
 
     // NOTE: Do not use the default connection since the Logitech Control
     // Center (LCC) input manager steals and this would cause MacVim to
@@ -300,9 +272,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     [openSelectionString release];  openSelectionString = nil;
     [recentFilesMenuItem release];  recentFilesMenuItem = nil;
     [defaultMainMenu release];  defaultMainMenu = nil;
-#ifdef MM_ENABLE_PLUGINS
-    [plugInMenuItem release];  plugInMenuItem = nil;
-#endif
     [appMenuItemTemplate release];  appMenuItemTemplate = nil;
 
     [super dealloc];
@@ -402,9 +371,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
     [NSApp setServicesProvider:self];
-#ifdef MM_ENABLE_PLUGINS
-    [[MMPlugInManager sharedManager] loadAllPlugIns];
-#endif
 
     if ([self maxPreloadCacheSize] > 0) {
         [self scheduleVimControllerPreloadAfterDelay:2];
@@ -636,10 +602,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
     [self stopWatchingVimDir];
 
-#ifdef MM_ENABLE_PLUGINS
-    [[MMPlugInManager sharedManager] unloadAllPlugIns];
-#endif
-
 #if MM_HANDLE_XCODE_MOD_EVENT
     [[NSAppleEventManager sharedAppleEventManager]
             removeEventHandlerForEventClass:'KAHL'
@@ -649,14 +611,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     // This will invalidate all connections (since they were spawned from this
     // connection).
     [connection invalidate];
-
-    // Deactivate the font we loaded from the app bundle.
-    // NOTE: This can take quite a while (~500 ms), so termination will be
-    // noticeably faster if loading of the default font is disabled.
-    if (fontContainerRef) {
-        ATSFontDeactivate(fontContainerRef, NULL, kATSOptionFlagsDefault);
-        fontContainerRef = 0;
-    }
 
     [NSApp setDelegate:nil];
 
@@ -892,12 +846,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         }
     }
     [NSApp setWindowsMenu:windowsMenu];
-
-#ifdef MM_ENABLE_PLUGINS
-    // Move plugin menu from old to new main menu.
-    [self removePlugInMenu];
-    [self addPlugInMenuToMenu:mainMenu];
-#endif
 }
 
 - (NSArray *)filterOpenFiles:(NSArray *)filenames
@@ -1054,24 +1002,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
     return openOk;
 }
-
-#ifdef MM_ENABLE_PLUGINS
-- (void)addItemToPlugInMenu:(NSMenuItem *)item
-{
-    NSMenu *menu = [plugInMenuItem submenu];
-    [menu addItem:item];
-    if ([menu numberOfItems] == 1)
-        [self addPlugInMenuToMenu:[NSApp mainMenu]];
-}
-
-- (void)removeItemFromPlugInMenu:(NSMenuItem *)item
-{
-    NSMenu *menu = [plugInMenuItem submenu];
-    [menu removeItem:item];
-    if ([menu numberOfItems] == 0)
-        [self removePlugInMenu];
-}
-#endif
 
 - (IBAction)newWindow:(id)sender
 {
@@ -1828,29 +1758,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     return dict;
 }
 
-#ifdef MM_ENABLE_PLUGINS
-- (void)removePlugInMenu
-{
-    if ([plugInMenuItem menu])
-        [[plugInMenuItem menu] removeItem:plugInMenuItem];
-}
-
-- (void)addPlugInMenuToMenu:(NSMenu *)mainMenu
-{
-    NSMenu *windowsMenu = [mainMenu findWindowsMenu];
-
-    if ([[plugInMenuItem submenu] numberOfItems] > 0) {
-        int idx = windowsMenu ? [mainMenu indexOfItemWithSubmenu:windowsMenu]
-                              : -1;
-        if (idx > 0) {
-            [mainMenu insertItem:plugInMenuItem atIndex:idx];
-        } else {
-            [mainMenu addItem:plugInMenuItem];
-        }
-    }
-}
-#endif
-
 - (void)scheduleVimControllerPreloadAfterDelay:(NSTimeInterval)delay
 {
     [self performSelector:@selector(preloadVimController:)
@@ -2121,57 +2028,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     // any previous preload requests before making a new one.
     [self cancelVimControllerPreloadRequests];
     [self scheduleVimControllerPreloadAfterDelay:0.5];
-}
-
-- (void)loadDefaultFont
-{
-    // It is possible to set a user default to avoid loading the default font
-    // (this cuts down on startup time).
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:MMLoadDefaultFontKey]
-            || fontContainerRef) {
-        ASLogInfo(@"Skip loading of the default font...");
-        return;
-    }
-
-    ASLogInfo(@"Loading the default font...");
-
-    // Load all fonts in the Resouces folder of the app bundle.
-    NSString *fontsFolder = [[NSBundle mainBundle] resourcePath];
-    if (fontsFolder) {
-        NSURL *fontsURL = [NSURL fileURLWithPath:fontsFolder];
-        if (fontsURL) {
-            FSRef fsRef;
-            CFURLGetFSRef((CFURLRef)fontsURL, &fsRef);
-
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
-            // This is the font activation API for OS X 10.5.  Only compile
-            // this code if we're building on OS X 10.5 or later.
-            if (NULL != ATSFontActivateFromFileReference) { // Weakly linked
-                ATSFontActivateFromFileReference(&fsRef, kATSFontContextLocal,
-                                                 kATSFontFormatUnspecified,
-                                                 NULL, kATSOptionFlagsDefault,
-                                                 &fontContainerRef);
-            }
-#endif
-#if (MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5)
-            // The following font activation API was deprecated in OS X 10.5.
-            // Don't compile this code unless we're targeting OS X 10.4.
-            FSSpec fsSpec;
-            if (fontContainerRef == 0 &&
-                    FSGetCatalogInfo(&fsRef, kFSCatInfoNone, NULL, NULL,
-                                     &fsSpec, NULL) == noErr) {
-                ATSFontActivateFromFileSpecification(&fsSpec,
-                        kATSFontContextLocal, kATSFontFormatUnspecified, NULL,
-                        kATSOptionFlagsDefault, &fontContainerRef);
-            }
-#endif
-        }
-    }
-
-    if (!fontContainerRef) {
-        ASLogNotice(@"Failed to activate the default font (the app bundle "
-                    "may be incomplete)");
-    }
 }
 
 - (int)executeInLoginShell:(NSString *)path arguments:(NSArray *)args
