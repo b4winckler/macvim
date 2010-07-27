@@ -6234,10 +6234,10 @@ uimfep_set_active(int active)
 {
     int mustfree = 0;
     char_u *setmode;
-    setmode = vim_getenv("UIM_FEP_SETMODE", &mustfree);
+    setmode = vim_getenv((char_u *)"UIM_FEP_SETMODE", &mustfree);
     if (setmode != NULL)
     {
-	FILE *fp = fopen(setmode, "w");
+	FILE *fp = fopen((char *)setmode, "w");
 	if (fp)
 	{
 	    fprintf(fp, "%d\n", active ? uimfep_lastmode : 0);
@@ -6255,13 +6255,13 @@ uimfep_get_status(void)
     int mustfree = 0;
     int mode = 0;
     char_u *getmode;
-    getmode = vim_getenv("UIM_FEP_GETMODE", &mustfree);
+    getmode = vim_getenv((char_u *)"UIM_FEP_GETMODE", &mustfree);
     if (getmode != NULL)
     {
-	FILE *fp = fopen(getmode, "r");
+	FILE *fp = fopen((char *)getmode, "r");
 	if (fp)
 	{
-	    char_u buf[99];
+	    char buf[99];
 	    if (fgets(buf, sizeof(buf), fp))
 		mode = atoi(buf);
 	    fclose(fp);

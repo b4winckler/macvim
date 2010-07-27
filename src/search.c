@@ -1211,18 +1211,24 @@ init_migemo()
 	return;
 
     migemo_tryload = 1;
-    migemo_object = migemo_open(p_migdict);
+    migemo_object = migemo_open((char *)p_migdict);
 
     if (!migemo_object)
 	return;
 
-    migemo_set_operator(migemo_object, MIGEMO_OPINDEX_OR, "\\|");
-    migemo_set_operator(migemo_object, MIGEMO_OPINDEX_NEST_IN, "\\%(");
-    migemo_set_operator(migemo_object, MIGEMO_OPINDEX_NEST_OUT, "\\)");
-    migemo_set_operator(migemo_object, MIGEMO_OPINDEX_NEST_OUT, "\\)");
-    migemo_set_operator(migemo_object, MIGEMO_OPINDEX_NEWLINE, "\\_s*");
+    migemo_set_operator(migemo_object,
+	MIGEMO_OPINDEX_OR, (char_u *)"\\|");
+    migemo_set_operator(migemo_object,
+	MIGEMO_OPINDEX_NEST_IN, (char_u *)"\\%(");
+    migemo_set_operator(migemo_object,
+	MIGEMO_OPINDEX_NEST_OUT, (char_u *)"\\)");
+    migemo_set_operator(migemo_object,
+	MIGEMO_OPINDEX_NEST_OUT, (char_u *)"\\)");
+    migemo_set_operator(migemo_object,
+	MIGEMO_OPINDEX_NEWLINE, (char_u *)"\\_s*");
     migemo_setproc_int2char(migemo_object, vimigemo_int2char);
-    migemo_setproc_char2int(migemo_object, vimigemo_char2int);
+    migemo_setproc_char2int(migemo_object,
+	(MIGEMO_PROC_CHAR2INT)vimigemo_char2int);
 }
 
     void
@@ -1248,7 +1254,7 @@ query_migemo(char_u* str)
 	init_migemo();
 	if (migemo_object)
 	{
-	    char *query = migemo_query(migemo_object, str);
+	    char_u *query = migemo_query(migemo_object, str);
 
 	    if (query != NULL)
 	    {
@@ -1312,7 +1318,7 @@ searchit_migemo(win, buf, pos, dir, str, count, options, pat_use, stop_lnum,
 	init_migemo();
 	if (migemo_object)
 	{
-	    char	*query;
+	    char_u	*query;
 	    char_u	*newstr = NULL;
 	    
 	    /* Remove backslash in str */
