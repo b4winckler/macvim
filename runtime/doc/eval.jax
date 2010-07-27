@@ -627,7 +627,7 @@ expr2 ? expr1 : expr1
 例: >
 	:echo lnum == 1 ? "top" : lnum == 1000 ? "last" : lnum
 
-読み易くするために、行継続|list-continuation|を利用することが推奨される: >
+読み易くするために、行継続|line-continuation|を利用することが推奨される: >
 	:echo lnum == 1
 	:\	? "top"
 	:\	: lnum == 1000
