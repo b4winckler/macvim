@@ -4582,6 +4582,7 @@ nv_mousescroll(cap)
 	if (!curwin->w_p_wrap)
 	{
 	    int val, step = 6;
+
 	    if (mod_mask & (MOD_MASK_SHIFT | MOD_MASK_CTRL))
 		step = W_WIDTH(curwin);
 	    val = curwin->w_leftcol + (cap->arg == MSCR_RIGHT ? -step : +step);
@@ -6365,7 +6366,7 @@ nv_csearch(cap)
 nv_brackets(cap)
     cmdarg_T	*cap;
 {
-    pos_T	new_pos;
+    pos_T	new_pos = INIT_POS_T(0, 0, 0);
     pos_T	prev_pos;
     pos_T	*pos = NULL;	    /* init for GCC */
     pos_T	old_pos;	    /* cursor position before command */
@@ -6443,7 +6444,6 @@ nv_brackets(cap)
     {
 	if (cap->nchar == '*')
 	    cap->nchar = '/';
-	new_pos.lnum = 0;
 	prev_pos.lnum = 0;
 	if (cap->nchar == 'm' || cap->nchar == 'M')
 	{
@@ -7656,7 +7656,7 @@ n_start_visual_mode(c)
 {
 #ifdef FEAT_CONCEAL
     /* Check for redraw before changing the state. */
-    conceal_check_cursur_line_redraw();
+    conceal_check_cursur_line();
 #endif
 
     VIsual_mode = c;
@@ -7680,7 +7680,7 @@ n_start_visual_mode(c)
 #endif
 #ifdef FEAT_CONCEAL
     /* Check for redraw after changing the state. */
-    conceal_check_cursur_line_redraw();
+    conceal_check_cursur_line();
 #endif
 
     if (p_smd && msg_silent == 0)

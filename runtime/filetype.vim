@@ -1,7 +1,7 @@
 " Vim support file to detect file types
 "
 " Maintainer:	Bram Moolenaar <Bram@vim.org>
-" Last Change:	2010 May 14
+" Last Change:	2010 Jul 30
 
 " Listen very carefully, I will say this only once
 if exists("did_load_filetypes")
@@ -617,6 +617,9 @@ au BufNewFile,BufRead *.def			setf def
 " Dracula
 au BufNewFile,BufRead *.drac,*.drc,*lvs,*lpe	setf dracula
 
+" Datascript
+au BufNewFile,BufRead *.ds			setf datascript
+
 " dsl
 au BufNewFile,BufRead *.dsl			setf dsl
 
@@ -702,9 +705,9 @@ au BufNewFile,BufRead *.frt			setf reva
 
 " Fortran
 if has("fname_case")
-  au BufNewFile,BufRead *.F,*.FOR,*.FPP,*.FTN,*.F77,*.F90,*.F95	 setf fortran
+  au BufNewFile,BufRead *.F,*.FOR,*.FPP,*.FTN,*.F77,*.F90,*.F95,*.F03,*.F08	 setf fortran
 endif
-au BufNewFile,BufRead   *.f,*.for,*.fortran,*.fpp,*.ftn,*.f77,*.f90,*.f95  setf fortran
+au BufNewFile,BufRead   *.f,*.for,*.fortran,*.fpp,*.ftn,*.f77,*.f90,*.f95,*.f03,*.f08  setf fortran
 
 " Framescript
 au BufNewFile,BufRead *.fsl			setf framescript
@@ -1285,6 +1288,7 @@ else
   au BufNewFile,BufRead *.pl			call s:FTpl()
 endif
 au BufNewFile,BufRead *.plx,*.al		setf perl
+au BufNewFile,BufRead *.p6,*.pm6		setf perl6
 
 func! s:FTpl()
   if exists("g:filetype_pl")
@@ -1632,6 +1636,9 @@ au BufNewFile,BufRead *.sa			setf sather
 
 " Scilab
 au BufNewFile,BufRead *.sci,*.sce		setf scilab
+
+" SCSS
+au BufNewFile,BufRead *.scss 			setf scss
 
 " SD: Streaming Descriptors
 au BufNewFile,BufRead *.sd			setf sd
@@ -2399,6 +2406,9 @@ au! BufNewFile,BufRead *jarg*
 
 " Kconfig
 au BufNewFile,BufRead Kconfig.*			call s:StarSetf('kconfig')
+
+" Logcheck
+au BufNewFile,BufRead /etc/logcheck/*.d*/*	call s:StarSetf('logcheck')
 
 " Makefile
 au BufNewFile,BufRead [mM]akefile*		call s:StarSetf('make')

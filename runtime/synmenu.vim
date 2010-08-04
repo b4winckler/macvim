@@ -2,7 +2,7 @@
 " This file is normally sourced from menu.vim.
 "
 " Maintainer:	Bram Moolenaar <Bram@vim.org>
-" Last Change:	2006 Apr 27
+" Last Change:	2010 Jul 26
 
 " Define the SetSyn function, used for the Syntax menu entries.
 " Set 'filetype' and also 'syntax' if it is manually selected.
@@ -135,49 +135,50 @@ an 50.20.470 &Syntax.C.CVS.cvsrc :cal SetSyn("cvsrc")<CR>
 an 50.20.480 &Syntax.C.Cyn++ :cal SetSyn("cynpp")<CR>
 an 50.20.490 &Syntax.C.Cynlib :cal SetSyn("cynlib")<CR>
 an 50.30.100 &Syntax.DE.D :cal SetSyn("d")<CR>
-an 50.30.110 &Syntax.DE.Debian.Debian\ ChangeLog :cal SetSyn("debchangelog")<CR>
-an 50.30.120 &Syntax.DE.Debian.Debian\ Control :cal SetSyn("debcontrol")<CR>
-an 50.30.130 &Syntax.DE.Debian.Debian\ Sources\.list :cal SetSyn("debsources")<CR>
-an 50.30.140 &Syntax.DE.Denyhosts :cal SetSyn("denyhosts")<CR>
-an 50.30.150 &Syntax.DE.Desktop :cal SetSyn("desktop")<CR>
-an 50.30.160 &Syntax.DE.Dict\ config :cal SetSyn("dictconf")<CR>
-an 50.30.170 &Syntax.DE.Dictd\ config :cal SetSyn("dictdconf")<CR>
-an 50.30.180 &Syntax.DE.Diff :cal SetSyn("diff")<CR>
-an 50.30.190 &Syntax.DE.Digital\ Command\ Lang :cal SetSyn("dcl")<CR>
-an 50.30.200 &Syntax.DE.Dircolors :cal SetSyn("dircolors")<CR>
-an 50.30.210 &Syntax.DE.Django\ template :cal SetSyn("django")<CR>
-an 50.30.220 &Syntax.DE.DNS/BIND\ zone :cal SetSyn("bindzone")<CR>
-an 50.30.230 &Syntax.DE.DocBook.auto-detect :cal SetSyn("docbk")<CR>
-an 50.30.240 &Syntax.DE.DocBook.SGML :cal SetSyn("docbksgml")<CR>
-an 50.30.250 &Syntax.DE.DocBook.XML :cal SetSyn("docbkxml")<CR>
-an 50.30.260 &Syntax.DE.Dot :cal SetSyn("dot")<CR>
-an 50.30.270 &Syntax.DE.Doxygen.C\ with\ doxygen :cal SetSyn("c.doxygen")<CR>
-an 50.30.280 &Syntax.DE.Doxygen.C++\ with\ doxygen :cal SetSyn("cpp.doxygen")<CR>
-an 50.30.290 &Syntax.DE.Doxygen.IDL\ with\ doxygen :cal SetSyn("idl.doxygen")<CR>
-an 50.30.300 &Syntax.DE.Doxygen.Java\ with\ doxygen :cal SetSyn("java.doxygen")<CR>
-an 50.30.310 &Syntax.DE.Dracula :cal SetSyn("dracula")<CR>
-an 50.30.320 &Syntax.DE.DSSSL :cal SetSyn("dsl")<CR>
-an 50.30.330 &Syntax.DE.DTD :cal SetSyn("dtd")<CR>
-an 50.30.340 &Syntax.DE.DTML\ (Zope) :cal SetSyn("dtml")<CR>
-an 50.30.350 &Syntax.DE.DTrace :cal SetSyn("dtrace")<CR>
-an 50.30.360 &Syntax.DE.Dylan.Dylan :cal SetSyn("dylan")<CR>
-an 50.30.370 &Syntax.DE.Dylan.Dylan\ interface :cal SetSyn("dylanintr")<CR>
-an 50.30.380 &Syntax.DE.Dylan.Dylan\ lid :cal SetSyn("dylanlid")<CR>
-an 50.30.400 &Syntax.DE.EDIF :cal SetSyn("edif")<CR>
-an 50.30.410 &Syntax.DE.Eiffel :cal SetSyn("eiffel")<CR>
-an 50.30.420 &Syntax.DE.Elinks\ config :cal SetSyn("elinks")<CR>
-an 50.30.430 &Syntax.DE.Elm\ filter\ rules :cal SetSyn("elmfilt")<CR>
-an 50.30.440 &Syntax.DE.Embedix\ Component\ Description :cal SetSyn("ecd")<CR>
-an 50.30.450 &Syntax.DE.ERicsson\ LANGuage :cal SetSyn("erlang")<CR>
-an 50.30.460 &Syntax.DE.ESMTP\ rc :cal SetSyn("esmtprc")<CR>
-an 50.30.470 &Syntax.DE.ESQL-C :cal SetSyn("esqlc")<CR>
-an 50.30.480 &Syntax.DE.Essbase\ script :cal SetSyn("csc")<CR>
-an 50.30.490 &Syntax.DE.Esterel :cal SetSyn("esterel")<CR>
-an 50.30.500 &Syntax.DE.Eterm\ config :cal SetSyn("eterm")<CR>
-an 50.30.510 &Syntax.DE.Eviews :cal SetSyn("eviews")<CR>
-an 50.30.520 &Syntax.DE.Exim\ conf :cal SetSyn("exim")<CR>
-an 50.30.530 &Syntax.DE.Expect :cal SetSyn("expect")<CR>
-an 50.30.540 &Syntax.DE.Exports :cal SetSyn("exports")<CR>
+an 50.30.110 &Syntax.DE.Datascript :cal SetSyn("datascript")<CR>
+an 50.30.120 &Syntax.DE.Debian.Debian\ ChangeLog :cal SetSyn("debchangelog")<CR>
+an 50.30.130 &Syntax.DE.Debian.Debian\ Control :cal SetSyn("debcontrol")<CR>
+an 50.30.140 &Syntax.DE.Debian.Debian\ Sources\.list :cal SetSyn("debsources")<CR>
+an 50.30.150 &Syntax.DE.Denyhosts :cal SetSyn("denyhosts")<CR>
+an 50.30.160 &Syntax.DE.Desktop :cal SetSyn("desktop")<CR>
+an 50.30.170 &Syntax.DE.Dict\ config :cal SetSyn("dictconf")<CR>
+an 50.30.180 &Syntax.DE.Dictd\ config :cal SetSyn("dictdconf")<CR>
+an 50.30.190 &Syntax.DE.Diff :cal SetSyn("diff")<CR>
+an 50.30.200 &Syntax.DE.Digital\ Command\ Lang :cal SetSyn("dcl")<CR>
+an 50.30.210 &Syntax.DE.Dircolors :cal SetSyn("dircolors")<CR>
+an 50.30.220 &Syntax.DE.Django\ template :cal SetSyn("django")<CR>
+an 50.30.230 &Syntax.DE.DNS/BIND\ zone :cal SetSyn("bindzone")<CR>
+an 50.30.240 &Syntax.DE.DocBook.auto-detect :cal SetSyn("docbk")<CR>
+an 50.30.250 &Syntax.DE.DocBook.SGML :cal SetSyn("docbksgml")<CR>
+an 50.30.260 &Syntax.DE.DocBook.XML :cal SetSyn("docbkxml")<CR>
+an 50.30.270 &Syntax.DE.Dot :cal SetSyn("dot")<CR>
+an 50.30.280 &Syntax.DE.Doxygen.C\ with\ doxygen :cal SetSyn("c.doxygen")<CR>
+an 50.30.290 &Syntax.DE.Doxygen.C++\ with\ doxygen :cal SetSyn("cpp.doxygen")<CR>
+an 50.30.300 &Syntax.DE.Doxygen.IDL\ with\ doxygen :cal SetSyn("idl.doxygen")<CR>
+an 50.30.310 &Syntax.DE.Doxygen.Java\ with\ doxygen :cal SetSyn("java.doxygen")<CR>
+an 50.30.320 &Syntax.DE.Dracula :cal SetSyn("dracula")<CR>
+an 50.30.330 &Syntax.DE.DSSSL :cal SetSyn("dsl")<CR>
+an 50.30.340 &Syntax.DE.DTD :cal SetSyn("dtd")<CR>
+an 50.30.350 &Syntax.DE.DTML\ (Zope) :cal SetSyn("dtml")<CR>
+an 50.30.360 &Syntax.DE.DTrace :cal SetSyn("dtrace")<CR>
+an 50.30.370 &Syntax.DE.Dylan.Dylan :cal SetSyn("dylan")<CR>
+an 50.30.380 &Syntax.DE.Dylan.Dylan\ interface :cal SetSyn("dylanintr")<CR>
+an 50.30.390 &Syntax.DE.Dylan.Dylan\ lid :cal SetSyn("dylanlid")<CR>
+an 50.30.410 &Syntax.DE.EDIF :cal SetSyn("edif")<CR>
+an 50.30.420 &Syntax.DE.Eiffel :cal SetSyn("eiffel")<CR>
+an 50.30.430 &Syntax.DE.Elinks\ config :cal SetSyn("elinks")<CR>
+an 50.30.440 &Syntax.DE.Elm\ filter\ rules :cal SetSyn("elmfilt")<CR>
+an 50.30.450 &Syntax.DE.Embedix\ Component\ Description :cal SetSyn("ecd")<CR>
+an 50.30.460 &Syntax.DE.ERicsson\ LANGuage :cal SetSyn("erlang")<CR>
+an 50.30.470 &Syntax.DE.ESMTP\ rc :cal SetSyn("esmtprc")<CR>
+an 50.30.480 &Syntax.DE.ESQL-C :cal SetSyn("esqlc")<CR>
+an 50.30.490 &Syntax.DE.Essbase\ script :cal SetSyn("csc")<CR>
+an 50.30.500 &Syntax.DE.Esterel :cal SetSyn("esterel")<CR>
+an 50.30.510 &Syntax.DE.Eterm\ config :cal SetSyn("eterm")<CR>
+an 50.30.520 &Syntax.DE.Eviews :cal SetSyn("eviews")<CR>
+an 50.30.530 &Syntax.DE.Exim\ conf :cal SetSyn("exim")<CR>
+an 50.30.540 &Syntax.DE.Expect :cal SetSyn("expect")<CR>
+an 50.30.550 &Syntax.DE.Exports :cal SetSyn("exports")<CR>
 an 50.40.100 &Syntax.FG.Fantom :cal SetSyn("fan")<CR>
 an 50.40.110 &Syntax.FG.Fetchmail :cal SetSyn("fetchmail")<CR>
 an 50.40.120 &Syntax.FG.FlexWiki :cal SetSyn("flexwiki")<CR>
@@ -417,41 +418,42 @@ an 50.110.140 &Syntax.S-Sm.Sather :cal SetSyn("sather")<CR>
 an 50.110.150 &Syntax.S-Sm.Scheme :cal SetSyn("scheme")<CR>
 an 50.110.160 &Syntax.S-Sm.Scilab :cal SetSyn("scilab")<CR>
 an 50.110.170 &Syntax.S-Sm.Screen\ RC :cal SetSyn("screen")<CR>
-an 50.110.180 &Syntax.S-Sm.SDC\ Synopsys\ Design\ Constraints :cal SetSyn("sdc")<CR>
-an 50.110.190 &Syntax.S-Sm.SDL :cal SetSyn("sdl")<CR>
-an 50.110.200 &Syntax.S-Sm.Sed :cal SetSyn("sed")<CR>
-an 50.110.210 &Syntax.S-Sm.Sendmail\.cf :cal SetSyn("sm")<CR>
-an 50.110.220 &Syntax.S-Sm.Send-pr :cal SetSyn("sendpr")<CR>
-an 50.110.230 &Syntax.S-Sm.Sensors\.conf :cal SetSyn("sensors")<CR>
-an 50.110.240 &Syntax.S-Sm.Service\ Location\ config :cal SetSyn("slpconf")<CR>
-an 50.110.250 &Syntax.S-Sm.Service\ Location\ registration :cal SetSyn("slpreg")<CR>
-an 50.110.260 &Syntax.S-Sm.Service\ Location\ SPI :cal SetSyn("slpspi")<CR>
-an 50.110.270 &Syntax.S-Sm.Services :cal SetSyn("services")<CR>
-an 50.110.280 &Syntax.S-Sm.Setserial\ config :cal SetSyn("setserial")<CR>
-an 50.110.290 &Syntax.S-Sm.SGML.SGML\ catalog :cal SetSyn("catalog")<CR>
-an 50.110.300 &Syntax.S-Sm.SGML.SGML\ DTD :cal SetSyn("sgml")<CR>
-an 50.110.310 &Syntax.S-Sm.SGML.SGML\ Declaration :cal SetSyn("sgmldecl")<CR>
-an 50.110.320 &Syntax.S-Sm.SGML.SGML-linuxdoc :cal SetSyn("sgmllnx")<CR>
-an 50.110.330 &Syntax.S-Sm.Shell\ script.sh\ and\ ksh :cal SetSyn("sh")<CR>
-an 50.110.340 &Syntax.S-Sm.Shell\ script.csh :cal SetSyn("csh")<CR>
-an 50.110.350 &Syntax.S-Sm.Shell\ script.tcsh :cal SetSyn("tcsh")<CR>
-an 50.110.360 &Syntax.S-Sm.Shell\ script.zsh :cal SetSyn("zsh")<CR>
-an 50.110.370 &Syntax.S-Sm.SiCAD :cal SetSyn("sicad")<CR>
-an 50.110.380 &Syntax.S-Sm.Sieve :cal SetSyn("sieve")<CR>
-an 50.110.390 &Syntax.S-Sm.Simula :cal SetSyn("simula")<CR>
-an 50.110.400 &Syntax.S-Sm.Sinda.Sinda\ compare :cal SetSyn("sindacmp")<CR>
-an 50.110.410 &Syntax.S-Sm.Sinda.Sinda\ input :cal SetSyn("sinda")<CR>
-an 50.110.420 &Syntax.S-Sm.Sinda.Sinda\ output :cal SetSyn("sindaout")<CR>
-an 50.110.430 &Syntax.S-Sm.SiSU :cal SetSyn("sisu")<CR>
-an 50.110.440 &Syntax.S-Sm.SKILL.SKILL :cal SetSyn("skill")<CR>
-an 50.110.450 &Syntax.S-Sm.SKILL.SKILL\ for\ Diva :cal SetSyn("diva")<CR>
-an 50.110.460 &Syntax.S-Sm.Slice :cal SetSyn("slice")<CR>
-an 50.110.470 &Syntax.S-Sm.SLRN.Slrn\ rc :cal SetSyn("slrnrc")<CR>
-an 50.110.480 &Syntax.S-Sm.SLRN.Slrn\ score :cal SetSyn("slrnsc")<CR>
-an 50.110.490 &Syntax.S-Sm.SmallTalk :cal SetSyn("st")<CR>
-an 50.110.500 &Syntax.S-Sm.Smarty\ Templates :cal SetSyn("smarty")<CR>
-an 50.110.510 &Syntax.S-Sm.SMIL :cal SetSyn("smil")<CR>
-an 50.110.520 &Syntax.S-Sm.SMITH :cal SetSyn("smith")<CR>
+an 50.110.180 &Syntax.S-Sm.SCSS :cal SetSyn("scss")<CR>
+an 50.110.190 &Syntax.S-Sm.SDC\ Synopsys\ Design\ Constraints :cal SetSyn("sdc")<CR>
+an 50.110.200 &Syntax.S-Sm.SDL :cal SetSyn("sdl")<CR>
+an 50.110.210 &Syntax.S-Sm.Sed :cal SetSyn("sed")<CR>
+an 50.110.220 &Syntax.S-Sm.Sendmail\.cf :cal SetSyn("sm")<CR>
+an 50.110.230 &Syntax.S-Sm.Send-pr :cal SetSyn("sendpr")<CR>
+an 50.110.240 &Syntax.S-Sm.Sensors\.conf :cal SetSyn("sensors")<CR>
+an 50.110.250 &Syntax.S-Sm.Service\ Location\ config :cal SetSyn("slpconf")<CR>
+an 50.110.260 &Syntax.S-Sm.Service\ Location\ registration :cal SetSyn("slpreg")<CR>
+an 50.110.270 &Syntax.S-Sm.Service\ Location\ SPI :cal SetSyn("slpspi")<CR>
+an 50.110.280 &Syntax.S-Sm.Services :cal SetSyn("services")<CR>
+an 50.110.290 &Syntax.S-Sm.Setserial\ config :cal SetSyn("setserial")<CR>
+an 50.110.300 &Syntax.S-Sm.SGML.SGML\ catalog :cal SetSyn("catalog")<CR>
+an 50.110.310 &Syntax.S-Sm.SGML.SGML\ DTD :cal SetSyn("sgml")<CR>
+an 50.110.320 &Syntax.S-Sm.SGML.SGML\ Declaration :cal SetSyn("sgmldecl")<CR>
+an 50.110.330 &Syntax.S-Sm.SGML.SGML-linuxdoc :cal SetSyn("sgmllnx")<CR>
+an 50.110.340 &Syntax.S-Sm.Shell\ script.sh\ and\ ksh :cal SetSyn("sh")<CR>
+an 50.110.350 &Syntax.S-Sm.Shell\ script.csh :cal SetSyn("csh")<CR>
+an 50.110.360 &Syntax.S-Sm.Shell\ script.tcsh :cal SetSyn("tcsh")<CR>
+an 50.110.370 &Syntax.S-Sm.Shell\ script.zsh :cal SetSyn("zsh")<CR>
+an 50.110.380 &Syntax.S-Sm.SiCAD :cal SetSyn("sicad")<CR>
+an 50.110.390 &Syntax.S-Sm.Sieve :cal SetSyn("sieve")<CR>
+an 50.110.400 &Syntax.S-Sm.Simula :cal SetSyn("simula")<CR>
+an 50.110.410 &Syntax.S-Sm.Sinda.Sinda\ compare :cal SetSyn("sindacmp")<CR>
+an 50.110.420 &Syntax.S-Sm.Sinda.Sinda\ input :cal SetSyn("sinda")<CR>
+an 50.110.430 &Syntax.S-Sm.Sinda.Sinda\ output :cal SetSyn("sindaout")<CR>
+an 50.110.440 &Syntax.S-Sm.SiSU :cal SetSyn("sisu")<CR>
+an 50.110.450 &Syntax.S-Sm.SKILL.SKILL :cal SetSyn("skill")<CR>
+an 50.110.460 &Syntax.S-Sm.SKILL.SKILL\ for\ Diva :cal SetSyn("diva")<CR>
+an 50.110.470 &Syntax.S-Sm.Slice :cal SetSyn("slice")<CR>
+an 50.110.480 &Syntax.S-Sm.SLRN.Slrn\ rc :cal SetSyn("slrnrc")<CR>
+an 50.110.490 &Syntax.S-Sm.SLRN.Slrn\ score :cal SetSyn("slrnsc")<CR>
+an 50.110.500 &Syntax.S-Sm.SmallTalk :cal SetSyn("st")<CR>
+an 50.110.510 &Syntax.S-Sm.Smarty\ Templates :cal SetSyn("smarty")<CR>
+an 50.110.520 &Syntax.S-Sm.SMIL :cal SetSyn("smil")<CR>
+an 50.110.530 &Syntax.S-Sm.SMITH :cal SetSyn("smith")<CR>
 an 50.120.100 &Syntax.Sn-Sy.SNMP\ MIB :cal SetSyn("mib")<CR>
 an 50.120.110 &Syntax.Sn-Sy.SNNS.SNNS\ network :cal SetSyn("snnsnet")<CR>
 an 50.120.120 &Syntax.Sn-Sy.SNNS.SNNS\ pattern :cal SetSyn("snnspat")<CR>
