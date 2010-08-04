@@ -2049,6 +2049,36 @@ ga_grow(gap, n)
 }
 
 /*
+ * For a growing array that contains a list of strings: concatenate all the
+ * strings with a separating comma.
+ * Returns NULL when out of memory.
+ */
+    char_u *
+ga_concat_strings(gap)
+    garray_T *gap;
+{
+    int		i;
+    int		len = 0;
+    char_u	*s;
+
+    for (i = 0; i < gap->ga_len; ++i)
+	len += (int)STRLEN(((char_u **)(gap->ga_data))[i]) + 1;
+
+    s = alloc(len + 1);
+    if (s != NULL)
+    {
+	*s = NUL;
+	for (i = 0; i < gap->ga_len; ++i)
+	{
+	    if (*s != NUL)
+		STRCAT(s, ",");
+	    STRCAT(s, ((char_u **)(gap->ga_data))[i]);
+	}
+    }
+    return s;
+}
+
+/*
  * Concatenate a string to a growarray which contains characters.
  * Note: Does NOT copy the NUL at the end!
  */
@@ -4514,8 +4544,9 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what,
 	 * This is needed if the parameter path is fully qualified.
 	 */
 	search_ctx->ffsc_start_dir = vim_strsave(search_ctx->ffsc_fix_path);
-	if (search_ctx->ffsc_start_dir)
-	    search_ctx->ffsc_fix_path[0] = NUL;
+	if (search_ctx->ffsc_start_dir == NULL)
+	    goto error_return;
+	search_ctx->ffsc_fix_path[0] = NUL;
     }
 
     /* create an absolute path */

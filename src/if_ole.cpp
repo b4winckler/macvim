@@ -157,7 +157,8 @@ CVim *CVim::Create(int *pbDoRestart)
 	// Check we can write to the registry.
 	// RegCreateKeyEx succeeds even if key exists. W.Briscoe W2K 20021011
 	if (RegCreateKeyEx(HKEY_CLASSES_ROOT, MYVIPROGID, 0, NULL,
-		  REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, NULL))
+		  REG_OPTION_NON_VOLATILE,
+		  KEY_ALL_ACCESS, NULL, &hKey, NULL))
 	{
 	    delete me;
 	    return NULL; // Unable to write to registry. Quietly fail.
@@ -649,7 +650,8 @@ static void RecursiveDeleteKey(HKEY hKeyParent, const char *child)
 {
     // Open the child
     HKEY hKeyChild;
-    LONG result = RegOpenKeyEx(hKeyParent, child, 0, KEY_ALL_ACCESS, &hKeyChild);
+    LONG result = RegOpenKeyEx(hKeyParent, child, 0,
+			       KEY_ALL_ACCESS, &hKeyChild);
     if (result != ERROR_SUCCESS)
 	return;
 

@@ -62,10 +62,8 @@ MOFILES = \
 
 PACKAGE = vim
 
-# Correct the following line for the installation directory of gettext
-!ifndef GETTEXT_PATH
-GETTEXT_PATH = H:\gettext.win32.msvcrt\bin
-!endif
+# Correct the following line for the directory where gettext et al is installed
+GETTEXT_PATH = H:\gettext.0.14.4\bin
 
 MSGFMT = $(GETTEXT_PATH)\msgfmt
 XGETTEXT = $(GETTEXT_PATH)\xgettext
@@ -106,10 +104,6 @@ $(LANGUAGES): files
 install:
 	if not exist $(INSTALLDIR) $(MKD) $(INSTALLDIR)
 	$(CP) $(LANGUAGE).mo $(INSTALLDIR)\$(PACKAGE).mo
-
-install-all: all
-	FOR %%l IN ($(LANGUAGES)) DO @IF NOT EXIST $(VIMRUNTIME)\lang\%%l\LC_MESSAGES $(MKD) $(VIMRUNTIME)\lang\%%l\LC_MESSAGES
-	FOR %%l IN ($(LANGUAGES)) DO @$(CP) %%l.mo $(VIMRUNTIME)\lang\%%l\LC_MESSAGES\$(PACKAGE).mo
 
 clean:
 	$(RM) *.mo
