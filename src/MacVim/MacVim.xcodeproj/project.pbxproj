@@ -76,7 +76,6 @@
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
-		B59228A611F7572F00E7F584 /* MacVim.sdef in Resources */ = {isa = PBXBuildFile; fileRef = B59228A511F7572F00E7F584 /* MacVim.sdef */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -233,7 +232,6 @@
 		52AA577711C5D8E600D57D62 /* dsa_pub.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = dsa_pub.pem; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* MacVim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacVim.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B59228A511F7572F00E7F584 /* MacVim.sdef */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.sdef; path = MacVim.sdef; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -407,7 +405,6 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				B59228A511F7572F00E7F584 /* MacVim.sdef */,
 				52AA577711C5D8E600D57D62 /* dsa_pub.pem */,
 				5260A95611BD1E3300EE97ED /* Preferences.strings */,
 				5260A94C11BD1BBC00EE97ED /* MainMenu.strings */,
@@ -555,7 +552,6 @@
 				5260A94E11BD1BBC00EE97ED /* MainMenu.strings in Resources */,
 				5260A95811BD1E3300EE97ED /* Preferences.strings in Resources */,
 				52AA577811C5D8E600D57D62 /* dsa_pub.pem in Resources */,
-				B59228A611F7572F00E7F584 /* MacVim.sdef in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
