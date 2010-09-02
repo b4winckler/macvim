@@ -1,4 +1,4 @@
-*remote.txt*    For Vim バージョン 7.2.  Last change: 2008 May 24
+*remote.txt*    For Vim バージョン 7.3.  Last change: 2008 May 24
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -163,11 +163,9 @@ server2client()で使用するサーバIDはexpand("<client>")で取得できる
 ためにはそのXサーバでウィンドウを作成できなければならない。異なるマシン間での
 通信も可能である。
 
-デフォルトでは、GUI VimはXサーバに名前を登録する。
-By default, a GUI Vim will register a name on the X-server by which it can be
-addressed for subsequent execution of injected strings.
-Vimはクライアントとしても振舞い、同じX11ディスプレイで動作する別のVimインスタ
-ンスに文字列を送ることができる。
+デフォルトでは、GUI Vim は X サーバに名前を登録して送信された文字列を実行でき
+るように備える。Vim はクライアントとしても振舞い、同じ X11 ディスプレイで動作
+する別の Vim インスタンスに文字列を送ることができる。
 
 X11のGUI Vim(gvim)が起動すると、ルートウィンドウの'VimRegistry'プロパティに
 送信サーバ名を登録しようと試みる。

@@ -1,4 +1,4 @@
-*quotes.txt*    For Vim バージョン 7.2.  Last change: 2006 Apr 24
+*quotes.txt*    For Vim バージョン 7.3.  Last change: 2006 Apr 24
 
 
 		 VIMリファレンスマニュアル    by Bram Moolenaar
@@ -76,9 +76,8 @@ article on VIM in iX magazine 9/1998)
 つい最近VIについてのオライリーの本を手に入れた(VIMについても深く言及されてい
 た)。このアプリケーションがあまりにパワフルで驚愕した。 (Jeffrey Rankin)
 
-This guide was written using the Windows 9.x distribution of GVIM, which is
-quite possibly the greatest thing to come along since God created the naked
-girl. (Michael DiBernardo)
+このガイドは Windows 9.x 上の GVIM で書いている。これは神が裸の女性を創造して
+以来の最高傑作なんじゃないだろうか。 (Michael DiBernardo)
 
 坊主、私は私自身VIMについてほとんど総てのことを知っていると考えていた。しかし
 いつもオンラインドキュメントを眺めるたびに、それまで知らなかったVIMの機能の小

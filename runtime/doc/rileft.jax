@@ -1,4 +1,4 @@
-*rileft.txt*    For Vim バージョン 7.2.  Last change: 2006 Apr 24
+*rileft.txt*    For Vim バージョン 7.3.  Last change: 2006 Apr 24
 
 
 		VIMリファレンスマニュアル    by Avner Lottem
@@ -15,7 +15,7 @@ Vimにおける"右左"書きとヘブライマッピング			*rileft*
 {Vi にはこれらのコマンドはない}
 
 								*E26*
-この機能は|+rightleft|がコンパイル時に有効にされていた場合に使用可能である。
+{Vi m が |+rightleft| 機能付きでコンパイルされたときのみ有効}
 
 
 はじめに

@@ -1,4 +1,4 @@
-*filetype.txt*  For Vim バージョン 7.2.  Last change: 2008 Jul 15
+*filetype.txt*  For Vim バージョン 7.3.  Last change: 2008 Jul 15
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -490,14 +490,13 @@ b:changelog_path
 			上がれなくなるまで、再帰的にこれが繰り返される。
 
 b:changelog_entry_prefix
-			Name of a function to call to generate a prefix to a
-			new entry.  This function takes no arguments and
-			should return a string containing the prefix.
-			Returning an empty prefix is fine.
-			The default generates the shortest path between the
-			ChangeLog's pathname and the current buffers pathname.
-			In the future, it will also be possible to use other
-			variable contexts for this variable, for example, g:.
+			新しいエントリのプレフィックスを生成するための関数の名
+			前を指定する。関数は引数を取らず、プレフィックスの文字
+			列を返す。関数は空文字を返しても構わない。
+			デフォルトでは ChangeLog のパスとカレントバッファのパ
+			スの間の最短パスが使用される。
+			将来的には他の変数コンテキスト (例えば g:) でも指定で
+			きるようになる予定です。
 
 チェンジログエントリは適切な位置に挿入される。現在の日付とユーザーを得た後
 に、その日付とユーザーのエントリをファイルから探し、見つかればその下にアイテ

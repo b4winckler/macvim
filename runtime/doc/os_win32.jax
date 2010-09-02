@@ -1,4 +1,4 @@
-*os_win32.txt*  For Vim バージョン 7.2.  Last change: 2008 May 02
+*os_win32.txt*  For Vim バージョン 7.3.  Last change: 2010 Jul 20
 
 
 		  VIM REFERENCE MANUAL    by George Reilly
@@ -7,10 +7,13 @@
 						*win32* *Win32* *MS-Windows*
 このファイルはVim Win32バージョンに特有の事柄についての文書である。
 
-Vim Win32バージョンはWindows NTとWindows 95上で実行可能である。コンソールバー
-ジョンとGUIバージョンが存在する。Windows 3.1[1]のWin32sサブシステムで動くGUI
-バージョンもある。32ビットDOSバージョンのVimを使うこともできる。
-|os_msdos.txt|を参照。
+Win32 版の Vim は Windows NT, 95, 98, ME, XP, Vista, Windows 7 で実行可能で
+す。コンソール 版と GUI 版があります。
+
+32 ビット版 Vim は 64 ビット版 MS-Windows システム上でも実行可能です。
+
+Windows 3.1 [1] では Win32s サブシステムで動く GUI バージョンもあります。
+32 ビット DOS バージョン の Vim も使えます。|os_msdos.txt| を参照。
 
 1. 知られている問題点		|win32-problems|
 2. Vimの起動			|win32-startup|
@@ -37,7 +40,7 @@ Win32バージョンはGeorge V. Reilly <george@reilly.org>による。
 オリジナルのWindows NTへの移植はRoger Knobbe <RogerK@wonderware.com>による。
 GUIバージョンはGeorge V. ReillyとRobert Webbによって作成された。
 
-コンパイルする場合は"src/INSTALL.pc"を参照。		*win32-compiling*
+コンパイルする場合は"src/INSTALLpc.txt"を参照。		*win32-compiling*
 
 ==============================================================================
 1. 知られている問題点				*windows95* *win32-problems*

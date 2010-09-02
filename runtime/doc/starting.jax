@@ -1,4 +1,4 @@
-*starting.txt*  For Vim バージョン 7.2.  Last change: 2009 Nov 11
+*starting.txt*  For Vim バージョン 7.3.  Last change: 2009 Dec 31
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -942,7 +942,8 @@ Vim が起動すると、オプション 'compatible' がオンに設定され�
 るvimrc/exrcからコマンドが実行されるのと、ちょうど同じように働く。
 
 							*slow-start*
-Vimの起動に時間がかかる場合、幾つかの理由が考えられる:
+Vimの起動に時間がかかる場合は |--startuptime| 引数を使って原因を探すことができ
+ます。よくある原因としては次のようなものがあります:
 - UnixでGUIやX11を有効にしている場合(":version"の出力で"+GUI"と"+X11"をチェッ
   ク)、共有ライブラリをロードしX11サーバに接続する必要がある。GUIとX11を無効に
   してコンパイルしたバージョンを試して欲しい。これにより実行ファイルが小さくも

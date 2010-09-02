@@ -1,4 +1,4 @@
-*tabpage.txt*   For Vim バージョン 7.2.  Last change: 2007 Mar 11
+*tabpage.txt*   For Vim バージョン 7.3.  Last change: 2010 Jul 31
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -41,8 +41,8 @@
 
 タブページを開くには:
 
-Vim を "vim -p filename ..." と起動すると、それぞれのファイルごとに
-('tabpagemax' までの) タブページを開けます。|-p|
+Vim を "vim -p filename ..." と起動すると、それぞれのファイルごとに (最大
+'tabpagemax' までの) タブページを開けます。|-p| 参照。
 
 CUI の Vim でタブページラインをダブルクリックすると新しいタブページが作成され
 ます。新しいタブページはクリックした場所の左に作成されます。最初のクリックが他
@@ -53,17 +53,19 @@ CUI の Vim でタブページラインをダブルクリックすると新し�
 
 GUI でタブページラインを右クリックするとメニューが表示されます。|tabline-menu|
 
-:tabe[dit]				*:tabe* *:tabedit* *:tabnew*
-:tabnew		カレントタブページの後ろに空のウィンドウを持った新しいタブペー
-		ジを作成します。
+:[count]tabe[dit]				*:tabe* *:tabedit* *:tabnew*
+:[count]tabnew
+		カレントタブページの後ろに空のウィンドウを持った新しいタブペー
+		ジを作成します。[count] については下記 |:tab| 参照。
 
-:tabe[dit] [++opt] [+cmd] {file}
-:tabnew [++opt] [+cmd] {file}
+:[count]tabe[dit] [++opt] [+cmd] {file}
+:[count]tabnew [++opt] [+cmd] {file}
 		{file} を新しいタブページで開きます。|:edit| と同じです。
+		[count] については下記 |:tab| 参照。
 
-:tabf[ind] [++opt] [+cmd] {file}			*:tabf* *:tabfind*
+:[count]tabf[ind] [++opt] [+cmd] {file}			*:tabf* *:tabfind*
 		'path' 内の {file} を新しいタブページで開きます。|:find| と同
-		じです。
+		じです。[count] については下記 |:tab| 参照。
 		{|+file_in_path| が有効な場合のみ利用できます}
 
 :[count]tab {cmd}					*:tab*

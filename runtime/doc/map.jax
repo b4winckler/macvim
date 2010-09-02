@@ -1,4 +1,4 @@
-*map.txt*       For Vim バージョン 7.2.  Last change: 2009 Nov 04
+*map.txt*       For Vim バージョン 7.3.  Last change: 2010 Jul 31
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -750,7 +750,7 @@ g@{motion}		'operatorfunc' に設定された関数を実行します。
 			関数の引数には、文字列が一つ渡されます:
 			    "line"  {motion} は行単位 |linewise|
 			    "char"  {motion} は文字単位 |characterwise|
-			    "block" {motion} はブロック選択 |blockwise-visual||
+			    "block" {motion} はブロック選択 |blockwise-visual|
 			"block" はたまにしか使われません。ビジュアルモードの場
 			合だけ渡されるのですが、"g@" と合わせてもそれほど便利
 			ではないからです。
@@ -1057,7 +1057,7 @@ CTRL-V を押してから短縮入力の後の文字を入力します。
 番号を確認できます。
 
 これらはすべて {Vi にはない機能です}。
-{|+eval|が有効な場合のみ利用できます}
+{|+eval| が有効な場合のみ利用できます}
 
 ==============================================================================
 4. ユーザ定義コマンド (User-defined command)		*user-commands*
@@ -1184,13 +1184,15 @@ script2.vimを実行すると"None"が表示されます。期待した結果と
 	-complete=event		オートコマンドのイベント
 	-complete=expression	Vimの式
 	-complete=file		ファイルとディレクトリ
-	-complete=shellcmd	シェルコマンド
+	-complete=filetype	ファイルタイプ名 |'filetype'|
 	-complete=function	関数
 	-complete=help		ヘルプの主題
 	-complete=highlight	強調グループ
 	-complete=mapping	マップ
 	-complete=menu		メニュー
 	-complete=option	オプション
+	-complete=shellcmd	シェルコマンド
+	-complete=syntax	シンタックスファイル名 |'syntax'|
 	-complete=tag		タグ
 	-complete=tag_listfiles	CTRL-D を押した時にタグ、ファイル名を表示
 	-complete=var		ユーザ変数
@@ -1238,6 +1240,8 @@ script2.vimを実行すると"None"が表示されます。期待した結果と
     :    return split(globpath(&path, a:A), "\n")
     :endfun
 <
+この例はファイル名にスペースが含まれていると機能しません!
+
 
 範囲指定				*E177* *E178* *:command-range*
 							*:command-count*

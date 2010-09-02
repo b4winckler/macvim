@@ -1,12 +1,12 @@
-*diff.txt*      For Vim バージョン 7.2.  Last change: 2009 Sep 15
+*diff.txt*      For Vim バージョン 7.3.  Last change: 2010 Jul 31
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
 
 
 				*diff* *vimdiff* *gvimdiff* *diff-mode*
-このファイルは+diff機能: 同じファイルの2つ/3つ/4つのバージョン間の違いを表示す
-る機能について解説している。
+このファイルでは |+diff| 機能 (同じファイルの2つ/3つ/4つのバージョン間の違いを
+表示する機能) について解説します。
 
 基本はユーザマニュアルのセクション|08.7|に記載されている。
 
@@ -56,7 +56,8 @@ Vimが各ファイルについてウィンドウを開く時に起こること�
 
 	'diff'		on
 	'scrollbind'	on
-	'scrollopt'	"hor" を含む
+	'cursorbind'	on
+	'scrollopt'	"hor" を入れる
 	'wrap'		off
 	'foldmethod'	"diff"
 	'foldcolumn'	2
@@ -130,10 +131,11 @@ Vimが各ファイルについてウィンドウを開く時に起こること�
 これは差分モードが開始する前の値とは異なるかもしれない。その古い値は記憶され
 ていない。
 
-	'diff'		オフ
-	'scrollbind'	オフ
-	'scrollopt'	"hor" なし
-	'wrap'		オン
+	'diff'		off
+	'scrollbind'	off
+	'cursorbind'	off
+	'scrollopt'	"hor" を外す
+	'wrap'		off
 	'foldmethod'	"manual"
 	'foldcolumn'	0
 

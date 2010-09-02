@@ -1,4 +1,4 @@
-*pi_vimball.txt*	For Vim バージョン 7.2.  Last change: 2008 Jul 30
+*pi_vimball.txt*	For Vim バージョン 7.3.  Last change: 2010 Apr 12
 
 			       ----------------
 			       Vimball Archiver
@@ -6,7 +6,7 @@
 
 Author:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamily.AbizM>
 	  (remove NOSPAM from Campbell's email first)
-Copyright: (c) 2004-2008 by Charles E. Campbell, Jr.	*Vimball-copyright*
+Copyright: (c) 2004-2009 by Charles E. Campbell, Jr.	*Vimball-copyright*
 	   The VIM LICENSE applies to Vimball.vim, and Vimball.txt
 	   (see |copyright|) except use "Vimball" instead of "Vim".
 	   No warranty, express or implied.
@@ -53,7 +53,7 @@ Copyright: (c) 2004-2008 by Charles E. Campbell, Jr.	*Vimball-copyright*
 ==============================================================================
 3. マニュアル						*vimball-manual*
 
-							*:MkVimball*
+VIMBALL の作成							*:MkVimball*
 		:[range]MkVimball[!] filename [path]
 
 	作成する vimball に含めるファイルのパスを書き、それらの行を範囲指定し
@@ -74,30 +74,34 @@ Copyright: (c) 2004-2008 by Charles E. Campbell, Jr.	*Vimball-copyright*
 	感嘆符 (!) を指定すると、既存の "filename.vba" は上書きされます。
 	|:w| コマンドの動作と同じようなものです。
 
-							*g:vimball_mkdir*
+	ファイル名にスラッシュを含めたい場合も感嘆符を付ける必要があります
+	(例: :MkVimball! path/filename)。
+
+	http://vim.wikia.com/wiki/Using_VimBall_with_%27Make%27 に、作品の
+	vimball の作成を make を使って自動化するためのチップが掲載されていま
+	す。
+
+
+VIMBALL によるディレクトリの作成			*g:vimball_mkdir*
+
 	最初に |mkdir()| コマンドが試されます (それをサポートしていないシステ
 	ムもあります)。
 
 	|mkdir()| が使えず、g:vimball_mkdir が設定されていない場合は、次の順番
-	で設定されます:
+	で設定されます: >
 	  |g:netrw_local_mkdir| (変数が存在するなら)
-	   "mkdir"      (コマンドが存在するなら)
-	   "makedir"    (コマンドが存在するなら)
-	   設定なし
-	g:vimball_mkdir にはディレクトリ作成コマンドを指定します。自分で設定す
+	   "mkdir"              (コマンドが存在するなら)
+	   "makedir"            (コマンドが存在するなら)
+	   すべてだめなら       (未定義)
+<	g:vimball_mkdir にはディレクトリ作成コマンドを指定します。自分で設定す
 	ることもできます。このコマンドは vimball 展開時にディレクトリを作成す
 	るために使われます。
 
-							*g:vimball_home*
+
+VIMBALL を展開するディレクトリの設定			*g:vimball_home*
+
 	vimball によって使用される |'runtimepath'| を指定したい場合は
 	g:vimball_home 変数を設定してください。
-
-	Path の前処理					*g:vimball_path_escape*
-
-	vimball で使われるパスは s:Path() で前処理されます。加えて、特定の文字
-	がエスケープされます (バックスラッシュを前置)。エスケープされる文字は
-	g:vimball_path_escape 変数で定義されます。.vimrc の中で変数を設定する
-	ことで値を上書きできます。
 
 							*vimball-extract*
 		vim filename.vba
@@ -108,12 +112,16 @@ Copyright: (c) 2004-2008 by Charles E. Campbell, Jr.	*Vimball-copyright*
 	Vimball ファイルの一行目が "Vimball Archiver by Charles E. Campbell,
 	Jr., Ph.D." となっている場合のみ、ファイルを展開できます。
 
-		:VimballList				*:VimballList*
+VIMBALL 内のファイルを一覧表示する				*:VimballList*
+
+		:VimballList
 
 	このコマンドを実行すると、Vimball ファイルに含まれているファイルと、そ
 	れぞれの行数が表示されます。
 
-		:UseVimball [path]			*:UseVimball*
+VIMBALL の展開を手動で呼び出す					*:UseVimball*
+
+		:UseVimball [path]
 
 	このコマンドは vimball に埋め込まれます。これは vimbal#Vimball() を呼
 	び出して vimball を展開します。vimball を実行する代わりに、このコマン
@@ -121,7 +129,9 @@ Copyright: (c) 2004-2008 by Charles E. Campbell, Jr.	*Vimball-copyright*
 	きます。指定がない場合は |'runtimepath'| の最初の存在するディレクトリ
 	が使用されます。
 
-		:RmVimball vimballfile [path]		*:RmVimball*
+VIMBALL の削除							*:RmVimball*
+
+		:RmVimball vimballfile [path]
 
 	vimball に含まれていたすべてのファイルを削除します (ディレクトリは削除
 	されません)。アンインストール元のパスを指定できます (|'runtimepath'|参
@@ -131,10 +141,45 @@ Copyright: (c) 2004-2008 by Charles E. Campbell, Jr.	*Vimball-copyright*
 	ルが作成され、削除すべきファイル (それまでに vimball によってインス
 	トールされたファイル) が記録されます。
 
+ロードの無効化
+
+	もしなんらかの理由で vimballs プラグインを使いたくない場合は、次の二つ
+	の変数を <.vimrc> で設定すると、vimball.vim の読み込みを無効化できま
+	す: >
+
+		let g:loaded_vimballPlugin= 1
+		let g:loaded_vimball      = 1
+<
+WINDOWS							*vimball-windows*
+
+	多くの vimball ファイルは gzip で圧縮されています。残念ながら Windows
+	には gzip 圧縮されたファイルを展開するためのツールが含まれていません。
+	しかし幸運にも、Windows ユーザーにも使える gzip 展開ツールがいくつかあ
+	ります:
+>
+	    Item     Tool/Suite   Free   Website
+	    ----     ----------   ----   -------
+	    7zip        tool       y     http://www.7-zip.org/
+	    Winzip      tool       n     http://www.winzip.com/downwz.htm
+	    unxutils    suite      y     http://unxutils.sourceforge.net/
+	    cygwin      suite      y     http://www.cygwin.com/
+	    GnuWin32    suite      y     http://gnuwin32.sourceforge.net/
+	    MinGW       suite      y     http://www.mingw.org/
+<
 
 ==============================================================================
 4. 開発履歴						*vimball-history* {{{1
 
+	30 : Dec 08, 2008 * fnameescape() inserted to protect error
+			    messaging using corrupted filenames from
+			    causing problems
+			  * RmVimball supports filenames that would
+			    otherwise be considered to have "magic"
+			    characters (ie. Abc[1].vba)
+	     Feb 18, 2009 * s:Escape(), g:vimball_shq, and g:netrw_shq
+			    removed (shellescape() used directly)
+	     Oct 05, 2009 * (Nikolai Weibull) suggested that MkVimball
+			    be allowed to use slashes in the filename.
 	26 : May 27, 2008 * g:vimball_mkdir usage installed.  Makes the
 	                    $HOME/.vim (or $HOME\vimfiles) directory if
 			    necessary.
@@ -146,7 +191,7 @@ Copyright: (c) 2004-2008 by Charles E. Campbell, Jr.	*Vimball-copyright*
 	     Apr 18, 2008 * RmVimball command is now protected by saving and
 	                    restoring settings -- in particular, acd was
 			    causing problems as reported by Zhang Shuhan
-	24 : Nov 15, 2007 * |g:vimball_path_escape| used by s:Path() to
+	24 : Nov 15, 2007 * g:vimball_path_escape used by s:Path() to
 	                    prevent certain characters from causing trouble
 	22 : Mar 21, 2007 * uses setlocal instead of set during BufEnter
 	21 : Nov 27, 2006 * (tnx to Bill McCarthy) vimball had a header

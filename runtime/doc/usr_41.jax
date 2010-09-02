@@ -1,4 +1,4 @@
-*usr_41.txt*	For Vim バージョン 7.2.  Last change: 2008 Jun 21
+*usr_41.txt*	For Vim バージョン 7.3.  Last change: 2010 Jul 20
 
 		     VIM USER MANUAL - by Bram Moolenaar
 
@@ -552,7 +552,7 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 の一覧は |functions| を参照してください。関数の名前の上で CTRL-] を押すと、詳
 細な説明にジャンプできます。
 
-文字列繰作:
+文字列繰作:						*string-functions*
 	nr2char()		ASCII値から文字を得る
 	char2nr()		文字のASCII値を得る
 	str2nr()		文字列を数値に変換する
@@ -581,7 +581,7 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	repeat()		文字列を複数回繰り返す
 	eval()			文字列を式として評価する
 
-リスト操作:
+リスト操作:						*list-functions*
 	get()			要素を取得。存在しないインデックスでもエラーを
 				出さない
 	len()			リスト中の要素の個数
@@ -607,7 +607,7 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	count()			ある要素がリスト中に出現する回数を返す
 	repeat()		リストを複数回繰り返す
 
-辞書操作:
+辞書操作:						*dict-functions*
 	get()			辞書の要素を返す。存在しないキーでもエラーを出
 				さない
 	len()			辞書の要素の個数
@@ -627,7 +627,7 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	min()			辞書中の最小値
 	count()			ある値が出現する回数を返す
 
-浮動小数点数の計算:
+浮動小数点数の計算:					*float-functions*
 	float2nr()		Float を Number に変換
 	abs()			絶対値 (Numberも処理可能)
 	round()			丸め
@@ -641,19 +641,21 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	cos()			cosine (コサイン)
 	atan()			arc tangent (アークタンジェント)
 
-変数:
+変数:							*var-functions*
 	type()			変数の型
 	islocked()		変数がロックされているか判定する
 	function()		関数名からFuncrefを取得する
 	getbufvar()		指定バッファの変数値を得る
 	setbufvar()		指定バッファに変数を設定する
 	getwinvar()		指定ウィンドウの変数値を得る
+	gettabvar()		指定タブページから変数値を得る
 	gettabwinvar()		指定ウィンドウ・タブページから変数値を取得する
 	setwinvar()		指定ウィンドウに変数を設定する
+	settabvar()		指定タブページに変数を設定する
 	settabwinvar()		指定ウィンドウ・タブページに変数を設定する
 	garbagecollect()	開放可能なメモリを解放する
 
-カーソルとマークの位置:
+カーソルとマークの位置:			*cursor-functions* *mark-functions*
 	col()			カーソルやマークの列番号を得る
 	virtcol()		カーソルやマークの画面上の列番号を得る
 	line()			カーソルやマークの行番号を得る
@@ -666,7 +668,7 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	line2byte()		指定の行のバイト位置を得る
 	diff_filler()		ある行より上の詰め行の数を取得する
 
-カレントバッファで動作するもの:
+カレントバッファで動作するもの:				*text-functions*
 	getline()		バッファから行を得る
 	setline()		バッファの行を置き換える
 	append()		行または行のリストをバッファに追加する
@@ -681,6 +683,7 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	searchpairpos()		start/skip/end の対を探す
 	searchdecl()		名前が宣言されている場所を探す
 
+					*system-functions* *file-functions*
 システム関数とファイル繰作:
 	glob()			ワイルドカードを展開する
 	globpath()		複数のディレクトリを対象にワイルドカードを展開
@@ -707,13 +710,14 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	readfile()		ファイルを読み込み、行のリストを得る
 	writefile()		行のリストをファイルに書き込む
 
-日付と時刻:
+日付と時刻:				*date-functions* *time-functions*
 	getftime()		ファイルの最終更新日時を得る
 	localtime()		現在時刻を秒単位で得る
 	strftime()		時刻を文字列に変換する
 	reltime()		現在時刻または経過時間を正確に取得する
 	reltimestr()		reltime()の結果を文字列に変換する
 
+			*buffer-functions* *window-functions* *arg-functions*
 バッファ、ウィンドウ、引数リスト:
 	argc()			引数リストの大きさ
 	argidx()		引数リスト中の現在の位置
@@ -731,32 +735,32 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	winbufnr()		ウィンドウのバッファ番号を得る
 	getbufline()		バッファの行のリストを得る
 
-コマンドライン:
+コマンドライン:					*command-line-functions*
 	getcmdline()		現在のコマンドラインを取得
 	getcmdpos()		コマンドラインにおけるカーソル位置を取得
 	setcmdpos()		コマンドラインにおけるカーソル位置を設定
 	getcmdtype()		現在のコマンドラインの種類を返す
 
-Quickfixとロケーションリスト:
+Quickfixとロケーションリスト:			*quickfix-functions*
 	getqflist()		quickfixエラーのリスト
 	setqflist()		quickfixを変更する
 	getloclist()		ロケーションリストの項目のリスト
 	setloclist()		ロケーションリストを変更する
 
-インサートモード補完:
+インサートモード補完:					*completion-functions*
 	complete()		補完候補を設定する
 	complete_add()		補完候補を追加する
 	complete_check()	補完処理を終えるべきかどうかをチェックする
 	pumvisible()		ポップアップメニューが表示されているかチェック
 
-折り畳み:
+折り畳み:					*folding-functions*
 	foldclosed()		行が折り畳まれているかどうかをチェックする
 	foldclosedend()		foldclosed()と同様。折り畳み末尾の行番号を返す
 	foldlevel()		行の折り畳みレベルを得る
 	foldtext()		閉じた折り畳みを代替表示するテキストを生成
 	foldtextresult()	閉じた折り畳みを代替表示するテキストを得る
 
-シンタックスハイライト:
+シンタックスハイライト:		  *syntax-functions* *highlighting-functions*
 	clearmatches()		|matchadd()|と|:match|コマンドで定義されたマッ
 				チをクリアする
 	getmatches()		|matchadd()|と|:match|コマンドで定義されたすべ
@@ -773,18 +777,18 @@ Quickfixとロケーションリスト:
 				チを削除する
 	setmatches()		|getmatches()|で得たマッチを使って復元する
 
-スペリング:
+スペリング:					*spell-functions*
 	spellbadword()		カーソル位置以降のスペルミスを探す
 	spellsuggest()		スペル訂正の候補を返す
 	soundfold()		単語の同音等値(sound-a-like equivalent)を返す
 
-履歴:
+履歴:						*history-functions*
 	histadd()		履歴に項目を追加
 	histdel()		履歴から項目を削除
 	histget()		履歴の項目を得る
 	histnr()		履歴リストの最大インデックスを得る
 
-対話インターフェース:
+対話インターフェース:				*interactive-functions*
 	browse()		ファイル選択ダイアログを開く
 	browsedir()		ディレクトリ選択ダイアログを開く
 	confirm()		ユーザーに選択をさせる
@@ -798,12 +802,12 @@ Quickfixとロケーションリスト:
 	inputsave()		先行入力キューを保存して空にする
 	inputrestore()		inputsave()で保存した状態に戻す
 
-GUI:
+GUI:						*gui-functions*
 	getfontname()		現在使われているフォントの名前を取得
 	getwinposx()		GUIのVimウィンドウのX座標
 	getwinposy()		GUIのVimウィンドウのY座標
 
-Vimサーバ:
+Vimサーバ:					*server-functions*
 	serverlist()		サーバ名のリストを返す
 	remote_send()		Vimサーバにコマンド文字を送る
 	remote_expr()		Vimサーバで式を評価する
@@ -813,14 +817,14 @@ Vimサーバ:
 	foreground()		Vimのウィンドウを前面に持ってくる
 	remote_foreground()	Vimサーバのウィンドウを前面に持ってくる
 
-ウィンドウサイズと位置:
+ウィンドウサイズと位置:				*window-size-functions*
 	winheight()		ウィンドウの高さを取得
 	winwidth()		ウィンドウの幅を取得
 	winrestcmd()		ウィンドウサイズを復元するコマンドを返す
 	winsaveview()		カレントウィンドウのビューを取得
 	winrestview()		カレントウィンドウのビューを復元
 
-その他:
+その他:						*various-functions*
 	mode()			現在の編集モードを得る
 	visualmode()		最後に使われたビジュアルモードの種類
 	hasmapto()		マップの存在をチェック
@@ -843,6 +847,8 @@ Vimサーバ:
 
 	taglist()		マッチするタグのリストを取得
 	tagfiles()		タグファイルのリストを取得
+
+	mzeval()		|MzScheme| の式を評価する
 
 ==============================================================================
 *41.7*	関数を定義する
@@ -1670,14 +1676,21 @@ Vim スクリプトを書いて、それを多くの人に使ってもらうこ�
 れたプラグインを使いたいということもあります。したがって、指定したプラグインだ
 けを無効にできる必要があります。次のようにします: >
 
-  6	if exists("loaded_typecorr")
+  6	if exists("g:loaded_typecorr")
   7	  finish
   8	endif
-  9	let loaded_typecorr = 1
+  9	let g:loaded_typecorr = 1
 
 これはスクリプトの二重ロードを避ける効果もあります。スクリプトを二重にロードす
 ると、関数の再定義エラーが発生したり、自動コマンドが二重に追加されることでトラ
 ブルが起きたりします。
+
+変数の名前は "loaded_" で始めてプラグインのファイル名をそのまま付けるようにし
+てください。"g:" を付けることで関数の中で変数を使用したときに発生するミスを防
+いでいます (関数の中では "g:" を付けない変数はローカル変数になります)。
+
+"finish" を使ってファイルの残りの部分の読み込みを停止しています。この方法は
+ファイル全体を if-endif で囲むよりも速いです。
 
 
 マップ
@@ -1856,10 +1869,10 @@ Note: 28 行目では ":noremap" を使って、他のマップでトラブル�
   3	" Maintainer:	Bram Moolenaar <Bram@vim.org>
   4	" License:	This file is placed in the public domain.
   5
-  6	if exists("loaded_typecorr")
+  6	if exists("g:loaded_typecorr")
   7	  finish
   8	endif
-  9	let loaded_typecorr = 1
+  9	let g:loaded_typecorr = 1
  10
  11	let s:save_cpo = &cpo
  12	set cpo&vim

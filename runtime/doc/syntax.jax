@@ -1,4 +1,4 @@
-*syntax.txt*	For Vim バージョン 7.2.  Last change: 2009 Dec 19
+*syntax.txt*	For Vim バージョン 7.3.  Last change: 2010 Aug 10
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -35,7 +35,8 @@ Vimは全ての端末で構文ハイライトをサポートしている。し�
 13. グループのリンク			|:highlight-link|
 14. 構文の消去				|:syn-clear|
 15. 関数名などのハイライト		|tag-highlight|
-16. カラー対応xterm			|xterm-color|
+16. ウィンドウローカル構文		|:ownsyntax|
+17. カラー対応xterm			|xterm-color|
 
 {これらのコマンドはViには存在しない}
 
@@ -88,12 +89,12 @@ NOTE: 反転表示("gvim -fg white -bg black")を使用する場合、|gvimrc|�
 NOTE: |.gvimrc|の中で":gui"を使用すると"gvim -f"によりフォアグラウンドで開始す
 ることができなくなる。その際は":gui -f"を使用すること。
 
-
-次のコマンドで構文ハイライトの有効・無効を切換えることができる >
-   :if exists("syntax_on") | syntax off | else | syntax enable | endif
+							*g:syntax_on*
+次のコマンドで構文ハイライトの有効・無効を切換えることができる: >
+   :if exists("g:syntax_on") | syntax off | else | syntax enable | endif
 
 これをキーマップに設定するには、以下のように書く: >
-   :map <F7> :if exists("syntax_on") <Bar>
+   :map <F7> :if exists("g:syntax_on") <Bar>
 	\   syntax off <Bar>
 	\ else <Bar>
 	\   syntax enable <Bar>
@@ -254,7 +255,7 @@ NOTE: 長い行があって表示が遅く、構文ハイライトをオフに�
 
 	*Underlined	o 目立つ文章, HTMLリンク
 
-	*Ignore		o (見た目上)空白, 不可視
+	*Ignore		o (見た目上)空白, 不可視  |hl-Ignore|
 
 	*Error		o エラーなど、なんらかの誤った構造
 
@@ -272,6 +273,10 @@ NOTE: 長い行があって表示が遅く、構文ハイライトをオフに�
 
 以下の名前は予約されているのでグループ名として使用することはできない:
 	NONE   ALL   ALLBUT   contains   contained
+
+							*hl-Ignore*
+Ignore グループを使うときは、conceal 機能も使うと便利かもしれません。
+|conceal| 参照。
 
 ==============================================================================
 3. 構文ファイル読込の手順				*syntax-loading*
@@ -375,44 +380,63 @@ Vimはロードした構文の名前を変数"b:current_syntax"に記憶して�
 
 	:runtime! syntax/2html.vim
 <
-	警告: この処理には時間がかかる!
-
 							*:TOhtml*
 またはユーザコマンド":TOhtml"を使ってもよい。これは標準プラグイン中で定義され
 ている。":TOhtml"は範囲指定やビジュアルモードにも対応している: >
 
 	:10,40TOhtml
 
+警告: このスクリプトは遅い!  すべての行のすべての文字を処理しなければなりませ
+ん。処理に時間が掛かるので、初期設定では、処理経過を表示するためのプログレス
+バーがステータスラインに表示されます。プログレスバーを非表示にしたい場合は次の
+コマンドでそれを無効化できます。ほんの少しだけ処理速度が早くなります: >
+
+	let g:html_no_progress = 1
+
+":TOhtml" には diff モード用の特別な機能があり、すべての関連するウィンドウの内
+容が HTML として生成されます。これは g:html_diff_one_file を設定することで無効
+化できます: >
+
+	let g:html_diff_one_file = 1
+
 出力結果をファイルに保存すれば、好きなブラウザでそれを観ることができる。Vimで
 表示されるのと寸分たがわぬ色が再現される。
 
-変換の範囲を指定するには、"html_start_line"と"html_end_line"をその範囲の最初と
-最後に設定すること。例えば、最後に選択された範囲だけを変換するには: >
+変換の範囲を指定するには、|:TOhtml| コマンドに範囲を指定するか、
+"g:html_start_line" と "g:html_end_line" に変換したい範囲の最初と最後の行を設
+定します。例えば、最後に選択された範囲だけを変換するには: >
 
-	:let html_start_line = line("'<")
-	:let html_end_line = line("'>")
+	:let g:html_start_line = line("'<")
+	:let g:html_end_line = line("'>")
 
 オプション'number'が設定されている場合には、各行にNumberでハイライトされた行番
 号が付加される。"html_number_lines"に非0の値を設定すれば、HTMLの出力へ強制的に
 行番号を付加することができる: >
-   :let html_number_lines = 1
+   :let g:html_number_lines = 1
 この変数に0を設定すれば行番号を強制的に省略できる: >
-   :let html_number_lines = 0
+   :let g:html_number_lines = 0
 この変数を削除すれば元通り'number'に従うように戻すことができる: >
-   :unlet html_number_lines
+   :unlet g:html_number_lines
 
-デフォルトでは、古いブラウザ用に最適化されたHTMLが生成される。属性を表現するの
-にカスケードスタイルシートを使用したい場合には次の設定を使用する(結果的にかな
-り短いHTML 4に準拠したファイルが得られる): >
-   :let html_use_css = 1
+デフォルトでは、カスケーディングスタイルシート (CSS1) を使用した正当 (valid)
+な HTML 4.01 の HTML が生成されます。古いブラウザや、CSS をサポートしていない
+他のユーザーエージェント向けに HTML を生成したい場合は次のように設定してくださ
+い: >
+   :let g:html_use_css = 0
 
-閉じた折り畳みは、画面表示通りに HTML に出力される。これが好ましくないなら、
-2html を呼ぶ前にコマンド |zR| を使うか、または次のようにする: >
-   :let html_ignore_folding = 1
+Conceal されたテキストは HTML には表示されず、'conceallevel' の現在の設定に応
+じて |:syn-cchar| や 'listchars' の文字が代わりに表示されます。すべてのテキス
+トを表示したい場合は 2html を呼ぶ前に 'conceallevel' をゼロに設定するか、次の
+変数を設定してください: >
+   :let g:html_ignore_conceal = 1
+
+同様に、閉じた折り畳みは、画面表示通りに HTML に出力される。これが好ましくない
+なら、2html を呼ぶ前にコマンド |zR| を使うか、または次のようにする: >
+   :let g:html_ignore_folding = 1
 
 ブラウザ上でも Vim と同じように折り畳みの開閉を行えるようにしたいことがある
 だろう。そんなときは次の設定をすると、動的な折り畳みの HTML が生成される: >
-   :let html_dynamic_folds = 1
+   :let g:html_dynamic_folds = 1
 
 html_dynamic_folds を使うと、html_use_css も自動的にセットされる。古いブラウ
 ザで動的な折り畳みを実現するのは非常に難しいからである。html_ignore_folding
@@ -423,7 +447,7 @@ html_dynamic_folds を使うと、HTML でも Vim と同じような折畳表示
 が開閉される。この折畳表示カラムの幅は |'foldcolumn'| の設定値から始まり、文
 書の最大の折り畳みレベルまで増えていく。折畳表示カラムをまったく表示させない
 ようにするには次のようにする: >
-   :let html_no_foldcolumn = 1
+   :let g:html_no_foldcolumn = 1
 
 このオプションをセットすると、HTML の中で折り畳みを開くための折畳表示カラム
 がすべてなくなってしまう。そこで、html_hover_unfold というオプションが用意さ
@@ -434,7 +458,7 @@ Internet Explorer 6)はこの機能に対応していないことに注意。IE6
 はできない。html_hover_unfold を有効にしているとき、新しいブラウザなら
 JavaScript を無効にしていても閉じた折畳の中を見られることに注意。このオプショ
 ンを有効にするには次のようにする: >
-   :let html_hover_unfold = 1
+   :let g:html_hover_unfold = 1
 
 html_no_foldcolumn と html_dynamic_folds をセットすると、自動的に
 html_hover_unfold もセットされる。そうしないと折畳が閉じたままになってしまう
@@ -443,7 +467,7 @@ html_hover_unfold もセットされる。そうしないと折畳が閉じた�
 デフォルトでは、テキストの周りに"<pre>"と"</pre>"がつけられる。これによって、
 ブラウザでも折り返しをせずに、Vimで表示される通りになる。一部が少々変わっても
 いいから折り返しをさせたいなら、次のようにする: >
-   :let html_no_pre = 1
+   :let g:html_no_pre = 1
 こうすると、各行末に<br>を使い、連続するスペースに"&nbsp;"を使うようになる。
 
 HTML ファイルの文字集合の指定には現在の 'encoding' の値が使われる。ただし、
@@ -451,32 +475,32 @@ HTML ファイルの文字集合の指定には現在の 'encoding' の値が使
 れを上書きするには、g:html_use_encoding に使用したい文字集合名をセットすればよ
 い:
 >
-   :let html_use_encoding = "foobar"
+   :let g:html_use_encoding = "foobar"
 文字集合指定の行を省略するには、g:html_use_encodingを空文字列にする: >
-   :let html_use_encoding = ""
+   :let g:html_use_encoding = ""
 自動的に判断する設定に戻したいなら、変数g:html_use_encodingを削除する: >
-   :unlet html_use_encoding
+   :unlet g:html_use_encoding
 <
 差分モードにおいて、3行以上連続した削除行(訳注:他方のファイルに行が挿入されて
 いることを示す行)は3行で表示され、そこに何行挿入されているかが真ん中の行に表示
 される。挿入された行数分の空行を表示させたい場合は、次のようにする: >
-    :let html_whole_filler = 1
+    :let g:html_whole_filler = 1
 3行で表示するように戻すにはこうする: >
-    :unlet html_whole_filler
+    :unlet g:html_whole_filler
 <
 					    *convert-to-XML* *convert-to-XHTML*
-代わりにXHTML(XML準拠のHTML)を生成するスクリプトを使うこともできる。そうするに
-は変数"use_xhtml"をセットする: > :let use_xhtml = 1
-これを無効にするにはこの変数を削除する: >
-    :unlet use_xhtml
-生成されたXHTMLファイルはDocBook XMLドキュメントで使用できる。次を参照:
-	http://people.mech.kuleuven.ac.be/~pissaris/howto/src2db.html
+HTML ではなく XHTML (XML 準拠の HTML) を生成することもできます。
+"html_use_xhtml" 変数を設定してください: >
+    :let g:html_use_xhtml = 1
+
+これらの変数は明示的に希望の値を設定することで有効化または無効化できます。
+|:unlet| を使って変数を削除することで初期設定に戻すこともできます。
 
 覚書き:
 - この機能はGUIをサポートしたバージョンでしか動作しない。(X11などの)GUIが実際
   に機能していない状況でも動作はするが、良い結果は得られない(色が異なってしま
   う)。
-- 古いブラウザでは背景色が表示されないことがある。
+- いくつかの本当に古いブラウザでは背景色が表示されないことがある。
 - 大半のブラウザでは(なんとカラーで)印刷することができる!
 
 ここではUNIXのシェル上で全ての.cと.hをコンバートする方法を例として示す: >
@@ -818,11 +842,12 @@ vimrcに次のコマンドを書くとよい: >
 
 DESKTOP					   *desktop.vim* *ft-desktop-syntax*
 
-この構文ファイルの本来の目的は、freedesktop.org標準
-(http://pdx.freedesktop.org/Standards/参照) の.desktopと.directoryファイルを
-構文ハイライトすることである。しかし実際にはこの標準を完全に実装したものはほと
-んどない。なのでこれは全てのiniファイルをハイライトする。ただし次をvimrcファイ
-ルに書くことによって厳格に標準に準拠したハイライトをさせることもできる: >
+この構文ファイルの本来の目的は、freedesktop.org 標準の .desktop と .directory
+を構文ハイライトすることである:
+http://standards.freedesktop.org/desktop-entry-spec/latest/
+しかし実際にはこの標準を完全に実装したものはほとんどない。なのでこれは全ての
+iniファイルをハイライトする。ただし次をvimrcファイルに書くことによって厳格に標
+準に準拠したハイライトをさせることもできる: >
 	:let enforce_freedesktop_standard = 1
 
 
@@ -887,7 +912,7 @@ Doxygen のフォーマットを有効にするにはいくつかの方法があ
 または  >
 	// vim:syntax=c.doxygen
 
-c, cpp, idl のファイルに対しては、グローバルまたはバッファローカルな変数
+C, C++, C#, IDL のファイルに対しては、グローバルまたはバッファローカルな変数
 load_doxygen_syntax を設定すれば自動的にこれが行われる。次の行を .vimrc に加え
 る。 >
 	:let g:load_doxygen_syntax=1
@@ -1054,9 +1079,11 @@ FORM用の既定の拡張カラーモードではヘッダ命令とFORMプログ
 FORTRAN					*fortran.vim* *ft-fortran-syntax*
 
 デフォルトのハイライトと方言 ~
-デフォルトではf95(Fortran 95)に相当するハイライトが行なわれる。Fortran 95は
-Fortran 90のスーパーセットであり、かつFortran 77のほぼスーパーセットであるから、
-多くのユーザの多くのケースにとって適切な選択である。
+デフォルトでは f95 (Fortran 95) に相当するハイライトが行なわれる。Fortran 95
+は Fortran 90 のスーパーセットであり、かつ Fortran 77のほぼスーパーセットであ
+るから、多くのユーザの多くのケースにとって適切な選択である。Fortran 2003 と
+Fortran 2008 の機能にも対応しており、これはデフォルトの (f95) ハイライトの中で
+自動的に利用可能である。
 
 Fortranソースコードの形式 ~
 Fortran 9xのソースコードには固定形式と自由形式が有る。形式が誤って設定されてい
@@ -1525,6 +1552,13 @@ LEX						*lex.vim* *ft-lex-syntax*
 の値を変更するとよいかもしれない。
 
 
+LIFELINES				*lifelines.vim* *ft-lifelines-syntax*
+
+廃止された関数をエラーとしてハイライトしたい場合は .vimrc で次のように設定して
+ください: >
+
+	:let g:lifelines_deprecated = 1
+<
 LISP						*lisp.vim* *ft-lisp-syntax*
 
 lisp の構文ハイライトには2つのオプションがある: >
@@ -2479,7 +2513,7 @@ tcsh_minlines に "fromstart" をセットすると、ファイルの先頭か�
 TEX						*tex.vim* *ft-tex-syntax*
 
 								*tex-folding*
-構文折り畳み? ~
+ Tex: 構文折り畳み? ~
 
 <syntax/tex.vim>のバージョン28以降では、構文による部分、章、節、小節などの折り
 畳みに対応している。それを有効にするには次の行を<.vimrc>に書き、 >
@@ -2489,15 +2523,24 @@ TEX						*tex.vim* *ft-tex-syntax*
 	% vim: fdm=syntax
 <
 								*tex-nospell*
-コメントの中ではスペルチェックを行わせたくない場合
+ Tex: コメントの中ではスペルチェックを行わせたくない場合 ~
 
 LaTeX ファイルのコメントの中にソースコードのようなものを含めることがあるので、
 コメントの中ではスペルチェックを無効にしたいという人もいる。そのようにするには
 次の行を .vimrc に加える: >
       let g:tex_comment_nospell= 1
 <
-*tex-runon*
-追い込みコメント/Mathについて ~
+								*tex-verb*
+ Tex: Verbatim ゾーンをスペルチェックするには?~
+
+たいてい verbatim リージョンはソースコードのようなものを書くのに使われます。
+ソースコードをスペルチェックしたいと思うことはほとんどないでしょう。とはいえ、
+もし verbatim ゾーンの内容をスペルチェックしたいときは <.vimrc> で次のように設
+定してください: >
+	let g:tex_verbspell= 1
+<
+								*tex-runon*
+ Tex: コメントや MathZone の区切り ~
 
 <syntax/tex.vim>の構文ハイライトはTeX, LaTeX, AmsTeXをサポートしている。normal,
 texZone, texMathZoneの3つの主な区間・範囲がサポートされている。これらの区間を
@@ -2509,7 +2552,7 @@ texZone, texMathZoneの3つの主な区間・範囲がサポートされてい�
 らせる。
 
 								*tex-slow*
-構文ハイライトが遅いならば ~
+ Tex: 構文ハイライトが遅いならば ~
 
 遅いコンピュータを使っているなら、これらの値を減らすとよいかもしれない >
 	:syn sync maxlines=200
@@ -2519,7 +2562,7 @@ texZone, texMathZoneの3つの主な区間・範囲がサポートされてい�
 影響を与える。
 
 					    *tex-morecommands* *tex-package*
-もっとコマンドをハイライトさせるには ~
+ Tex: もっとコマンドをハイライトさせるには ~
 
 LaTeXはプログラミング言語であり、特殊化されたLaTeXのコマンド、構文、フォントが
 つまったパッケージがたくさんある。そのようなパッケージを使っている人は、標準の
@@ -2528,7 +2571,7 @@ syntax/tex.vimにそのパッケージを対応させてほしいと思うだろ
 、syntax/tex.vimで提供されているハイライトを拡張・修正してみてください。
 
 								*tex-error*
-エラーのハイライトが行き過ぎならば ~
+ Tex: エラーのハイライトが行き過ぎならば ~
 
 <tex.vim>は様々な種類のレキシカルエラーチェックをサポートしている。すなわち、
 エラーチェックはとても便利だが、実際にはエラーでない箇所もエラーと示すかもしれ
@@ -2537,7 +2580,7 @@ syntax/tex.vimにそのパッケージを対応させてほしいと思うだろ
 すると<syntax/tex.vim>によるすべてのエラーチェックが行われなくなる。
 
 								*tex-math*
-新しいMathグループが必要ならば ~
+ Tex: 新しいMathグループが必要ならば ~
 
 新しいmathグループをLaTeXに含めるには、以下のコードがその例となるだろう: >
 
@@ -2556,7 +2599,7 @@ LOCALMATHをあなたが決めた新しいmathグループに書き換える必�
 を.vim/after/syntax/tex.vimに加えること。
 
 								*tex-style*
-新しいスタイルを始めるには ~
+ Tex: 新しいスタイルを始めるには ~
 
 *.texファイルで"\makeatletter"を使う人がいるかもしれないので、コマンド中で"@"
 が使えるようになっている。しかし*.texファイルは次の拡張子: sty cls clo dtx ltx
@@ -2567,6 +2610,35 @@ LOCALMATHをあなたが決めた新しいmathグループに書き換える必�
 
 "let g:tex_stylish=1"を<.vimrc>に書くと<syntax/tex.vim>は常にこのような@の使用
 法を受け入れるようになる。
+
+					*tex-cchar* *tex-cole* *tex-conceal*
+ Tex: Conceal モードを活用する ~
+
+'conceallevel' が 2 に設定され、エンコーディングとして utf-8 が使われていると
+き、さまざまな文字シーケンスがそれに対応した utf-8 グリフとして表示されます。
+対応している文字としてはアクセント付き文字、Math ゾーンの中のギリシア文字、
+Math ゾーンの中の上付き記号と下付き記号などがあります。すべての上付き記号と下
+付き記号を表示できるわけではありません。utf-8 がサポートしている範囲でのみ利用
+可能です。実際のところ、サポートされている下付き記号は少ししかありません。
+
+使用例としては、ウィンドウを垂直分割して (|CTRL-W_v| 参照)、一つのウィンドウは
+|'conceallevel'| を 0 に設定してもう一方は 2 に設定し、両方で |'scrollbind'|
+を設定するような使い方があります。
+
+							*g:tex_conceal*
+ Tex: Conceal モードの選択 ~
+
+g:tex_conceal を <.vimrc> で設定することで Conceal モードの表示を変更できま
+す。初期設定は "admgs" で、これは次の文字セットが Conceal 表示されます: >
+
+	a = アクセント/合字 (accents/ligatures)
+	d = 区切り記号 (delimiters)
+	m = 数学記号 (math symbols)
+	g = ギリシア文字 (Greek)
+	s = 上付き記号/下付き記号 (superscripts/subscripts)
+<
+これらの文字を設定から外すことで、それに関連した文字が Conceal 表示されなくな
+ります。
 
 
 TF						*tf.vim* *ft-tf-syntax*
@@ -3001,13 +3073,15 @@ xpm.vimは編集中のXPMファイルの内容から、動的に構文要素を�
 
 全てのコマンドが全ての引数を受けいれるわけではない。次の表はどの引数がどのコマ
 ンドに対して利用可能かを示している:
-							*E395* *E396*
-		    contains  oneline	fold  display  extend ~
-:syntax keyword		 -	 -	 -	 -	 -
-:syntax match		yes	 -	yes	yes	yes
-:syntax region		yes	yes	yes	yes	yes
+							*E395*
+		    contains  oneline	fold  display  extend concealends~
+:syntax keyword		 -	 -	 -	 -	 -      -
+:syntax match		yes	 -	yes	yes	yes     -
+:syntax region		yes	yes	yes	yes	yes    yes
 
 以下の引数は3つのコマンド全てに対して使える:
+	conceal
+	cchar
 	contained
 	containedin
 	nextgroup
@@ -3016,6 +3090,30 @@ xpm.vimは編集中のXPMファイルの内容から、動的に構文要素を�
 	skipnl
 	skipempty
 
+conceal						*conceal* *:syn-conceal*
+訳注: conceal = 隠す、秘密にする
+
+"conceal" 引数が指定されると、そのアイテムは Conceal 可能になります。アイテム
+が実際に Conceal 表示されるかどうかは 'conceallevel' オプションの設定に依存し
+ます。現在行のアイテムを Conceal 表示するかどうかは 'concealcursor' オプション
+で制御できます (行の編集を妨げないようにするため)。
+
+concealends						*:syn-concealends*
+
+"concealends" 引数が指定されると、リージョンの開始部分と終了部分が Conceal 可
+能になります (リージョンの中身はなりません)。アイテムが実際に Conceal 表示され
+るかどうかは 'conceallevel' の設定に依存します。"matchgroup" で別のハイライト
+を設定することでリージョンの終了部分だけを別に Conceal 表示するということもで
+きます。
+
+cchar							*:syn-cchar*
+
+"cchar" 引数はアイテムが Conceal 表示されたときに実際に画面に表示される文字を
+定義します ("cchar" は conceal 引数が指定されたときのみ意味を持ちます)。
+"cchar" が指定されていない場合はデフォルトの Conceal 文字として 'listchars' オ
+プションが使われます。例: >
+   :syntax match Entity "&amp;" conceal cchar=&
+ハイライトについては |hl-Conceal| を参照してください。
 
 contained						*:syn-contained*
 
@@ -3253,6 +3351,16 @@ Note マッチ"[^ \t].*"はホワイトスペース以外の全てのテキス�
 て"endif"にもマッチする。そのためマッチ"endif"を最後に置き、最優先にしている。
 Note この例はネストした"if"には機能しないことに注意。ネストに対応するには引数
 "contains"を指定する必要がある(この例では簡単のため省略した)。
+
+暗黙 CONCEAL (IMPLICIT CONCEAL)				*:syn-conceal-implicit*
+
+:sy[ntax] conceal [on|off]
+	これ以降の ":syntax" コマンドでキーワード、マッチ、リージョンを定義し
+	たときに "conceal" フラグをセットするかどうかを定義します。":syn
+	conceal on" を実行した後で ":syn keyword"、":syn match"、":syn region"
+	を実行すると、暗黙的に "conceal" フラグがセットされます。":syn conceal
+	off" を実行することで通常の状態、つまり "conceal" フラグを明示的に設定
+	しなければならない状態に戻ります。
 
 ==============================================================================
 7. syntaxのパターン				*:syn-pattern* *E401* *E402*
@@ -3708,13 +3816,20 @@ skipパターンも"\n"を含んでよい。ただし次の行の最初の文字
 自身の色を使って表示する。
 
 						*:colo* *:colorscheme* *E185*
+:colo[rscheme]		現在のカラースキームの名前を表示します。
+			基本的には次のコマンドと同じです >
+				:echo g:colors_name
+<			g:colors_name が定義されていない場合は "default" と表
+			示されます。|+eval| 機能付きでコンパイルされていない場
+			合は "unknown" と表示されます。
+
 :colo[rscheme] {name}	カラースキーム{name}を読み込む。これは'runtimepath'中
 			から"colors/{name}.vim"というファイルを検索する。最初
 			に見つかったものが読み込まれる。
-			現在使われているカラースキームの名前を見るには: >
-				:echo g:colors_name
-<			デフォルトのカラースキームを使っている場合はエラー E121
-			になる。
+			現在使われているカラースキームの名前を見るには次のよう
+			にします: >
+				:colo
+<			名前は g:colors_name 変数にも格納されています。
 			再帰的な読み込みはされない。つまりカラースキームスクリ
 			プト中で":colorscheme"を使うことはできない。
 			カラースキームが読み込まれた後、自動コマンドイベント
@@ -3984,6 +4099,11 @@ guisp={color-name}					*highlight-guisp*
 以下はデフォルトのハイライトグループである。これらのグループはデフォルトでオプ
 ション'highlight'によって使われる。ただしハイライトは'background'の値に依存す
 ることに注意。":highlight"コマンドで現在の設定を知ることができる。
+							*hl-ColorColumn*
+ColorColumn	'colorcolumn' で設定された列の表示に使われる
+							*hl-Conceal*
+Conceal		Conceal されたテキストの代わりに表示される代替文字の表示に使わ
+		れる ('conceallevel' 参照)
 							*hl-Cursor*
 Cursor		カーソル下の文字
 							*hl-CursorIM*
@@ -4016,8 +4136,9 @@ SignColumn	目印|signs|が表示される行。
 IncSearch	'incsearch'のハイライト; ":s///c"で置換されたテキストにも使わ
 		れる。
 							*hl-LineNr*
-LineNr		":number"と":#"コマンドの行番号。オプション'number'がセットさ
-		れているときはそれにも使われる。
+LineNr		":number" と ":#" コマンドの行番号。'number' オプションか
+		'relativenumber' オプションが設定されているときにはその表示に
+		も使われる。
 							*hl-MatchParen*
 MatchParen	カーソル下の文字、または直後の文字が括弧であるとき、その文字と
 		対応する括弧に使われる。|pi_paren.txt|
@@ -4270,6 +4391,32 @@ types.vim: *.[ch]
    autocmd BufRead,BufNewFile *.[ch] if filereadable(fname)
    autocmd BufRead,BufNewFile *.[ch]   exe 'so ' . fname
    autocmd BufRead,BufNewFile *.[ch] endif
+
+==============================================================================
+16. ウィンドウローカル構文			*:ownsyntax*
+
+通常は同じバッファを表示するすべてのウィンドウは同じ構文設定を共有します。しか
+しながら、特定のウィンドウだけ別の構文設定を使用することも可能です。例えば
+一つのウィンドウで LaTeX のソースを普通に表示して、別のウィンドウで異なる表示
+をする (文字を隠したり太字や斜字体で表示したりする) ことが可能です。その場合は
+'scrollbind' オプションを使うと便利です。
+
+同じバッファを表示しているウィンドウが複数あって、現在のウィンドウの構文だけを
+"foo" に設定するには次のようにします: >
+   :ownsyntax foo
+<						*w:current_syntax*
+"w:current_syntax" 変数が "foo" に設定されます。"b:current_syntax" 変数の値は
+変更されません。"b:current_syntax" は構文ファイルによって変更されますが、
+"b:current_syntax" を一時的に保存・復元することで値が変わらないようになってい
+ます。構文ファイルによって設定された値が "w:current_syntax" に代入されます。
+
+ウィンドウの独自構文が定義されると、同じバッファの他のウィンドウで実行された構
+文コマンドが影響しなくなります。逆に、そのウィンドウで実行された構文コマンドも
+他のウィンドウには影響しなくなります。
+
+独自構文を持ったウィンドウは他のバッファを読み込むかファイルを再読み込みするこ
+とで通常の動作に戻ります。
+ウィンドウを分割したときは、新しいウィンドウは元々の構文を使います。
 
 ==============================================================================
 16. カラー対応xterm				*xterm-color* *color-xterm*

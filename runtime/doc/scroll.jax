@@ -1,4 +1,4 @@
-*scroll.txt*    For Vim バージョン 7.2.  Last change: 2006 Aug 27
+*scroll.txt*    For Vim バージョン 7.3.  Last change: 2006 Aug 27
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -231,30 +231,42 @@ ze			カーソルのある位置がスクリーンの終わり(右側)に来る�
 ==============================================================================
 6. マウスホイールスクロール				*scroll-mouse-wheel*
 
-貴方のマウスにスクロールホイールがあるときには、GUIのVimでそれを使うことができ
-る。どのように働くかは貴方のシステムに依存する。それはxtermでも動作する
-|xterm-mouse-wheel|。
+マウスにスクロールホイールがあるときは、GUI の Vim でそれを使うことができる。
+どのように動作するかはシステムに依存する。ホイールは xterm でも動作する
+|xterm-mouse-wheel|。デフォルトでは垂直スクロールホイールのみサポートされてい
+る。いくつかの GUI では水平スクロールホイールもサポートされている。
 
 Win32 GUIではスクロールの動作はソースに埋め込まれている。それはちょうど現在の
 ウィンドウのスクロールバーをドラッグした時のように働く。何行スクロールするかは
 貴方のマウスドライバに依存する。スクロールの動作が入力フォーカスの問題を引き起
 こすならば、|intellimouse-wheel-problems|を参照。
 
-X11GUI(Motif、AthenaそしてGTK)ではホイールを回すと<MouseDown>と<MouseUp>のキー
-が押されたことになる。これらのキーのデフォルトの動作は次の通り:
-    <MouseDown>		3行下にスクロール		*<MouseDown>*
-    <S-MouseDown>	1ページ下にスクロール		*<S-MouseDown>*
-    <C-MouseDown>	1ページ下にスクロール		*<C-MouseDown>*
-    <MouseUp>		3行上にスクロール		*<MouseUp>*
-    <S-MouseUp>		1ページ上にスクロール		*<S-MouseUp>*
-    <C-MouseUp>		1ページ上にスクロール		*<C-MouseUp>*
+X11 GUI (Motif、Athena、GTK) ではホイールを回すと <ScrollWheelUp>、
+<ScrollWheelDown>、<ScrollWheelLeft>、<ScrollWheelRight> などのキー入力が発生
+する。例えば、スクロールホイールを上に回すと <ScrollWheelUp> キーが生成され、
+ウィンドウが上にスクロールする (つまりテキストが下に移動する)。これらのキーの
+デフォルトの動作は次の通り:
+    <ScrollWheelUp>	    3 行上にスクロール		*<ScrollWheelUp>*
+    <S-ScrollWheelUp>	    1 画面上にスクロール	*<S-ScrollWheelUp>*
+    <C-ScrollWheelUp>	    1 画面上にスクロール	*<C-ScrollWheelUp>*
+    <ScrollWheelDown>	    3 行下にスクロール		*<ScrollWheelDown>*
+    <S-ScrollWheelDown>	    1 画面下にスクロール	*<S-ScrollWheelDown>*
+    <C-ScrollWheelDown>	    1 画面下にスクロール	*<C-ScrollWheelDown>*
+    <ScrollWheelLeft>	    6 列左にスクロール		*<ScrollWheelLeft>*
+    <S-ScrollWheelLeft>	    1 画面左にスクロール	*<S-ScrollWheelLeft>*
+    <C-ScrollWheelLeft>	    1 画面左にスクロール	*<C-ScrollWheelLeft>*
+    <ScrollWheelRight>	    6 列右にスクロール		*<ScrollWheelRight>*
+    <S-ScrollWheelRight>    1 画面右にスクロール	*<S-ScrollWheelRight>*
+    <C-ScrollWheelRight>    1 画面右にスクロール	*<C-ScrollWheelRight>*
 これはコマンドラインを編集する以外の、全てのモードで動作するだろう。
 
-<MouseDown>はホイールをまわしたときに、テキストをスクロールするために使われる
-ことに注意してください。
+Note: 水平スクロールは 'nowrap' が設定されているときのみ機能します。また、
+'guioptions' の "h" フラグが設定されていない場合は、スクロールするとカーソル行
+が画面外になってしまうようなときに、表示されている範囲の一番長い行にカーソルが
+移動します (水平スクロールバーの動作に似た感じ)。
 
-キーマッピングによりこの振る舞いを変更することができる。例えば、ノーマルモード
-でホイールによるスクロールを1行にしたり半画面にしたりできる: >
+キーマッピングによりデフォルトの振る舞いを変更することができる。例えば、ノーマ
+ルモードでホイールによるスクロールを1行にしたり半画面にしたりできる: >
     map <MouseDown> <C-Y>
     map <S-MouseDown> <C-U>
     map <MouseUp> <C-E>
@@ -272,6 +284,10 @@ XFree86を使っているときには、/etc/XF86Configに貴方のマウスの�
     ZAxisMapping 4 5
 詳しくはXFree86のドキュメントを参照すること。
 
+						*<MouseDown>* *<MouseUp>*
+<MouseDown> と <MouseUp> は廃止されました。<MouseDown> の代わりに
+<ScrollWheelUp> を、<MouseUp> の代わりに <ScrollWheelDown> を使ってください。
+
 							*xterm-mouse-wheel*
 新しいxtermでマウスホイールを使うには、上で書かれているようにXserverでスクロー
 ルホイールマウスが動作するようにするだけで良い。
@@ -280,8 +296,8 @@ XFree86を使っているときには、/etc/XF86Configに貴方のマウスの�
 1. 上にかかれているように、Xserverで使えるようにする。
 2. xtermに変換を追加し、スクロールイベントをVimへエスケープシーケンスとして渡
    すようにする。
-3. Vimにマッピングを追加し、エスケープシーケンスが<MouseUp>もしくは<MouseDown>
-   キーになるようにする。
+3. Vimにマッピングを追加し、エスケープシーケンスを <ScrollWheelDown> もしくは
+   <ScrollWheelUp> キーとして解釈できるようにする。
 
 次のような内容をあなたの~/.Xdefaults(もしくは別名の貴方のXリソースファイル)に
 追加すれば変換ができる。 >
@@ -294,14 +310,14 @@ XFree86を使っているときには、/etc/XF86Configに貴方のマウスの�
  		<Btn4Up>: \n\
  		<Btn5Up>:
 
-これらのマッピングを貴方のvimrcファイルに追加しなさい: >
-	:map <M-Esc>[62~ <MouseDown>
-	:map! <M-Esc>[62~ <MouseDown>
-	:map <M-Esc>[63~ <MouseUp>
-	:map! <M-Esc>[63~ <MouseUp>
-	:map <M-Esc>[64~ <S-MouseDown>
-	:map! <M-Esc>[64~ <S-MouseDown>
-	:map <M-Esc>[65~ <S-MouseUp>
-	:map! <M-Esc>[65~ <S-MouseUp>
+以下のマッピングを vimrc ファイルに追加してください: >
+	:map <M-Esc>[62~ <ScrollWheelUp>
+	:map! <M-Esc>[62~ <ScrollWheelUp>
+	:map <M-Esc>[63~ <ScrollWheelDown>
+	:map! <M-Esc>[63~ <ScrollWheelDown>
+	:map <M-Esc>[64~ <S-ScrollWheelUp>
+	:map! <M-Esc>[64~ <S-ScrollWheelUp>
+	:map <M-Esc>[65~ <S-ScrollWheelDown>
+	:map! <M-Esc>[65~ <S-ScrollWheelDown>
 <
  vim:tw=78:ts=8:ft=help:norl:

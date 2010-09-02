@@ -1,4 +1,4 @@
-*recover.txt*   For Vim バージョン 7.2.  Last change: 2009 Apr 18
+*recover.txt*   For Vim バージョン 7.3.  Last change: 2010 Jul 20
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -186,5 +186,45 @@ Vimはスワップファイルが何らかの理由で壊れているときに�
 存在するというメッセージが表示されつづけることになる。
 
 {Vi: 違う方法で回復し、回復できそうなときはメールが送られる}
+
+
+暗号化とスワップファイル				*:recover-crypt*
+
+テキストファイルが暗号化されているときはスワップファイルも暗号化されます。これ
+はリカバリーを多少複雑にします。スワップファイルからリカバリーするときにそれが
+暗号化されていた場合、一つか二つの秘密鍵を入力する必要があるでしょう。
+
+テキストファイルが存在しない場合は入力する必要のある秘密鍵はスワップファイル用
+の一つだけです。
+
+テキストファイルが存在する場合、そのファイルはスワップファイルとは別の方法で復
+号する必要があるかもしれません。秘密鍵を二つ入力する必要があります:
+
+	Need encryption key for "/tmp/tt" ~
+	Enter encryption key: ****** ~
+	"/tmp/tt" [crypted] 23200L, 522129C ~
+	Using swap file "/tmp/.tt.swp" ~
+	Original file "/tmp/tt" ~
+	Swap file is encrypted: "/tmp/.tt.swp" ~
+	If you entered a new crypt key but did not write the text file, ~
+	enter the new crypt key. ~
+	If you wrote the text file after changing the crypt key press enter ~
+	to use the same key for text file and swap file ~
+	Enter encryption key:  ~
+
+二つの状況が考えられます:
+
+1. 暗号化キーが変更されなかったか、キーが変更された後でファイルが保存された場
+   合。秘密鍵を二回入力する必要があります。二回目に入力するときは単にエンター
+   を押してください。そうするとテキストファイルとスワップファイルの両方に同じ
+   キーが使用されます。
+2. 新しい暗号化キーを入力したが、ファイルは保存されなかった場合。スワップファ
+   イルには新しいキーが使用されていますが、テキストファイルは古いキーで暗号化
+   されたままになっています。二回目にキーを入力するときに新しい方のキーを入力
+   してください。
+
+Note: リカバリー実行後にはスワップファイルのキーがテキストファイルに使用されま
+す。したがって、ファイルを書き込んだ後は新しいキーを使用する必要があります。
+
 
  vim:tw=78:ts=8:ft=help:norl:

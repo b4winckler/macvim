@@ -1,4 +1,4 @@
-*message.txt*   For Vim バージョン 7.2.  Last change: 2009 Oct 28
+*message.txt*   For Vim バージョン 7.3.  Last change: 2010 Aug 10
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -20,7 +20,7 @@
 利である。これは'shortmess'オプションに依存する。
 
 見ることのできるメッセージ数は、tiny バージョンでは20に、それ以外のバージョン
-では100に固定されている。
+では200に固定されている。
 
 								*g<*
 コマンド "g<" を使うと前のコマンドの出力の最後のページを見ることができる。
@@ -72,7 +72,7 @@ LIST OF MESSAGES
   Hangul automata ERROR
   block was not locked
   Didn't get block nr {N}?
-  ml_timestamp: Didn't get block 0??
+  ml_upd_block0(): Didn't get block 0??
   pointer block id wrong {N}
   Updated too many blocks?
   get_varp ERROR
@@ -128,7 +128,6 @@ ExコマンドがExコマンドを実行するExコマンドを実行...(以下�
 るので参照。
 
 							*E458*  >
-  Cannot allocate colormap entry for "xxxx"
   Cannot allocate colormap entry, some colors may be incorrect
 
 Vimに必要な色数が使用できないことを意味している。Vimは終了しないが、一部の色が
@@ -178,7 +177,7 @@ colormapを使うように指定することで回避できる: >
 それを上書きできるようにパーミッションを変更しなければならない。
 
 							*E46*  >
-  Cannot set read-only variable "{name}"
+  Cannot change read-only variable "{name}"
 
 関数の引数|a:var|またはVim内部変数|v:var|に値を代入しようとした。これらはリー
 ドオンリーである。
@@ -276,8 +275,8 @@ Vim内部でなんらかの不具合が起こり、正規表現が壊れてし�
 ファイルの書き込みが正常に完了しなかった。そのファイルはおそらく不完全である。
 
 							*E13* *E189*  >
-  File exists (use ! to override)
-  "{filename}" exists (use ! to override)
+  File exists (add ! to override)
+  "{filename}" exists (add ! to override)
 
 間違ってファイルを上書きしてしまわないように保護されている。どうしても上書きし
 たいのなら、同じコマンドの直後に"!"を付けて使用する。例: >
@@ -344,7 +343,7 @@ GUIのためのコードを含んでいないVimのバージョンを実行し�
 {foo,bar}のように使わねばならない。これは"foo"と"bar"にマッチする。
 
 							*E315*  >
-  ml_get: invalid lnum:
+  ml_get: invalid lnum: {number}
 
 Vimの内部エラー。どうしたらこれを再現できるかを発見して、バグレポートを送って
 くれないだろうか |bugreport.vim|。
@@ -414,8 +413,8 @@ GnomeサポートつきのGTK GUIでのみ表示される。Gnomeがオーディ
   |:map-<buffer>|
 
 							*E37* *E89*  >
-  No write since last change (use ! to override)
-  No write since last change for buffer {N} (use ! to override)
+  No write since last change (add ! to override)
+  No write since last change for buffer {N} (add ! to override)
 
 変更のあるファイルを放棄(|abandon|)しようとした。Vimは仕事(ファイル)を失ってし
 まう危険から守ってくれる。変更されたファイルを":w"で保存するか、変更を失ったと
@@ -461,8 +460,16 @@ Vim内部で何か不具合が起こり、NULLポインタが現れてしまっ�
 あ～あ… なにか厄介なことをしたか、別のプログラムがメモリを喰らい尽くしたか。
 気をつけて。Vimはメモリ不足の状況というのは、想定していない。まず、変更した
 ファイルが保存されているか確認しよう。それからメモリを節約する方法を考えよう。
-安全に使いたいのならば、一度Vimを終了して、再度起動しなそう。
-|msdos-limitations|も参照。
+安全に使いたいのならば、一度Vimを終了して、再度起動しましょう。
+
+バッファは一部のみメモリに保持されるので、大きなファイルを編集するときでもメモ
+リ不足になることはほとんどありません。アンドゥ情報は完全にメモリに保持されます
+が、次の方法でその量を減らすことができます:
+- 'undolevels' を小さい値に設定する。-1 に設定するとアンドゥ機能を完全に無効に
+  できます。すべての行を変更するような場合に役立ちます。
+- 'undoreload' をゼロに設定して無効化する。
+
+|msdos-limitations| も参照。
 
 							*E339*  >
   Pattern too long
@@ -471,7 +478,7 @@ int型が16ビットのシステム上でのみ起こる: コンパイルされ�
 さが65000文字以上である。もっと短いパターンを使ってみること。
 
 							*E45*  >
-  'readonly' option is set (use ! to override)
+  'readonly' option is set (add ! to override)
 
 読み込み専用とマークされたファイルに書き込もうとした。本当にファイルを書き込ん
 でしまうには、'readonly'オプションをリセットするか、保存に使用したコマンドに
@@ -578,6 +585,7 @@ Vimがスワップファイルを作成できなかった。ファイルを編�
 起動時にこのようなメッセージが現れた場合、これはVimの問題ではなく、X11の設定が
 間違っている。この問題を解決するためのヒントがここにある:
 http://groups.yahoo.com/group/solarisonintel/message/12179.
+[this URL is no longer valid]
 
 							*W10*  >
   Warning: Changing a readonly file
@@ -632,7 +640,7 @@ http://groups.yahoo.com/group/solarisonintel/message/12179.
 。
 
 							*E211*  >
-  Warning: File "{filename}" no longer available
+  File "{filename}" no longer available
 
 編集を始めているファイルが消え失せたか、もはやアクセスできない。変更が失われる
 のを避けるため、バッファが書き込まれたか確認すること。'buftype'が空でないとき
@@ -677,6 +685,7 @@ VimがXサーバへ接続を試みたが、接続を確立できなかった場�
 
 							*E474* *E475*  >
   Invalid argument
+  Invalid argument: {arg}
 
 Exコマンドが実行されたが、無効な引数が指定された。
 
@@ -703,8 +712,8 @@ Exコマンドが実行されたが、無効な引数が指定された。
 Vimが一時ファイルを作成できなかった。
 
 							*E484* *E485*  >
-  Can't open file %s"
-  Can't read file %s"
+  Can't open file {filename}
+  Can't read file {filename}
 
 Vimが一時ファイルを読み込めなかった。
 

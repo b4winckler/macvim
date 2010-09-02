@@ -1,4 +1,4 @@
-*netbeans.txt*  For Vim バージョン 7.2.  Last change: 2009 Jan 06
+*netbeans.txt*  For Vim バージョン 7.3.  Last change: 2010 Jul 20
 
 
 		  VIM REFERENCE MANUAL    by Gordon Prieur et al.
@@ -14,7 +14,7 @@ Vim NetBeans プロトコル: Vim と IDE を統合するためのソケット�
 4.  エラーメッセージ				|netbeans-messages|
 5.  Vim を NetBeans モードで起動する		|netbeans-run|
 6.  NetBeans プロトコル				|netbeans-protocol|
-7.  NetBeans のホットキー			|netbeans-key|
+7.  NetBeans コマンド				|netbeans-commands|
 8.  既知の問題					|netbeans-problems|
 9.  NetBeans プロトコルのデバッグ		|netbeans-debugging|
 10. NetBeans External Editor
@@ -48,6 +48,8 @@ NetBeans プロトコルを使ったプロジェクトは現在のところ、�
 	http://www.a-a-p.org
 - Clewn, gdb 統合。C で書かれている。
 	http://clewn.sourceforge.net/
+- Pyclewn, gdb 統合。 Python で書かれている。
+	http://pyclewn.sourceforge.net/
 - VimPlugin, Eclipse の内部に Vim を取り込む。
 	http://vimplugin.sourceforge.net/wiki/pmwiki.php
 - PIDA, Python で書かれた IDE。
@@ -113,9 +115,8 @@ configure を引数なしで起動した場合、NetBeans インターフェイ�
 NetBeans インターフェイスを有効にしたくない場合は、Makefile の中の
 "--disable-netbeans" の行のコメントアウトを解除すれば無効にできます。
 
-NetBeans は端末エミュレータに Vim コマンドを送る手段を持っていないため、現在
-のところ GVim だけがこの統合機能をサポートしています。また、GUI サポートがあ
-るのは GTK, GNOME, Motif だけです。
+現在 NetBeans インターフェースは端末動作の Vim と GUI (GTK, GNOME, Motif) の
+GVim でのみサポートされています。
 
 Motif をサポートするためには XPM ライブラリが必要です。XPM の最新バージョン
 を入手する方法については |workshop-xpm| を参照してください。
@@ -152,6 +153,12 @@ Region is guarded, cannot modify
 		変更することはできません。必要に応じてカレントバッファもセッ
 		トします。
 
+							*E532*
+The defineAnnoType highlighting color name is too long
+		defineAnnoType コマンドの "fg" と "bg" の色指定引数の最大長は
+		32 文字です。
+		バージョン 2.5 で新たに追加された仕様。
+
 							*E656*
 Writes of unmodified buffers forbidden
 		Vim コントローラによって開かれている変更されていないバッファ
@@ -185,25 +192,38 @@ Read-only file
 ==============================================================================
 5. Vim を NetBeans モードで起動する			*netbeans-run*
 
-Vim を引数 |-nb| つきで起動する必要があります。接続情報を指定する形式が次の
-3 通りあります:
+Vim を NetBeans モードで実行するには二つの方法があります:
+
+	+ IDE から起動するときなどに Vim に |-nb| 引数を付けて起動する
+	+ Vim の中で |:nbstart| コマンドを使って開始する
+
+							*netbeans-parameters*
+NetBeans 接続情報を指定する形式は三通りあります。
+コマンドラインで |-nb| 引数を指定するときは次のように指定します:
 
 	-nb={fname}				ファイルから
 	-nb:{hostname}:{addr}:{password}	直接指定
 	-nb					ファイルまたは環境変数から
 
+Vim の中で |:nbstart| コマンドの引数として指定するときは次のように指定します:
+
+	={fname}				from a file
+	:{hostname}:{addr}:{password}	        directly
+	<MISSING ARGUMENT>			from a file or environment
+
 							*E660* *E668*
-セキュリティ上の理由からベストな方法は、情報をファイルに書き、自分だけが読める
-ようにしておくことです。ファイル名は "-nb={fname}" で渡すか、または "-nb" をパ
-ラメータなしで使うと環境変数 "__NETBEANS_CONINFO" が使われます。
-このファイルは以下の三行を含んでいなければなりません(順序は問わない): >
+NetBeans の開始をコマンドラインで指定するとき、セキュリティ上の理由からベスト
+な方法は、情報をファイルに書き、自分だけが読めるようにしておくことです。ファイ
+ル名は "-nb={fname}" で渡すか、または "-nb" をパラメータなしで使うと環境変数
+"__NETBEANS_CONINFO" が使われます。このファイルは以下の三行を含んでいなければ
+なりません(順序は問わない): >
 
 	host={hostname}
 	port={addr}
 	auth={password}
 
-これ以外の行は無視されます。Vim を呼び出したプログラムが、終了後にこのファイ
-ルを削除する責任を負います。
+これ以外の行は無視されます。Vim コントローラが終了後にこのファイルを削除する責
+任を負います。
 
 {hostname} は Vim コントローラが動作するマシンの名前です。省略されたときは、
 環境変数 "__NETBEANS_HOST" または既定値の "localhost" が使われます。
@@ -237,8 +257,8 @@ netbeans_saved() 関数が "save" プロトコルコマンドを送信するの�
 れました。以降、同じ間違いが起こらないようにするため、netbeans_saved() は
 netbeans_save_buffer() と名前が変更されました。
 
-現在のバージョンは 2.4 です。2.3 と 2.4 の違いは、後述の "2.4" を読んでくだ
-さい。
+現在のバージョンは 2.5 です。2.4 と 2.5 の違いは下記文章から "2.5" を検索して
+ください。
 
 メッセージはソケットを通じて送られます。メッセージは UTF-8 のプレインテキス
 トなので、このプロトコルは他のどんな通信メカニズムでも使えます。
@@ -304,7 +324,10 @@ boolean		次の二つの値のどちらかとなります。
 
 number		10 進数の数値。
 
-optnum		10 進数の数値または "none" (ダブルクォートはつけない)。
+color		10 進数の数値か "none" (クォートなし) か色の名前 (クォートな
+		し) のいずれか。色の名前は |highlight-ctermfg| と |gui-colors|
+		で定義されている名前。
+		バージョン 2.5 で新たに追加された仕様。
 
 offset		バッファ中のバイト位置を示す数値。第 1 バイト目のオフセットは
 		0 となります。改行は、ファイル中での表現と同じくカウントされ
@@ -363,9 +386,13 @@ defineAnnoType typeNum typeName tooltip glyphFile fg bg
 		   typeName	string	この annotation を識別するための名前
 		   tooltip	string	未使用
 		   glyphFile	string	アイコンのファイル名
-		   fg		optnum	行の文字色
-		   bg		optnum	行の背景色
+		   fg		color	行の文字色
+		   bg		color	行の背景色
 		Vim はこの annotation に対して目印を定義します。
+		色を数値で指定するときは "#rrggbb" で赤緑青での色指定になり
+		(|gui-colors| 参照) GVim でのみ定義されます。
+		色を名前で指定するときはその色はカラー端末上で動作する Vim と
+		GVim の両方で定義されたものです。
 		"fg" と "bg" が両方とも "none" の場合、行は強調されません
 		(version 2.1 から)。
 		"glyphFile" が空の場合、テキストの目印は使われません
@@ -431,6 +458,7 @@ putBufferNumber pathname
 		version 2.1 から。
 
 raise		エディタを前面に移動します。
+		GUI Vim でのみ有効。
 		version 2.1 から。
 
 removeAnno serNum
@@ -520,6 +548,8 @@ showBalloon text
 		(ポップアップウィンドウ)を表示します。引数 "text" は string で
 		す。マウスが 2, 3 ピクセル以上移動すると、バルーンウィンドウは
 		消えます。
+		GUI Vim でのみ有効。
+		version 2.1 から。
 
 specialKeys
 		Vim コントローラに戻して処理させるキー(大抵はファンクションキ
@@ -651,6 +681,7 @@ balloonText text
 		'ballooneval' がセットされており、マウスポインタが一定時間
 		テキストの上に置かれたとき発生します。"text" は string で、マ
 		ウスポインタの下のテキストを表します。
+		GUI Vim でのみ有効。
 		version 2.1 から。
 
 buttonRelease button lnum col
@@ -785,10 +816,22 @@ REJECT		未使用。
 
 
 ==============================================================================
-7. NetBeans のホットキー				*netbeans-key*
+7. NetBeans コマンド					*netbeans-commands*
+
+							*:nbstart* *E511*
+:nbs[tart] {connection}	新しい Netbeans セッションを開始する。{connection} は
+			ソケット接続パラメータ。{connection} の書式は
+			|netbeans-parameters| で説明されています。
+			netbeans ソケットが接続されているかどうかは次のコマン
+			ドで確認できます:
+			':echo has("netbeans_enabled")'
+
+							*:nbclose*
+:nbc[lose]		現在の NetBeans セッションを閉じる。目印はすべて削除さ
+			れます。
 
 							*:nbkey*
-:nbkey key		Vim コントローラにキーを渡します。
+:nb[key] {key}		Vim コントローラに {key} を渡します。
 
 specialKeys コマンドによりホットキーがインストールされているとき、このコマン
 ドを使ってホットキー・メッセージを Vim コントローラに送信できます。イベント
@@ -800,6 +843,13 @@ newDotAndMark, keyCommand, keyAtPos がこの順序で発生します。
 
 NUL 文字は扱えません。editor -> IDE の通信では、NUL は NL に置換して送信され
 ます。IDE -> editor では、NUL を含めることはできません。
+
+NetBeans セッションが端末動作の Vim で初期化され、後で |:gui| コマンドによって
+GUI 環境に引き継がれることがあります。この場合、":gui" コマンドが .gvimrc を読
+み込み、カラースキームが読み込まれ、そこで ":highlight clear" コマンドが実行さ
+れることで、NetBeans annotation 用に定義された強調表示がクリアされるかもしれま
+せん。
+バージョン 2.5 で新たに追加された仕様。
 
 
 ==============================================================================

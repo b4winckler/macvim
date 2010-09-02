@@ -1,4 +1,4 @@
-*ft_ada.txt*	For Vim バージョン 7.2.  Last change: 2008 Jun 21
+*ft_ada.txt*	For Vim バージョン 7.3.  Last change: 2010 Jul 20
 
 
 		    ADAファイルタイププラグイン リファレンスマニュアル~
@@ -169,11 +169,11 @@ g:gnat.Make()
 
 							     *g:gnat.Pretty()*
 g:gnat.Pretty()
-		|g:gnat.Pretty_Command|を呼び出す。
+		|g:gnat.Pretty_Program|を呼び出す。
 
 							       *g:gnat.Find()*
 g:gnat.Find()
-		|g:gnat.Find_Command|を呼び出す。
+		|g:gnat.Find_Program|を呼び出す。
 
 							       *g:gnat.Tags()*
 g:gnat.Tags()
@@ -239,7 +239,7 @@ g:decada.Unit_Name()	関数
 
 						       *g:decada.Make_Command*
 g:decada.Make_Command	文字列
-		|g:decadat.Make()| に使われる外部プログラム (|'makeprg'|).
+		|g:decada.Make()| に使われる外部プログラム (|'makeprg'|).
 
 						       *g:decada.Error_Format*
 g:decada.Error_Format|	文字列

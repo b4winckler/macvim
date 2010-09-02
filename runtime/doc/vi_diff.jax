@@ -1,4 +1,4 @@
-*vi_diff.txt*   For Vim バージョン 7.2.  Last change: 2008 Jun 28
+*vi_diff.txt*   For Vim バージョン 7.3.  Last change: 2010 Jul 20
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -416,8 +416,8 @@ C プログラムのインデントを改善				|'cindent'|
 	などなど。|eval|を参照。
 	デバッグとプロファイリングがサポートされています。|debug-scripts|
 	|profile|
-	もしこれで十分でないなら、|Python|, |Ruby|, |Tcl|, |Perl|, |MzScheme|
-	のインターフェイスが提供されています。
+	もしこれで十分でないなら、|Python|, |Ruby|, |Tcl|, |Lua|, |Perl|,
+	|MzScheme| のインターフェイスが提供されています。
 
 Viminfo							|viminfo-file|
 	コマンドライン履歴やマークやレジスターの内容を起動時に読み込まれるファ

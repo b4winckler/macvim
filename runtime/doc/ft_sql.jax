@@ -1,4 +1,4 @@
-*sql.txt*	For Vim バージョン 7.2.  Last change: 2009 Nov 03
+*ft_sql.txt*	For Vim バージョン 7.3.  Last change: 2010 Jul 20
 
 by David Fishburn
 
@@ -204,7 +204,7 @@ Vim の機能に対応しています: >
 						*sqlanywhere*
 						*oracle* *plsql* *sqlj*
 						*sqlserver*
-						*mysql* *postgress* *psql*
+						*mysql* *postgresql* *psql*
 						*informix*
 
 すべてのリレーショナルデータベースは SQL に対応しています。SQL の一部分はベン
@@ -237,7 +237,7 @@ ftplugin/sql.vim では次のコマンドが定義されています: >
 
 このコマンドを引数なしで実行すると、インデントと構文スクリプトが既定値に戻りま
 す。既定値は |sql-type-default| を参照してください。Vi 互換モードをオフにして
-いると |'compatibile'|、<Tab> キーで引数を補完できます。
+いると (|'compatible'|)、<Tab> キーで引数を補完できます。
 
 コマンド名とスペースをタイプした後、引数を指定するために補完を利用できます。こ
 のコマンドは source したい Vim スクリプトの名前を受け取ります。
@@ -613,7 +613,7 @@ select 文を書くための特別な機能があります。 次の文を書く
 		   MYTABLENAME --> M
 
     omni_sql_ignorecase
-<	- 既定値: |ignorecase| の現在値
+<	- 既定値: 'ignorecase' の現在値
 	- 有効な値は 0 または 1。
 	- 数文字を入力してから補完を開始すると、リストの要素がその文字列で始ま
 	  るものだけにフィルタされます。このオプションが 0 の場合は、そのフィ

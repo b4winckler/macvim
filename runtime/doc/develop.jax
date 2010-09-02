@@ -1,4 +1,4 @@
-*develop.txt*   For Vim バージョン 7.2.  Last change: 2008 Dec 17
+*develop.txt*   For Vim バージョン 7.3.  Last change: 2008 Dec 17
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -145,11 +145,11 @@ Vimは、そのユーザに特定の作業パターンを強いるよりは、�
 
 VIM IS... NOT						*design-not*
 
-- Vimはシェルでも、オペレーティングシステムでもない。Vimの中でシェルを走らせた
-  り、デバッガを制御したりできるようにはならない。Vimは、もっと違った方法で機
-  能するものである: シェルやIDEの１つのコンポーネントとして使いなさい。
-  これを皮肉をもって言うならば: "Emacsとは違い、Vimは流し台以外の全てのものを
-  取り込もうとはしない、だが、VimでEmacsをきれいにすることはできるという ;-)"
+- Vim はシェルでもオペレーティングシステムでもない。Vim の中でシェルを走らせた
+  りデバッガを制御したりできるようにはならない。これらは他の方法で成されるべき
+  である: Vim をシェルや IDE のコンポーネントとして使おう。
+  風刺を込めて曰く: "Vim は Emacs のように流し台以外ならなんでもかんでも取り込
+  んでしまうようなことはしないが、Vim で流し台を洗うことはできるぞ。 ;-)"
   A satirical way to say this: "Unlike Emacs, Vim does not attempt to include
   everything but the kitchen sink, but some people say that you can clean one
   with it.  ;-)"

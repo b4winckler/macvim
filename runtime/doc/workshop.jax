@@ -1,4 +1,4 @@
-*workshop.txt*  For Vim バージョン 7.2.  Last change: 2006 Apr 24
+*workshop.txt*  For Vim バージョン 7.3.  Last change: 2010 Jul 20
 
 
 		VIM リファレンスマニュアル    by Gordon Prieur
@@ -89,12 +89,11 @@ XPMライブラリはVimで(MotifかAthenaを使って)画像を表示するた�
 
 XPMライブラリは French National Institute for Research in Computer Science and
 Control(訳注:フランス国立コンピュータ科学/制御研究所---通称INRIA) の Arnaud Le
-Hors によって作成された。http://koala.ilog.fr/ftp/pub/xpm よりダウンロードでき
-るこれを書いている時点(訳注:原文の書かれた時点、訳した時点ではない)での最新版
-はxpm-3.4k-solaris.tgzでgzipされたtarファイルである。ディレクトリ
-/usr/local/xpmを作成してそこにファイルを伸長展開したならば、Makefile内のコメン
-トアウトされた行を内容は変更せずにコメントを解除するだけで使うことができる。も
-しもxpmを他のディレクトリに置いたならばsrc/Makefile内のXPM_DIRを変更する必要が
-ある。
+Hors によって提供されている。http://cgit.freedesktop.org/xorg/lib/libXpm より
+ダウンロードできる。これを書いている時点での最新版はxpm-3.4k-solaris.tgzでgzip
+されたtarファイルである。ディレクトリ /usr/local/xpmを作成してそこにファイルを
+伸長展開したならば、Makefile内のコメントアウトされた行を内容は変更せずにコメン
+トを解除するだけで使うことができる。もしもxpmを他のディレクトリに置いたならば
+src/Makefile内のXPM_DIRを変更する必要がある。
 
  vim:tw=78:ts=8:ft=help:norl:
