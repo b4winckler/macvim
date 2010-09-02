@@ -188,6 +188,7 @@ enum {
     DeleteSignMsgID,
     SetTooltipMsgID,
     SetTooltipDelayMsgID,
+    GestureMsgID,
     LastMsgID   // NOTE: MUST BE LAST MESSAGE IN ENUM!
 };
 
@@ -224,6 +225,17 @@ enum {
     MMTabLabel = 0,
     MMTabToolTip,
     MMTabInfoCount
+};
+
+enum {
+    MMGestureSwipeLeft,
+    MMGestureSwipeRight,
+    MMGestureSwipeUp,
+    MMGestureSwipeDown,
+    MMGesturePinchIn,
+    MMGesturePinchOut,
+    MMGestureRotateCW,
+    MMGestureRotateCCW,
 };
 
 
@@ -263,6 +275,7 @@ extern NSString *VimFindPboardType;
 @interface NSString (MMExtras)
 - (NSString *)stringByEscapingSpecialFilenameCharacters;
 - (NSString *)stringByRemovingFindPatterns;
+- (NSString *)stringBySanitizingSpotlightSearch;
 @end
 
 
