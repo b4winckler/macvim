@@ -1,4 +1,4 @@
-*os_risc.txt*   For Vim バージョン 7.2.  Last change: 2008 Jun 28
+*os_risc.txt*   For Vim バージョン 7.3.  Last change: 2010 Aug 07
 
 
 		VIMリファレンスマニュアル    by Thomas Leonard
@@ -177,7 +177,7 @@ ZapRedrawを使用している時には、編集バーがキャラクタの後�
 コントロール文字が含まれる場合には、オプション'isprint'を変更することで表示さ
 せることができる。
 
-スクロールがあまりに遅すぎる場合には、オプション'scrolling' と 'ttyscroll'を実
+スクロールがあまりに遅すぎる場合には、オプション'scrolljump' と 'ttyscroll'を実
 験的に試してみると良い。
 
 とりわけStrongARMのユーザは: >
@@ -283,7 +283,6 @@ RISC OS 3.5以降で動くVimは動的領域のメモリを使用する。それ
 
 - 最新のソースコード (www.vim.org参照)
 - ランタイム環境ファイル (このファイルを含むヘルプ一式)
-- extraアーカイブ (RISC OS用ファイルが含まれている)
 - RISC OSのバイナリディストリビューション (可能ならば)
 
 

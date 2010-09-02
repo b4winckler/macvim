@@ -1,4 +1,4 @@
-*if_mzsch.txt*  For Vim バージョン 7.2.  Last change: 2009 Jun 24
+*if_mzsch.txt*  For Vim バージョン 7.3.  Last change: 2010 Feb 11
 
 
 		  VIM REFERENCE MANUAL    by Sergey Khorev
@@ -9,8 +9,9 @@ Vim の MzScheme インターフェイス			*mzscheme* *MzScheme*
 1. コマンド				|mzscheme-commands|
 2. 例					|mzscheme-examples|
 3. スレッド				|mzscheme-threads|
-4. Vim にアクセスするプロシージャ	|mzscheme-vim|
-5. 動的ローディング			|mzscheme-dynamic|
+4. MzScheme から Vim にアクセスする	|mzscheme-vim|
+5. mzeval() Vim 関数			|mzscheme-mzeval|
+6. 動的ローディング			|mzscheme-dynamic|
 
 {Vi にはこれらのコマンドはない}
 
@@ -143,7 +144,7 @@ NOTE
 ます。
 
 ==============================================================================
-4. VIM 関数						*mzscheme-vim*
+4. MzScheme から VIM にアクセスする			*mzscheme-vim*
 
 							*mzscheme-vimext*
 'vimext' モジュールは MzScheme インターフェイスで定義されたプロシージャへの
@@ -204,8 +205,8 @@ NOTE
 				    {linenr} が 0 の場合、バッファの先頭に挿
 				    入される。
     (curr-buff)			    カレントバッファ(オブジェクト)を取得する。
-				    バッファに対して変更を加えるには vimext モ
-				    ジュールのプロシージャを使う。
+				    バッファを変更するには他の MzScheme イン
+				    ターフェース手続きを使う。
     (buff-count)		    バッファの総数を取得する。
     (get-next-buff [buffer])	    次のバッファを取得する
     (get-prev-buff [buffer])	    前のバッファを取得する。それ以上前が存在し
@@ -236,7 +237,13 @@ NOTE
     (set-cursor (line . col) [window])  カーソル位置をセットする
 
 ==============================================================================
-5. 動的ローディング				    *mzscheme-dynamic* *E815*
+5. mzeval() Vim 関数					    *mzscheme-mzeval*
+
+相互接続を容易にするために |mzeval()| 関数が提供されています。この関数は
+MzScheme の式を評価してその結果を VimL の値に変換したものを返します。
+
+==============================================================================
+6. 動的ローディング				    *mzscheme-dynamic* *E815*
 
 MS-Windows では MzScheme ライブラリを動的に読み込むことが可能です。これを行う
 と |:version| の出力に |+mzscheme/dyn| が含まれるようになります。

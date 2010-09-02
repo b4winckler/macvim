@@ -1,4 +1,4 @@
-*gui.txt*       For Vim バージョン 7.2.  Last change: 2009 Jan 22
+*gui.txt*       For Vim バージョン 7.3.  Last change: 2010 May 14
 
 
 		  VIMリファレンスマニュアル    by Bram Moolenaar
@@ -555,7 +555,7 @@ Win32 GUIバージョンはMotifの切取りメニューをエミュレートす
 	モード			前に付加	後ろに付加	~
 	ノーマルモード		なし		なし
 	ビジュアルモード	<C-C>		<C-\><C-G>
-	挿入モード		<C-O>
+	挿入モード		<C-\><C-O>
 	コマンドラインモード	<C-C>		<C-\><C-G>
 	演算子未解決モード	<C-C>		<C-\><C-G>
 
@@ -570,7 +570,7 @@ Win32 GUIバージョンはMotifの切取りメニューをエミュレートす
 
    :nmenu File.Next	:next^M
    :vmenu File.Next	^C:next^M^\^G
-   :imenu File.Next	^O:next^M
+   :imenu File.Next	^\^O:next^M
    :cmenu File.Next	^C:next^M^\^G
    :omenu File.Next	^C:next^M^\^G
 
@@ -687,8 +687,9 @@ Note: 区切りの定義にはコマンドの指定が必要である。その�
 定義されている。
 ツールバーの表示は'guioptions'の文字'T'によって制御される。したがって、メ
 ニューとツールバーを同時に、あるいはどちらかだけを表示することもできるし、両方
-とも非表示にすることもできる。画像かテキスト、もしくは両方を表示するかを選ぶこ
-とができる。
+とも非表示にすることもできる。
+表示方法は 'toolbar' オプションで変更できる。画像かテキスト、もしくは両方を表
+示するかを選択できる。
 
 							*toolbar-icon*
 ツールバーは、1つのレベルだけを持つToolBarと呼ばれる特別なメニューとして定義さ

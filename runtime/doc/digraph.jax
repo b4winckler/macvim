@@ -1,4 +1,4 @@
-*digraph.txt*   For Vim バージョン 7.2.  Last change: 2008 Aug 06
+*digraph.txt*   For Vim バージョン 7.3.  Last change: 2010 Apr 11
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -60,7 +60,7 @@ Vimは普通|+digraphs|特性を持ってコンパイルされる。この特性
 文字は NL で表現されているからである。ファイルに書き込むときに NUL 文字に変換
 される。
 
-Vim が +multi_byte 機能なしでコンパイルされている場合は、その文字を
+Vim が |+multi_byte| 機能なしでコンパイルされている場合は、その文字を
 'encoding' と同じエンコーディングで指定しなければならない。次のようにするとよ
 いだろう: >
 

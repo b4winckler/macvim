@@ -1,4 +1,4 @@
-*if_ruby.txt*   For Vim バージョン 7.2.  Last change: 2008 Aug 16
+*if_ruby.txt*   For Vim バージョン 7.3.  Last change: 2010 Jul 20
 
 
 		 VIM リファレンスマニュアル    by Shugo Maeda
@@ -187,13 +187,21 @@ MS-WindowsではRubyライブラリを動的に読み込むことが可能であ
 この場合、Vimは必要なときだけRubyのDLLファイルを検索する。Rubyインターフェ
 イスを使わないときはDLLを必要としないので、DLLなしでVimを使うことができる。
 
+これが動作するためには Ruby の適切なバージョンがインストールされている必要があ
+ります。次の場所からパッケージをダウンロードできます:
+http://www.garbagecollect.jp/ruby/mswin32/en/download/release.html
+現在のパッケージは ruby-1.9.1-p429-i386-mswin32.zip です。
+
 Rubyインターフェイスを使うにはRubyのDLLが検索パス内に存在しなければならな
 い。コンソールウィンドウで"path"とタイプすると、どのディレクトリが検索パスとな
 るか表示することができる。
 
-DLLの名前はVimをコンパイルした時のRubyのバージョンに一致しなければならない。
-現在その名前は"ruby18.dll"である。これはRuby1.8用である。これを確かめるに
-は、"gvim.exe"を開き、"ruby\d*.dll\c"を検索する。
+DLLの名前はVimをコンパイルした時のRubyのバージョンに一致しなければならない。現
+在その名前は"msvcrt-ruby191.dll"である。これはRuby1.9.1用である。これを確かめ
+るには、"gvim.exe"を開き、"ruby\d*.dll\c"を検索する。
+
+自分で Ruby 1.9.1 対応の Vim をビルドするには、config.h ファイルを編集して
+_MSC_VER のチェックをコメントアウトする必要があるでしょう。
 
 ==============================================================================
  vim:tw=78:ts=8:ft=help:norl:

@@ -1,4 +1,4 @@
-*os_vms.txt*    For Vim バージョン 7.2.  Last change: 2009 Oct 28
+*os_vms.txt*    For Vim バージョン 7.3.  Last change: 2010 Jul 28
 
 
 			  VIMリファレンスマニュアル
@@ -767,10 +767,14 @@ GNU_TOOLS.ZIP の [GNU]gnu_tools.com スクリプトである。
 
 9. VMS関連の変更点					*vms-changes*
 
-最近の変更点
+バージョン 7.3
+- CTAGS 5.8 の取り込み
+- VMS コンパイル警告の修正 - VAX の浮動小数点数オーバーフローの警告を直した
+- ファイルパス補完の修正 - ファイル名とシェルコマンドにおいて余計な文字がエス
+  ケープされていた
 - 以下のプラグインが VMS の runtime に追加された:
-  genutils 2.4, multiselect 2.2, multvals 3.1, selectbuf 4.3,
-  bufexplorer 7.1.7, taglist 4.5
+	genutils 2.4, multiselect 2.2, multvals 3.1, selectbuf 4.3,
+	bufexplorer 7.1.7, taglist 4.5
 - vimrc の小さな変更 (VMS runtime 内のみ)
 - make_vms.mms - HUGE がデフォルト
 - [TESTDIR]make_vms.mms にできるだけ多くのテストを含めた

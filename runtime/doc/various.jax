@@ -1,4 +1,4 @@
-*various.txt*   For Vim バージョン 7.2.  Last change: 2008 Aug 06
+*various.txt*   For Vim バージョン 7.3.  Last change: 2010 Aug 10
 
 
 		VIM リファレンスマニュアル    by Bram Moolenaar
@@ -6,8 +6,7 @@
 様々なコマンド						*various*
 
 1. 様々なコマンド			|various-cmds|
-2. オンラインヘルプ			|online-help|
-3. less、more の代わりに Vim を使う	|less|
+2. less、more の代わりに Vim を使う	|less|
 
 ==============================================================================
 1. 様々なコマンド					*various-cmds*
@@ -107,9 +106,9 @@ g8			カーソル位置の文字のバイト列を 16 進数で表示します�
 							*:l* *:list*
 :[range]l[ist] [count] [flags]
 			:print と同じですが、表示できない文字は '^'を付けて表
-			示し、行末に $ を置きます。
+			示し、行末に $ を置きます。表示は 'listchars' オプショ
+			ンの設定で変更できます。
 			[flags] については |ex-flags| を参照してください。
-訳注: 表示は 'list'、'listchars'、'display' などの設定に影響されるみたい。
 
 							*:nu* *:number*
 :[range]nu[mber] [count] [flags]
@@ -183,7 +182,8 @@ g8			カーソル位置の文字のバイト列を 16 進数で表示します�
 			"Q" や "gQ" を使って Ex モードを開始することはできませ
 			ん。
 			{commands} の最初にスペースは置けません。そうしたい場
-			合はスペースの前に 1 (数字の 1) を置いてください。
+			合はスペースの前にカウント指定の 1 (数字の 1) を置いて
+			ください。"1 " は 1 つのスペースになります。
 			{command} の実行ではオプション 'insertmode' は無視され
 			ます。'|' は :normal コマンドの一部として処理されるの
 			で、他のコマンドを続けて書けません。:normal コマンドは
@@ -294,8 +294,10 @@ N  *+cmdline_compl*	コマンドライン補完 |cmdline-completion|
 N  *+cmdline_hist*	コマンドライン履歴 |cmdline-history|
 N  *+cmdline_info*	|'showcmd'| と |'ruler'|
 N  *+comments*		|'comments'| サポート
+B  *+conceal*		"conceal" サポート。|conceal| |:syn-conceal| 他 参照。
 N  *+cryptv*		暗号化サポート |encryption|
 B  *+cscope*		|cscope| サポート
+m  *+cursorbind*	|'cursorbind'| サポート
 m  *+cursorshape*	|termcap-cursor-shape| サポート
 m  *+debug*		Vim がデバッグ用にコンパイルされた
 N  *+dialog_gui*	|:confirm| のGUIダイアログをサポート
@@ -336,6 +338,8 @@ N  *+lispindent*	|'lisp'|
 N  *+listcmds*		バッファリストや引数リストに対するVimコマンド
 			|buffer-hidden| |:argdelete|
 N  *+localmap*		バッファローカルなマップのサポート |:map-local|
+m  *+lua*		|Lua| インターフェース
+m  *+lua/dyn*		|Lua| インターフェース |/dyn|
 N  *+menu*		|:menu|
 N  *+mksession*		|:mksession|
 N  *+modify_fname*	|filename-modifiers|
@@ -347,7 +351,7 @@ B  *+mouse_netterm*	Unix のみ: nettermマウス操作 |netterm-mouse|
 N  *+mouse_pterm*	QNX  のみ: ptermマウス操作 |qnx-terminal|
 N  *+mouse_sysmouse*	Unix のみ: *BSD コンソールマウス操作 |sysmouse|
 N  *+mouse_xterm*	Unix のみ: xtermマウス操作 |xterm-mouse|
-B  *+multi_byte*	マルチバイト文字(日韓中) |multibyte|
+B  *+multi_byte*	16ビット、32 ビット文字 |multibyte|
    *+multi_byte_ime*	Win32 IMEサポート
 N  *+multi_lang*	多言語サポート |multi-lang|
 m  *+mzscheme*		Mzscheme インターフェース |mzscheme|
@@ -359,11 +363,14 @@ m  *+ole*		Win32 GUI のみ: |ole-interface|
 N  *+path_extra*	'path'や'tags'での上下階の検索
 m  *+perl*		Perl インターフェース |perl|
 m  *+perl/dyn*		Perl インターフェース |perl-dynamic| |/dyn|
+N  *+persistent_undo*	永続 undo |undo-persistence|
    *+postscript*	|:hardcopy| でPostScriptファイルの書き出し
 N  *+printer*		|:hardcopy| コマンド
 H  *+profile*		|:profile| コマンド
-m  *+python*		Python インターフェース |python|
-m  *+python/dyn*	Python インターフェース |python-dynamic| |/dyn|
+m  *+python*		Python 2 インターフェース |python|
+m  *+python/dyn*	Python 2 インターフェース |python-dynamic| |/dyn|
+m  *+python3*		Python 3 インターフェース |python|
+m  *+python3/dyn*	Python 3 インターフェース |python-dynamic| |/dyn|
 N  *+quickfix*		|:make| と |quickfix| コマンド
 N  *+reltime*		|reltime()| 関数, 'hlsearch'/'incsearch' タイムアウト,
 			'redrawtime' オプション
@@ -374,6 +381,7 @@ N  *+scrollbind*	|'scrollbind'|
 B  *+signs*		|:sign|
 N  *+smartindent*	|'smartindent'|
 m  *+sniff*		SniFFインターフェース |sniff|
+N  *+startuptime*	|--startuptime| 引数
 N  *+statusline*	オプション'statusline'、'rulerformat'と、
 			'titlestring'と'iconstring'の特殊フォーマット
 m  *+sun_workshop*	|workshop|
@@ -508,6 +516,16 @@ N  *+X11*		Unix のみ: ウィンドウタイトルを復帰可能 |X11|
 			るにはそのコマンド自身に ":silent" を付けてください:
 			":silent menu .... :silent command"
 
+						*:uns* *:unsilent*
+:uns[ilent] {command}	{command} を静かでなく実行します。|:silent| コマンドが
+			使用されているときのみ違いがでます。
+			|:silent| が使われていてもメッセージを表示したいときに
+			使用します。次の例では、|:silent| を使ってファイル読み
+			込みに関するメッセージを抑制しつつ、|:unsilent| を使っ
+			て各ファイルの最初の行を表示できるようにしています: >
+    		:silent argdo unsilent echo expand('%') . ": " . getline(1)
+<
+
 						*:verb* *:verbose*
 :[count]verb[ose] {command}
 			'verbose' に [count] を設定した状態で {command} を実行
@@ -587,268 +605,6 @@ K			カーソル位置のキーワードを調べるためのプログラムを�
 g CTRL-A		MEM_PROFILING を define して Vim をコンパイルしたとき
 			み使えます (通常は使いません)。メモリ使用量の統計を表
 			示します。Vim をデバッグするときなどに使います。
-
-==============================================================================
-2. オンラインヘルプ					*online-help*
-
-			*help* *<Help>* *:h* *:help* *<F1>* *i_<F1>* *i_<Help>*
-<Help>		or
-:h[elp]			新しいウィンドウを作成し、ヘルプファイルを読み込み専用
-			で開きます。ヘルプウィンドウがすでに開いているときはそ
-			のウィンドウを使います。カレントウィンドウの幅がスク
-			リーンと同じか、 80 文字分以上のときにはヘルプウィンド
-			ウはカレントウィンドウのすぐ上に作成されます。そうでな
-			いときには、ヘルプウィンドウは最上部に作成されます。
-			複数言語のヘルプが利用可能なときは、言語を選択するため
-			に、オプション 'helplang' が参照されます。
-			{Vi にはない}
-
-						*{subject}* *E149* *E661*
-:h[elp] {subject}	":help"と同じですが、加えて、{subject} へタブジャンプ
-			します。
-			{subject} には "*", "?"、"[a-z]" といったワイルドカー
-			ドも指定できます。
-			   :help z?	"z" コマンドのいずれかのヘルプを開く
-			   :help z.	"z." のヘルプを開く
-			パターンに完全に一致する項目が無かった場合、または、複
-			数の項目が一致した場合には、"最善"の一致が選択されま
-			す。洗練されたアルゴリズムで最善な項目が決定されます。
-			次のような優先順位が使われます:
-			- 大小文字が一致したほうが、しない時よりも良い
-			- 非英数字のあとにマッチするほうが、単語の真ん中にマッ
-			  チするものよりも良い。
-			- タグ名の先頭でマッチするか、なるべく先頭に近いほう
-			  が、そうでないものよりも良い。
-			- より多くの英数字がマッチするほうが良い。
-			- 短いマッチが良い。
-
-			{subject} のヘルプが複数の言語にある場合には、言語を選
-			択するために、オプション 'helplang' が参照されます。
-			言語を指定してタグを検索するには {subject} に "@ab" を
-			付加します。"ab" は2文字の言語コードです。
-			|help-translated| を参照。
-
-			長い {subject} を与えても、より短いものにマッチするこ
-			ともあります。この動作はコマンドラインの補完を考えると
-			わかりやすいでしょう (":help subject" の後でCTRL-Dをタ
-			イプしてみてください)。
-			複数の候補がある場合には、CTRL-Dを押すことで一覧を見る
-			ことができます。例: >
-				:help cont<Ctrl-D>
-<			正規表現 (|pattern|) を使うには、まず":help"を実行し、
-			ヘルプウィンドウで ":tag {pattern}" を実行します。
-			":tnext"コマンドでその他の項目へ移動することができ、
-			":tselect"でマッチした候補の一覧から選択することができ
-			ます。 >
-				:help index| :tse z.
-<			引数が指定されていない場合は "help" にマッチするものが
-			表示されます (すべての候補にマッチしてしまうのを防ぐた
-			め。そのような処理は時間がかかります)。
-			マッチした候補は最大で 300 件まで表示されます。
-
-<			:help コマンドの後ろには '|' で他のコマンドを続けるこ
-			とができます。しかし、'|' のヘルプを引くのに '|' をエ
-			スケープする必要はありません。したがって、次の例はどち
-			らも正しく機能します: >
-				:help |
-				:help k| only
-<			Note: '|' の直前の空白があると ":help" コマンドの引数
-			の一部として解釈されてしまいます。
-			ヘルプコマンドと続くコマンドを区切るには <LF> と <CR>
-			も使えます。<LF> や <CR> を入力するには、CTRL-V を使い
-			ます。例: >
-				:help so<C-V><CR>only
-<			{Vi にはない}
-
-:h[elp]! [subject]	":help" と同じですが、非英語のヘルプファイルを開いてい
-			るときには、それと同じ言語を優先します。
-			|help-translated|も参照。
-
-							*:helpg* *:helpgrep*
-:helpg[rep] {pattern}[@xx]
-			すべてのヘルプファイルから {pattern} を検索して、マッ
-			チした行の一覧を作成します。そして最初にマッチした行へ
-			ジャンプします。
-			[@xx] を指定した場合は、言語 "xx" のヘルプのみマッチし
-			ます。
-			|quickfix|コマンドを使ってマッチした行の一覧を順に移動
-			できます。例えば、|:cnext|で次の項目へジャンプしたり、
-			|:cwindow|でマッチした行の一覧をクイックフィックスウィ
-			ンドウに表示できます。
-			{pattern} には Vim の正規表現を使用できます|pattern|。
-			'ignorecase' は影響しません。大文字と小文字を区別する
-			には "\c" を使ってください。
-			大文字と小文字を区別して検索する例: >
-				:helpgrep Uganda
-<			区別しない例: >
-				:helpgrep uganda\c
-<			フランス語のヘルプを検索: >
-				:helpgrep backspace@fr
-<			改行を含むパターンはサポートされていません。一行内で
-			マッチするようにしてください。代わりに |:grep| を使用
-			することもできますが、その場合は、どうにかして検索結果
-			からヘルプファイルの一覧を取得する必要があります。
-			他のコマンドを後ろに続けることはできません。すべての文
-			字はパターンの一部として解釈されます。必要なら
-			|:execute| を使ってコマンドを並べることができます。
-			圧縮されたヘルプファイルは検索されません(Fedoraはヘル
-			プファイルを圧縮します)。
-			{Vi にはない}
-
-							*:lh* *:lhelpgrep*
-:lh[elpgrep] {pattern}[@xx]
-			":helpgrep" と同じですが、クイックフィックスリストでは
-			なく、ロケーションリストを使います。ヘルプウィンドウが
-			すでに開いている場合は、そのウィンドウのロケーションリ
-			ストを使います。開いていない場合は、新しいヘルプウィン
-			ドウを作成し、そのウィンドウのロケーションリストをセッ
-			トします。カレントウィンドウのロケーションリストは変更
-			されません。
-
-							*:exu* *:exusage*
-:exu[sage]		Ex コマンドのヘルプを表示します。Nvi との互換性のため
-			追加されました。{Vi にはない}
-
-							*:viu* *:viusage*
-:viu[sage]		ノーマルモードコマンドのヘルプを表示します。Nvi との互
-			換性のため追加されました。{Vi にはない}
-
-|:help|に引数を指定しなかった場合には 'helpfile' に設定されたファイルが開かれ
-ます。引数を与えた場合には 'runtimepath' に設定されたすべてのディレクトリの
-"doc/tags" から検索されます。
-
-ヘルプウィンドウの高さの初期値は 'helpheight' で設定できます (標準設定: 20)。
-
-ある項目へジャンプするにはタグを使います。これには2つの方法があります:
-- オプションやコマンド名にカーソルをあわせて "CTRL-]" コマンド使う。これはタグ
-  がキーワードの時にだけ使用できます。"<C-Leftmouse>" と "g<LeftMouse>" は
-  "CTRL-]" と同じ動作をします。
-- ":ta {subject}" コマンドを使う。これはどのような文字でも使用できます。
-
-ジャンプ先から戻るには CTRL-T か CTRL-O を使います。
-ヘルプウィンドウを閉じるには ":q" を使います。
-
-探しているものが複数の項目にマッチする場合には、次のようにして各項目にジャンプ
-できます:
-1. ヘルプウィンドウを開く
-2. 調べるタグにスラッシュを付けて ":tag" コマンドを実行する。例: >
-	:tag /min
-3. ":tnext" を実行してマッチした次の項目へジャンプする。
-
-プラグインなどのために、ヘルプを追加できます。そのために、配布されているヘルプ
-ファイルに変更を加える必要はありません。|add-local-help|を参照。
-
-ローカルヘルプファイルを書くには |write-local-help|を参照。
-
-Note: ローカルヘルプファイルのタイトル行 (1 行目) は自動的にヘルプファイル
-"help.txt" のセクション "LOCAL ADDITIONS" に追加されます|local-additions|。こ
-れは Vim でファイルを開いたときに追加されるので、ヘルプファイル自体は変更され
-ません。すべてのヘルプファイルの 1 行目が "LOCAL ADDITIONS" に追加されますが、
-$VIMRUNTIME/docにあるファイルは対象外です。
-
-							*help-xterm-window*
-他の xterm ウィンドウでヘルプを表示するには、このコマンドを使ってください: >
-	:!xterm -e vim +help &
-<
-
-			*:helpfind* *:helpf*
-:helpf[ind]		|:help|と同じですが、引数を入力するためのダイアログを
-			使います。後方互換性のために残さされています。現在は組
-			み込みのダイアログを使用せず、メニューの
-			ToolBar.FindHelp を使います。{|+GUI_GTK|が有効な場合の
-			み利用できます}
-			{Vi にはない}
-
-					*:helpt* *:helptags*
-				*E154* *E150* *E151* *E152* *E153* *E670*
-:helpt[ags] [++t] {dir}
-			ディレクトリ {dir} のヘルプタグファイルを作成します。
-			"*.txt" と "*.??x" というファイル内のスター (*) で囲ま
-			たタグがすべてスキャンされます。"*.??x" というファイル
-			は翻訳ヘルプです。"tags-??" というタグファイルが生成さ
-			れます。|help-translated|を参照。
-			作成されたタグファイルはソートされます。
-			タグの重複があるときはエラーメッセージが表示されます。
-			すでにあるタグファイルは警告なしに上書きされます。
-			"++t" 引数を指定すると "help-tags" タグが強制的に追加
-			されます。これは、{dir} が $VIMRUNTIME/doc と等しいと
-			きにも同様にタグが追加されます。
-			ランタイムディレクトリのヘルプタグファイルを作成し直す
-			には次のようにします (ファイルの書き込み権限が必要): >
-				:helptags $VIMRUNTIME/doc
-<			{Vi にはない}
-
-
-翻訳ヘルプ (TRANSLATED HELP)				*help-translated*
-
-翻訳ヘルプを追加し、英語のヘルプファイルと共存させることができます。
-'runtimepath' の "doc" ディレクトリにあるすべてのヘルプが検索対象になります。
-{|+multi_lang|が有効な場合のみ利用できます}
-
-今のところ、以下の翻訳が利用可能です:
-	Chinese - 共同翻訳
-	French  - 翻訳者 David Blanchet
-	Italian - 翻訳者 Antonio Colombo
-	Polish  - 翻訳者 Mikolaj Machowski
-	Russian - 翻訳者 Vassily Ragosin
-詳しくは Vim のウェブサイトを参照してください:
-	http://www.vim.org/translations.php
-
-翻訳ヘルプファイルの名前は次のようになってます:
-
-	help.abx
-	howto.abx
-	...
-	tags-ab
-
-"ab" は 2 文字の言語コードでです。例えばイタリア語なら次のような名前になりま
-す:
-
-	help.itx
-	howto.itx
-	...
-	tags-it
-
-訳注: 日本語の言語コードは ja です。help.jax
-
-オプション 'helplang' に言語の優先順位を指定できます。初期設定は環境から自動的
-に設定されます。ヘルプを検索するときはまず、優先の高い言語からタグが検索されま
-す。見つからなかった場合は、英語のヘルプが使われます。
-
-言語を指定してタグを検索するには "@ab" をタグ名に付け加えます。"ab" は 2 文字
-の言語コードです。例: >
-	:he user-manual@it
-	:he user-manual@en
-最初の例は、'helplang' が未設定の場合でも、イタリア語のユーザマニュアルを検索
-します。
-2 番目の例は、'helplang' が "it" に設定されている場合でも、英語のユーザマニュ
-アルを検索します。
-
-":help" コマンドでコマンドライン補完をするとき、複数の言語でタグが見つかった場
-合には "@en" が付加されます。タグが英語だけにある場合には、"@en" は省略されま
-す。
-
-翻訳ヘルプで |CTRL-]| や ":help!" を使うと、同じ言語のタグが検索されます。見つ
-からなかった場合は、言語を選択するために 'helplang' が参照されます。
-
-ヘルプファイルのエンコーディングは latin1 か utf-8 にしてください。非 ASCII 文
-字が 1 行目にある場合、そのヘルプファイルは utf-8 であると判断されます。ヘッダ
-の "For Vim version" を翻訳しておくとよいでしょう。
-
-一つのディレクトリの一つの言語のヘルプファイルはすべて同じエンコーディングを
-使ってください。。別の言語なら別のエンコーディングを使用できます。ディレクトリ
-を分けた場合は、同じ言語で別のエンコーディングを使用できます。
-
-翻訳のヒント:
-- タグは翻訳しない。そうすれば 'helplang' を使って言語の優先順位を指定できま
-  す。言語用の新しいタグを追加するのは構いません。
-- ファイルの一部を翻訳しない場合は、英語のままタグを追加し、"tag@en" 表記を使
-  えるようしてください。
-- ヘルプファイルとタグファイルをまとめてダウンロードできるようにしてください。
-  そうすれば、ユーザはそれを "doc" ディレクトリにコピーするだけで使えます。
-  www.vim.org からリンクしたいので、Bramに連絡してください。
-- タグファイルを作成するには |:helptags| を使います。指定したディレクトリのす
-  べての言語のファイルが処理されます。
 
 ==============================================================================
 3. less、more の代わりに Vim を使う				*less*

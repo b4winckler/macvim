@@ -1,4 +1,4 @@
-*pi_tar.txt*	For Vim バージョン 7.2.  Last change: 2008 Aug 09
+*pi_tar.txt*	For Vim バージョン 7.3.  Last change: 2010 Aug 09
 
 		       +====================+
 		       | Tar File Interface |
@@ -6,7 +6,7 @@
 
 Author:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamily.AbizM>
 	  (remove NOSPAM from Campbell's email first)
-Copyright 2005-2008: The GPL (gnu public license) applies to	*tar-copyright*
+Copyright 2005-2010: The GPL (gnu public license) applies to	*tar-copyright*
 	   tar.vim, tarPlugin.vim, and pi_tar.txt.
 	   No warranty, express or implied.  Use At-Your-Own-Risk.
 
@@ -25,6 +25,33 @@ Copyright 2005-2008: The GPL (gnu public license) applies to	*tar-copyright*
    い。編集後に保存することもできます。tar ファイルに新しいファイルを追加する
    ことはまだできません。
 
+						*:Vimuntar*
+   VIMUNTAR~
+
+   :Vimuntar [vimhome]
+
+	このコマンドは (必要なら) tarball を .vim または vimfiles ディレクトリ
+	にコピーします。 [vimhome] が指定されていなければ 'runtimepath' の最初
+	の書き込み可能なディレクトリにコピーされます。 [vimhome] が指定されて
+	いればそのディレクトリが使われます。
+
+	コピーには *g:tar_copycmd* に指定されたコマンドが使用されます。初期設
+	定は: >
+		cp   for cygwin, unix, macunix
+		copy for windows (32, 95, 64, 16)
+<	ファイルの展開には *g:tar_extractcmd* で指定されたコマンドが使用されま
+	す。初期設定は: >
+		"tar -xf"
+<
+   ロードの無効化~
+
+   もしなんらかの理由で tar ファイルを vim で開きたくない場合は、次の二つの変
+   数を <.vimrc> ファイルで設定すると、tar プラグインはロードされなくなります:
+>
+	let g:loaded_tarPlugin= 1
+	let g:loaded_tar      = 1
+<
+
 ==============================================================================
 3. オプション						*tar-options*
 
@@ -41,8 +68,9 @@ Copyright 2005-2008: The GPL (gnu public license) applies to	*tar-copyright*
 					があります。Posix 互換の tar なら対応
 					しているはずです。
 				  変数が存在しない場合:
-					tar プラグインは "-" で始まるファイル
-					名を受け付けません。
+					tar プラグインは "-" で始まる tar ファ
+					イルまたは中のファイルを受け付けませ
+					ん。
 				  すべての tar が "--" をサポートしているわけ
 				  ではないので、初期設定では無効になっていま
 				  す。
@@ -52,6 +80,12 @@ Copyright 2005-2008: The GPL (gnu public license) applies to	*tar-copyright*
 ==============================================================================
 4. 開発履歴						*tar-history*
 
+
+   v26 Aug 09, 2010 * uses buffer-local instead of window variables to hold
+		      tarfile name
+   v25 Jun 19, 2010 * (Jan Steffens) added support for xz compression
+   v24 Apr 07, 2009 * :Untarvim command implemented
+       Sep 28, 2009 * Added lzma support
    v22 Aug 08, 2008 * security fixes
    v16 Jun 06, 2008 * tarfile:: used instead of tarfile: when editing files
 		      inside tarballs.  Fixes a problem with tarballs called

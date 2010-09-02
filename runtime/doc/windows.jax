@@ -1,4 +1,4 @@
-*windows.txt*   For Vim バージョン 7.2.  Last change: 2009 Sep 23
+*windows.txt*   For Vim バージョン 7.3.  Last change: 2010 Aug 15
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -475,11 +475,11 @@ CTRL-W =	総てのウィンドウの高さ・幅を(ほとんど)同じにする
 
 :res[ize] -N					*:res* *:resize* *CTRL-W_-*
 CTRL-W -	カレントウィンドウの高さをN（デフォルトは1）行分低くする。
-		'vertical' の後に置かれたときは、幅を N 桁分減らす。
+		|:vertical| の後に置かれたときは、幅を N 桁分減らす。
 
 :res[ize] +N					*CTRL-W_+*
 CTRL-W +	カレントウィンドウの高さをN（デフォルトは1）行分高くする。
-		'vertical' の後に置かれたときは、幅を N 桁分増やす。
+		|:vertical| の後に置かれたときは、幅を N 桁分増やす。
 
 :res[ize] [N]
 CTRL-W CTRL-_					*CTRL-W_CTRL-_* *CTRL-W__*
@@ -660,7 +660,7 @@ These are hard values, a window will never become smaller.
 		ページで開かれる。最後のウィンドウが空ならそのウィンドウが使わ
 		れる。
 		|++opt| と |+cmd| も参照。
-		{+gui 機能つきでコンパイルされたときのみ使用可能}
+		{GUI 機能つきでコンパイルされたときのみ使用可能}
 
 ==============================================================================
 8. 全てのバッファ／ウィンドウに対してコマンド実行       *list-repeat*
@@ -797,7 +797,7 @@ CTRL-W gF						*CTRL-W_gF*
 'previewwindow'がセットされる。他のウィンドウを開閉したときにも同じ高さを保つ
 ためにオプション'winfixheight'がセットされる。
 
-							*:pta* *:ptag*
+						*:pta* *:ptag*
 :pta[g][!] [tagname]
 		":tag[!] [tagname]" を実行し、現在のバッファまたはカーソル位置
 		を変えずに「プレビュー」ウィンドウないで検索したタグを表示す
@@ -811,7 +811,7 @@ CTRL-W gF						*CTRL-W_gF*
 		このおかげで |:ptnext| の後でも CursorHold の例がうまくいくよ
                 うになっている。
 
-CTRL-W z					*CTRL-W_j
+CTRL-W z					*CTRL-W_z*
 CTRL-W CTRL-Z					*CTRL-W_CTRL-Z* *:pc* *:pclose*
 :pc[lose][!]	現在開いている「プレビュー」ウィンドウを閉じる。 'hidden' オプ
 		ションがセットされている時、または、バッファが編集中で[!]が使
@@ -1189,8 +1189,8 @@ help		ヘルプファイルを保持する。|:help| コマンドによっての
 		ない。ヘルプバッファに対する 'buflisted' オプションはリセット
 		される。
 
-directory	ディレクトリの内容を表示する。|file-explorer| プラグインで使わ
-		れる。このバッファは以下の設定で作成される: >
+directory	ディレクトリの内容を表示する。ファイルエクスプローラプラグイン
+		で使用されている。このバッファは以下の設定で作成される: >
 			:setlocal buftype=nowrite
 			:setlocal bufhidden=delete
 			:setlocal noswapfile

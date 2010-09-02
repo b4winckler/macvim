@@ -1,4 +1,4 @@
-*index.txt*     For Vim バージョン 7.2.  Last change: 2009 Jul 01
+*index.txt*     For Vim バージョン 7.3.  Last change: 2010 Jul 21
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -136,10 +136,14 @@ Vim変数の一覧は|vim-variable|を参照。
 |i_<Help>|	<Help>		挿入モードを終了し、ヘルプウィンドウを表示する。
 |i_<Insert>|	<Insert>	挿入/上書きモードをトグルする。
 |i_<LeftMouse>| <LeftMouse>	カーソルをマウスクリックした位置へ移動。
-|i_<MouseDown>| <MouseDown>	ウィンドウを3行下へスクロール。
-|i_<S-MouseDown>| <S-MouseDown> ウィンドウを1画面下ヘスクロール。
-|i_<MouseUp>|	<MouseUp>	ウィンドウを3行上へスクロール。
-|i_<S-MouseUp>| <S-MouseUp>	ウィンドウを1画面上へスクロール。
+|i_<ScrollWheelDown>|	<ScrollWheelDown>	ウィンドウを3行下へ
+|i_<S-ScrollWheelDown>|	<S-ScrollWheelDown>	ウィンドウを1画面下ヘ
+|i_<ScrollWheelUp>|	<ScrollWheelUp>		ウィンドウを3行上へ
+|i_<S-ScrollWheelUp>|	<S-ScrollWheelUp>	ウィンドウを1画面上へ
+|i_<ScrollWheelLeft>|	<ScrollWheelLeft>	ウィンドウを6列左へ
+|i_<S-ScrollWheelLeft>| <S-ScrollWheelLeft>	ウィンドウを1画面左へ
+|i_<ScrollWheelRight>|	<ScrollWheelRight>	ウィンドウを6列右へ
+|i_<S-ScrollWheelRight>| <S-ScrollWheelRight>	ウィンドウを1画面右へ
 
 CTRL-X サブモードで使用するコマンド			*i_CTRL-X_index*
 
@@ -159,7 +163,7 @@ CTRL-X サブモードで使用するコマンド			*i_CTRL-X_index*
 |i_CTRL-X_CTRL-V|	CTRL-X CTRL-V	コマンドラインと同様な補完
 |i_CTRL-X_CTRL-]|	CTRL-X CTRL-]	タグを補完。
 |i_CTRL-X_s|		CTRL-X s	スペリング補完
-{コンパイル時に|+insert_expand|オプションを有効にしたときのみ利用可能}
+{コンパイル時に |+insert_expand| オプションを有効にしたときのみ利用可能}
 
 ==============================================================================
 2. ノーマルモード					*normal-index*
@@ -434,10 +438,14 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 |<S-Up>|	<S-Up>		1  CTRL-B と同じ。
 |<Undo>|	<Undo>		2  "u" と同じ。
 |<Up>|		<Up>		1  "k" と同じ。
-|<MouseDown>|	<MouseDown>	   ウィンドウを3行下へスクロール。
-|<S-MouseDown>| <S-MouseDown>	   ウィンドウを1画面下ヘスクロール。
-|<MouseUp>|	<MouseUp>	   ウィンドウを3行上へスクロール。
-|<S-MouseUp>|	<S-MouseUp>	   ウィンドウを1画面上へスクロール。
+|<ScrollWheelDown>|	<ScrollWheelDown>	ウィンドウを3行下へ
+|<S-ScrollWheelDown>|	<S-ScrollWheelDown>	ウィンドウを1画面下へ
+|<ScrollWheelUp>|	<ScrollWheelUp>		ウィンドウを3行上へ
+|<S-ScrollWheelUp>|	<S-ScrollWheelUp>	ウィンドウを1画面上へ
+|<ScrollWheelLeft>|	<ScrollWheelLeft>	ウィンドウを6列左へ
+|<S-ScrollWheelLeft>|	<S-ScrollWheelLeft>	ウィンドウを1画面左へ
+|<ScrollWheelRight>|	<ScrollWheelRight>	ウィンドウを6列右へ
+|<S-ScrollWheelRight>|	<S-ScrollWheelRight>	ウィンドウを1画面右へ
 
 ==============================================================================
 2.1 テキストオブジェクト					*objects*
@@ -1341,6 +1349,9 @@ You found it, Arthur!				*holy-grail*
 |:ltag|		:lt[ag]		タグへジャンプし、マッチしたタグをロケーション
 				リストに追加する
 |:lunmap|	:lu[nmap]	":unmap!"と同じだが、Lang-Argモードも対象
+|:lua|		:lua		|Lua| コマンドを実行
+|:luado|	:luad[o]	各行に対して Lua コマンドを実行
+|:luafile|	:luaf[ile]	|Lua| スクリプトファイルを実行
 |:lvimgrep|	:lv[imgrep]	ファイルからパターンを検索する
 |:lvimgrepadd|	:lvimgrepa[dd]	:vimgrepと同様だが、ロケーションリストに追加す
 				る
@@ -1365,6 +1376,8 @@ You found it, Arthur!				*holy-grail*
 |:mode|		:mod[e]		スクリーンモードを表示または変更する
 |:mzscheme|	:mz[scheme]	MzSchemeコマンドを実行する
 |:mzfile|	:mzf[ile]	MzSchemeスクリプトファイルを実行する
+|:nbclose|	:nbc[lose]	現在の Netbeans セッションを閉じる
+|:nbstart|	:nbs[art]	新しい Netbeans セッションを開始する
 |:nbkey|	:nb[key]	キーをNetbeansに渡す
 |:next|		:n[ext]		引数リストの次のファイルを開く
 |:new|		:new		新規に空のウィンドウを作成する
@@ -1398,6 +1411,7 @@ You found it, Arthur!				*holy-grail*
 |:ounmap|	:ou[nmap]	Operator-pending モードを対象とした ":unmap"
 				コマンド
 |:ounmenu|	:ounme[nu]	Operator-pending モードのメニューを削除
+|:ownsyntax|	:ow[nsyntax]	ウィンドウのローカル構文強調を新たに設定する
 |:pclose|	:pc[lose]	プレビューウィンドウを閉じる
 |:pedit|	:ped[it]	プレビューウィンドウでファイルを開く
 |:perl|		:pe[rl]		Perl コマンドを実行
@@ -1427,6 +1441,9 @@ You found it, Arthur!				*holy-grail*
 				を表示
 |:put|		:pu[t]		テキストにレジスタの内容を挿入
 |:pwd|		:pw[d]		カレントディレクトリを表示
+|:py3|		:py3		Python 3 コマンドを実行
+|:python3|	:python3	:py3 と同じ
+|:py3file|	:py3f[ile]	Python 3 スクリプトファイルを実行
 |:python|	:py[thon]	Python コマンドを実行
 |:pyfile|	:pyf[ile]	Python スクリプトファイルを実行
 |:quit|		:q[uit]		カレントウィンドウを閉じる(ウィンドウが1つなら
@@ -1450,6 +1467,7 @@ You found it, Arthur!				*holy-grail*
 |:ruby|		:rub[y]		Rubyのコマンドを実行する
 |:rubydo|	:rubyd[o]	各行に対してRubyのコマンドを実行する
 |:rubyfile|	:rubyf[ile]	Rubyスクリプトファイルを実行する
+|:rundo|	:rund[o]	アンドゥ情報をファイルから読み込む
 |:runtime|	:ru[ntime]	Vimスクリプトを'runtimepath'から探して実行する
 |:rviminfo|	:rv[iminfo]	viminfo ファイルを読み込む
 |:substitute|	:s[ubstitute]	テキストの置換
@@ -1627,6 +1645,7 @@ You found it, Arthur!				*holy-grail*
 |:wq|		:wq		ファイルに保存して、ウィンドウもしくは Vim を終
 				了
 |:wqall|	:wqa[ll]	すべての変更済みバッファを保存し、Vim を終了
+|:wundo|	:wu[ndo]	アンドゥ情報をファイルに保存する
 |:wviminfo|	:wv[iminfo]	viminfo ファイルに保存
 |:wsverb|	:ws[verb]	workshopに命令をIPCで送信する
 |:xit|		:x[it]		バッファが変更されていたら保存し、ウィンドウ

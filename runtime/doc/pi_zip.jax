@@ -1,4 +1,4 @@
-*pi_zip.txt*	For Vim バージョン 7.2.  Last change: 2008 Jul 30
+*pi_zip.txt*	For Vim バージョン 7.3.  Last change: 2010 Apr 12
 
 				+====================+
 				| Zip File Interface |
@@ -6,7 +6,7 @@
 
 Author:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamily.AbizM>
 	  (remove NOSPAM from Campbell's email first)
-Copyright: Copyright (C) 2005-2008 Charles E Campbell, Jr *zip-copyright*
+Copyright: Copyright (C) 2005-2009 Charles E Campbell, Jr *zip-copyright*
            Permission is hereby granted to use and distribute this code,
 	   with or without modifications, provided that this copyright
 	   notice is copied with it. Like anything else that's free,
@@ -56,6 +56,15 @@ Copyright: Copyright (C) 2005-2008 Charles E Campbell, Jr *zip-copyright*
    "zip" として使用するプログラムを指定します。これは zip ファイルを保存する
    (更新する) ときに使用されます。初期設定: >
    	let g:zip_zipcmd= "zip"
+<
+   ロードの無効化~
+
+   もしなんらかの理由で vim で zip ファイルを開きたくない場合は、次の二つの変
+   数を <.vimrc> で設定すると、tar プラグインのロードを無効化できます: >
+
+	let g:loaded_zipPlugin= 1
+	let g:loaded_zip      = 1
+<
 <
 
 ==============================================================================

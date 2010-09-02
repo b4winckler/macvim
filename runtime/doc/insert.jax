@@ -1,4 +1,4 @@
-*insert.txt*    For Vim バージョン 7.2.  Last change: 2009 Jul 14
+*insert.txt*    For Vim バージョン 7.3.  Last change: 2010 Jul 29
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -344,10 +344,14 @@ CTRL-G CTRL-J	1行下の、挿入開始位置と同じ列へ移動	     *i_CTRL-
 <PageUp>	1ページ上へ				     *i_<PageUp>*
 <S-Down>	1ページ下へ				     *i_<S-Down>*
 <PageDown>	1ページ下へ				     *i_<PageDown>*
-<MouseDown>	3行下へスクロール			     *i_<MouseDown>*
-<S-MouseDown>	1ページ下へスクロール			     *i_<S-MouseDown>*
-<MouseUp>	3行上へスクロール			     *i_<MouseUp>*
-<S-MouseUp>	1ページ上へスクロール			     *i_<S-MouseUp>*
+<ScrollWheelDown>    ウィンドウを3行下へ移動			*i_<ScrollWheelDown>*
+<S-ScrollWheelDown>  ウィンドウを1ページ下へ移動	*i_<S-ScrollWheelDown>*
+<ScrollWheelUp>      ウィンドウを3行上へ移動		*i_<ScrollWheelUp>*
+<S-ScrollWheelUp>    ウィンドウを1ページ上へ移動	*i_<S-ScrollWheelUp>*
+<ScrollWheelLeft>    ウィンドウを6列左へ移動		*i_<ScrollWheelLeft>*
+<S-ScrollWheelLeft>  ウィンドウを1ページ左へ移動	*i_<S-ScrollWheelLeft>*
+<ScrollWheelRight>   ウィンドウを6列右へ移動		*i_<ScrollWheelRight>*
+<S-ScrollWheelRight> ウィンドウを1ページ右へ移動	*i_<S-ScrollWheelRight>*
 CTRL-O		1つコマンドを実行して、挿入モードに戻る      *i_CTRL-O*
 CTRL-\ CTRL-O	CTRL-O と同様だがカーソルを移動させない	     *i_CTRL-\_CTRL-O*
 CTRL-L		'insertmode' がオンのとき: ノーマルモードへ  *i_CTRL-L*
@@ -496,7 +500,7 @@ UNDOになる。
 6. 仮想置換モード		*vreplace-mode* *Virtual-Replace-mode*
 
 ノーマルモードで"gR"コマンドを使うと仮想置換モードに入る。
-{+vreplace機能を付けずにコンパイルした場合は利用できない}
+{|+vreplace| 機能を付けずにコンパイルした場合は利用できない}
 {Vi には仮想置換モードはない}
 
 仮想置換モードは置換モードに良く似ているが、ファイルの実際の文字ごとにではな
@@ -524,14 +528,12 @@ CTRL-TとCTRL-Dを使用したときには面白い効果がある。カーソ�
 'list'モードで'cpoptions'に"L"が含まれない時には、仮想置換モードはまるで'list'
 モードでないかのように振舞う。
 
-TRANS_TODO
-Note that the only times characters beyond the cursor should appear to move
-are in 'list' mode, and occasionally when 'wrap' is set (and the line changes
-length to become shorter or wider than the width of the screen), or
-momentarily when typing over a CTRL character.
-(訳注:ここ、どうしてもうまく訳せません…m(_ _)m)
-コントロール文字は1文字でスクリーン文字を2文字占有する。それを通常の文字2文字
-で置換すると、最初の1文字目は挿入され2文字目がコントロール文字を置換する。
+Note: カーソルより後ろの文字が移動して見えることがありますが、それは 'list'
+モードにおいて、'wrap' がオンのとき (そして変更によって行の長さがスクリーンの
+幅より短くなるか長くなるとき) にときどき、あるいはコントロール文字の上で入力す
+るときに一時的にそうなります。コントロール文字はスクリーン上で 2 文字分の幅を
+取ります。それを通常の文字 2 文字で置換すると、最初の 1 文字目は挿入され 2 文
+字目がコントロール文字を置換します。
 
 このモードは<Tab>でカラムが区切られた表へ、新しいデータをカラムを揃えて入力す
 るような編集作業に便利である。
@@ -610,6 +612,7 @@ i.."のようなマッピングを使うとエラー E523 が発生する。
 	      return "\<Tab>"
 	   else
 	      return "\<C-N>"
+	   endif
 	endfunction
 	inoremap <Tab> <C-R>=CleverTab()<CR>
 
@@ -1373,10 +1376,10 @@ syntaxcomplete プラグインでは、構文グループのうちどれを補�
 index.php という名前のファイルを開き、次のコマンドを実行してみる: >
 	:syntax list
 
-たくさんの構文グループがあることに気づくだろう。PHP 言語は HTML, JavaScript な
-ど他の言語の要素を含むことがある。この場合、syntaxcomplete プラグインはファイ
-ルタイプ名 "php" で始まる構文グループだけを含める。例えば、次の構文グループは
-デフォルトで含まれる: phpEnvVar, phpIntVar, phpFunctions。
+まず最初にたくさんの異なる構文グループがあることに気づくだろう。PHP 言語は
+HTML, JavaScript など他の言語の要素を含むことがある。この場合、syntaxcomplete
+プラグインはファイルタイプ名 "php" で始まる構文グループだけを含める。例えば、
+次の構文グループはデフォルトで含まれる: phpEnvVar, phpIntVar, phpFunctions。
 
 PHP 言語は構文強調で色付けできる要素がとてもたくさんある。これはつまり、非常に
 多数の要素がオムニ補完リストに現れることを意味する。人によってはこれがわずらわ
@@ -1403,6 +1406,40 @@ syntaxcomplete プラグインは、構文アイテムの単語境界の認識�
 きないかもしれない。g:omni_syntax_use_iskeyword に 0 を代入すれば
 syntaxcomplete プラグインは単語文字の区切りを使わなくなる: >
     let g:omni_syntax_use_iskeyword = 0
+
+
+プラグイン開発者のために OmniSyntaxList 関数が公開されている。この関数は構文ア
+イテムのリストを得るために使うことができる。例えば SQL ファイルを開いていると
+きに (:e syntax.sql) ":syntax list" コマンドを実行してグループと構文アイテムを
+確認してみる。例: >
+    syntax list
+
+次のような出力が表示される: >
+    sqlOperator    xxx some prior all like and any escape exists in is not
+                       or intersect minus between distinct
+                       links to Operator
+    sqlType        xxx varbit varchar nvarchar bigint int uniqueidentifier
+                       date money long tinyint unsigned xml text smalldate
+                       double datetime nchar smallint numeric time bit char
+                       varbinary binary smallmoney
+                       image float integer timestamp real decimal
+
+二つの構文グループ sqlOperator と sqlType がある。構文アイテムのリストを得るた
+めに OmniSyntaxList をいくつかの方法で呼び出すことができる。構文グループを限定
+せずにすべての構文アイテムを得るには次のようにする: >
+    echo OmniSyntaxList( [] )
+
+sqlOperator 構文グループの構文アイテムの得るには次のようにする: >
+    echo OmniSyntaxList( ['sqlOperator'] )
+
+sqlOperator 構文グループと sqlType 構文グループの両方の構文アイテムをすべて得
+るには次のようにする: >
+    echo OmniSyntaxList( ['sqlOperator', 'sqlType'] )
+
+プラグインから呼び出すときは、結果を List に代入して使うのが一般的だろう: >
+    let myKeywords = []
+    let myKeywords = OmniSyntaxList( ['sqlKeyword'] )
+
 
 
 SQL							*ft-sql-omni*
@@ -1657,8 +1694,8 @@ NOTE: これらのコマンドは |:global| または |:vglobal| と組み合わ
 			入が始まることに注意。
 			|:normal| からこのコマンドを呼び出すと機能しない。
 			{Vi にはない}
-			{+ex_extra機能を無効にしてコンパイルした場合は利用でき
-			ない}
+			{|+ex_extra| 機能を無効にしてコンパイルした場合は利用
+			できない}
 
 							*:stopi* *:stopinsert*
 :stopi[nsert]		できるだけ早く挿入モードを中止します。挿入モードで
@@ -1677,13 +1714,13 @@ NOTE: これらのコマンドは |:global| または |:vglobal| と組み合わ
 			その関数・スクリプトが終了した後ではじめて置換モード
 			になることに注意。
 			{Vi にはない}
-			{+ex_extra 機能つきでコンパイルしたときのみ有効}
+			{|+ex_extra| 機能つきでコンパイルしたときのみ有効}
 
 							*:startgreplace*
 :startg[replace][!]	|:startreplace| と同様だが、|gR| のようなビジュアル置
 			換モードになる。
 			{Vi にはない}
-			{+ex_extra 機能つきでコンパイルしたときのみ有効}
+			{|+ex_extra| 機能つきでコンパイルしたときのみ有効}
 
 ==============================================================================
 10. ファイルを挿入する					*inserting-file*

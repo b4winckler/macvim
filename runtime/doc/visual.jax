@@ -1,4 +1,4 @@
-*visual.txt*    For Vim バージョン 7.2.  Last change: 2009 Oct 14
+*visual.txt*    For Vim バージョン 7.3.  Last change: 2010 Feb 17
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -198,10 +198,18 @@ CTRL-O を使用するとブザー音が発生し、ビジュアルモードが�
 	ib	()のブロックの中身				|v_ib|
 	aB	(波括弧文字を含む) {}のブロック			|v_aB|
 	iB	{}のブロックの中身				|v_iB|
+	at	(タグ自身を含む) <tag> </tag> ブロック		|v_at|
+	it	<tag> </tag> ブロックの中身			|v_it|
 	a<	(大小記号文字を含む) <>のブロック		|v_a<|
 	i<	<>のブロックの中身				|v_i<|
 	a[	(各カッコ文字を含む) []のブロック		|v_a[|
 	i]	[]のブロックの中身				|v_i[|
+	a"	(クォートを含む) ダブルクォート文字列		|v_aquote|
+	i"	ダブルクォート文字列の中身			|v_iquote|
+	a'	(クォートを含む) シングルクォート文字列		|v_a'|
+	i'	シングルクォート文字列の中身			|v_i'|
+	a`	(backtick を含む) backtick 文字列		|v_a`|
+	i`	backtick 文字列の中身				|v_i`|
 
 加えて続くコマンドが使用可能:
 	:	強調された行にExコマンドを適用 (1)		|v_:|

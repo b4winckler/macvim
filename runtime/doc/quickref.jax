@@ -1,4 +1,4 @@
-*quickref.txt*  For Vim バージョン 7.2.  Last change: 2009 Jan 22
+*quickref.txt*  For Vim バージョン 7.3.  Last change: 2010 Jul 24
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -652,6 +652,7 @@ smz			   号のこと。英語圏では昔から使われている。
 'clipboard'	  'cb'      無名レジスタ操作でクリップボードを使う
 'cmdheight'	  'ch'      コマンドラインの行数
 'cmdwinheight'	  'cwh'     コマンドラインウィンドウの行数
+'colorcolumn'	  'cc'	    列を強調表示する
 'columns'	  'co'      画面上の桁数
 'comments'	  'com'     コメント行の開始を示すパターン
 'commentstring'	  'cms'     コメント用テンプレート(foldマーカ用)
@@ -659,16 +660,21 @@ smz			   号のこと。英語圏では昔から使われている。
 'complete'	  'cpt'     挿入モードでの補完の動きを指定する
 'completefunc'	  'cfu'     挿入モードでの補完に使われる関数
 'completeopt'	  'cot'     挿入モードでの補完のオプション
+'concealcursor'	  'cocu'    カーソル行の Conceal テキストを表示するかどうか
+'conceallevel'	  'cole'    Conceal テキストを表示するかどうか
 'confirm'	  'cf'      未保存ファイル、リードオンリファイルの確認方法
 'conskey'	  'consk'   コンソールからの直接キー検出(MS-DOSのみ)
 'copyindent'	  'ci'      'autoindent'がすでにあるインデントを参考にする
 'cpoptions'	  'cpo'     vi互換な振る舞いのフラグ集
+'cryptmethod'	  'cm'	    ファイルの保存に使用する暗号化の種類
 'cscopepathcomp'  'cspc'    表示するファイルパスの深さ
 'cscopeprg'	  'csprg'   cscopeの実行ファイル
 'cscopequickfix'  'csqf'    cscopeの結果の表示にquickfixウインドウを使う
 'cscopetag'	  'cst'     タグコマンドでcscopeを使う
 'cscopetagorder'  'csto'    |:cstag|が検索する順番を決める
 'cscopeverbose'	  'csverb'  cscopeデータベースに追加時にメッセージを表示
+'cursorbind'	  'crb'     カーソルを移動させたときに他のウィンドウ内でもカー
+		            ソルを移動させる
 'cursorcolumn'	  'cuc'     カーソルがある桁を強調表示する
 'cursorline'	  'cuc'	    カーソルがある行を強調表示する
 'debug'			    "msg"と設定すると全てのエラーが表示される
@@ -830,6 +836,7 @@ smz			   号のこと。英語圏では昔から使われている。
 'quoteescape'	  'qe'	    文字列中に使われるエスケープ文字
 'readonly'	  'ro'      バッファの書き込みを制限する
 'redrawtime'	  'rdt'     'hlsearch' と |:match| のハイライトのタイムアウト
+'relativenumber'  'rnu'	    相対行番号を表示する
 'remap'			    再帰的マッピングを有効にする
 'report'		    変更された行の数の方向が出る最小値
 'restorescreen'	  'rs'      Win32: 終了時スクリーンを更新する
@@ -922,7 +929,11 @@ smz			   号のこと。英語圏では昔から使われている。
 'ttymouse'	  'ttym'    マウスコードの種類
 'ttyscroll'	  'tsl'     画面をスクロールする行数の最大値
 'ttytype'	  'tty'     'term'の別名
+'undodir'	  'udir'    アンドゥファイルの保存場所
+'undofile'	  'udf'	    アンドゥ情報をファイルに保存する
 'undolevels'	  'ul'      アンドゥ可能な回数の最大値
+'undoreload'	  'ur'	    バッファ再読み込み時にアンドゥを保存するかどうかを
+		            行数で制限する
 'updatecount'	  'uc'      この回数だけ入力するとスワップファイルを更新する
 'updatetime'	  'ut'      この時間だけ入力がなければスワップファイルを更新
 'verbose'	  'vbs'     有益なメッセージを表示する
@@ -933,7 +944,7 @@ smz			   号のこと。英語圏では昔から使われている。
 'virtualedit'	  've'      フリーカーソルモードを使う場面
 'visualbell'	  'vb'      ビープの代わりにvisualベル(画面フラッシュ)を使用
 'warn'			    バッファ変更済み時にシェル使用で警告する
-'weirdinvert'	  'wi'      変な強調表示方法を持つターミナル用
+'weirdinvert'	  'wiv'     変な強調表示方法を持つターミナル用
 'whichwrap'	  'ww'      行を越えて機能するキーを設定する
 'wildchar'	  'wc'      コマンドラインでワイルドカードの展開に使うキー
 'wildcharm'	  'wcm'     'wildchar'に似た、マッピング内で使うもの
@@ -942,6 +953,7 @@ smz			   号のこと。英語圏では昔から使われている。
 'wildmode'	  'wim'     'wildchar'の補完モード
 'wildoptions'	  'wop'     コマンドライン補完をどう行うか指定する
 'winaltkeys'	  'wak'     GUIでのALTキーの使い方
+'window'	  'wi'	    CTRL-F と CTRL-B でスクロールする行数
 'winheight'	  'wh'      カレントウィンドウの行数の最小値
 'winfixheight'	  'wfh'     ウィンドウの高さをキープする
 'winfixwidth'	  'wfh'     ウィンドウの幅をキープする
@@ -1087,15 +1099,19 @@ smz			   号のこと。英語圏では昔から使われている。
 |:_%|	    %		現在のファイル名(ファイル名を使うべき場所でのみ可)
 |:_#|	    #[num]	別のファイル名[num] (ファイル名を使うべき場所でのみ可)
 
-	Note: 以下の４つについては、そのまま打ち込みます。特殊キーの表記では
+	Note: 以下の 7 つについては、そのまま打ち込みます。特殊キーの表記では
 	      ありません。
+|:<afile>|  <abuf>	バッファ番号。自動コマンドで使われる (ファイル名を使う
+			   べき場所でのみ可)
+|:<afile>|  <afile>	ファイル名。自動コマンドで使われる (ファイル名を使うべ
+			   き場所でのみ可)
+|:<afile>|  <amatch>	パターンにマッチしたもの。自動コマンドで使われる (ファ
+			   イル名を使うべき場所でのみ可)
 |:<cword>|  <cword>	カーソル下の単語(ファイル名を使うべき場所でのみ可)
 |:<cWORD>|  <cWORD>	カーソル下の大単語(ファイル名を使うべき場所でのみ可)
 			※ 大単語については|WORD|を参照)
 |:<cfile>|  <cfile>	カーソルのあるファイルの名前(ファイル名を使うべき場
 			所でのみ使用可)
-|:<afile>|  <afile>	自動コマンドのファイルの名前(ファイル名を使うべき
-			場所でのみ使用可)
 |:<sfile>|  <sfile>	そのファイルで ":source"を使ったファイルの名前(ファ
 			イル名を使うべき場所でのみ使用可)
 

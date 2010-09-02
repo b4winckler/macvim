@@ -1,4 +1,4 @@
-*quickfix.txt*  For Vim バージョン 7.2.  Last change: 2009 May 24
+*quickfix.txt*  For Vim バージョン 7.3.  Last change: 2010 Jul 20
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -111,6 +111,7 @@ AmigaでManx's Aztec C compilerを使っているなら、Vimと連携させる�
 :cr[ewind][!] [nr]	[nr]のエラーを表示する。[nr]が省略されると一番最初の
 			エラーが表示される。|:cc|を参照。
 
+							*:lrewind* *:lr*
 :lr[ewind][!] [nr]	":crewind"と同様だが、QuickFixリストでなく、カレント
 			ウィンドウのロケーションリストが使われる。
 
@@ -281,7 +282,7 @@ Vimが|+autocmd|機能つきでビルドされている場合、QuickFixコマ�
 =============================================================================
 2. エラーウィンドウ					*quickfix-window*
 
-							*:cope* *:copen*
+					    *:cope* *:copen* *w:quickfix_title*
 :cope[n] [height]	現在のエラーリストを表示するウィンドウを開く。
 			[height]が与えられたとき、（余地があれば）ウィンドウの
 			高さがその値になる。与えられなければウィンドウの高さは
@@ -290,7 +291,10 @@ Vimが|+autocmd|機能つきでビルドされている場合、QuickFixコマ�
 			ァを含んでいる。これを変更してはならない。
 			すでにQuickFixウィンドウがある場合はそれがカレントウィ
 			ンドウになる。２個目のQuickFixウィンドウを開くことは出
-			来ない。
+			来ない。ウィンドウの w:quickfix_title 変数を設定するこ
+			とで、エラーリストを生成したコマンドを表示するようなこ
+			とができる。変数の値は 'statusline' が適切に調整されて
+			いればステータスラインに表示される。
 
 							*:lop* *:lopen*
 :lop[en] [height]	カレントウィンドウのロケーションリストを表示するウィン

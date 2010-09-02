@@ -1,4 +1,4 @@
-*help.txt*	For Vim バージョン 7.2.  Last change: 2008 Jul 21
+*help.txt*	For Vim バージョン 7.3.  Last change: 2010 Jul 20
 
 			   VIM - メインヘルプファイル
 									 k
@@ -26,6 +26,7 @@
 		  オプション			 '	   :help 'textwidth'
   ヘルプを検索する: ":help word" とタイプしてから CTRL-D を押すと "word" に
 		    マッチするヘルプ項目の一覧が表示されます。
+		    もしくは ":helpgrep word" を使ってください。 |:helpgrep|
 
 VIM は Vi IMproved の略です。VIM の大部分は Bram Moolenaar によって作成され、
 たくさんの人が協力しました。|credits| 参照。
@@ -91,6 +92,7 @@ VIM は Vi IMproved の略です。VIM の大部分は Bram Moolenaar によっ�
 一般事項 ~
 |intro.txt|	Vimについての前書き。と、ヘルプの表記について
 |help.txt|	全体説明とクイックリファレンス (今見ているファイル)
+|helphelp.txt|	ヘルプの使い方
 |index.txt|	全コマンド一覧。アルファベット順
 |help-tags|	ジャンプできるタグ一覧
 |howto.txt|	一般的な編集操作についてのHow to
@@ -157,6 +159,7 @@ GUI ~
 
 拡張インターフェース ~
 |if_cscop.txt|	cscopeを使う
+|if_lua.txt|	Lua インターフェース
 |if_mzsch.txt|	MzScheme インターフェース
 |if_perl.txt|	Perl インターフェース
 |if_pyth.txt|	Python インターフェース
@@ -215,7 +218,8 @@ Note: タグは | で囲まれていますが、その文字は、カラー表�
 合は表示されません。読みやすさのためです。
 
 CTRL-] はどの単語の上でも使えます。| で囲まれていない単語でも大丈夫です。選択
-された単語がヘルプから検索されます。
+された単語がヘルプから検索されます。特にシングルクオートで囲まれたオプション名
+(例: 'compatible')。
 
 ------------------------------------------------------------------------------
  vim:tw=78:fo=tcq2:isk=!-~,^*,^\|,^\":ts=8:ft=help:norl:

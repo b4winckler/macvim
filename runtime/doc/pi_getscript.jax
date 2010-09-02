@@ -1,11 +1,11 @@
-*pi_getscript.txt*  For Vim バージョン 7.2.  Last change: 2008 Jun 29
+*pi_getscript.txt*  For Vim バージョン 7.3.  Last change: 2009 Oct 14
 >
 		GETSCRIPT REFERENCE MANUAL  by Charles E. Campbell, Jr.
 <
 Authors:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamilyA.Mbiz>
 	  (remove NOSPAM from the email address)
 						*GetLatestVimScripts-copyright*
-Copyright: (c) 2004-2006 by Charles E. Campbell, Jr.	*glvs-copyright*
+Copyright: (c) 2004-2009 by Charles E. Campbell, Jr.	*glvs-copyright*
            The VIM LICENSE applies to getscript.vim and
            pi_getscript.txt (see |copyright|) except use
            "getscript" instead of "Vim".  No warranty, express or implied.
@@ -49,7 +49,7 @@ GetLatestVimScripts.dist は自分の一覧を作成するためのサンプル�
 トとして使ってください。ファイルにはスクリプトがいくつか列挙されていますが、必
 要なければ消してください。重要なのはファイル先頭の二行だけです。
 
-GetLatestVimScripts の動作には wget が必要です。
+GetLatestVimScripts の動作には wget か curl が必要です。
 
 	1. ファイルが圧縮されている場合:  gunzip getscript.vba.gz
 	2. Unix:
@@ -76,8 +76,8 @@ GetLatestVimScripts の動作には wget が必要です。
 
 次のコマンドを実行すると GetLatestVimScripts() が呼び出されます >
 	:GLVS
-同じ名前のコマンドが他のプラグインによって定義されている場合は、次のコマンドを
-使ってください
+同じ名前のコマンドが他のプラグインによって既に定義されていた場合は、次のコマン
+ドを使ってください
 >
 	:GetLatestVimScripts
 <
@@ -132,8 +132,8 @@ GetLatest/GetLatestVimScripts.dist ファイルはそのようなデータファ
 そのスクリプトがまだ最新版に更新されていないということを明示できます。
 
 GetLatestVimScripts は、vim.sf.net のスクリプトのページから SourceID を抜き出
-して、それが GetLatestVimScripts.dat に記録された番号よりも大きいようなら、そ
-のスクリプトをダウンロードします。
+して、それが GetLatestVimScripts.dat に記録された番号よりも大きければ、そのス
+クリプトをダウンロードします。
 (|GetLatestVimScripts_dat|参照)
 
 スクリプトの作者が、プラグインに特殊なコメント行を書いていた場合、そのコメント
@@ -170,6 +170,8 @@ Note: 最初の二行は必須です。ただしコメントと同様に無視�
 ==============================================================================
 5. GetLatestVimScripts 対応プラグイン	*getscript-plugins* *glvs-plugins*
 
+		(このセクションはプラグイン作者向けの説明です)~
+
 プラグインの作者がプラグインのどこかに以下のようなコメントを書いていた場合、
 GetLatestVimScripts はそれを見付けて、GetLatestVimScripts.dat ファイルの構築に
 使います:
@@ -187,6 +189,15 @@ GetLatestVimScripts はそれを見付けて、GetLatestVimScripts.dat ファイ
 プラグインが自動インストール可能 (|glvs-autoinstall|参照) なら (ほとんどのスク
 リプトはそうだと思いますが)、"yourscriptname" の前に :AutoInstall: を指定する
 ことができます。
+>
+	                         src_id
+	                            v
+	" GetLatestVimScripts: ### ### :AutoInstall: yourscriptname
+	                        ^
+	                    scriptid
+<
+NOTE: :AutoInstall: はプラグイン作者が書くオプションです。 ~
+      GetLatestVimScripts.dat のエントリには書けません。 ~
 
 GetLatestVimScripts 命令が未登録の場合は、ユーザーの
 GetLatest/GetLatestVimScripts.dat ファイルに追加されます。あなたのプラグインが
@@ -278,13 +289,20 @@ after/syntax/c/ ディレクトリを使えるようにしています:
 <	初期設定: "-q -O"
 		g:GetLatestVimScripts_wget に設定されたプログラムの起動引数。
 >
- 	g:getLatestVimScripts_allowautoinstall
+ 	g:GetLatestVimScripts_allowautoinstall
 <	初期設定: 1
-		スクリプトの自動インストールを許可するかどうかの設定。
-		Note: vimball はまだ未対応。自動インストールは、プラグインの作
-		者によって、そのプラグインが自動インストール可能であることが明
-		示されている必要があります。
-
+		スクリプトの自動インストールを許可するかどうかの設定。自動イン
+		ストールはプラグインの作者によってそのプラグインが自動インス
+		トール可能であることが明示されている必要があります (それには
+		:AutoInstall: キーワードを GetLatestVimScripts コメント行に指
+		定します)。
+>
+	g:GetLatestVimScripts_autoinstalldir
+<	初期設定= $HOME/.vim     (linux)
+	初期設定= $HOME/vimfiles (windows)
+		自動インストールスクリプト (:AutoInstall:) のインストール先を
+		変更できます。
+		vimball のインストールには適用されません。
 
 ==============================================================================
 8. GetLatestVimScripts アルゴリズム		*glvs-algorithm* *glvs-alg*
@@ -322,8 +340,10 @@ scriptname を更新します。
 9. GetLatestVimScripts 開発履歴		*getscript-history* *glvs-hist* {{{1
 
 v31 Jun 29, 2008 : * (Bill McCarthy) fixed having hls enabled with getscript
+		   * (David Schaefer) the acd option interferes with vimballs
+		     Solution: bypass the acd option
 v30 Jun 13, 2008 : * GLVS now checks for existence of fnameescape() and will
-		     issue an error message if it's not supported
+		     issue an error message if it is not supported
 v29 Jan 07, 2008 : * Bram M pointed out that cpo is a global option and that
                      getscriptPlugin.vim was setting it but not restoring it.
 v28 Jan 02, 2008 : * improved shell quoting character handling, cygwin
