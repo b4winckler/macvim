@@ -1,0 +1,240 @@
+*if_lua.txt*    For Vim バージョン 7.3.  Last change: 2010 Jul 22
+
+
+		  VIM REFERENCE MANUAL    by Luis Carvalho
+
+
+Vim の Lua インターフェース				*lua* *Lua*
+
+1. コマンド			|lua-commands|
+2. vim モジュール		|lua-vim|
+3. バッファユーザーデータ	|lua-buffer|
+4. ウィンドウユーザーデータ	|lua-window|
+
+{Vi にはこれらのコマンドはない}
+
+Lua インターフェースは Vim が |+lua| 機能付きでコンパイルされたときのみ利用で
+きます。
+
+==============================================================================
+1. コマンド						*lua-commands*
+
+							*:lua*
+:[range]lua {chunk}
+			Lua チャンク {chunk} を実行する。    {Vi にはない}
+
+例:
+>
+	:lua print("Hello, Vim!")
+	:lua local curbuf = vim.buffer() curbuf[7] = "line #7"
+<
+
+:[range]lua << {endmarker}
+{script}
+{endmarker}
+			Lua スクリプト {script} を実行する。  {Vi にはない}
+			Note: このコマンドは Lua が組み込まれていない場合は機
+			能しません。エラーを避けるには |script-here| を参照。
+
+{endmarker} の前には空白を入れることはできません。"<<" の後の {endmarker} を省
+略した場合は |:append| や |:insert| コマンドのようにドット "." で {script} を
+閉じます。
+|:lua| コマンドのこの書式は主に Vim スクリプトの中に Lua コードを埋め込むとき
+に便利です。
+
+例:
+>
+	function! CurrentLineInfo()
+	lua << EOF
+	local linenr = vim.window().line
+	local curline = vim.buffer()[linenr]
+	print(string.format("Current line [%d] has %d chars",
+		linenr, #curline))
+	EOF
+	endfunction
+<
+
+							*:luado*
+:[range]luado {body}	Lua 関数 "function (line) {body} end" を [range] で指
+			定された各行に対して実行する。関数の引数には各行のテキ
+			スト (末尾の <EOL> 無し) が渡されます。関数の返り値が
+			文字列なら行のテキストはその文字列で置換されます。
+			[range] を省略するとすべてのファイル ("1,$") が処理さ
+			れます。		      {Vi にはない}
+
+例:
+>
+	:luado return string.format("%s\t%d", line:reverse(), #line)
+
+	:lua require"lpeg"
+	:lua -- balanced parenthesis grammar:
+	:lua bp = lpeg.P{ "(" * ((1 - lpeg.S"()") + lpeg.V(1))^0 * ")" }
+	:luado if bp:match(line) then return "-->\t" .. line end
+<
+
+							*:luafile*
+:[range]luafile {file}
+			{file} 内の Lua スクリプトを実行する。 {Vi にはない}
+			引数全体で一つのファイル名として認識されます。
+
+例:
+>
+	:luafile script.lua
+	:luafile %
+<
+
+これらすべてのコマンドはコマンドライン (:lua と :luado) かファイル (:luafile)
+で指定された Lua チャンクを範囲指定 [range] に対して実行します。Lua インタプリ
+タと同様に各チャンクはそれぞれのスコープを持つため、各コマンドの実行で共有され
+るのはグローバル変数だけです。Lua のデフォルトライブラリ "table", "string",
+"math", "package" は使用できます。"io" と "debug" は使用できません。"os" は
+"date", "clock", "time", "difftime", "getenv" のみに制限されています。Lua の
+"print" 関数の出力先は Vim のメッセージエリアになり、引数はタブ文字ではなくス
+ペースで区切られます。
+
+Lua は "vim" モジュール (|lua-vim| 参照) を使って、Vim コマンドを発行したり
+バッファ (|lua-buffer|) やウィンドウ (|lua-window|) を管理したりします。ただ
+し、コマンドが |sandbox| の中で実行されたときはバッファの変更、新規バッファの
+作成、カーソル位置の変更は制限されます。
+
+
+==============================================================================
+2. vim モジュール					*lua-vim*
+
+Lua からは "vim" モジュールを使って Vim を操作します。範囲指定の最初と最後の行
+は "vim.firstline" と "vim.lastline" に格納されています。vim モジュールには
+バッファ操作、ウィンドウ操作、現在行の取得、Vim 式評価、Vim コマンド実行、など
+のルーチンが含まれています。
+
+	vim.isbuffer(value)	"value" がバッファユーザーデータなら 'true'
+				(boolean、文字列ではない) を返す。そうでなけれ
+				ば 'false' を返す。 (|lua-buffer| 参照)
+
+	vim.buffer([arg])	"arg" が数値ならバッファリストの "arg" 番の
+				バッファを返す。"arg" が文字列ならフルパスか
+				ショートパスが "arg" に一致するバッファを返
+				す。どちらの場合もバッファが見つからなければ
+				'nil' (nil 値、文字列ではない) を返す。その
+				他、"toboolean(arg)" が 'true' ならバッファリ
+				ストの最初のバッファを、そうでなければカレント
+				バッファを返す。
+
+	vim.iswindow(value)	"value" がウィンドウユーザーデータなら 'true'
+				(boolean、文字列ではない) を返す。そうでなけれ
+				ば 'false' を返す。 (|lua-window| 参照)
+
+	vim.window([arg])	"arg" が数値なら "arg" 番のウィンドウを返す。
+				ウィンドウが無ければ 'nil' (nil 値、文字列では
+				ない) を返す。その他、"toboolean(arg)" が
+				'true' なら最初のウィンドウを、そうでなければ
+				カレントウィンドウを返す。
+
+	vim.command({cmd})	Vim の Ex コマンド {cmd} を実行する。
+				例: >
+					:lua vim.command"set tw=60"
+					:lua vim.command"normal ddp"
+<
+	vim.eval({expr})	式 {expr} (|expression| 参照) を評価してその結
+				果を Lua の値に変換して返す。
+				Vim の文字列と数値はそのまま Lua の文字列と数
+				値に変換される。Vim のリストと辞書は Lua の
+				テーブルに変換される (リストは整数キーのテーブ
+				ルになる)。
+				例: >
+					:lua tw = vim.eval"&tw"
+					:lua print(vim.eval"{'a': 'one'}".a)
+<
+	vim.line()		現在行 (末尾の <EOL> 無し) を返す。型は Lua 文
+				字列。
+
+	vim.beep()		ビープ音を鳴らす。
+
+	vim.open({fname})	ファイル {fname} 用の新しいバッファを開いて返
+				す。Note: カレントバッファは変更されません。
+
+
+==============================================================================
+3. バッファユーザーデータ				*lua-buffer*
+
+バッファユーザーデータは Vim のバッファを表します。バッファユーザーデータ "b"
+は以下のプロパティとメソッドを持っています:
+
+プロパティ
+----------
+	o "b()"		"b" をカレントバッファに設定する。
+	o "#b"		バッファ "b" の行数。
+	o "b[k]"	バッファの k 行目。"b[k] = newline" で k 行目を文字列
+			"newline" で置換する。"b[k] = nil" で k 行目を削除す
+			る。
+	o "b.name"	バッファ "b" のショートパス (読込専用)。
+	o "b.fname"	バッファ "b" のフルパス (読込専用)。
+	o "b.number"	バッファ "b" のバッファリスト内の位置 (読込専用)。
+
+メソッド
+--------
+	o "b:insert(newline[, pos])"
+			文字列 "newline" をバッファの "pos" の位置 (省略可) に
+			挿入する。"pos" を省略した場合は"#b + 1"に挿入される。
+			"pos == 0" の場合は "newline" は 1 行目に挿入される。
+	o "b:next()"	 バッファリストの "b" の次のバッファを返す。
+	o "b:previous()" バッファリストの "b" の前のバッファを返す。
+	o "b:isvalid()"	 バッファ "b" が実在するバッファ (メモリが開放されてい
+			 ない) なら 'true' (boolean) を返す。
+
+例:
+>
+	:lua b = vim.buffer() -- current buffer
+	:lua print(b.name, b.number)
+	:lua b[1] = "first line"
+	:lua b:insert("FIRST!", 0)
+	:lua b[1] = nil -- delete top line
+	:lua for i=1,3 do b:insert(math.random()) end
+	:3,4lua for i=vim.lastline,vim.firstline,-1 do b[i] = nil end
+	:lua vim.open"myfile"() -- open buffer and set it as current
+
+	function! ListBuffers()
+	lua << EOF
+	local b = vim.buffer(true) -- first buffer in list
+	while b ~= nil do
+		print(b.number, b.name, #b)
+		b = b:next()
+	end
+	vim.beep()
+	EOF
+	endfunction
+<
+
+==============================================================================
+4. ウィンドウユーザーデータ				*lua-window*
+
+ウィンドウオブジェクトは Vim のウィンドウを表します。ウィンドウユーザーデータ
+"w" は以下のプロパティとメソッドを持っています:
+
+プロパティ
+----------
+	o "w()"		"w" をカレントウィンドウに設定する。
+	o "w.buffer"	ウィンドウ "w" のバッファ (読込専用)。
+	o "w.line"	ウィンドウ "w" のカーソルの行。
+	o "w.col"	ウィンドウ "w" のカーソルの列。
+	o "w.width"	ウィンドウ "w" の幅。
+	o "w.height"	ウィンドウ "w" の高さ。
+
+メソッド
+--------
+	o "w:next()"	 "w" の次のウィンドウを返す。
+	o "w:previous()" "w" の前のウィンドウを返す。
+	o "w:isvalid()"	ウィンドウ "w" が実在するウィンドウ (メモリが開放され
+			ていない) なら 'true' を返す。
+
+例:
+>
+	:lua w = vim.window() -- current window
+	:lua print(w.buffer.name, w.line, w.col)
+	:lua w.width = w.width + math.random(10)
+	:lua w.height = 2 * math.random() * w.height
+	:lua n,w = 0,vim.window(true) while w~=nil do n,w = n + 1,w:next() end
+	:lua print("There are " .. n .. " windows")
+<
+
+==============================================================================
+ vim:tw=78:ts=8:ft=help:norl:
