@@ -1123,6 +1123,15 @@ doESCkey:
 	case K_MOUSERIGHT: /* Scroll wheel right */
 	    ins_mousescroll(MSCR_RIGHT);
 	    break;
+
+# ifdef FEAT_GUI_MACVIM
+	/* Gestures are ignored */
+	case K_SWIPELEFT:
+	case K_SWIPERIGHT:
+	case K_SWIPEUP:
+	case K_SWIPEDOWN:
+	    break;
+# endif
 #endif
 #ifdef FEAT_GUI_TABLINE
 	case K_TABLINE:
@@ -1133,6 +1142,7 @@ doESCkey:
 
 	case K_IGNORE:	/* Something mapped to nothing */
 	    break;
+
 
 #ifdef FEAT_AUTOCMD
 	case K_CURSORHOLD:	/* Didn't type something for a while. */
@@ -3509,7 +3519,12 @@ ins_compl_prep(c)
 
     /* Ignore end of Select mode mapping and mouse scroll buttons. */
     if (c == K_SELECT || c == K_MOUSEDOWN || c == K_MOUSEUP
-	    || c == K_MOUSELEFT || c == K_MOUSERIGHT)
+	    || c == K_MOUSELEFT || c == K_MOUSERIGHT
+# ifdef FEAT_GUI_MACVIM
+	    || c == K_SWIPELEFT || c == K_SWIPERIGHT || c == K_SWIPEUP
+	    || c == K_SWIPEDOWN
+# endif
+		    )
 	return retval;
 
     /* Set "compl_get_longest" when finding the first matches. */

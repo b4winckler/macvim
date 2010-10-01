@@ -10954,7 +10954,14 @@ f_getchar(argvars, rettv)
 		|| n == K_MOUSELEFT
 		|| n == K_MOUSERIGHT
 		|| n == K_MOUSEDOWN
-		|| n == K_MOUSEUP)
+		|| n == K_MOUSEUP
+# ifdef FEAT_GUI_MACVIM
+                || n == K_SWIPELEFT
+                || n == K_SWIPERIGHT
+                || n == K_SWIPEUP
+                || n == K_SWIPEDOWN
+# endif
+                )
 	{
 	    int		row = mouse_row;
 	    int		col = mouse_col;

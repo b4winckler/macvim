@@ -1350,6 +1350,14 @@ getcmdline(firstc, count, indent)
 	case K_X2RELEASE:
 		goto cmdline_not_changed;
 
+# ifdef FEAT_GUI_MACVIM
+	/* Gestures are ignored */
+	case K_SWIPELEFT:
+	case K_SWIPERIGHT:
+	case K_SWIPEUP:
+	case K_SWIPEDOWN:
+		goto cmdline_not_changed;
+# endif
 #endif	/* FEAT_MOUSE */
 
 #ifdef FEAT_GUI

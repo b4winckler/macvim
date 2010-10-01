@@ -3192,6 +3192,10 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 <ScrollWheelRight>	scroll.txt	/*<ScrollWheelRight>*
 <ScrollWheelUp>	scroll.txt	/*<ScrollWheelUp>*
 <Space>	motion.txt	/*<Space>*
+<SwipeDown>	gui_mac.txt	/*<SwipeDown>*
+<SwipeLeft>	gui_mac.txt	/*<SwipeLeft>*
+<SwipeRight>	gui_mac.txt	/*<SwipeRight>*
+<SwipeUp>	gui_mac.txt	/*<SwipeUp>*
 <Tab>	motion.txt	/*<Tab>*
 <Undo>	undo.txt	/*<Undo>*
 <Up>	motion.txt	/*<Up>*
@@ -6541,6 +6545,7 @@ macvim-differences	gui_mac.txt	/*macvim-differences*
 macvim-drag-n-drop	gui_mac.txt	/*macvim-drag-n-drop*
 macvim-encoding	gui_mac.txt	/*macvim-encoding*
 macvim-find	gui_mac.txt	/*macvim-find*
+macvim-gestures	gui_mac.txt	/*macvim-gestures*
 macvim-hints	gui_mac.txt	/*macvim-hints*
 macvim-international	gui_mac.txt	/*macvim-international*
 macvim-login-shell	gui_mac.txt	/*macvim-login-shell*

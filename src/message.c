@@ -996,6 +996,10 @@ wait_return(redraw)
 					|| c == K_RIGHTMOUSE
 					|| c == K_X1MOUSE
 					|| c == K_X2MOUSE))
+# ifdef FEAT_GUI_MACVIM
+				|| c == K_SWIPELEFT || c == K_SWIPERIGHT
+				|| c == K_SWIPEUP   || c == K_SWIPEDOWN
+# endif
 #endif
 				);
 	ui_breakcheck();
