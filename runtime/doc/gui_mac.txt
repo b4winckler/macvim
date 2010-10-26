@@ -1,4 +1,4 @@
-*gui_mac.txt*	For Vim version 7.3.  Last change: 2010 Sep 2
+*gui_mac.txt*	For Vim version 7.3.  Last change: 2010 Sep 17
 
 
 		  VIM REFERENCE MANUAL    by Bjorn Winckler
@@ -172,6 +172,8 @@ time you start MacVim, you could create an alias such as >
 	alias gvim='/Applications/MacVim.app/Contents/MacOS/Vim -g'
 and add that to "~/.profile".
 
+Note: Do NOT call the MacVim binary inside the app bundle to start MacVim.
+
 							*mvim*
 A more flexible way to start MacVim is to use the shell script "mvim" which
 comes bundled with MacVim.  Put this script in a folder in your path and then
@@ -210,13 +212,15 @@ pressed.  This feature can be enabled from the Advanced preferences pane (it
 is disabled by default).  Note that this setting does not affect the speed
 with which windows open when using the |mvim| command.
 
-The main reason why this feature is not enabled by default is because on OS X
-10.4 changes to runtime files (e.g. those in "~/.vim") are not detected.  For
-example, if you install a new plugin and then press <D-n> to open a new
-window, then that first window will not notice the plugin (but any consecutive
-windows after the first one will).  On OS X 10.5 and later all modifications
-to runtime files in "~/.vim" are detected, so unless you keep runtime files in
-another folder there should be no problems.
+Note that any changes to runtime files that are kept in an non-standard
+location (i.e. not in ~/.vim) will not be picked up for the first window that
+opens after any changes.  Also, there are some issues related to reading and
+writing of the |viminfo| file which can lead to the command line history
+appearing to be lost (as well as any other information stored in the |viminfo|
+file).  For example, if you open a window, edit some files then close the
+window, then the next window that opens will not have the same command line
+history as the window you just closed (however the next window you open will).
+For these reasons Quickstart is disabled by default.
 
 						*odbeditor* *external-editor*
 MacVim can act as an 'external editor' for Mac OS X applications that support
@@ -547,7 +551,8 @@ Note that url has to be a file:// url pointing to an existing local file.
 
 Most keyboard shortcuts in MacVim are bound to menu items and can be
 discovered by looking through the menus (see |macvim-menus| on how to create
-your own menu shortcuts).  The remaining shortcuts are listed here:
+your own menu shortcuts, see |cmd-key| on how to map your own commands to
+Cmd-key shortcuts).  The remaining shortcuts are listed here:
 
 							*Cmd-.* *<D-.>*
 Cmd-.			Interrupt Vim.  Unlike Ctrl-C which is sent as normal
@@ -606,29 +611,37 @@ equivalents which are not set up with :map).
 See |macvim-shift-movement| if you want Shift to select text when used in
 conjunction with the above Cmd/Alt movement shortcuts.
 
+						*cmd-key* *cmd-shortcuts*
+Creating key mappings that involve the Cmd key (<D-..> in Vim notation) can
+sometimes be slightly involved.  Here are all the things you need to consider:
+
+- Make sure the shortcut is not used by a menu item by looking through the
+  menus.  If it is then you need to unbind it before you can map to it.  This
+  is described under the help for the |:macmenu| command.
+- Bindings to <D-..> are case sensitive: <D-d> is not the same as <D-D>.  If
+  you want to map something to Cmd+Shift+d, then you need to use <D-D>, not
+  <D-S-d> or <D-S-D>.
+- Some command key shortcuts are reserved by Mac OS X and cannot be mapped to
+  (e.g. <D-Tab>).  However, some of these shortcuts can be freed up in the
+  System Preferences under Keyboard (e.g. Cmd+Space).
+- A few command key mappings are set up by MacVim, see |cmd-movement|.
+
 ==============================================================================
 11. Trackpad gestures					*macvim-gestures*
 
-MacVim supports swipe, pinch, and rotate gestures.  The swipe gesture can be
-used to navigate back/forward in the help (try it!).  Currently no other
-gestures are set up by default.
+MacVim supports trackpad swipe gestures.  By default this can be used to
+navigate back/forward in the help (try it!).
 
-Each gesture generates a Vim pseudo key according to the following list:
+Each gesture generates one of the following Vim pseudo keys:
 
-		    *<SwipeLeft>* *<SwipeRight>* *<SwipeUp>* *<SwipeDown>*
+						 *<SwipeLeft>* *<SwipeRight>*
 	Generated when swiping three fingers across the trackpad in a
-	horizontal or vertical direction.
+	horizontal direction.  The Apple Magic Mouse generates these
+	events when swiping two fingers in a horizontal direction.
 
-		    *<PinchIn>*	  *<PinchOut>*
-	Generated when moving two fingers together or apart in a pinch
-	movement.  Note that the keys are generated continuously as the
-	fingers move, not only when the gesture has finished.
-
-		    *<RotateCW>*  *<RotateCCW>*
-	Generated when rotating two fingers in a clockwise (CW) or
-	counterclockwise (CCW) direction.  Note that the keys are generated
-	continuously as the fingers move, not only when the gesture has
-	finished.
+						 *<SwipeUp>*   *<SwipeDown>*
+	Generated when swiping three fingers across the trackpad in a
+	vertical direction.  (Not supported by the Apple Magic Mouse.)
 
 You can map these keys like with any other key using the |:map| family of
 commands.  For example, the following commands map left/right swipe to change
@@ -636,6 +649,11 @@ to the previous/next tab in normal mode: >
 
 	nmap <SwipeLeft> gT
 	nmap <SwipeRight> gt
+
+As another example, here is how to switch buffers by swiping left/right: >
+
+	nmap <SwipeLeft> :bN<CR>
+	nmap <SwipeRight> :bn<CR>
 
 See the section on |key-mapping| for more help on how to map keys.
 

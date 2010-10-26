@@ -7076,7 +7076,7 @@ dict_add_nr_str(d, key, nr, str)
 }
 
 /*
- * Add a list  entry to dictionary "d".
+ * Add a list entry to dictionary "d".
  * Returns FAIL when out of memory and when key already exists.
  */
     int
@@ -7098,6 +7098,7 @@ dict_add_list(d, key, list)
 	dictitem_free(item);
 	return FAIL;
     }
+    ++list->lv_refcount;
     return OK;
 }
 
@@ -10957,10 +10958,6 @@ f_getchar(argvars, rettv)
                 || n == K_SWIPERIGHT
                 || n == K_SWIPEUP
                 || n == K_SWIPEDOWN
-                || n == K_PINCHIN
-                || n == K_PINCHOUT
-                || n == K_ROTATECW
-                || n == K_ROTATECCW
 # endif
                 )
 	{

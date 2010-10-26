@@ -3498,9 +3498,7 @@ do_ecmd(fnum, ffname, sfname, eap, newlnum, flags, oldwin)
 	curbuf->b_p_bin = FALSE;	/* reset 'bin' before reading file */
 	curwin->w_p_nu = 0;		/* no line numbers */
 	curwin->w_p_rnu = 0;		/* no relative line numbers */
-#ifdef FEAT_SCROLLBIND
-	curwin->w_p_scb = FALSE;	/* no scroll binding */
-#endif
+	RESET_BINDING(curwin);		/* no scroll or cursor binding */
 #ifdef FEAT_ARABIC
 	curwin->w_p_arab = FALSE;	/* no arabic mode */
 #endif
@@ -5471,9 +5469,8 @@ prepare_tagpreview(undo_sync)
 		return FALSE;
 	    curwin->w_p_pvw = TRUE;
 	    curwin->w_p_wfh = TRUE;
-# ifdef FEAT_SCROLLBIND
-	    curwin->w_p_scb = FALSE;	    /* don't take over 'scrollbind' */
-# endif
+	    RESET_BINDING(curwin);	    /* don't take over 'scrollbind'
+					       and 'cursorbind' */
 # ifdef FEAT_DIFF
 	    curwin->w_p_diff = FALSE;	    /* no 'diff' */
 # endif
@@ -6673,11 +6670,6 @@ ex_sign(eap)
 		    sp = (sign_T *)alloc_clear((unsigned)sizeof(sign_T));
 		    if (sp == NULL)
 			return;
-		    if (sp_prev == NULL)
-			first_sign = sp;
-		    else
-			sp_prev->sn_next = sp;
-		    sp->sn_name = vim_strnsave(arg, (int)(p - arg));
 
 		    /* If the name is a number use that for the typenr,
 		     * otherwise use a negative number. */
@@ -6690,13 +6682,14 @@ ex_sign(eap)
 
 			for (lp = first_sign; lp != NULL; lp = lp->sn_next)
 			{
-			    if (lp->sn_typenr == last_sign_typenr)
+			    if (lp->sn_typenr == -last_sign_typenr)
 			    {
 				--last_sign_typenr;
 				if (last_sign_typenr == 0)
 				    last_sign_typenr = MAX_TYPENR;
 				if (last_sign_typenr == start)
 				{
+				    vim_free(sp);
 				    EMSG(_("E612: Too many signs defined"));
 				    return;
 				}
@@ -6705,10 +6698,17 @@ ex_sign(eap)
 			    }
 			}
 
-			sp->sn_typenr = last_sign_typenr--;
-			if (last_sign_typenr == 0)
+			sp->sn_typenr = -last_sign_typenr;
+			if (--last_sign_typenr == 0)
 			    last_sign_typenr = MAX_TYPENR; /* wrap around */
 		    }
+
+		    /* add the new sign to the list of signs */
+		    if (sp_prev == NULL)
+			first_sign = sp;
+		    else
+			sp_prev->sn_next = sp;
+		    sp->sn_name = vim_strnsave(arg, (int)(p - arg));
 		}
 
 		/* set values for a defined sign. */

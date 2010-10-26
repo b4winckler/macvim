@@ -253,25 +253,42 @@
 {
     // Indicates that the window is ready to be displayed, but do not display
     // (or place) it yet -- that is done in showWindow.
+    //
+    // TODO: Remove this method?  Everything can probably be done in
+    // presentWindow: but must carefully check dependencies on 'setupDone'
+    // flag.
 
     [self addNewTabViewItem];
 
     setupDone = YES;
-
-    [self updateResizeConstraints];
-    [self resizeWindowToFitContentSize:[vimView desiredSize]
-                          keepOnScreen:YES];
 }
 
 - (BOOL)presentWindow:(id)unused
 {
-    // Actually show the window on screen.  However, if openWindow hasn't
-    // already been called nothing will happen (the window will be displayed
-    // later).
+    // If openWindow hasn't already been called then the window will be
+    // displayed later.
     if (!setupDone) return NO;
 
+    // Place the window now.  If there are multiple screens then a choice is
+    // made as to which screen the window should be on.  This means that all
+    // code that is executed before this point must not depend on the screen!
+
     [[MMAppController sharedInstance] windowControllerWillOpen:self];
+    [self updateResizeConstraints];
+    [self resizeWindowToFitContentSize:[vimView desiredSize]
+                          keepOnScreen:YES];
     [[self window] makeKeyAndOrderFront:self];
+
+    // Flag that the window is now placed on screen.  From now on it is OK for
+    // code to depend on the screen state.  (Such as constraining views etc.)
+    windowPresented = YES;
+
+    if (fullscreenWindow) {
+        // Delayed entering of full screen happens here (a ":set fu" in a
+        // GUIEnter auto command could cause this).
+        [fullscreenWindow enterFullscreen];
+        fullscreenEnabled = YES;
+    }
 
     return YES;
 }
@@ -289,8 +306,8 @@
 - (void)setTextDimensionsWithRows:(int)rows columns:(int)cols isLive:(BOOL)live
                      keepOnScreen:(BOOL)onScreen
 {
-    //ASLogDebug(@"setTextDimensionsWithRows:%d columns:%d isLive:%d "
-    //        "keepOnScreen:%d", rows, cols, live, onScreen);
+    ASLogDebug(@"setTextDimensionsWithRows:%d columns:%d isLive:%d "
+            "keepOnScreen:%d", rows, cols, live, onScreen);
 
     // NOTE: The only place where the (rows,columns) of the vim view are
     // modified is here and when entering/leaving full-screen.  Setting these
@@ -358,6 +375,7 @@
         filename = @"";
 
     [decoratedWindow setRepresentedFilename:filename];
+    [fullscreenWindow setRepresentedFilename:filename];
 }
 
 - (void)setToolbar:(NSToolbar *)toolbar
@@ -448,7 +466,10 @@
     if (updateToolbarFlag != 0)
         [self updateToolbar];
 
-    if (shouldResizeVimView) {
+    // NOTE: If the window has not been presented then we must avoid resizing
+    // the views since it will cause them to be constrained to the screen which
+    // has not yet been set!
+    if (windowPresented && shouldResizeVimView) {
         shouldResizeVimView = NO;
 
         NSSize originalSize = [vimView frame].size;
@@ -606,15 +627,28 @@
 {
     if (fullscreenEnabled) return;
 
-    fullscreenWindow = [[MMFullscreenWindow alloc]
-        initWithWindow:decoratedWindow view:vimView backgroundColor:back];
-    [fullscreenWindow enterFullscreen:fuoptions];    
-    [fullscreenWindow setDelegate:self];
-    fullscreenEnabled = YES;
+    // fullscreenWindow could be nil here if this is called multiple times
+    // during startup.
+    [fullscreenWindow release];
 
-    // The resize handle disappears so the vim view needs to update the
-    // scrollbars.
-    shouldResizeVimView = YES;
+    fullscreenWindow = [[MMFullscreenWindow alloc]
+            initWithWindow:decoratedWindow view:vimView backgroundColor:back];
+    [fullscreenWindow setOptions:fuoptions];
+    [fullscreenWindow setRepresentedFilename:
+                                        [decoratedWindow representedFilename]];
+
+    // NOTE: Do not enter full screen until the window has been presented since
+    // we don't actually know which screen to use before then.
+    if (windowPresented) {
+        [fullscreenWindow enterFullscreen];
+        fullscreenEnabled = YES;
+
+        // The resize handle disappears so the vim view needs to update the
+        // scrollbars.
+        shouldResizeVimView = YES;
+    } else {
+        ASLogDebug(@"Delay enter full screen");
+    }
 }
 
 - (void)leaveFullscreen
@@ -632,7 +666,7 @@
 
 - (void)setFullscreenBackgroundColor:(NSColor *)back
 {
-    if (fullscreenEnabled)
+    if (fullscreenWindow)
         [fullscreenWindow setBackgroundColor:back];
 }
 

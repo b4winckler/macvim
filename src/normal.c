@@ -3869,8 +3869,7 @@ add_to_showcmd(c)
 	K_X1MOUSE, K_X1DRAG, K_X1RELEASE, K_X2MOUSE, K_X2DRAG, K_X2RELEASE,
 	K_CURSORHOLD,
 # ifdef FEAT_GUI_MACVIM
-	K_SWIPELEFT, K_SWIPERIGHT, K_SWIPEUP, K_SWIPEDOWN, K_PINCHIN,
-	K_PINCHOUT, K_ROTATECW, K_ROTATECCW,
+	K_SWIPELEFT, K_SWIPERIGHT, K_SWIPEUP, K_SWIPEDOWN,
 # endif
 	0
     };
@@ -5701,8 +5700,13 @@ nv_ident(cap)
 	else if (cmdchar == '#')
 	    aux_ptr = (char_u *)(p_magic ? "/?.*~[^$\\" : "/?^$\\");
 	else if (tag_cmd)
-	    /* Don't escape spaces and Tabs in a tag with a backslash */
-	    aux_ptr = (char_u *)"\\|\"\n[";
+	{
+	    if (curbuf->b_help)
+		/* ":help" handles unescaped argument */
+		aux_ptr = (char_u *)"";
+	    else
+		aux_ptr = (char_u *)"\\|\"\n[";
+	}
 	else
 	    aux_ptr = (char_u *)"\\|\"\n*?[";
 
