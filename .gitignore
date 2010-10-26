@@ -35,3 +35,4 @@ src/po/*.mo
 src/tags
 src/xxd/xxd
 src/xxd/xxd.dSYM
+runtime/lang/*/LE_MESSAGES

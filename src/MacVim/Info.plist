@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
+	<string>en</string>
 
 	<!-- When adding support for a new file type:
 	     1. Add entry to CFBundleDocumentTypes
