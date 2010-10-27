@@ -3,7 +3,7 @@
 " An example for a Japanese version vimrc file.
 " 日本語版のデフォルト設定ファイル(vimrc) - Vim7用試作
 "
-" Last Change: 31-Aug-2009.
+" Last Change: 27-Oct-2010.
 " Maintainer:  MURAOKA Taro <koron@tka.att.ne.jp>
 "
 " 解説:
@@ -222,6 +222,8 @@ endif
 
 if has('gui_macvim')
   let $PATH = simplify($VIM . '/../../MacOS') . ':' . $PATH
+  set migemodict=$VIMRUNTIME/dict/migemo-dict
+  set migemo
 endif
 
 " Copyright (C) 2007 KaoriYa/MURAOKA Taro
