@@ -426,7 +426,7 @@
 				8D11072E0486CEB800E47090 /* Frameworks */,
 				1D0DCAD80BA3604D00B6CCFA /* Copy Executables */,
 				1D9EB2840C366D7B0074B739 /* Copy Frameworks */,
-				D83F9D2D12358A1B004D257E /* Generate Gettext Files In Runtime */,
+				D83F9D2D12358A1B004D257E /* Copy Gettext Files To Runtime */,
 				1DE608B80C58807F0055263D /* Copy Vim Runtime Files */,
 				1D1C31F00EFFBFD6003FE9A5 /* Make Document Icons */,
 			);
@@ -448,6 +448,7 @@
 			isa = PBXProject;
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "MacVim" */;
 			compatibilityVersion = "Xcode 2.4";
+			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				English,
@@ -542,19 +543,19 @@
 			shellScript = "# Clear deployment target, else the python script always thinks we're building on Tiger\nunset MACOSX_DEPLOYMENT_TARGET\n\n# Generate the icons (redirect stderr to ignore warnings)\ncd $PROJECT_DIR/icons/\nmake OUTDIR=$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH 2> /dev/null\n";
 			showEnvVarsInLog = 0;
 		};
-		D83F9D2D12358A1B004D257E /* Generate Gettext Files In Runtime */ = {
+		D83F9D2D12358A1B004D257E /* Copy Gettext Files To Runtime */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
 			);
-			name = "Generate Gettext Files In Runtime";
+			name = "Copy Gettext Files To Runtime";
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "CP=/bin/cp\nPO_DIR=\"$PROJECT_DIR/../po\"\nLOCALE_DIR=\"$PROJECT_DIR/../../runtime/lang/\"\n\nexport PATH=\"$PROJECT_DIR/tools\":$PATH\n\ncd \"$PO_DIR\"\nmake all\n\nfor mo_file in \"$PO_DIR\"/*.mo; do\n\tlocale=`basename \"$mo_file\" .mo`\n\tdir=\"$LOCALE_DIR/$locale/LC_MESSAGES\"\n\tif [ ! -e\t\"$dir\" ]; then\n\t\tmkdir -p \"$dir\" \n\t\tif [ \"$mo_file\" -nt \"$dir/vim.mo\" ]; then\n\t\t\tcmd=\"CP '$mo_file' '$dir/vim.mo'\"\n\t\t\techo \"$cmd\"\n\t\t\teval \"$cmd\"\n\t\tfi\n\tfi\ndone";
+			shellScript = "CP=/bin/cp\nPO_DIR=\"$PROJECT_DIR/../po\"\nLOCALE_DIR=\"$PROJECT_DIR/../../runtime/lang/\"\n\ncd \"$PO_DIR\"\nmake all\n\nfor mo_file in \"$PO_DIR\"/*.mo; do\n\tlocale=`basename \"$mo_file\" .mo`\n\tdir=\"$LOCALE_DIR/$locale/LC_MESSAGES\"\n\tif [ ! -e\t\"$dir\" ]; then\n\t\tmkdir -p \"$dir\"\n\tfi\n\tif [ \"$mo_file\" -nt \"$dir/vim.mo\" ]; then\n\t\tcmd=\"CP '$mo_file' '$dir/vim.mo'\"\n\t\techo \"$cmd\"\n\t\teval \"$cmd\"\n\tfi\ndone";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
