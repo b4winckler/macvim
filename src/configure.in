@@ -1335,12 +1335,17 @@ AC_ARG_ENABLE(rubyinterp,
 	[enable_rubyinterp="no"])
 AC_MSG_RESULT($enable_rubyinterp)
 if test "$enable_rubyinterp" = "yes"; then
+
+  #------------------------------------------------------------------------------------------------
   AC_MSG_CHECKING(--with-ruby-command argument)
   AC_ARG_WITH(ruby-command, [  --with-ruby-command=RUBY  name of the Ruby command (default: ruby)],
-	RUBY_CMD="$withval"; AC_MSG_RESULT($RUBY_CMD),
-	RUBY_CMD="ruby"; AC_MSG_RESULT(defaulting to $RUBY_CMD))
+    RUBY_PATH=`echo "$withval" | sed 's/\(.*\)\/\([[[^/]]]*\)$/\1/'`; RUBY_CMD=`echo "$withval" | sed 's/.*\/\([[[^/]]]*\)$/\1/'`; AC_MSG_RESULT($RUBY_CMD),
+    RUBY_CMD="ruby"; RUBY_PATH=`dirname \`which ruby\``; AC_MSG_RESULT(defaulting to $RUBY_CMD)
+  )
+  
+  AC_PATH_PROG(vi_cv_path_ruby, $RUBY_CMD, "", $RUBY_PATH)
   AC_SUBST(vi_cv_path_ruby)
-  AC_PATH_PROG(vi_cv_path_ruby, $RUBY_CMD)
+
   if test "X$vi_cv_path_ruby" != "X"; then
     AC_MSG_CHECKING(Ruby version)
     if $vi_cv_path_ruby -e '(VERSION rescue RUBY_VERSION) >= "1.6.0" or exit 1' >/dev/null 2>/dev/null; then
