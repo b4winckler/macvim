@@ -6302,7 +6302,6 @@ else
 echo "${ECHO_T}defaulting to $RUBY_CMD" >&6; }
 fi
 
-
   # Extract the first word of "$RUBY_CMD", so it can be a program name with args.
 set dummy $RUBY_CMD; ac_word=$2
 { echo "$as_me:$LINENO: checking for $ac_word" >&5
@@ -6380,7 +6379,7 @@ else
   rubylibdir=`$vi_cv_path_ruby -r rbconfig -e 'print Config.expand(Config::CONFIG["libdir"])'`
   if test "X$RUBY_PATH" != "X"; then
     librubyarg=`$vi_cv_path_ruby -r rbconfig -e "print '$librubyarg'.gsub(/-L\./, '') << %' -L#{Config.expand(Config::CONFIG[\"libdir\"])}'"`
-  else
+  elif test "$RUBY_PATH" == "/usr/bin"; then
     if test -d "/System/Library/Frameworks/Ruby.framework"; then
                     RUBY_LIBS="-framework Ruby"
                     RUBY_CFLAGS=
