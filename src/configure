@@ -26,9 +26,6 @@ esac
 
 fi
 
-
-
-
 # PATH needs CR
 # Avoid depending upon Character Ranges.
 as_cr_letters='abcdefghijklmnopqrstuvwxyz'
@@ -6375,23 +6372,22 @@ librubyarg=`$vi_cv_path_ruby -r rbconfig -e 'print Config.expand(Config::CONFIG[
 if test -f "$rubyhdrdir/$librubyarg"; then
   librubyarg="$rubyhdrdir/$librubyarg"
 else
-
   rubylibdir=`$vi_cv_path_ruby -r rbconfig -e 'print Config.expand(Config::CONFIG["libdir"])'`
-  if test "X$RUBY_PATH" != "X"; then
-    librubyarg=`$vi_cv_path_ruby -r rbconfig -e "print '$librubyarg'.gsub(/-L\./, '') << %' -L#{Config.expand(Config::CONFIG[\"libdir\"])}'"`
-  elif test "$RUBY_PATH" == "/usr/bin"; then
+ if test "$RUBY_PATH" == "/usr/bin"; then
     if test -d "/System/Library/Frameworks/Ruby.framework"; then
-                    RUBY_LIBS="-framework Ruby"
-                    RUBY_CFLAGS=
+      RUBY_LIBS="-framework Ruby"
+      RUBY_CFLAGS=
       librubyarg=
     elif test -f "$rubylibdir/$librubyarg"; then
       librubyarg="$rubylibdir/$librubyarg"
     elif test "$librubyarg" = "libruby.a"; then
-                    librubyarg="-lruby"
+      librubyarg="-lruby"
     else
       librubyarg=`$vi_cv_path_ruby -r rbconfig -e "print '$librubyarg'.gsub(/-L\./, '') << %' -L#{Config.expand(Config::CONFIG[\"libdir\"])}'"`
     fi
-  fi
+  elif test "X$RUBY_PATH" != "X"; then
+    librubyarg=`$vi_cv_path_ruby -r rbconfig -e "print '$librubyarg'.gsub(/-L\./, '') << %' -L#{Config.expand(Config::CONFIG[\"libdir\"])}'"`
+  fi 
 fi
 
 if test "X$librubyarg" != "X"; then
