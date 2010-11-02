@@ -237,11 +237,10 @@ static void ruby_vim_init(void);
 # define ruby_init_stack		dll_ruby_init_stack
 #endif
 
-#ifdef FEAT_EVAL
-# define rb_ary_new				dll_rb_ary_new
-# define rb_float_new			dll_rb_float_new
-# define rb_string_value_ptr	dll_rb_string_value_ptr
-# define rb_ary_push			dll_rb_ary_push
+#ifdef FEAT_GUI_MACVIM
+# define rb_fix2int			dll_rb_fix2int
+# define rb_num2int			dll_rb_num2int
+# define rb_num2uint			dll_rb_num2uint
 #endif
 
 /*
@@ -280,7 +279,7 @@ static VALUE (*dll_rb_int2inum) (long);
 static VALUE (*dll_rb_lastline_get) (void);
 static void (*dll_rb_lastline_set) (VALUE);
 static void (*dll_rb_load_protect) (VALUE, int, int*);
-#if defined(__LP64__)
+#if defined(__LP64__) || defined(FEAT_GUI_MACVIM)
 static long (*dll_rb_fix2int) (VALUE);
 static long (*dll_rb_num2int) (VALUE);
 static unsigned long (*dll_rb_num2uint) (VALUE);
@@ -391,7 +390,7 @@ static struct
     {"rb_lastline_get", (RUBY_PROC*)&dll_rb_lastline_get},
     {"rb_lastline_set", (RUBY_PROC*)&dll_rb_lastline_set},
     {"rb_load_protect", (RUBY_PROC*)&dll_rb_load_protect},
-#if defined(__LP64__)
+#if defined(__LP64__) || defined(FEAT_GUI_MACVIM)
     {"rb_fix2int", (RUBY_PROC*)&dll_rb_fix2int},
     {"rb_num2int", (RUBY_PROC*)&dll_rb_num2int},
     {"rb_num2uint", (RUBY_PROC*)&dll_rb_num2uint},
@@ -448,12 +447,6 @@ static struct
     {"rb_enc_str_new", (RUBY_PROC*)&dll_rb_enc_str_new},
     {"rb_sprintf", (RUBY_PROC*)&dll_rb_sprintf},
     {"ruby_init_stack", (RUBY_PROC*)&dll_ruby_init_stack},
-#endif
-#ifdef FEAT_EVAL
-    {"rb_ary_new", (RUBY_PROC*)&dll_rb_ary_new},
-    {"rb_float_new", (RUBY_PROC*)&dll_rb_float_new},
-    {"rb_string_value_ptr", (RUBY_PROC*)&dll_rb_string_value_ptr},
-    {"rb_ary_push", (RUBY_PROC*)&dll_rb_ary_push},
 #endif
     {"", NULL},
 };
