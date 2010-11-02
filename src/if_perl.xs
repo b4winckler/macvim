@@ -111,7 +111,7 @@ typedef int perl_key;
 # endif
 #else
 #define PERL_PROC FARPROC
-#define load_dll LoadLibrary
+#define load_dll vimLoadLib
 #define symbol_from_dll GetProcAddress
 #define close_dll FreeLibrary
 #endif
