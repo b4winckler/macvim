@@ -717,6 +717,7 @@ TCL_PRO
 TCL_CFLAGS
 TCL_LIBS
 vi_cv_path_ruby
+with_custom_ruby
 RUBY_SRC
 RUBY_OBJ
 RUBY_PRO
