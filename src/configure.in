@@ -1334,13 +1334,18 @@ AC_ARG_ENABLE(rubyinterp,
 	[  --enable-rubyinterp[=OPTS]     Include Ruby interpreter.  [default=no] [OPTS=no/yes/dynamic]], ,
 	[enable_rubyinterp="no"])
 AC_MSG_RESULT($enable_rubyinterp)
+
 if test "$enable_rubyinterp" = "yes" -o "$enable_rubyinterp" = "dynamic"; then
   AC_MSG_CHECKING(--with-ruby-command argument)
   AC_ARG_WITH(ruby-command, [  --with-ruby-command=RUBY  name of the Ruby command (default: ruby)],
-	RUBY_CMD="$withval"; AC_MSG_RESULT($RUBY_CMD),
-	RUBY_CMD="ruby"; AC_MSG_RESULT(defaulting to $RUBY_CMD))
+    [ RUBY_CMD="$withval"; with_custom_ruby="true"; vi_cv_path_ruby="$withval"; AC_MSG_RESULT($RUBY_CMD) ],
+    [ RUBY_CMD="/usr/bin/ruby"; with_custom_ruby="false"; vi_cv_path_ruby="/usr/bin/ruby"; AC_MSG_RESULT(defaulting to $RUBY_CMD) ] )
+
+  AC_SUBST(with_custom_ruby)
   AC_SUBST(vi_cv_path_ruby)
+
   AC_PATH_PROG(vi_cv_path_ruby, $RUBY_CMD)
+
   if test "X$vi_cv_path_ruby" != "X"; then
     AC_MSG_CHECKING(Ruby version)
     if $vi_cv_path_ruby -e '(VERSION rescue RUBY_VERSION) >= "1.6.0" or exit 1' >/dev/null 2>/dev/null; then
@@ -1348,74 +1353,93 @@ if test "$enable_rubyinterp" = "yes" -o "$enable_rubyinterp" = "dynamic"; then
       AC_MSG_CHECKING(Ruby header files)
       rubyhdrdir=`$vi_cv_path_ruby -r mkmf -e 'print Config::CONFIG[["rubyhdrdir"]] || Config::CONFIG[["archdir"]] || $hdrdir' 2>/dev/null`
       if test "X$rubyhdrdir" != "X"; then
-	AC_MSG_RESULT($rubyhdrdir)
-	RUBY_CFLAGS="-I$rubyhdrdir"
+        AC_MSG_RESULT($rubyhdrdir)
+
+        RUBY_CFLAGS="-I$rubyhdrdir"
         rubyarch=`$vi_cv_path_ruby -r rbconfig -e 'print Config::CONFIG[["arch"]]'`
+
         if test -d "$rubyhdrdir/$rubyarch"; then
           RUBY_CFLAGS="$RUBY_CFLAGS -I$rubyhdrdir/$rubyarch"
         fi
+
         rubyversion=`$vi_cv_path_ruby -r rbconfig -e 'print Config::CONFIG[["ruby_version"]].gsub(/\./, "")[[0,2]]'`
         RUBY_CFLAGS="$RUBY_CFLAGS -DRUBY_VERSION=$rubyversion"
-	rubylibs=`$vi_cv_path_ruby -r rbconfig -e 'print Config::CONFIG[["LIBS"]]'`
-	if test "X$rubylibs" != "X"; then
-	  RUBY_LIBS="$rubylibs"
-	fi
-	librubyarg=`$vi_cv_path_ruby -r rbconfig -e 'print Config.expand(Config::CONFIG[["LIBRUBYARG"]])'`
-	if test -f "$rubyhdrdir/$librubyarg"; then
-	  librubyarg="$rubyhdrdir/$librubyarg"
-	else
-	  rubylibdir=`$vi_cv_path_ruby -r rbconfig -e 'print Config.expand(Config::CONFIG[["libdir"]])'`
+        rubylibs=`$vi_cv_path_ruby -r rbconfig -e 'print Config::CONFIG[["LIBS"]]'`
+
+        if test "X$rubylibs" != "X"; then
+          RUBY_LIBS="$rubylibs"
+        fi
+
+        librubyarg=`$vi_cv_path_ruby -r rbconfig -e 'print Config.expand(Config::CONFIG[["LIBRUBYARG"]])'`
+        librubystatic=`$vi_cv_path_ruby -r rbconfig -e 'print Config.expand(Config::CONFIG[["LIBRUBY_A"]])'`
+        librubydir=`$vi_cv_path_ruby -r rbconfig -e 'print Config.expand(Config::CONFIG[["libdir"]])'`
+
+        if test "$with_custom_ruby" == "false"; then
           if test -d "/System/Library/Frameworks/Ruby.framework"; then
             dnl On Mac OS X it is safer to just use the -framework flag
             RUBY_LIBS="-framework Ruby"
             dnl Don't include the -I flag when -framework is set
             RUBY_CFLAGS=
             librubyarg=
-          elif test -f "$rubylibdir/$librubyarg"; then
-	    librubyarg="$rubylibdir/$librubyarg"
-	  elif test "$librubyarg" = "libruby.a"; then
-	    dnl required on Mac OS 10.3 where libruby.a doesn't exist
-	    librubyarg="-lruby"
-	  else
-	    librubyarg=`$vi_cv_path_ruby -r rbconfig -e "print '$librubyarg'.gsub(/-L\./, %'-L#{Config.expand(Config::CONFIG[\"libdir\"])}')"`
-	  fi
-	fi
+          elif test -f "$librubydir/$librubystatic"; then
+            librubyarg="$librubyarg"
+            RUBY_LIBS="-L$librubydir"
+          elif test "$librubyarg" = "libruby.a"; then
+            librubyarg="-lruby"
+            RUBY_LIBS="-L$librubydir"
+          fi
+        else
+          if test -f "$librubydir/$librubystatic"; then
+            librubyarg="$librubyarg"
+            RUBY_LIBS="-L$librubydir"
+          elif test "$librubyarg" = "libruby.a"; then
+            librubyarg="-lruby"
+            RUBY_LIBS="-L$librubydir"
+          fi
+        fi
 
-	if test "X$librubyarg" != "X"; then
-	  RUBY_LIBS="$librubyarg $RUBY_LIBS"
-	fi
-	rubyldflags=`$vi_cv_path_ruby -r rbconfig -e 'print Config::CONFIG[["LDFLAGS"]]'`
-	if test "X$rubyldflags" != "X"; then
-	  dnl Ruby on Mac OS X 10.5 adds "-arch" flags but these should only
-	  dnl be included if requested by passing --with-mac-arch to
-	  dnl configure, so strip these flags first (if present)
-	  rubyldflags=`echo "$rubyldflags" | sed -e 's/-arch\ ppc//' -e 's/-arch\ i386//' -e 's/-arch\ x86_64//'`
-	  if test "X$rubyldflags" != "X"; then
-	    LDFLAGS="$rubyldflags $LDFLAGS"
-	  fi
-	fi
+        if test "X$librubyarg" != "X"; then
+          RUBY_LIBS="$librubyarg $RUBY_LIBS"
+        fi
+
+        rubyldflags=`$vi_cv_path_ruby -r rbconfig -e 'print Config::CONFIG[["LDFLAGS"]]'`
+
+        if test "X$rubyldflags" != "X"; then
+          dnl Ruby on Mac OS X 10.5 adds "-arch" flags but these should only
+          dnl be included if requested by passing --with-mac-arch to
+          dnl configure, so strip these flags first (if present)
+          rubyldflags=`echo "$rubyldflags" | sed -e 's/-arch\ ppc//' -e 's/-arch\ i386//' -e 's/-arch\ x86_64//'`
+          if test "X$rubyldflags" != "X"; then
+            LDFLAGS="$rubyldflags $LDFLAGS"
+          fi
+        fi
+
         if test "X$rubyldflags" != "X"; then
           LDFLAGS="$rubyldflags $LDFLAGS"
         fi
-	RUBY_SRC="if_ruby.c"
-	RUBY_OBJ="objects/if_ruby.o"
-	RUBY_PRO="if_ruby.pro"
 
-	AC_DEFINE(FEAT_RUBY)
-	if test "$enable_rubyinterp" = "dynamic"; then
-	  libruby=`$vi_cv_path_ruby -r rbconfig -e 'printf "lib%s.%s\n", Config::CONFIG[["RUBY_SO_NAME"]], Config::CONFIG[["DLEXT"]]'`
-	  AC_DEFINE(DYNAMIC_RUBY)
-	  RUBY_CFLAGS="-DDYNAMIC_RUBY_DLL=\\\"$libruby\\\" -DDYNAMIC_RUBY_VER=$rubyversion $RUBY_CFLAGS"
-	  RUBY_LIBS=
-	fi
+        RUBY_SRC="if_ruby.c"
+        RUBY_OBJ="objects/if_ruby.o"
+        RUBY_PRO="if_ruby.pro"
+
+        AC_DEFINE(FEAT_RUBY)
+
+dnl        if test "$enable_rubyinterp" = "dynamic"; then
+dnl          libruby=`$vi_cv_path_ruby -r rbconfig -e 'printf "lib%s.%s\n", Config::CONFIG[["RUBY_SO_NAME"]], Config::CONFIG[["DLEXT"]]'`
+dnl          AC_DEFINE(DYNAMIC_RUBY)
+dnl          RUBY_CFLAGS="-DDYNAMIC_RUBY_DLL=\\\"$libruby\\\" -DDYNAMIC_RUBY_VER=$rubyversion $RUBY_CFLAGS"
+dnl          RUBY_LIBS=
+dnl        fi
+
       else
-	AC_MSG_RESULT(not found; disabling Ruby)
+        AC_MSG_RESULT(not found; disabling Ruby)
       fi
     else
       AC_MSG_RESULT(too old; need Ruby version 1.6.0 or later)
     fi
   fi
 fi
+
 AC_SUBST(RUBY_SRC)
 AC_SUBST(RUBY_OBJ)
 AC_SUBST(RUBY_PRO)
