@@ -41,9 +41,11 @@
 #import "MMPreferenceController.h"
 #import "MMVimController.h"
 #import "MMWindowController.h"
+#import "MMTextView.h"
 #import "Miscellaneous.h"
 #import <unistd.h>
 #import <CoreServices/CoreServices.h>
+#import <Carbon/Carbon.h>
 
 
 #define MM_HANDLE_XCODE_MOD_EVENT 0
@@ -136,6 +138,8 @@ typedef struct
                                   toCommandLine:(NSArray **)cmdline;
 - (NSString *)workingDirectoryForArguments:(NSDictionary *)args;
 - (NSScreen *)screenContainingTopLeftPoint:(NSPoint)pt;
+- (void)addInputSourceChangedObserver;
+- (void)removeInputSourceChangedObserver;
 @end
 
 
@@ -374,6 +378,8 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         [self startWatchingVimDir];
     }
 
+    [self addInputSourceChangedObserver];
+
     ASLogInfo(@"MacVim finished launching");
 }
 
@@ -596,6 +602,8 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 - (void)applicationWillTerminate:(NSNotification *)notification
 {
     ASLogInfo(@"Terminating MacVim...");
+
+    [self removeInputSourceChangedObserver];
 
     [self stopWatchingVimDir];
 
@@ -2380,5 +2388,49 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
     return nil;
 }
+
+- (void)addInputSourceChangedObserver
+{
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // The TIS symbols are weakly linked.
+    if (NULL != TISCopyCurrentKeyboardInputSource) {
+        // We get here when compiled on >=10.5 and running on >=10.5.
+
+        id nc = [NSDistributedNotificationCenter defaultCenter];
+        NSString *notifyInputSourceChanged =
+            (NSString *)kTISNotifySelectedKeyboardInputSourceChanged;
+        [nc addObserver:self
+               selector:@selector(inputSourceChanged:)
+                   name:notifyInputSourceChanged
+                 object:nil];
+    }
+#endif
+}
+
+- (void)removeInputSourceChangedObserver
+{
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // The TIS symbols are weakly linked.
+    if (NULL != TISCopyCurrentKeyboardInputSource) {
+        // We get here when compiled on >=10.5 and running on >=10.5.
+
+        id nc = [NSDistributedNotificationCenter defaultCenter];
+        [nc removeObserver:self];
+    }
+#endif
+}
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+- (void)inputSourceChanged:(NSNotification *)notification
+{
+    unsigned i, count = [vimControllers count];
+    for (i = 0; i < count; ++i) {
+        MMVimController *controller = [vimControllers objectAtIndex:i];
+        MMWindowController *wc = [controller windowController];
+        MMTextView *tv = (MMTextView *)[[wc vimView] textView];
+        [tv checkImState];
+    }
+}
+#endif
 
 @end // MMAppController (Private)
