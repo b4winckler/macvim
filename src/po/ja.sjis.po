@@ -4,7 +4,7 @@
 # Do ":help credits" in Vim to see a list of people who contributed.
 #
 # MURAOKA Taro <koron.kaoriya@gmail.com>, 2001-8.
-# Last Change: 31-May-2008.
+# Last Change: 10-Nov-2010.
 #
 msgid ""
 msgstr ""
@@ -6210,3 +6210,15 @@ msgstr "上まで検索したので下に戻ります"
 
 msgid "search hit BOTTOM, continuing at TOP"
 msgstr "下まで検索したので上に戻ります"
+
+msgid "Do you want to save the changes you made in the document \"%s\"?"
+msgstr "変更を \"%s\" に保存しますか?"
+
+msgid "Your changes will be lost if you don't save them."
+msgstr "保存しない場合、変更は失われます"
+
+msgid "&Save\n&Cancel\n&Don't Save"
+msgstr "保存\nキャンセル\n保存しない"
+
+msgid "&Save...\n&Cancel\n&Don't Save"
+msgstr "保存...\nキャンセル\n保存しない"
