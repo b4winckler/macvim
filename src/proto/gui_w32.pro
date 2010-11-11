@@ -75,6 +75,7 @@ void im_set_active __ARGS((int active));
 int im_get_status __ARGS((void));
 void gui_mch_draw_string __ARGS((int row, int col, char_u *text, int len, int flags));
 void gui_mch_flush __ARGS((void));
+int gui_mch_get_charwidth __ARGS((int c));
 void gui_mch_get_screen_dimensions __ARGS((int *screen_w, int *screen_h));
 void gui_mch_add_menu __ARGS((vimmenu_T *menu, int pos));
 void gui_mch_show_popupmenu __ARGS((vimmenu_T *menu));
@@ -96,5 +97,4 @@ BalloonEval *gui_mch_create_beval_area __ARGS((void *target, char_u *mesg, void 
 void gui_mch_destroy_beval_area __ARGS((BalloonEval *beval));
 void netbeans_draw_multisign_indicator __ARGS((int row));
 void netbeans_init_winsock __ARGS((void));
-int gui_mch_get_charwidth __ARGS((int c));
 /* vim: set ft=c : */
