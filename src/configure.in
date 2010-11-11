@@ -2491,14 +2491,13 @@ fi
 AC_CHECK_HEADERS(stdarg.h stdint.h stdlib.h string.h \
 	sys/select.h sys/utsname.h termcap.h fcntl.h \
 	sgtty.h sys/ioctl.h sys/time.h sys/types.h \
-	termio.h iconv.h inttypes.h langinfo.h math.h \
+	termio.h iconv.h inttypes.h langinfo.h math.h migemo.h \
 	unistd.h stropts.h errno.h sys/resource.h \
 	sys/systeminfo.h locale.h sys/stream.h termios.h \
 	libc.h sys/statfs.h poll.h sys/poll.h pwd.h \
 	utime.h sys/param.h libintl.h libgen.h \
 	util/debug.h util/msg18n.h frame.h sys/acl.h \
-	sys/access.h sys/sysinfo.h wchar.h wctype.h \
-	migemo.h)
+	sys/access.h sys/sysinfo.h wchar.h wctype.h)
 
 dnl sys/ptem.h depends on sys/stream.h on Solaris
 AC_CHECK_HEADERS(sys/ptem.h, [], [],

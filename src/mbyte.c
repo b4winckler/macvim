@@ -5673,6 +5673,14 @@ xim_real_init(x11_window, x11_display)
     int
 im_get_status()
 {
+#ifdef FEAT_UIMFEP
+    if (!gui.in_use)
+	return uimfep_get_status();
+#endif
+#ifdef FEAT_GUI_GTK
+    if (xim_input_style & (int)GDK_IM_PREEDIT_CALLBACKS)
+	return xim_can_preediting;
+#endif
     return xim_has_focus;
 }
 

@@ -1296,6 +1296,16 @@ gui_mch_prepare(int *argc, char **argv)
 		argv[*argc] = NULL;
 		break;	/* enough? */
 	    }
+
+	{
+	    WSADATA wsaData;
+	    int wsaerr;
+
+	    /* Init WinSock */
+	    wsaerr = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	    if (wsaerr == 0)
+		WSInitialized = TRUE;
+	}
     }
 #endif
 
