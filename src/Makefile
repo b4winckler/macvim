@@ -1350,7 +1350,7 @@ ALL_CFLAGS = $(PRE_DEFS) $(CFLAGS) $(PROFILE_CFLAGS) $(POST_DEFS)
 # with "-E".
 OSDEF_CFLAGS = $(PRE_DEFS) $(POST_DEFS)
 
-LINT_CFLAGS = -DLINT -I. $(PRE_DEFS) $(POST_DEFS) $(RUBY_CFLAGS) $(LUA_CFLAGS) $(PERL_CFLAGS) $(PYTHON_CFLAGS) -Dinline= -D__extension__= -Dalloca=alloca
+LINT_CFLAGS = -DLINT -I. $(PRE_DEFS) $(POST_DEFS) $(RUBY_CFLAGS) $(RUBY19_CFLAGS) $(LUA_CFLAGS) $(PERL_CFLAGS) $(PYTHON_CFLAGS) -Dinline= -D__extension__= -Dalloca=alloca
 
 LINT_EXTRA = -DUSE_SNIFF -DHANGUL_INPUT -D"__attribute__(x)="
 
@@ -1373,6 +1373,7 @@ ALL_LIBS = \
 	   $(PYTHON3_LIBS) \
 	   $(TCL_LIBS) \
 	   $(RUBY_LIBS) \
+	   $(RUBY19_LIBS) \
 	   $(PROFILE_LIBS)
 
 # abbreviations
@@ -1486,6 +1487,7 @@ SRC =	$(BASIC_SRC) \
 	$(PYTHON_SRC) $(PYTHON3_SRC) \
 	$(TCL_SRC) \
 	$(RUBY_SRC) \
+	$(RUBY19_SRC) \
 	$(SNIFF_SRC) \
 	$(WORKSHOP_SRC) \
 	$(WSDEBUG_SRC)
@@ -1493,7 +1495,7 @@ SRC =	$(BASIC_SRC) \
 TAGS_SRC = *.c *.cpp if_perl.xs
 
 EXTRA_SRC = hangulin.c if_lua.c if_mzsch.c auto/if_perl.c if_perlsfio.c \
-	    if_python.c if_python3.c if_tcl.c if_ruby.c if_sniff.c \
+	    if_python.c if_python3.c if_tcl.c if_ruby.c if_ruby19.c if_sniff.c \
 	    gui_beval.c workshop.c wsdebug.c integration.c netbeans.c
 
 # All sources, also the ones that are not configured
@@ -1567,6 +1569,7 @@ OBJ = \
 	$(PYTHON3_OBJ) \
 	$(TCL_OBJ) \
 	$(RUBY_OBJ) \
+	$(RUBY19_OBJ) \
 	$(OS_EXTRA_OBJ) \
 	$(WORKSHOP_OBJ) \
 	$(NETBEANS_OBJ) \
@@ -1597,6 +1600,7 @@ PRO_AUTO = \
 	if_python.pro \
 	if_python3.pro \
 	if_ruby.pro \
+	if_ruby19.pro \
 	main.pro \
 	mark.pro \
 	memfile.pro \
@@ -1658,7 +1662,7 @@ config auto/config.mk: auto/configure config.mk.in config.h.in
 		LDFLAGS="$(LDFLAGS)" $(CONF_SHELL) srcdir="$(srcdir)" \
 		./configure $(CONF_OPT_GUI) $(CONF_OPT_X) $(CONF_OPT_XSMP) \
 		$(CONF_OPT_DARWIN) $(CONF_OPT_PERL) $(CONF_OPT_PYTHON) $(CONF_OPT_PYTHON3) \
-		$(CONF_OPT_TCL) $(CONF_OPT_RUBY) $(CONF_OPT_NLS) \
+		$(CONF_OPT_TCL) $(CONF_OPT_RUBY) $(CONF_OPT_RUBY19) $(CONF_OPT_NLS) \
 		$(CONF_OPT_CSCOPE) $(CONF_OPT_MULTIBYTE) $(CONF_OPT_INPUT) \
 		$(CONF_OPT_OUTPUT) $(CONF_OPT_GPM) $(CONF_OPT_WORKSHOP) \
 		$(CONF_OPT_SNIFF) $(CONF_OPT_FEAT) $(CONF_TERM_LIB) \
@@ -2571,6 +2575,9 @@ objects/if_python3.o: if_python3.c if_py_both.h
 objects/if_ruby.o: if_ruby.c
 	$(CCC) $(RUBY_CFLAGS) -o $@ if_ruby.c
 
+objects/if_ruby19.o: if_ruby19.c
+	$(CCC) $(RUBY19_CFLAGS) -o $@ if_ruby19.c
+
 objects/if_sniff.o: if_sniff.c
 	$(CCC) -o $@ if_sniff.c
 
@@ -3095,6 +3102,10 @@ objects/if_tcl.o: if_tcl.c vim.h auto/config.h feature.h os_unix.h auto/osdef.h 
  gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
  arabic.h
 objects/if_ruby.o: if_ruby.c vim.h auto/config.h feature.h os_unix.h auto/osdef.h \
+ ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
+ gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
+ arabic.h version.h
+objects/if_ruby19.o: if_ruby19.c vim.h auto/config.h feature.h os_unix.h auto/osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
  gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
  arabic.h version.h

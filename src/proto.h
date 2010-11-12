@@ -198,6 +198,10 @@ void qsort __ARGS((void *base, size_t elm_count, size_t elm_size, int (*cmp)(con
 #  include "if_ruby.pro"
 # endif
 
+# ifdef FEAT_RUBY19
+#  include "if_ruby19.pro"
+# endif
+
 /* Ugly solution for "BalloonEval" not being defined while it's used in some
  * .pro files. */
 # ifndef FEAT_BEVAL

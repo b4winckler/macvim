@@ -27,6 +27,13 @@
 # endif
 #endif
 
+#if !defined(FEAT_RUBY) && defined(FEAT_RUBY19)
+    Error: !FEAT_RUBY && FEAT_RUBY19 is not supported.
+#endif
+#if defined(FEAT_RUBY19) && !defined(DYNAMIC_RUBY)
+    Error: FEAT_RUBY19 && !DYNAMIC_RUBY is not supported.
+#endif
+
 /* ============ the header file puzzle (ca. 50-100 pieces) ========= */
 
 #ifdef HAVE_CONFIG_H	/* GNU autoconf (or something else) was here */

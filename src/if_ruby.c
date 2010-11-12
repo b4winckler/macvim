@@ -18,6 +18,16 @@
 # include "auto/config.h"
 #endif
 
+#if defined(FEAT_RUBY19) && !defined(FEAT_RUBY19_COMPILING)
+#define ex_ruby ex_ruby18
+#define ex_rubydo ex_ruby18do
+#define ex_rubyfile ex_ruby18file
+#define ruby_buffer_free ruby18_buffer_free
+#define ruby_enabled ruby18_enabled
+#define ruby_end ruby18_end
+#define ruby_window_free ruby18_window_free
+#endif
+
 #ifdef _WIN32
 # if !defined(DYNAMIC_RUBY_VER) || (DYNAMIC_RUBY_VER < 18)
 #   define NT
@@ -1340,3 +1350,93 @@ static void ruby_vim_init(void)
     rb_define_virtual_variable("$curbuf", buffer_s_current, 0);
     rb_define_virtual_variable("$curwin", window_s_current, 0);
 }
+
+#if defined(FEAT_RUBY19) && !defined(FEAT_RUBY19_COMPILING)
+
+#undef ex_ruby
+#undef ex_rubydo
+#undef ex_rubyfile
+#undef ruby_buffer_free
+#undef ruby_enabled
+#undef ruby_end
+#undef ruby_window_free
+
+enum {
+    DYNAMIC_RUBY_NOT_INITIALIZED,
+    DYNAMIC_RUBY_NOT_AVAILABLE,
+    DYNAMIC_RUBY_VER18,
+    DYNAMIC_RUBY_VER19,
+};
+
+static int dynamic_ruby_version = DYNAMIC_RUBY_NOT_INITIALIZED;
+
+static int ensure_ruby19_initialized(void)
+{
+    if (dynamic_ruby_version == DYNAMIC_RUBY_NOT_INITIALIZED) {
+	if (ruby19_enabled(FALSE) == TRUE)
+	    dynamic_ruby_version = DYNAMIC_RUBY_VER19;
+	else if (ruby18_enabled(FALSE) == TRUE)
+	    dynamic_ruby_version = DYNAMIC_RUBY_VER18;
+	else
+	    dynamic_ruby_version = DYNAMIC_RUBY_NOT_AVAILABLE;
+    }
+    return dynamic_ruby_version;
+}
+
+void ex_ruby(exarg_T *eap)
+{
+    switch (ensure_ruby19_initialized()) {
+    case DYNAMIC_RUBY_VER18: ex_ruby18(eap); return;
+    case DYNAMIC_RUBY_VER19: ex_ruby19(eap); return;
+    }
+}
+
+void ex_rubydo(exarg_T *eap)
+{
+    switch (ensure_ruby19_initialized()) {
+    case DYNAMIC_RUBY_VER18: ex_ruby18do(eap); return;
+    case DYNAMIC_RUBY_VER19: ex_ruby19do(eap); return;
+    }
+}
+
+void ex_rubyfile(exarg_T *eap)
+{
+    switch (ensure_ruby19_initialized()) {
+    case DYNAMIC_RUBY_VER18: ex_ruby18file(eap); return;
+    case DYNAMIC_RUBY_VER19: ex_ruby19file(eap); return;
+    }
+}
+
+void ruby_buffer_free(buf_T *buf)
+{
+    switch (dynamic_ruby_version) {
+    case DYNAMIC_RUBY_VER18: ruby18_buffer_free(buf); return;
+    case DYNAMIC_RUBY_VER19: ruby19_buffer_free(buf); return;
+    }
+}
+
+int ruby_enabled(int verbose)
+{
+    switch (ensure_ruby19_initialized()) {
+    case DYNAMIC_RUBY_VER18: return TRUE;
+    case DYNAMIC_RUBY_VER19: return TRUE;
+    default: return FALSE;
+    }
+}
+
+void ruby_end()
+{
+    switch (dynamic_ruby_version) {
+    case DYNAMIC_RUBY_VER18: ruby18_end(); return;
+    case DYNAMIC_RUBY_VER19: ruby19_end(); return;
+    }
+}
+
+void ruby_window_free(win_T *win)
+{
+    switch (dynamic_ruby_version) {
+    case DYNAMIC_RUBY_VER18: ruby18_window_free(win); return;
+    case DYNAMIC_RUBY_VER19: ruby19_window_free(win); return;
+    }
+}
+#endif
