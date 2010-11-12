@@ -285,3 +285,7 @@ if has('printer')
 endif
 
 " Copyright (C) 2007 KaoriYa/MURAOKA Taro
+
+if has('gui_macvim')
+  let $SSH_ASKPASS = simplify($VIM . '/../../MacOS') . '/macvim-askpass'
+endif
