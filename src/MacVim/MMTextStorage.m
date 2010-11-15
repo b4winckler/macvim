@@ -667,6 +667,8 @@ static NSString *MMWideCharacterAttributeName = @"MMWideChar";
         NSDictionary *dict = [NSDictionary
             dictionaryWithObject:[NSNumber numberWithFloat:cellSize.width]
                           forKey:NSFontFixedAdvanceAttribute];
+        if (proportionalFont)
+            dict = [NSDictionary dictionary];
 
         NSFontDescriptor *desc = [newFont fontDescriptor];
         desc = [desc fontDescriptorByAddingAttributes:dict];
@@ -725,6 +727,8 @@ static NSString *MMWideCharacterAttributeName = @"MMWideChar";
         NSDictionary *dictWide = [NSDictionary
             dictionaryWithObject:[NSNumber numberWithFloat:2*cellSize.width]
                           forKey:NSFontFixedAdvanceAttribute];
+        if (proportionalFont)
+            dictWide = [NSDictionary dictionary];
 
         desc = [desc fontDescriptorByAddingAttributes:dictWide];
         fontWide = [NSFont fontWithDescriptor:desc size:pointSize];
@@ -936,15 +940,17 @@ static NSString *MMWideCharacterAttributeName = @"MMWideChar";
 
 - (void)setProportionalFont:(BOOL)pfont
 {
-    proportionalFont = pfont;
+    if (proportionalFont != pfont) {
+        proportionalFont = pfont;
 
-    NSFont *currentFont = font;
-    [font release];  font = nil;
-    [self setFont:currentFont];
+        NSFont *currentFont = font;
+        [font release];  font = nil;
+        [self setFont:currentFont];
 
-    NSFont *currentFontWide = fontWide;
-    [fontWide release];  fontWide = nil;
-    [self setWideFont:currentFontWide];
+        NSFont *currentFontWide = fontWide;
+        [fontWide release];  fontWide = nil;
+        [self setWideFont:currentFontWide];
+    }
 }
 
 @end // MMTextStorage
