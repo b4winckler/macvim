@@ -335,7 +335,7 @@ defaultLineHeightForFont(NSFont *font)
 
 - (void)setProportionalFont:(BOOL)proportionalFont
 {
-    // NOT INPLEMENTED
+    // NOT IMPLEMENTED
 }
 
 
