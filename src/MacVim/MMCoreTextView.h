@@ -68,6 +68,7 @@
 - (NSFont *)fontWide;
 - (NSSize)cellSize;
 - (void)setLinespace:(float)newLinespace;
+- (void)setProportionalFont:(BOOL)proportionalFont;
 
 //
 // MMTextView methods

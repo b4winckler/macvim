@@ -934,6 +934,19 @@ static NSString *MMWideCharacterAttributeName = @"MMWideChar";
 }
 #endif
 
+- (void)setProportionalFont:(BOOL)pfont
+{
+    proportionalFont = pfont;
+
+    NSFont *currentFont = font;
+    [font release];  font = nil;
+    [self setFont:currentFont];
+
+    NSFont *currentFontWide = fontWide;
+    [fontWide release];  fontWide = nil;
+    [self setWideFont:currentFontWide];
+}
+
 @end // MMTextStorage
 
 

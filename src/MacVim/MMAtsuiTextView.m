@@ -333,6 +333,10 @@ defaultLineHeightForFont(NSFont *font)
     cellSize.height = linespace + defaultLineHeightForFont(font);
 }
 
+- (void)setProportionalFont:(BOOL)proportionalFont
+{
+    // NOT INPLEMENTED
+}
 
 
 - (void)setShouldDrawInsertionPoint:(BOOL)on
