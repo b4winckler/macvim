@@ -944,11 +944,11 @@ static NSString *MMWideCharacterAttributeName = @"MMWideChar";
         proportionalFont = pfont;
 
         NSFont *currentFont = font;
-        [font release];  font = nil;
+        font = nil;
         [self setFont:currentFont];
 
         NSFont *currentFontWide = fontWide;
-        [fontWide release];  fontWide = nil;
+        fontWide = nil;
         [self setWideFont:currentFontWide];
     }
 }
