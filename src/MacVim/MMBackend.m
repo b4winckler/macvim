@@ -1180,6 +1180,14 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
     [self queueMessage:msgid data:nil];
 }
 
+- (void)setProportionalFont:(BOOL)proportionalFont
+{
+    int msgid = proportionalFont ?
+        EnableProportionalFontMsgID : DisableProportionalFontMsgID;
+
+    [self queueMessage:msgid data:nil];
+}
+
 - (void)updateModifiedFlag
 {
     // Notify MacVim if _any_ buffer has changed from unmodified to modified or

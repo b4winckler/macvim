@@ -1739,6 +1739,11 @@ void gui_macvim_get_window_layout(int *count, int *layout)
     }
 }
 
+void gui_macvim_set_proportional_font(int proportional_font)
+{
+    [[MMBackend sharedInstance] setProportionalFont:proportional_font];
+}
+
 
 // -- Client/Server ---------------------------------------------------------
 

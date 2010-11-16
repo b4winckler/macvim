@@ -367,6 +367,10 @@ defaultAdvanceForFont(CTFontRef fontRef)
     cellSize.height = linespace + defaultLineHeightForFont(font);
 }
 
+- (void)setProportionalFont:(BOOL)proportionalFont
+{
+    // NOT IMPLEMENTED
+}
 
 
 

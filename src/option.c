@@ -342,6 +342,7 @@ static int	p_ml;
 static int	p_ma;
 #ifdef FEAT_GUI_MACVIM
 static int	p_mmta;
+static int	p_mpfont;
 #endif
 static int	p_mod;
 static char_u	*p_mps;
@@ -1761,6 +1762,13 @@ static struct vimoption
     {"macmeta",	    "mmta", P_BOOL|P_VI_DEF,
 #ifdef FEAT_GUI_MACVIM
 			    (char_u *)&p_mmta, PV_MMTA,
+#else
+			    (char_u *)NULL, PV_NONE,
+#endif
+			    {(char_u *)FALSE, (char_u *)0L}},
+    {"macproportionalfont", "mpf", P_BOOL|P_VI_DEF|P_VIM|P_RCLR,
+#ifdef FEAT_GUI_MACVIM
+			    (char_u *)&p_mpfont, PV_NONE,
 #else
 			    (char_u *)NULL, PV_NONE,
 #endif
@@ -7815,6 +7823,13 @@ set_bool_option(opt_idx, varp, value, opt_flags)
     else if ((int *)varp == &p_antialias)
     {
 	gui_macvim_set_antialias(p_antialias);
+    }
+#endif
+
+#if defined(FEAT_GUI_MACVIM)
+    else if ((int *)varp == &p_mpfont)
+    {
+	gui_macvim_set_proportional_font(p_mpfont);
     }
 #endif
 

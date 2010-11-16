@@ -166,6 +166,8 @@ enum {
     XcodeModMsgID,
     EnableAntialiasMsgID,
     DisableAntialiasMsgID,
+    EnableProportionalFontMsgID,
+    DisableProportionalFontMsgID,
     SetVimStateMsgID,
     SetDocumentFilenameMsgID,
     OpenWithArgumentsMsgID,

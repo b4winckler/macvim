@@ -204,6 +204,7 @@ void gui_mch_fuopt_update(void);
 void gui_macvim_update_modified_flag();
 void gui_macvim_add_to_find_pboard(char_u *pat);
 void gui_macvim_set_antialias(int antialias);
+void gui_macvim_set_proportional_font(int proportional_font);
 
 int16_t odb_buffer_close(buf_T *buf);
 int16_t odb_post_buffer_write(buf_T *buf);
