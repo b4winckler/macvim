@@ -1,4 +1,4 @@
-*starting.txt*  For Vim バージョン 7.3.  Last change: 2009 Dec 31
+*starting.txt*  For Vim バージョン 7.3.  Last change: 2010 Sep 18
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -92,14 +92,14 @@ exim	vim -E	    改良版Exモードで起動(|Ex-mode|を参照)。	    *exim*
 			(通常はインストールされない)
 view	vim -R	    読み込み専用モードで起動(|-R|を参照)。	    *view*
 gvim	vim -g	    GUIで起動(|gui|を参照)。			    *gvim*
-gex	vim -eg	    GUIのEXモードで起動。			    *gex*
-gview	vim -Rg	    GUIの読み込み専用モードで起動。		    *gview*
+gex	vim -eg	    GUIのEXモードで起動。			  *gex*
+gview	vim -Rg	    GUIの読み込み専用モードで起動。		  *gview*
 rvim	vim -Z	    "vim"の制限モードで起動(|-Z|を参照)。	    *rvim*
-rview	vim -RZ	    "view"の制限モード。			    *rview*
-rgvim	vim -gZ	    "gvim"の制限モード。			    *rgvim*
-rgview	vim -RgZ    "gview"の制限モード。			    *rgview*
+rview	vim -RZ	    "view"の制限モード。			  *rview*
+rgvim	vim -gZ	    "gvim"の制限モード。			  *rgvim*
+rgview	vim -RgZ    "gview"の制限モード。			  *rgview*
 evim	vim -y	    簡易操作のVim(|-y|を参照)			    *evim*
-eview	vim -yR	    "evim"と同じ。読み込み専用モード。		    *eview*
+eview	vim -yR	    "evim"と同じ。読み込み専用モード。		  *eview*
 vimdiff vim -d	    差分モードで起動|diff-mode|
 gvimdiff vim -gd    差分モードで起動|diff-mode|
 
@@ -236,7 +236,8 @@ VMSでは全てのオプション引数は小文字であるとみなされる�
 							*-Z* *restricted-mode*
 -Z		制限モード。外部シェルを実行するあらゆるコマンドの使用を不許可
 		にする。これにはサスペンドであるCTRL-Zや、":sh"、フィルタリン
-		グ、system()関数、バッククォートの評価、その他も含まれる。
+		グ、system() 関数、バッククォートの評価、delete()、rename()、
+		mkdir()、writefile()、libcall()、などが含まれる。
 		{Vi にはない}
 
 							*-g*
@@ -847,6 +848,8 @@ Evimでは以下のオプションが標準設定から変更される:
 12. スタートアップコマンドが実行される
 	"-t"フラグがVimに与えられた場合、タグにジャンプする。
 	|-c|と|+cmd|引数で与えられたコマンドが実行される。
+	スタートフラグがリセットされ、has("vim_starting") がゼロを返すようにな
+	る。
 	'insertmode'オプションがセットされていると、インサートモード入る。
 	|VimEnter|のautocommandが実行される。
 

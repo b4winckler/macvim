@@ -1,4 +1,4 @@
-*vi_diff.txt*   For Vim バージョン 7.3.  Last change: 2010 Jul 20
+*vi_diff.txt*   For Vim バージョン 7.3.  Last change: 2010 Oct 11
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -89,6 +89,7 @@ Vim で編集できるファイルの制限はかなり少ないです。 {Vi: <
 			   50 文字
 異なるハイライトの種類の数: 30000以上
 数値変数の範囲: -2147483648 から 2147483647 (64ビットシステムではそれ以上)
+タグファイルにおける一行の最大の長さ: 512 バイト
 
 アンドゥとレジスターの中のテキストに関する情報はメモリーに保持されます。ですの
 で、使用可能な(仮想)メモリーの量を超えて(大きな)変更を行っている場合はアンドゥ
@@ -1018,6 +1019,8 @@ POSIXテストの実行についての注意:
 - viテスト33はときどき未知の理由のために失敗します
 - viテスト250が失敗します。新しいバージョンで挙動が変更されるでしょう。
     http://www.opengroup.org/austin/mailarchives/ag-review/msg01710.html
+    (今はリンク切れ。現在の場所はおそらくここ:
+    https://www.opengroup.org/sophocles/show_mail.tpl?CALLER=show_archive.tpl&source=L&listname=austin-review-l&id=1711)
 - viテスト310が失敗します。エラーが起きたとき終了コードが非ゼロになる？
 - exテスト24が失敗します。テストが間違っているためです。SUSv2とSUSv3の間に変更
   されました。

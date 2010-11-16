@@ -1,4 +1,4 @@
-*netbeans.txt*  For Vim バージョン 7.3.  Last change: 2010 Jul 20
+*netbeans.txt*  For Vim バージョン 7.3.  Last change: 2010 Sep 29
 
 
 		  VIM REFERENCE MANUAL    by Gordon Prieur et al.
@@ -115,8 +115,8 @@ configure を引数なしで起動した場合、NetBeans インターフェイ�
 NetBeans インターフェイスを有効にしたくない場合は、Makefile の中の
 "--disable-netbeans" の行のコメントアウトを解除すれば無効にできます。
 
-現在 NetBeans インターフェースは端末動作の Vim と GUI (GTK, GNOME, Motif) の
-GVim でのみサポートされています。
+現在 NetBeans インターフェースは端末動作の Vim と GUI (GTK, GNOME, Windows,
+Athena, Motif) の GVim でのみサポートされています。
 
 Motif をサポートするためには XPM ライブラリが必要です。XPM の最新バージョン
 を入手する方法については |workshop-xpm| を参照してください。
@@ -818,7 +818,7 @@ REJECT		未使用。
 ==============================================================================
 7. NetBeans コマンド					*netbeans-commands*
 
-							*:nbstart* *E511*
+							*:nbstart* *E511* *E838*
 :nbs[tart] {connection}	新しい Netbeans セッションを開始する。{connection} は
 			ソケット接続パラメータ。{connection} の書式は
 			|netbeans-parameters| で説明されています。

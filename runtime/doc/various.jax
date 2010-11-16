@@ -1,4 +1,4 @@
-*various.txt*   For Vim バージョン 7.3.  Last change: 2010 Aug 10
+*various.txt*   For Vim バージョン 7.3.  Last change: 2010 Sep 23
 
 
 		VIM リファレンスマニュアル    by Bram Moolenaar
@@ -607,7 +607,7 @@ g CTRL-A		MEM_PROFILING を define して Vim をコンパイルしたとき
 			示します。Vim をデバッグするときなどに使います。
 
 ==============================================================================
-3. less、more の代わりに Vim を使う				*less*
+2. less、more の代わりに Vim を使う				*less*
 
 less や more ではファイルを構文強調表示できません。代わりに、Vim を使うことが
 できます。それには、シェルスクリプト "$VIMRUNTIME/macros/less.sh" を使います。

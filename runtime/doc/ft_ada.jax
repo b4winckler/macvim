@@ -6,20 +6,20 @@
 ADA								      *ada.vim*
 
 1.  構文強調				    |ft-ada-syntax|
-2.  プラグイン				    |ft-ada-plugin|
+2.  ファイルタイププラグイン		    |ft-ada-plugin|
 3.  オムニ補完				    |ft-ada-omni|
     3.1 "gnat xref"を使ったオムニ補完		|gnat-xref|
     3.2 "ctags"を使ったオムニ補完		|ada-ctags|
 4.  コンパイラへの対応			    |ada-compiler|
     4.1 GNAT					|compiler-gnat|
-    4.1 Dec Ada					|compiler-decada|
+    4.2 Dec Ada					|compiler-decada|
 5.  リファレンス			    |ada-reference|
     5.1 オプション				|ft-ada-options|
-    5.2 関数					|ft-ada-functions|
-    5.3 コマンド				|ft-ada-commands|
-    5.4 変数					|ft-ada-variables|
-    5.5 定数					|ft-ada-constants|
-8.  その他のプラグイン			    |ada-extra-plugins|
+    5.2 コマンド				|ft-ada-commands|
+    5.3 変数					|ft-ada-variables|
+    5.4 定数					|ft-ada-constants|
+    5.5 関数					|ft-ada-functions|
+6.  その他のプラグイン			    |ada-extra-plugins|
 
 ==============================================================================
 1. 構文強調 ~
@@ -134,7 +134,7 @@ Exuberant Ctagsを利用するVimのツールはたくさんある。
 Exuberant CtagsのAdaパーサはかなり新しく、完全な対応は期待しないこと。
 
 ==============================================================================
-4.  コンパイラへの対応 ~
+4. コンパイラへの対応 ~
 								*ada-compiler*
 
 Adaモードは複数のAdaコンパイラに対応していて、Adaソースを開くとき、
@@ -359,7 +359,7 @@ g:ada_default_compiler	  文字列
 いときは偽となる。その変数がどんな値であろうとも、違いはない。
 
 ------------------------------------------------------------------------------
-5.3 コマンド ~
+5.2 コマンド ~
 							     *ft-ada-commands*
 
 :AdaRainbow							 *:AdaRainbow*
@@ -436,7 +436,7 @@ g:ada#Ctags_Kinds	リストの辞書
 		CtagsがAdaのタグを生成する際の、要素の種類の辞書。
 
 ------------------------------------------------------------------------------
-5.2 関数 ~
+5.5 関数 ~
 							    *ft-ada-functions*
 
 ada#Word([{line}, {col}])					  *ada#Word()*
@@ -470,7 +470,7 @@ gnat#New ()
 
 
 ==============================================================================
-8. その他のプラグイン ~
+6. その他のプラグイン ~
 							   *ada-extra-plugins*
 
 以下の外部プラグインをインストールしてもよい。これらはAdaの編集に役に立ち、

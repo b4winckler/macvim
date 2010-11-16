@@ -1,4 +1,4 @@
-*if_cscop.txt*  For Vim バージョン 7.3.  Last change: 2009 Mar 18
+*if_cscop.txt*  For Vim バージョン 7.3.  Last change: 2010 Sep 29
 
 
 		  VIM リファレンスマニュアル    by Andy Kahn
@@ -108,8 +108,7 @@ tagsのようになるので、普通のタグのようなジャンプ操作(Ctr
 	    :cscope add /projects/vim/cscope.out /usr/local/vim
 	    :cscope add cscope.out /usr/local/vim -C
 <
-				      *cscope-find* *cs-find*
-						*E565* *E567*
+				      *cscope-find* *cs-find* *E567*
     find  : cscopeに問い合わせる。#5オプション(grepパターンを変更する)以外の全
 	    cscopeクエリオプションが使用可能。
 
@@ -195,7 +194,7 @@ tagsのようになるので、普通のタグのようなジャンプ操作(Ctr
 
 	    使用法  :cs help
 
-						*E260* *E261*
+							*E261*
     kill  : cscopeとの接続を切断する(もしくは全ての接続を切断する)。
 
 	    使用法  :cs kill {num|partial_name}

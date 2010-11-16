@@ -1,4 +1,4 @@
-*debug.txt*     For Vim バージョン 7.3.  Last change: 2010 Jul 20
+*debug.txt*     For Vim バージョン 7.3.  Last change: 2010 Sep 14
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -22,7 +22,8 @@ Vim スクリプトや関数などのデバッグについては、|debug-script
 場所を特定できます。MinGW でも同じようにできます。
 
 1. "-g" オプション付きで Vim をコンパイル (Makefile にそのための行があるのでコ
-   メントアウトしてください)。
+   メントアウトしてください)。さらに "strip" を無効化 (strip をインストールし
+   ないか、"STRIP = /bin/true" の行を使う)。
 
 2. 次のコマンドを実行 ("11" の所を失敗したテストの番号に変えてください): >
 	cd testdir
@@ -67,7 +68,7 @@ XtVaAppCreateShell() などです。それらを避けることはできませ�
 Windows版の Vim が再現可能な手段でクラッシュした場合、次の方法で有用なバグレ
 ポートを作成できます。
 
-一般事項 ~
+3.1 一般事項 ~
 
 実行ファイルに対応したデバッグシンボルファイル (PDB) を用意してください。
 gvim.exe には gvim.pdb、vim.exe には vim.pdb が必要です。あなたが実行ファイル
@@ -91,7 +92,7 @@ Borland コンパイラで作成した Vim 実行ファイルなら TD を使っ
 
 
 								*debug-vs2005*
-2.2 Visual Studio 2005/Visual C++ 2005 Express で Vim をデバッグする ~
+3.2 Visual Studio 2005/Visual C++ 2005 Express で Vim をデバッグする ~
 
 vim.exe か gvim.exe を起動し、Visual Studio を起動してください。(Visual Studio
 を持っていない場合は、|get-ms-debuggers| の説明に従って、無料の Visual C++
@@ -125,7 +126,7 @@ Visual C++ 2005 Express Edition では minidump を保存できません。just-
 せん。それらが必要なときは WinDbg (|debug-windbg|) を使ってください。
 
 								*debug-windbg*
-2.3 WinDbg を使って Vim をデバッグする ~
+3.3 WinDbg を使って Vim をデバッグする ~
 
 WinDbg の入手方法は |get-ms-debuggers| を参照してください。
 
@@ -154,7 +155,7 @@ minidump を保存するには、WinDbg コマンドラインで次のコマン�
         .dump vim.dmp
 <
 							*debug-minidump*
-2.4 Minidump を開く ~
+3.4 Minidump を開く ~
 
 Visual Studio か WinDbg を使って minidump を開くことができます。
 
@@ -167,7 +168,7 @@ WinDbg の場合: メニューから「File->Open Crash Dump」を選択しま�
 Pathの設定について |debug-windbg| の説明も参照してください。
 
 							*get-ms-debuggers*
-2.5 Microsoft デバッグツールの入手方法 ~
+3.5 Microsoft デバッグツールの入手方法 ~
 
 Windows 用のデバッグツールは次の場所からダウンロードできます
     http://www.microsoft.com/whdc/devtools/debugging/default.mspx

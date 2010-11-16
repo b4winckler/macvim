@@ -1,4 +1,4 @@
-*pi_zip.txt*	For Vim バージョン 7.3.  Last change: 2010 Apr 12
+*pi_zip.txt*	For Vim バージョン 7.3.  Last change: 2010 Sep 14
 
 				+====================+
 				| Zip File Interface |
@@ -60,11 +60,10 @@ Copyright: Copyright (C) 2005-2009 Charles E Campbell, Jr *zip-copyright*
    ロードの無効化~
 
    もしなんらかの理由で vim で zip ファイルを開きたくない場合は、次の二つの変
-   数を <.vimrc> で設定すると、tar プラグインのロードを無効化できます: >
+   数を <.vimrc> で設定すると、zip プラグインのロードを無効化できます: >
 
 	let g:loaded_zipPlugin= 1
 	let g:loaded_zip      = 1
-<
 <
 
 ==============================================================================

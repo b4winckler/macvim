@@ -1,4 +1,4 @@
-*sign.txt*      For Vim バージョン 7.3.  Last change: 2010 May 07
+*sign.txt*      For Vim バージョン 7.3.  Last change: 2010 Oct 14
 
 
 		VIMリファレンスマニュアル    by Gordon Prieur
@@ -66,7 +66,8 @@ SignColumnの色を使う|hl-SignColumn|。色を設定するには次のよう�
 
 :sign define {name} {argument}...
 		新しい目印を定義するか既にある目印に属性を設定する。{name}は番
-		号(全て数字)か非数字で始まる名前である。
+		号(全て数字)か非数字で始まる名前である。先導数字は無視されるの
+		で、"0012" と "012" と "12" は同じ名前として解釈されます。
 		約120の異なる目印を定義することができる。
 
 		利用可能な引数:
