@@ -1,4 +1,4 @@
-*os_vms.txt*    For Vim バージョン 7.3.  Last change: 2010 Jul 28
+*os_vms.txt*    For Vim バージョン 7.3.  Last change: 2010 Aug 16
 
 
 			  VIMリファレンスマニュアル
@@ -677,7 +677,7 @@ GUI/GTK 版の Vim はコンソールモードでも同じように動作する�
 幸いなことに、簡単な解決法がある。GUI/GTK 版の実行ファイルとコンソール用にビル
 ドした実行ファイルの両方をデプロイするのである。次のように: >
 
-    |- vim72
+    |- vim73
     |----- doc
     |----- syntax
        vimrc    (system rc files)
@@ -687,7 +687,7 @@ GUI/GTK 版の Vim はコンソールモードでも同じように動作する�
 
 以下のようなシステムシンボルを LOGIN.COM または SYLOGIN.COM で定義する: >
 
-	$ define/nolog VIM RF10:[UTIL.VIM72] ! where you VIM directory is
+	$ define/nolog VIM RF10:[UTIL.VIM73] ! where you VIM directory is
 	$ vi*m  :== mcr VIM:VIM.EXE
 	$ gvi*m :== mcr VIM:GVIM.EXE
 	$ ! or you can try to spawn with
@@ -756,7 +756,7 @@ VIM ディレクトリは共通にし、実行ファイルだけ異なるよう�
 	$      define/nolog VIM RF10:[UTIL.IA64_EXE] ! IA64 executables
 	$ endif
         $! VIMRUNTIME must be defined in order to find runtime files
-	$ define/nolog VIMRUNTIME RF10:[UTIL.VIM72]
+	$ define/nolog VIMRUNTIME RF10:[UTIL.VIM73]
 
 このアプローチの良い例が http://www.polarhome.com/vim/ からダウンロードできる
 GNU_TOOLS.ZIP の [GNU]gnu_tools.com スクリプトである。

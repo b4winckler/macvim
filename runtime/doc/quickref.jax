@@ -1,4 +1,4 @@
-*quickref.txt*  For Vim バージョン 7.3.  Last change: 2010 Jul 24
+*quickref.txt*  For Vim バージョン 7.3.  Last change: 2010 Sep 14
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -51,7 +51,7 @@
 |f|	N  f{char}	現在位置から右方向にあるN個目の{char}に移動
 |F|	N  F{char}	現在位置から左方向にあるN個目の{char}に移動
 |t|	N  t{char}	現在位置から右方向にあるN個目の{char}の左側に移動
-|T|	N  T{char}	現在位置から左方向にあるN個目の{char}の左側に移動
+|T|	N  T{char}	現在位置から左方向にあるN個目の{char}の右側に移動
 |;|	N  ;		直前の"f", "F", "t", "T"を N 回繰り返す。
 |,|	N  ,		直前の"f", "F", "t", "T"を逆方向に N 回繰り返す。
 ------------------------------------------------------------------------------
@@ -1101,11 +1101,11 @@ smz			   号のこと。英語圏では昔から使われている。
 
 	Note: 以下の 7 つについては、そのまま打ち込みます。特殊キーの表記では
 	      ありません。
-|:<afile>|  <abuf>	バッファ番号。自動コマンドで使われる (ファイル名を使う
+|:<abuf>|   <abuf>	バッファ番号。自動コマンドで使われる (ファイル名を使う
 			   べき場所でのみ可)
 |:<afile>|  <afile>	ファイル名。自動コマンドで使われる (ファイル名を使うべ
 			   き場所でのみ可)
-|:<afile>|  <amatch>	パターンにマッチしたもの。自動コマンドで使われる (ファ
+|:<amatch>| <amatch>	パターンにマッチしたもの。自動コマンドで使われる (ファ
 			   イル名を使うべき場所でのみ可)
 |:<cword>|  <cword>	カーソル下の単語(ファイル名を使うべき場所でのみ可)
 |:<cWORD>|  <cWORD>	カーソル下の大単語(ファイル名を使うべき場所でのみ可)
@@ -1389,7 +1389,7 @@ smz			   号のこと。英語圏では昔から使われている。
 		set foldmethod=indent	インデントで折畳み
 		set foldmethod=expr	'foldexpr'で折畳み
 		set foldmethod=syntax	シンタックスのリージョンで折畳み
-		set foldmethod=marker	'foldmarkers'で折畳み
+		set foldmethod=marker	'foldmarker'で折畳み
 
 |zf|		zf{motion}		手動で折畳みを定義する
 |:fold|		:{range}fold		{range}範囲の行を折畳む

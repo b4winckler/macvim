@@ -1,4 +1,4 @@
-*intro.txt*     For Vim バージョン 7.3.  Last change: 2010 Jul 20
+*intro.txt*     For Vim バージョン 7.3.  Last change: 2010 Sep 29
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -298,7 +298,7 @@ Note: Vim は入力可能な文字はすべてコマンドで使います。実�
 
 []		角カッコで囲まれた文字は省略可能。
 
-						    *count* *[count]* *E489*
+						    *count* *[count]*
 [count]		コマンドに前置して、そのコマンドを繰り返したり、反復したりする
 		ための省略可能な数字。省略した場合、特に注意が無ければ 1 を指
 		定したのと同じになります。Note: このマニュアルでは、[count] は

@@ -1,4 +1,4 @@
-*map.txt*       For Vim バージョン 7.3.  Last change: 2010 Jul 31
+*map.txt*       For Vim バージョン 7.3.  Last change: 2010 Sep 29
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -1179,6 +1179,7 @@ script2.vimを実行すると"None"が表示されます。期待した結果と
 	-complete=augroup	オートコマンドのグループ
 	-complete=buffer	バッファ
 	-complete=command	Ex コマンド(と、引数)
+	-complete=cscope	|:cscope| サブオプション
 	-complete=dir		ディレクトリ
 	-complete=environment	環境変数
 	-complete=event		オートコマンドのイベント
@@ -1192,6 +1193,7 @@ script2.vimを実行すると"None"が表示されます。期待した結果と
 	-complete=menu		メニュー
 	-complete=option	オプション
 	-complete=shellcmd	シェルコマンド
+	-complete=sign		|:sign| サブオプション
 	-complete=syntax	シンタックスファイル名 |'syntax'|
 	-complete=tag		タグ
 	-complete=tag_listfiles	CTRL-D を押した時にタグ、ファイル名を表示
