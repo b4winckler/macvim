@@ -932,6 +932,14 @@ defaultAdvanceForFont(CTFontRef fontRef)
             // Convert UTF-8 chars to UTF-16
             CFStringRef sref = CFStringCreateWithBytesNoCopy(NULL, s, len,
                                 kCFStringEncodingUTF8, false, kCFAllocatorNull);
+            if (sref == NULL) {
+                ASLogWarn(@"Conversion error len=%d row=%d col=%d flags=%#x",
+                        len, row, col, flags);
+                s = "<CONVERR>";
+                len = strlen(s);
+                sref = CFStringCreateWithBytesNoCopy(NULL, s, len,
+                        kCFStringEncodingUTF8, false, kCFAllocatorNull);
+            }
             CFIndex unilength = CFStringGetLength(sref);
             const UniChar *unichars = CFStringGetCharactersPtr(sref);
             UniChar *buffer = NULL;
