@@ -1,4 +1,4 @@
-*pi_tar.txt*	For Vim バージョン 7.3.  Last change: 2010 Aug 09
+*pi_tar.txt*	For Vim バージョン 7.3.  Last change: 2010 Nov 03
 
 		       +====================+
 		       | Tar File Interface |
@@ -57,11 +57,11 @@ Copyright 2005-2010: The GPL (gnu public license) applies to	*tar-copyright*
 
    これらの変数を <.vimrc> ファイルなどで設定してください。
    変数                  初期設定 説明
-   *g:tar_browseoptions*  "Ptf"   ファイル一覧を取得するときに使われる
-   *g:tar_readoptions*    "OPxf"  tar ファイルを展開するときに使われる
-   *g:tar_cmd*            "tar"   tar プログラムの名前
-   *g:tar_nomax*            0     true ならファイルウィンドウが最大化されない
-   *g:tar_secure*         undef   変数が存在する場合:
+   *g:tar_browseoptions*    "Ptf"   ファイル一覧を取得するときに使われる
+   *g:tar_readoptions*      "OPxf"  tar ファイルを展開するときに使われる
+   *g:tar_cmd*              "tar"   tar プログラムの名前
+   *g:tar_nomax*              0     trueならファイルウィンドウが最大化されない
+   *g:tar_secure*           undef   変数が存在する場合:
 					"--" を使って、ファイル名がオプション
 					指定として解釈されるのを防ぎます。
 					tar コマンドが "--" に対応している必要
@@ -74,7 +74,7 @@ Copyright 2005-2010: The GPL (gnu public license) applies to	*tar-copyright*
 				  すべての tar が "--" をサポートしているわけ
 				  ではないので、初期設定では無効になっていま
 				  す。
-   *g:tar_writeoptions*   "uf"    ファイルを更新するときに使われる
+   *g:tar_writeoptions*     "uf"    ファイルを更新するときに使われる
 
 
 ==============================================================================

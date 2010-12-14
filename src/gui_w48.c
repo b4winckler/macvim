@@ -3291,7 +3291,7 @@ convert_filterW(char_u *s)
     tmp = convert_filter(s);
     if (tmp == NULL)
 	return NULL;
-    len = STRLEN(s) + 3;
+    len = (int)STRLEN(s) + 3;
     res = enc_to_utf16(tmp, &len);
     vim_free(tmp);
     return res;
