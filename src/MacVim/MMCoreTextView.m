@@ -933,12 +933,8 @@ defaultAdvanceForFont(CTFontRef fontRef)
             CFStringRef sref = CFStringCreateWithBytesNoCopy(NULL, s, len,
                                 kCFStringEncodingUTF8, false, kCFAllocatorNull);
             if (sref == NULL) {
-                ASLogWarn(@"Conversion error len=%d row=%d col=%d flags=%#x",
-                        len, row, col, flags);
-                s = "<CONVERR>";
-                len = strlen(s);
-                sref = CFStringCreateWithBytesNoCopy(NULL, s, len,
-                        kCFStringEncodingUTF8, false, kCFAllocatorNull);
+                ASLogWarn(@"Conversion error: some text may not be rendered");
+                continue;
             }
             CFIndex unilength = CFStringGetLength(sref);
             const UniChar *unichars = CFStringGetCharactersPtr(sref);

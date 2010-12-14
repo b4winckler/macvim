@@ -1439,6 +1439,15 @@ A jump table for the options with a short description can be found at |Q_op|.
 			explicitly accessed using the "* notation.  Also see
 			|gui-clipboard|.
 
+	unnamedplus	A variant of "unnamed" flag which uses the clipboard
+			register '+' (|quoteplus|) instead of register '*' for
+			all operations except yank.  Yank shall copy the text
+			into register '+' and also into '*' when "unnamed" is
+			included.
+			Only available with the |+x11| feature.
+			Availability can be checked with: >
+				if has('unnamedplus')
+<
 	autoselect	Works like the 'a' flag in 'guioptions': If present,
 			then whenever Visual mode is started, or the Visual
 			area extended, Vim tries to become the owner of the
@@ -7877,6 +7886,17 @@ A jump table for the options with a short description can be found at |Q_op|.
 <	The use of |:set+=| and |:set-=| is preferred when adding or removing
 	a pattern from the list.  This avoids problems when a future version
 	uses another default.
+
+
+			*'wildignorecase* *'wic'* *'nowildignorecase* *'nowic'*
+'wildignorecase' 'wic'	boolean	(default off)
+			global
+			{not in Vi}
+	When set case is ignored when completing file names and directories.
+	Has no effect on systems where file name case is generally ignored.
+	Does not apply when the shell is used to expand wildcards, which
+	happens when there are special characters.
+
 
 				*'wildmenu'* *'wmnu'* *'nowildmenu'* *'nowmnu'*
 'wildmenu' 'wmnu'	boolean	(default off)

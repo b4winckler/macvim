@@ -2327,7 +2327,7 @@ ex_let_one(arg, tv, copy, endchars, op)
 	    else if (endchars != NULL
 			     && vim_strchr(endchars, *skipwhite(arg)) == NULL)
 		EMSG(_(e_letunexp));
-	    else
+	    else if (!check_secure())
 	    {
 		c1 = name[len];
 		name[len] = NUL;
@@ -9879,7 +9879,7 @@ f_expand(argvars, rettv)
     char_u	*s;
     int		len;
     char_u	*errormsg;
-    int		flags = WILD_SILENT|WILD_USE_NL|WILD_LIST_NOTFOUND;
+    int		options = WILD_SILENT|WILD_USE_NL|WILD_LIST_NOTFOUND;
     expand_T	xpc;
     int		error = FALSE;
 
@@ -9897,12 +9897,14 @@ f_expand(argvars, rettv)
 	 * for 'wildignore' and don't put matches for 'suffixes' at the end. */
 	if (argvars[1].v_type != VAR_UNKNOWN
 				    && get_tv_number_chk(&argvars[1], &error))
-	    flags |= WILD_KEEP_ALL;
+	    options |= WILD_KEEP_ALL;
 	if (!error)
 	{
 	    ExpandInit(&xpc);
 	    xpc.xp_context = EXPAND_FILES;
-	    rettv->vval.v_string = ExpandOne(&xpc, s, NULL, flags, WILD_ALL);
+	    if (p_wic)
+		options += WILD_ICASE;
+	    rettv->vval.v_string = ExpandOne(&xpc, s, NULL, options, WILD_ALL);
 	}
 	else
 	    rettv->vval.v_string = NULL;
@@ -11682,7 +11684,7 @@ f_glob(argvars, rettv)
     typval_T	*argvars;
     typval_T	*rettv;
 {
-    int		flags = WILD_SILENT|WILD_USE_NL;
+    int		options = WILD_SILENT|WILD_USE_NL;
     expand_T	xpc;
     int		error = FALSE;
 
@@ -11690,14 +11692,16 @@ f_glob(argvars, rettv)
     * for 'wildignore' and don't put matches for 'suffixes' at the end. */
     if (argvars[1].v_type != VAR_UNKNOWN
 				&& get_tv_number_chk(&argvars[1], &error))
-	flags |= WILD_KEEP_ALL;
+	options |= WILD_KEEP_ALL;
     rettv->v_type = VAR_STRING;
     if (!error)
     {
 	ExpandInit(&xpc);
 	xpc.xp_context = EXPAND_FILES;
+	if (p_wic)
+	    options += WILD_ICASE;
 	rettv->vval.v_string = ExpandOne(&xpc, get_tv_string(&argvars[0]),
-						       NULL, flags, WILD_ALL);
+						     NULL, options, WILD_ALL);
     }
     else
 	rettv->vval.v_string = NULL;
@@ -12163,6 +12167,9 @@ f_has(argvars, rettv)
 #endif
 #ifdef FEAT_TRANSPARENCY
 	"transparency",
+#endif
+#if defined(FEAT_CLIPBOARD) && defined(FEAT_X11)
+	"unnamedplus",
 #endif
 #ifdef FEAT_USR_CMDS
 	"user-commands",    /* was accidentally included in 5.4 */
