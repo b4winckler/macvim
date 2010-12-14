@@ -1254,7 +1254,7 @@ query_migemo(char_u* str)
     int
 check_migemo_able_string(char_u* str)
 {
-    int len;
+    size_t len;
 
     len = STRLEN(str);
     /* Disabled because of adding query size limitation. */
