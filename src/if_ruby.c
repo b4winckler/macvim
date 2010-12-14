@@ -231,7 +231,6 @@ static void ruby_vim_init(void);
 # define rb_enc_str_new			dll_rb_enc_str_new
 # define rb_intern2			dll_rb_intern2
 # define rb_const_remove		dll_rb_const_remove
-# define Init_prelude			dll_Init_prelude
 # define rb_sprintf			dll_rb_sprintf
 # define ruby_init_stack		dll_ruby_init_stack
 #endif
@@ -433,7 +432,6 @@ static struct
     {"rb_enc_str_new", (RUBY_PROC*)&dll_rb_enc_str_new},
     {"rb_intern2", (RUBY_PROC*)&dll_rb_intern2},
     {"rb_const_remove", (RUBY_PROC*)&dll_rb_const_remove},
-    {"Init_prelude", (RUBY_PROC*)&dll_Init_prelude},
     {"rb_sprintf", (RUBY_PROC*)&dll_rb_sprintf},
     {"ruby_init_stack", (RUBY_PROC*)&dll_ruby_init_stack},
 #endif
@@ -588,9 +586,9 @@ void ex_rubydo(exarg_T *eap)
 	if (u_save(eap->line1 - 1, eap->line2 + 1) != OK)
 	    return;
 	for (i = eap->line1; i <= eap->line2; i++) {
-	    VALUE line, oldline;
+	    VALUE line;
 
-	    line = oldline = vim_str2rb_enc_str((char *)ml_get(i));
+	    line = vim_str2rb_enc_str((char *)ml_get(i));
 	    rb_lastline_set(line);
 	    eval_enc_string_protect((char *) eap->arg, &state);
 	    if (state) {
@@ -675,7 +673,6 @@ static int ensure_ruby_initialized(void)
 	    /* This avoids the error "Encoding::ConverterNotFoundError: code
 	     * converter not found (UTF-16LE to ASCII-8BIT)". */
 	    rb_define_module("Gem");
-	    Init_prelude();
 	    rb_const_remove(rb_cObject, rb_intern2("TMP_RUBY_PREFIX", 15));
 #endif
 	    ruby_vim_init();
