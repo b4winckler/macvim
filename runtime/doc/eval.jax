@@ -1,4 +1,4 @@
-*eval.txt*	For Vim バージョン 7.3.  Last change: 2010 Oct 27
+*eval.txt*	For Vim バージョン 7.3.  Last change: 2010 Nov 13
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -3884,7 +3884,7 @@ maparg({name}[, {mode} [, {abbr} [, {dict}]]])			*maparg()*
 			     加え、次の文字が使用される:
 			     " "     ノーマル、ビジュアル、オペレータ待機
 			     "!"     インサート、コマンドラインモード
-				     (|mapmpde-ic|)
+				     (|mapmode-ic|)
 		  "sid"	     <sid> マッピングで使用されるスクリプトローカルID
 			     (|<SID>|)。
 
