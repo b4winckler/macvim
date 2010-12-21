@@ -484,13 +484,11 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     int reply = NSTerminateNow;
     BOOL modifiedBuffers = NO;
 
-    // Go through windows, checking for modified buffers.  (Each Vim process
-    // tells MacVim when any buffer has been modified and MacVim sets the
-    // 'documentEdited' flag of the window correspondingly.)
-    NSEnumerator *e = [[NSApp windows] objectEnumerator];
-    id window;
-    while ((window = [e nextObject])) {
-        if ([window isDocumentEdited]) {
+    // Go through Vim controllers, checking for modified buffers.
+    NSEnumerator *e = [vimControllers objectEnumerator];
+    id vc;
+    while ((vc = [e nextObject])) {
+        if ([vc hasModifiedBuffer]) {
             modifiedBuffers = YES;
             break;
         }
@@ -522,7 +520,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
         // Count the number of open tabs
         e = [vimControllers objectEnumerator];
-        id vc;
         while ((vc = [e nextObject]))
             numTabs += [[vc objectForVimStateKey:@"numTabs"] intValue];
 
