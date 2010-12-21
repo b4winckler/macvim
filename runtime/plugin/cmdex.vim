@@ -3,7 +3,7 @@
 " cmdex.vim - Extra coomands
 "
 " Maintainer:	Muraoka Taro <koron@tka.att.ne.jp>
-" Last Change:	06-Feb-2006.
+" Last Change:	18-Dec-2010.
 " Commands:
 "		:MenuLang {language}
 "		    (language: none/ja/zh...etc.)
@@ -122,4 +122,4 @@ endfunction
 
 " :Undiff
 "   Turn off diff mode for current buffer.
-command! -nargs=0 Undiff set nodiff noscrollbind wrap
+command! -nargs=0 Undiff set nodiff noscrollbind wrap nocursorbind
