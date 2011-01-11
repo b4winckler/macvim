@@ -1,4 +1,4 @@
-*usr_41.txt*	For Vim バージョン 7.3.  Last change: 2010 Oct 31
+*usr_41.txt*	For Vim バージョン 7.3.  Last change: 2010 Nov 17
 
 		     VIM USER MANUAL - by Bram Moolenaar
 
@@ -771,6 +771,7 @@ Quickfixとロケーションリスト:			*quickfix-functions*
 	synIDattr()		シンタックスIDから指定の属性を得る
 	synIDtrans()		変換したシンタックスIDを得る
 	synstack()		指定位置のシンタックスIDのリストを得る
+	synconcealed()		conceal の情報を得る
 	diff_hlID()		diffモードの指定位置のシンタックスIDを得る
 	matchadd()		強調表示するパターンを定義する
 	matcharg()		|:match|の引数の情報を得る

@@ -1,4 +1,4 @@
-*cmdline.txt*   For Vim バージョン 7.3.  Last change: 2010 Sep 18
+*cmdline.txt*   For Vim バージョン 7.3.  Last change: 2010 Nov 28
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -745,7 +745,7 @@ Note: "#<n" 以外は、ユーザに打ち込まれた通りのファイル名�
 			       *:<cword>* *:<cWORD>* *:<cfile>* *<cfile>*
 			       *:<sfile>* *<sfile>* *:<afile>* *<afile>*
 			       *:<abuf>* *<abuf>* *:<amatch>* *<amatch>*
-			       *E495* *E496* *E497* *E498* *E499* *E500*
+			       *E495* *E496* *E497* *E499* *E500*
 Note: これらは文字通りに打ち込まれる、これらは特別なキーではない！
 	<cword>    カーソル下の word に置き換えられる (|star| と同様)
 	<cWORD>    カーソル下の WORD に置き換えられる (|WORD| を参照)
@@ -761,11 +761,14 @@ Note: これらは文字通りに打ち込まれる、これらは特別なキ�
 		   いないときのみ、<afile> と違う値になる (イベント FileType
 		   や Syntax、SpellFileMissing 用)。
 	<sfile>    コマンド ":source" の実行時、取り込まれたファイルのファイル
-		   名に置き換えられる。
+		   名に置き換えられる。  *E498*
 		   関数の実行時、"関数 {関数名}" に置き換えられる。関数呼び出
 		   しのネスト (入れ子状態) はこのように表される:
 		   "関数 {関数名1}..{関数名2}"。 Note: 関数内で <sfile> が使わ
 		   れている場合、ファイル名修飾子は無効になることに注意。
+	<slnum>	   コマンド ":source" の実行時、行番号に置き換えられる。
+	           *E842*
+		   関数の中では、関数の先頭からの相対的な行番号になる。
 
 							 *filename-modifiers*
 	 *:_%:* *::8* *::p* *::.* *::~* *::h* *::t* *::r* *::e* *::s* *::gs*
