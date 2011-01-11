@@ -224,6 +224,7 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 #ifdef INCLUDE_OLD_IM_CODE
         [NSNumber numberWithBool:NO],   MMUseInlineImKey,
 #endif // INCLUDE_OLD_IM_CODE
+        [NSNumber numberWithBool:NO],   MMSuppressTerminationAlertKey,
         nil];
 
     [[NSUserDefaults standardUserDefaults] registerDefaults:dict];
@@ -512,7 +513,8 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
             reply = NSTerminateCancel;
 
         [alert release];
-    } else {
+    } else if (![[NSUserDefaults standardUserDefaults]
+                                boolForKey:MMSuppressTerminationAlertKey]) {
         // No unmodified buffers, but give a warning if there are multiple
         // windows and/or tabs open.
         int numWindows = [vimControllers count];
@@ -533,6 +535,9 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
             [alert setMessageText:NSLocalizedString(
                     @"Are you sure you want to quit MacVim?",
                     @"Quit dialog with no changed buffers, title")];
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+            [alert setShowsSuppressionButton:YES];
+#endif
 
             NSString *info = nil;
             if (numWindows > 1) {
@@ -561,6 +566,13 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
             if ([alert runModal] != NSAlertFirstButtonReturn)
                 reply = NSTerminateCancel;
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+            if ([[alert suppressionButton] state] == NSOnState) {
+                [[NSUserDefaults standardUserDefaults]
+                            setBool:YES forKey:MMSuppressTerminationAlertKey];
+            }
+#endif
 
             [alert release];
         }
@@ -1408,7 +1420,16 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
 - (MMVimController *)topmostVimController
 {
-    // Find the topmost visible window which has an associated vim controller.
+    // Find the topmost visible window which has an associated vim controller
+    // as follows:
+    //
+    // 1. Search through ordered windows as determined by NSApp.  Unfortunately
+    //    this method can fail, e.g. if a full screen window is on another
+    //    "Space" (in this case NSApp returns no windows at all), so we have to
+    //    fall back on ...
+    // 2. Search through all Vim controllers and return the first visible
+    //    window.
+
     NSEnumerator *e = [[NSApp orderedWindows] objectEnumerator];
     id window;
     while ((window = [e nextObject]) && [window isVisible]) {
@@ -1417,6 +1438,14 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
             MMVimController *vc = [vimControllers objectAtIndex:i];
             if ([[[vc windowController] window] isEqual:window])
                 return vc;
+        }
+    }
+
+    unsigned i, count = [vimControllers count];
+    for (i = 0; i < count; ++i) {
+        MMVimController *vc = [vimControllers objectAtIndex:i];
+        if ([[[vc windowController] window] isVisible]) {
+            return vc;
         }
     }
 

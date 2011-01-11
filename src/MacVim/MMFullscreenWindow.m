@@ -37,11 +37,21 @@
 #define FUOPT_MAXHORZ         0x002
 #define FUOPT_BGCOLOR_HLGROUP 0x004
 
+// Used for 'state' variable
+enum {
+    BeforeFullScreen = 0,
+    InFullScreen,
+    LeftFullScreen
+};
+
 
 @interface MMFullscreenWindow (Private)
 - (BOOL)isOnPrimaryScreen;
-- (void)handleWindowDidBecomeMainNotification:(NSNotification *)notification;
-- (void)handleWindowDidResignMainNotification:(NSNotification *)notification;
+- (void)windowDidBecomeMain:(NSNotification *)notification;
+- (void)windowDidResignMain:(NSNotification *)notification;
+- (void)windowDidMove:(NSNotification *)notification;
+- (void)applicationDidChangeScreenParameters:(NSNotification *)notification;
+- (void)resizeVimView;
 @end
 
 @implementation MMFullscreenWindow
@@ -77,17 +87,26 @@
     [self setBackgroundColor:back];
     [self setReleasedWhenClosed:NO];
 
-    [[NSNotificationCenter defaultCenter]
-        addObserver:self
-           selector:@selector(handleWindowDidBecomeMainNotification:)
+    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+    [nc addObserver:self
+           selector:@selector(windowDidBecomeMain:)
                name:NSWindowDidBecomeMainNotification
              object:self];
 
-    [[NSNotificationCenter defaultCenter]
-        addObserver:self
-           selector:@selector(handleWindowDidResignMainNotification:)
+    [nc addObserver:self
+           selector:@selector(windowDidResignMain:)
                name:NSWindowDidResignMainNotification
              object:self];
+
+    [nc addObserver:self
+           selector:@selector(windowDidMove:)
+               name:NSWindowDidMoveNotification
+             object:self];
+
+    [nc addObserver:self
+           selector:@selector(applicationDidChangeScreenParameters:)
+               name:NSApplicationDidChangeScreenParametersNotification
+             object:NSApp];
 
     // NOTE: Vim needs to process mouse moved events, so enable them here.
     [self setAcceptsMouseMovedEvents:YES];
@@ -115,6 +134,11 @@
 - (void)enterFullscreen
 {
     ASLogDebug(@"Enter full screen now");
+
+    // Hide Dock and menu bar now to avoid the hide animation from playing
+    // after the fade to black (see also windowDidBecomeMain:).
+    if ([self isOnPrimaryScreen])
+        SetSystemUIMode(kUIModeAllSuppressed, 0);
 
     // fade to black
     Boolean didBlend = NO;
@@ -148,8 +172,13 @@
     
     // NOTE: Calling setTitle:nil causes an exception to be raised (and it is
     // possible that 'target' has no title when we get here).
-    if ([target title])
+    if ([target title]) {
         [self setTitle:[target title]];
+
+        // NOTE: Cocoa does not add borderless windows to the "Window" menu so
+        // we have to do it manually.
+        [NSApp changeWindowsItem:self title:[target title] filename:NO];
+    }
 
     [self setOpaque:[target isOpaque]];
 
@@ -157,68 +186,32 @@
     // focus gained message  
     [self setDelegate:delegate];
 
-    // resize vim view according to options
-    int currRows, currColumns;
-    [[view textView] getMaxRows:&currRows columns:&currColumns];
+    // Store view dimension used before entering full screen, then resize the
+    // view to match 'fuopt'.
+    [[view textView] getMaxRows:&nonFuRows columns:&nonFuColumns];
+    [self resizeVimView];
 
-    int fuRows = currRows, fuColumns = currColumns;
-
-    // NOTE: Do not use [NSScreen visibleFrame] when determining the screen
-    // size since it compensates for menu and dock.
-    int maxRows, maxColumns;
-    NSSize size = [[self screen] frame].size;
-    [view constrainRows:&maxRows columns:&maxColumns toSize:size];
-
-    // Store current pre-fu vim size
-    nonFuRows = currRows;
-    nonFuColumns = currColumns;
-
-    // Compute current fu size
-    if (options & FUOPT_MAXVERT)
-        fuRows = maxRows;
-    if (options & FUOPT_MAXHORZ)
-        fuColumns = maxColumns;
-
+    // Store options used when entering full screen so that we can restore
+    // dimensions when exiting full screen.
     startFuFlags = options;
 
-    // if necessary, resize vim to target fu size
-    if (currRows != fuRows || currColumns != fuColumns) {
-
-        // The size sent here is queued and sent to vim when it's in
-        // event processing mode again. Make sure to only send the values we
-        // care about, as they override any changes that were made to 'lines'
-        // and 'columns' after 'fu' was set but before the event loop is run.
-        NSData *data = nil;
-        int msgid = 0;
-        if (currRows != fuRows && currColumns != fuColumns) {
-            int newSize[2] = { fuRows, fuColumns };
-            data = [NSData dataWithBytes:newSize length:2*sizeof(int)];
-            msgid = SetTextDimensionsMsgID;
-        } else if (currRows != fuRows) {
-            data = [NSData dataWithBytes:&fuRows length:sizeof(int)];
-            msgid = SetTextRowsMsgID;
-        } else if (currColumns != fuColumns) {
-            data = [NSData dataWithBytes:&fuColumns length:sizeof(int)];
-            msgid = SetTextColumnsMsgID;
-        }
-        NSParameterAssert(data != nil && msgid != 0);
-
-        MMVimController *vimController =
-            [[self windowController] vimController];
-
-        [vimController sendMessage:msgid data:data];
-        [[view textView] setMaxRows:fuRows columns:fuColumns];
-    }
-
-    startFuRows = fuRows;
-    startFuColumns = fuColumns;
-
-    // move vim view to the window's center
-    [self centerView];
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // HACK! Put window on all Spaces to avoid Spaces (available on OS X 10.5
+    // and later) from moving the full screen window to a separate Space from
+    // the one the decorated window is occupying.  The collection behavior is
+    // restored further down.
+    NSWindowCollectionBehavior wcb = [self collectionBehavior];
+    [self setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
+#endif
 
     // make us visible and target invisible
     [target orderOut:self];
     [self makeKeyAndOrderFront:self];
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // Restore collection behavior (see hack above).
+    [self setCollectionBehavior:wcb];
+#endif
 
     // fade back in
     if (didBlend) {
@@ -226,6 +219,8 @@
             kCGDisplayBlendNormal, .0, .0, .0, false);
         CGReleaseDisplayFadeReservation(token);
     }
+
+    state = InFullScreen;
 }
 
 - (void)leaveFullscreen
@@ -292,7 +287,22 @@
     // button on the tabline steals the first responder status.
     [target setInitialFirstResponder:[view textView]];
 
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // HACK! Put decorated window on all Spaces (available on OS X 10.5 and
+    // later) so that the decorated window stays on the same Space as the full
+    // screen window (they may occupy different Spaces e.g. if the full screen
+    // window was dragged to another Space).  The collection behavior is
+    // restored further down.
+    NSWindowCollectionBehavior wcb = [target collectionBehavior];
+    [target setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
+#endif
+
     [target makeKeyAndOrderFront:self];
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // Restore collection behavior (see hack above).
+    [target setCollectionBehavior:wcb];
+#endif
 
     // ...but we don't want a focus gained message either, so don't set this
     // sooner
@@ -306,6 +316,9 @@
     }
     
     [self autorelease]; // Balance the above retain
+
+    state = LeftFullScreen;
+    ASLogDebug(@"Left full screen");
 }
 
 // Title-less windows normally don't receive key presses, override this
@@ -376,7 +389,7 @@
     return [self screen] == [screens objectAtIndex:0];
 }
 
-- (void)handleWindowDidBecomeMainNotification:(NSNotification *)notification
+- (void)windowDidBecomeMain:(NSNotification *)notification
 {
     // Hide menu and dock, both appear on demand.
     //
@@ -394,12 +407,110 @@
     }
 }
 
-- (void)handleWindowDidResignMainNotification:(NSNotification *)notification
+- (void)windowDidResignMain:(NSNotification *)notification
 {
     // order menu and dock back in
     if ([self isOnPrimaryScreen]) {
         SetSystemUIMode(kUIModeNormal, 0);
     }
+}
+
+- (void)windowDidMove:(NSNotification *)notification
+{
+    if (state != InFullScreen)
+        return;
+
+    // Window may move as a result of being dragged between Spaces.
+    ASLogDebug(@"Full screen window moved, ensuring it covers the screen...");
+
+    // Ensure the full screen window is still covering the entire screen and
+    // then resize view according to 'fuopt'.
+    [self setFrame:[[self screen] frame] display:NO];
+    [self resizeVimView];
+}
+
+- (void)applicationDidChangeScreenParameters:(NSNotification *)notification
+{
+    if (state != InFullScreen)
+        return;
+
+    // This notification is sent when screen resolution may have changed (e.g.
+    // due to a monitor being unplugged or the resolution being changed
+    // manually) but it also seems to get called when the Dock is
+    // hidden/displayed.
+    ASLogDebug(@"Screen unplugged / resolution changed");
+
+    NSScreen *screen = [target screen];
+    if (!screen) {
+        // Paranoia: if window we originally used for full screen is gone, try
+        // screen window is on now, and failing that (not sure this can happen)
+        // use main screen.
+        screen = [self screen];
+        if (!screen)
+            screen = [NSScreen mainScreen];
+    }
+
+    // Ensure the full screen window is still covering the entire screen and
+    // then resize view according to 'fuopt'.
+    [self setFrame:[screen frame] display:NO];
+    [self resizeVimView];
+}
+
+- (void)resizeVimView
+{
+    // Resize vim view according to options
+    int currRows, currColumns;
+    [[view textView] getMaxRows:&currRows columns:&currColumns];
+
+    int fuRows = currRows, fuColumns = currColumns;
+
+    // NOTE: Do not use [NSScreen visibleFrame] when determining the screen
+    // size since it compensates for menu and dock.
+    int maxRows, maxColumns;
+    NSSize size = [[self screen] frame].size;
+    [view constrainRows:&maxRows columns:&maxColumns toSize:size];
+
+    // Compute current fu size
+    if (options & FUOPT_MAXVERT)
+        fuRows = maxRows;
+    if (options & FUOPT_MAXHORZ)
+        fuColumns = maxColumns;
+
+    // if necessary, resize vim to target fu size
+    if (currRows != fuRows || currColumns != fuColumns) {
+        // The size sent here is queued and sent to vim when it's in
+        // event processing mode again. Make sure to only send the values we
+        // care about, as they override any changes that were made to 'lines'
+        // and 'columns' after 'fu' was set but before the event loop is run.
+        NSData *data = nil;
+        int msgid = 0;
+        if (currRows != fuRows && currColumns != fuColumns) {
+            int newSize[2] = { fuRows, fuColumns };
+            data = [NSData dataWithBytes:newSize length:2*sizeof(int)];
+            msgid = SetTextDimensionsMsgID;
+        } else if (currRows != fuRows) {
+            data = [NSData dataWithBytes:&fuRows length:sizeof(int)];
+            msgid = SetTextRowsMsgID;
+        } else if (currColumns != fuColumns) {
+            data = [NSData dataWithBytes:&fuColumns length:sizeof(int)];
+            msgid = SetTextColumnsMsgID;
+        }
+        NSParameterAssert(data != nil && msgid != 0);
+
+        MMVimController *vc = [[self windowController] vimController];
+        [vc sendMessage:msgid data:data];
+        [[view textView] setMaxRows:fuRows columns:fuColumns];
+    }
+
+    // The new view dimensions are stored and then consulted when attempting to
+    // restore the windowed view dimensions when leaving full screen.
+    // NOTE: Store them here and not only in enterFullscreen, otherwise the
+    // windowed view dimensions will not be restored if the full screen was on
+    // a screen that later was unplugged.
+    startFuRows = fuRows;
+    startFuColumns = fuColumns;
+
+    [self centerView];
 }
 
 @end // MMFullscreenWindow (Private)
