@@ -1,9 +1,9 @@
                    Vim version 7.3 香り屋版 導入マニュアル
 
-                                                         Version: 1.5.1
+                                                         Version: 1.5.3
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 06-Nov-2010.
+                                                     Last Change: 09-Jan-2011.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -21,12 +21,12 @@
   いるので、解凍してシステム内の好きな場所に配置してください。
 
   32bit版
-    配布ファイル: vim73-YYYYMMDD-kaoriya-w32j.zip
-    Vimプログラムフォルダ: vim73-kaoriya-w32j
+    配布ファイル: vim73-YYYYMMDD-kaoriya-msvc10_x32j.zip
+    Vimプログラムフォルダ: vim73-kaoriya-msvc10_x32j.zip
 
   64bit版
-    配布ファイル: vim73-YYYYMMDD-kaoriya-w64j.zip
-    Vimプログラムフォルダ: vim73-kaoriya-w64j
+    配布ファイル: vim73-YYYYMMDD-kaoriya-msvc10_x64j.zip
+    Vimプログラムフォルダ: vim73-kaoriya-msvc10_x64j
 
   上記のYYYYMMDDにはリリースの年月日が入ります。
 
@@ -167,7 +167,7 @@ Vimの拡張機能について
   何よりも、素晴らしいエディタであるVimをフリーソフトウェアとして公開&管理し、
   今回の日本語版の公開を快諾していただいたBram Moolenaar氏に最大の感謝をいたし
   ます。また、この配布パッケージには以下の方々によるファイル・ドキュメントが含
-  まれています。加えて香り屋版の作成に関連して、多くの方いから様々なアイデアや
+  まれています。加えて香り屋版の作成に関連して、多くの方々から様々なアイデアや
   バグ報告をいただきました。皆様協力ありがとうございます。
 
   (アルファベット順)
@@ -179,6 +179,8 @@ Vimの拡張機能について
     runtime/keymap/tutcode_cp932.vim
   - MATSUMOTO Yasuhiro <mattn_jp@hotmail.com>
     diffs/ (一部コード流用/アドバイス/遊び仲間)
+  - NAKADAIRA Yukihiro <http://code.google.com/u/yukihiro.nakadaira/>
+    plugins/autofmt
   - NISHIOKA Takuhiro <takuhiro@super.win.ne.jp>
     runtime/plugin/format.vim (Vim6対応改造版)
   - TAKASUKA Yoshihiro <tesuri@d1.dion.ne.jp>

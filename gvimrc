@@ -3,8 +3,8 @@
 " An example for a Japanese version gvimrc file.
 " 日本語版のデフォルトGUI設定ファイル(gvimrc) - Vim7用試作
 "
-" Last Change: 08-Jul-2007.
-" Maintainer:  MURAOKA Taro <koron@tka.att.ne.jp>
+" Last Change: 09-Jan-2011.
+" Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 "
 " 解説:
 " このファイルにはVimの起動時に必ず設定される、GUI関連の設定が書かれていま
@@ -173,4 +173,4 @@ if has('printer')
   endif
 endif
 
-" Copyright (C) 2007 KaoriYa/MURAOKA Taro
+" Copyright (C) 2011 KaoriYa/MURAOKA Taro

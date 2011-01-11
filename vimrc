@@ -3,8 +3,8 @@
 " An example for a Japanese version vimrc file.
 " 日本語版のデフォルト設定ファイル(vimrc) - Vim7用試作
 "
-" Last Change: 24-Jul-2007.
-" Maintainer:  MURAOKA Taro <koron@tka.att.ne.jp>
+" Last Change: 09-Jan-2011.
+" Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 "
 " 解説:
 " このファイルにはVimの起動時に必ず設定される、編集時の挙動に関する設定が書
@@ -138,8 +138,6 @@ set showmatch
 set wildmenu
 " テキスト挿入中の自動折り返しを日本語に対応させる
 set formatoptions+=mM
-" 日本語整形スクリプト(by. 西岡拓洋さん)用の設定
-let format_allow_over_tw = 1	" ぶら下り可能幅
 
 "---------------------------------------------------------------------------
 " GUI固有ではない画面表示の設定:
@@ -216,4 +214,11 @@ if has('mac')
   set iskeyword=@,48-57,_,128-167,224-235
 endif
 
-" Copyright (C) 2007 KaoriYa/MURAOKA Taro
+"---------------------------------------------------------------------------
+" KaoriYaでバンドルしているプラグインのための設定
+
+" autofmt: 日本語文章のフォーマット(折り返し)プラグイン.
+set runtimepath+=$VIM/plugins/autofmt
+set formatexpr=autofmt#japanese#formatexpr()
+
+" Copyright (C) 2011 KaoriYa/MURAOKA Taro
