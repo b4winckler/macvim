@@ -112,8 +112,8 @@ unlet s:cpo_save
 " An example for a Japanese version gvimrc file.
 " 日本語版のデフォルトGUI設定ファイル(gvimrc) - Vim7用試作
 "
-" Last Change: 08-Jul-2007.
-" Maintainer:  MURAOKA Taro <koron@tka.att.ne.jp>
+" Last Change: 09-Jan-2011.
+" Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 "
 " 解説:
 " このファイルにはVimの起動時に必ず設定される、GUI関連の設定が書かれていま
@@ -186,9 +186,10 @@ if has('win32')
   if has('kaoriya')
     set ambiwidth=auto
   endif
-elseif has('mac') || has('gui_macvim')
+elseif has('gui_macvim')
   set guifont=Osaka-Mono:h14
-  set guifontwide=Osaka-Mono:h14
+elseif has('mac')
+  set guifont=Osaka－等幅:h14
 elseif has('xfontset')
   " UNIX用 (xfontsetを使用)
   set guifontset=a14,r14,k14
@@ -209,11 +210,10 @@ set cmdheight=2
 "---------------------------------------------------------------------------
 " 日本語入力に関する設定:
 "
-if has('multi_byte_ime') || has('xim') || has('mac') || has('gui_macvim')
+if has('multi_byte_ime') || has('xim') || has('gui_macvim')
   " IME ON時のカーソルの色を設定(設定例:紫)
   highlight CursorIM guibg=Purple guifg=NONE
   " 挿入モード・検索モードでのデフォルトのIME状態設定
-  set noimdisable
   set iminsert=0 imsearch=0
   if has('xim') && has('GUI_GTK')
     " XIMの入力開始キーを設定:
@@ -284,8 +284,12 @@ if has('printer')
   endif
 endif
 
-" Copyright (C) 2007 KaoriYa/MURAOKA Taro
+" Copyright (C) 2011 KaoriYa/MURAOKA Taro
 
-if has('gui_macvim')
-  let $SSH_ASKPASS = simplify($VIM . '/../../MacOS') . '/macvim-askpass'
-endif
+
+"
+" MacVim-KaoriYa固有の設定
+"
+let $SSH_ASKPASS = simplify($VIM . '/../../MacOS') . '/macvim-askpass'
+set noimdisable
+set imdisableactivate

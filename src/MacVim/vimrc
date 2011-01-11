@@ -3,8 +3,8 @@
 " An example for a Japanese version vimrc file.
 " 日本語版のデフォルト設定ファイル(vimrc) - Vim7用試作
 "
-" Last Change: 27-Oct-2010.
-" Maintainer:  MURAOKA Taro <koron@tka.att.ne.jp>
+" Last Change: 11-Jan-2011.
+" Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 "
 " 解説:
 " このファイルにはVimの起動時に必ず設定される、編集時の挙動に関する設定が書
@@ -142,8 +142,6 @@ set showmatch
 set wildmenu
 " テキスト挿入中の自動折り返しを日本語に対応させる
 set formatoptions+=mM
-" 日本語整形スクリプト(by. 西岡拓洋さん)用の設定
-let format_allow_over_tw = 1	" ぶら下り可能幅
 
 "---------------------------------------------------------------------------
 " GUI固有ではない画面表示の設定:
@@ -220,10 +218,20 @@ if has('mac')
   set iskeyword=@,48-57,_,128-167,224-235
 endif
 
-if has('gui_macvim')
-  let $PATH = simplify($VIM . '/../../MacOS') . ':' . $PATH
-  set migemodict=$VIMRUNTIME/dict/migemo-dict
-  set migemo
-endif
+"---------------------------------------------------------------------------
+" KaoriYaでバンドルしているプラグインのための設定
 
-" Copyright (C) 2007 KaoriYa/MURAOKA Taro
+" autofmt: 日本語文章のフォーマット(折り返し)プラグイン.
+set runtimepath+=$VIM/plugins/autofmt
+set formatexpr=autofmt#japanese#formatexpr()
+
+" Copyright (C) 2011 KaoriYa/MURAOKA Taro
+
+
+"
+" MacVim-KaoriYa固有の設定
+"
+let $PATH = simplify($VIM . '/../../MacOS') . ':' . $PATH
+set runtimepath+=$VIM/plugins/pathogen
+set migemodict=$VIMRUNTIME/dict/migemo-dict
+set migemo
