@@ -1,4 +1,4 @@
-*eval.txt*	For Vim バージョン 7.3.  Last change: 2010 Nov 13
+*eval.txt*	For Vim バージョン 7.3.  Last change: 2010 Dec 01
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -2646,7 +2646,7 @@ exp({expr})						*exp()*
 							*expand()*
 expand({expr} [, {flag}])
 		ワイルドカードと{expr}内の特殊なキーワードを展開する。戻り値は
-		文字列。
+		文字列。 'wildignorecase' が適用される。
 
 		複数の候補があった場合、それらは文字<NL>で区切られる。[注意:
 		バージョン5.0では空白文字が用いられ、スペースを含むファイル名
@@ -2666,6 +2666,7 @@ expand({expr} [, {flag}])
 			<afile>		autocmdのファイル名
 			<abuf>		autocmdのバッファ名
 			<sfile>		取り込み(source)中のファイル名
+			<slnum>		取り込み(source)中の行番号
 			<cword>		カーソル下の単語(word)
 			<cWORD>		カーソル下の単語(WORD)
 			<client>	最後に受け取ったメッセージの{clientid}
@@ -2698,11 +2699,11 @@ expand({expr} [, {flag}])
 		結果はカレントディレクトリに'/'が付加されたものになる。
 
 		'%'や'#'や'<'で始まらない{expr}は、コマンドラインのファイル名
-		と同じように展開される。オプションの{flag}が使用され、その値が
-		非ゼロでない時以外は'suffixes'と'wildignore'が使用される。存在
-		しないファイルの名前も結果の文字列に含まれる。"**"を使うとディ
-		レクトリツリーを検索できる。例えば、カレントディレクトリ以下に
-		ある全ての"README"を見つけるには次のようにする: >
+		と同じように展開される。{flag}引数に非ゼロを指定しない限り、
+		'suffixes'と'wildignore'が使用される。存在しないファイルの名前
+		も結果の文字列に含まれる。"**"を使うとディレクトリツリーを検索
+		できる。例えば、カレントディレクトリ以下にある全ての"README"を
+		見つけるには次のようにする: >
 			:echo expand("**/README")
 <
 		expand()は、シェルの持っている変数や環境変数を展開することがで
@@ -3325,6 +3326,7 @@ glob({expr} [, {flag}])					*glob()*
 		{flag} に非零を指定しない限り、'suffixes' と 'wildignore' が適
 		用される。つまり'wildignore' のパターンにマッチする名前はス
 		キップされ、'suffixes' がマッチの順番に影響を与える。
+		'wildignorecase' は常に適用される。
 		展開が失敗した場合、結果は空文字列。結果には、存在しないファイ
 		ル名は含まれない。
 
@@ -5245,8 +5247,8 @@ stridx({haystack}, {needle} [, {start}])		*stridx()*
 		のバイトインデックスを表す。{start}を指定すると、インデックス
 		{start}の位置から検索を開始する。
 		2番目のマッチを探すには次のようにする: >
-			:let comma1 = stridx(line, ",")
-			:let comma2 = stridx(line, ",", comma1 + 1)
+			:let colon1 = stridx(line, ":")
+			:let colon2 = stridx(line, ":", colon1 + 1)
 <		検索は大文字・小文字を区別する。
 		検索パターンについては|match()|を使う。
 		{haystack}の中に{needle}がないときは-1を返す。

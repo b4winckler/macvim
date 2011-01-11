@@ -1,4 +1,4 @@
-*syntax.txt*	For Vim バージョン 7.3.  Last change: 2010 Oct 7
+*syntax.txt*	For Vim バージョン 7.3.  Last change: 2010 Dec 08
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -889,8 +889,8 @@ Slackwareキーワードを有効化するには次を起動設定ファイル�
 
 
 DOCBOOK					*docbk.vim* *ft-docbk-syntax* *docbook*
-DOCBOOK	XML				*docbkxml.vim* *ft-docbkxml-syntax*
-DOCBOOK	SGML				*docbksgml.vim* *ft-docbksgml-syntax*
+DOCBOOK XML				*docbkxml.vim* *ft-docbkxml-syntax*
+DOCBOOK SGML				*docbksgml.vim* *ft-docbksgml-syntax*
 
 DocBookファイルには2つの種類: SGMLとXMLがある。どちらのタイプを使用するのかを
 指定するには変数"b:docbk_type"をセットする。Vimがそのタイプを認識できた場合に

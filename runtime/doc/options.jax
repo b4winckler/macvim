@@ -1,4 +1,4 @@
-*options.txt*	For Vim バージョン 7.3.  Last change: 2010 Nov 16
+*options.txt*	For Vim バージョン 7.3.  Last change: 2010 Dec 08
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -1502,7 +1502,7 @@ Note 1番目の形式では、行全体がオプション指定に使われる�
 			す。ヤンクしたときはレジスタ '+' にテキストがコピーさ
 			れ、"unnamed" が指定されていればレジスタ '*' にもコ
 			ピーされます。
-			|+x11| 機能が有効な場合のみ利用可能。
+			|+X11| 機能が有効な場合のみ利用可能。
 			利用できるかどうかは次のコマンドで確認できます: >
 				if has('unnamedplus')
 <
@@ -2919,6 +2919,9 @@ Note 1番目の形式では、行全体がオプション指定に使われる�
 	  そのバッファでの値は変更されない。
 	'binary' がオンのときは、'fileformats' は使われない。
 
+	Note: Vim が空のバッファで起動されたときはこのオプションは使用されませ
+	ん。変更したい場合は .vimrc で 'fileformat' を設定してください。
+
 	DOS形式の <EOL> (<CR><NL>) のシステムでは、コマンド ":source" で読み込
 	まれるファイルと、ファイル vimrc については、<EOL> の判別が自動的に行
 	われる。
@@ -3295,8 +3298,9 @@ Note 1番目の形式では、行全体がオプション指定に使われる�
 
 	この関数が非ゼロを返すと Vim 内部の文章整形処理が使われる。
 
-	この式はサンドボックス|sandbox|の中で評価することができる。
-	|sandbox-option|を参照。
+	この式はサンドボックス (|sandbox|) の中で評価されることがあります。
+	|sandbox-option|を参照。その場合、サンドボックスの中ではバッファテキス
+	トの変更は許可されていないので、このオプションは機能しません。
 
 						*'fsync'* *'fs'*
 'fsync' 'fs'		切替	(既定ではオン)
@@ -6378,7 +6382,7 @@ Note 1番目の形式では、行全体がオプション指定に使われる�
 	C言語系のプログラミング言語で有効だが、他のプログラミング言語にも使え
 	る。オプション 'cindent' でも似たことができ、より多くの場面で適切に動
 	作するが、'cindent' の方がこちらより厳密である。 |C-indenting| を参照。
-	'cindent' か 'smartindent' がオンのときは 'si' をオンにしても効果はな
+	'cindent' か 'indentexpr' がオンのときは 'si' をオンにしても効果はな
 	い。'indentexpr' を使うとさらに高度な動作が実現できる。
 	'smartindent' を使うときは、'autoindent' もオンに設定するべきである。
 	インデントは、以下のときに自動的に挿入される。
@@ -7916,7 +7920,7 @@ Note 1番目の形式では、行全体がオプション指定に使われる�
 	げる。
 
 
-			*'wildignorecase* *'wic'* *'nowildignorecase* *'nowic'*
+			*'wildignorecase'* *'wic'* *'nowildignorecase'* *'nowic'*
 'wildignorecase' 'wic'	切替	(既定ではオフ)
 			グローバル
 			{Vi にはない}

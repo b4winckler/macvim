@@ -1,4 +1,4 @@
-*diff.txt*      For Vim バージョン 7.3.  Last change: 2010 Nov 03
+*diff.txt*      For Vim バージョン 7.3.  Last change: 2010 Dec 08
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -370,7 +370,7 @@ Vimは差分の出力結果が妥当であるか検証する。妥当でない�
 MS-Windows 用の Vim インストーラには diff プログラムが含まれています。もし
 diff プログラムを持っていない場合はどこかから diff.exe をダウンロードしてくだ
 さい。例えば次の場所から入手できます。
- http://jlb.twu.net/code/unixkit.php.
+http://gnuwin32.sourceforge.net/packages/diffutils.htm.
 
 
 パッチを使用する				*diff-patchexpr*
