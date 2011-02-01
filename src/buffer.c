@@ -272,7 +272,7 @@ open_buffer(read_stdin, eap, flags)
 	    do_modelines(0);
 
 	    /* specified ff and enc, bin in modelines */
-	    if (file_ff_differs(curbuf))
+	    if (file_ff_differs(curbuf, TRUE))
 	    {
 		/* reload buffer */
 		if (eap)

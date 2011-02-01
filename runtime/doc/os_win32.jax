@@ -1,4 +1,4 @@
-*os_win32.txt*  For Vim バージョン 7.3.  Last change: 2010 Jul 20
+*os_win32.txt*  For Vim バージョン 7.3.  Last change: 2010 Dec 19
 
 
 		  VIM REFERENCE MANUAL    by George Reilly
@@ -309,6 +309,7 @@ A. :!を使って外部コマンドを実行している場合、"start"と共�
    Vimの開いたファイルハンドルを受け渡されないため、Vimより早く終了する必要は
    ない。
    このような特別な動作を避けるには ":! start" を使う
+   "/min" 引数を指定すると、ウィンドウは最小化される。
 
 Q. Win32sを使っていて、"make"のような外部コマンドを実行すると、Vimはそれが終わ
    るまでまってくれない！ どうしたよいだろう！

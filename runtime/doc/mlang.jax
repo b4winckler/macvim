@@ -1,4 +1,4 @@
-*mlang.txt*     For Vim バージョン 7.3.  Last change: 2010 Jul 20
+*mlang.txt*     For Vim バージョン 7.3.  Last change: 2010 Dec 11
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -68,8 +68,8 @@ Vimはシステム環境からロケール(地域情報)を判定する。ほと
 			定する。
 			引数"ctype"を使用すると文字エンコードに利用する言語を
 			設定する。これはVimがリンクしているライブラリに影響を
-			与える。'encoding'と異なる値を指定するのは一般的ではな
-			い。これは$LC_CTYPEを設定する。
+			与える。"C"や'encoding'と異なる値を指定するのは一般的
+			ではない。これは$LC_CTYPEを設定する。
 			引数"time"を使用すると時刻と日付のメッセージに利用され
 			る言語を設定する。strftime()に影響を与える。これは
 			$LC_TIMEを設定する。

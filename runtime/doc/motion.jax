@@ -1028,20 +1028,20 @@ CTRL-I			ジャンプリストの中の [count] だけ新しいカーソル位�
 
 例えば、3回ジャンプを行った後ではジャンプリストは次のようになっています:
 
-  jump line  col file/line ~
+  jump line  col file/text ~
     3	  1    0 some text ~
     2	 70    0 another line ~
     1  1154   23 end. ~
  > ~
 
-"file/line" 欄はファイル名か現在のファイルであればジャンプするテキストを表示し
+"file/text" 欄はファイル名か現在のファイルであればジャンプするテキストを表示し
 ています(インデントは取り除かれ、そして長い行はウインドーに合うように短くカッ
 トされます)。
 
 現在1167行目にいるとして、CTRL-O コマンドを使うとカーソルは1154行目に移動しま
 す。結果として次のようになります:
 
-  jump line  file/line ~
+  jump line  file/text ~
     2	  1  some text ~
     1	 70  another line ~
  >  0  1154  end. ~
@@ -1070,7 +1070,7 @@ CTRL-I			ジャンプリストの中の [count] だけ新しいカーソル位�
 CTRL-O コマンドを行って1154行目に移動した後、他のジャンプコマンド(例えば: "G")
 を実行したとするとジャンプリストは次のようになります:
 
-  jump line  col file/line ~
+  jump line  col file/text ~
     4	  1    0 some text ~
     3	 70    0 another line ~
     2  1167    0 foo bar ~

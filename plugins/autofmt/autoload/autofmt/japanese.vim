@@ -1,6 +1,6 @@
 " Maintainer:   Yukihiro Nakadaira <yukihiro.nakadaira@gmail.com>
 " License:      This file is placed in the public domain.
-" Last Change:  2011-01-08
+" Last Change:  2011-01-11
 "
 " Options:
 "
@@ -43,21 +43,26 @@ let s:lib.autofmt_allow_over_tw = 0
 " should be dangled over the 'textwidth' or commited to next line with
 " previous character.
 let s:lib.autofmt_allow_over_tw_char = ""
-      \ . ",)]}、〕〉》」』】〙〗〟’”⦆»"
-      \ . "ヽヾーァィゥェォッャュョヮヵヶゝゞぁぃぅぇぉっゃゅょゃゎゕゖ々"
-      \ . "‐゠–〜"
-      \ . "?!‼⁇⁈⁉"
+      \ . ",)]}、〕〉》」』】〟’”»"
+      \ . "ヽヾーァィゥェォッャュョヮヵヶゝゞぁぃぅぇぉっゃゅょゃゎ々"
+      \ . "‐"
+      \ . "?!"
       \ . "・:;"
       \ . "。."
 " compatible character with different width or code point
 let s:lib.autofmt_allow_over_tw_char .= ""
       \ . "°′″，．：；？！）］｝…～"
+" not in cp932
+if &encoding == 'utf-8'
+  let s:lib.autofmt_allow_over_tw_char .= "〙〗⦆ゕゖ゠–〜‼⁇⁈⁉"
+endif
+
 
 function! s:lib.check_boundary(lst, i)
   let [lst, i] = [a:lst, a:i]
-  let tw = &textwidth + self.get_opt("autofmt_allow_over_tw")
+  let tw = self.textwidth + self.get_opt("autofmt_allow_over_tw")
   let tw_char = self.get_opt("autofmt_allow_over_tw_char")
-  if &textwidth < lst[i].virtcol && lst[i].virtcol <= tw
+  if self.textwidth < lst[i].virtcol && lst[i].virtcol <= tw
     " Dangling wrap.  Allow character, prohibited a line break before, to
     " over 'textwidth'.
     if stridx(tw_char, lst[i].c) != -1

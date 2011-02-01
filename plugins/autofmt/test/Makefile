@@ -1,6 +1,6 @@
 VIMPROG = vim
 
-SCRIPTS = test1.out test2.out test3.out
+SCRIPTS := $(patsubst %.ok, %.out, $(wildcard *.ok))
 
 .SUFFIXES: .in .out
 
@@ -15,7 +15,7 @@ report:
 		fi"
 
 clean:
-	-rm -rf *.out *.failed test.log test.ok X*
+	-rm -rf *.out *.failed test.log test.ok X* debug.log
 
 .in.out:
 	-rm -rf $*.failed test.ok test.out X*

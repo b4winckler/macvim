@@ -1911,7 +1911,7 @@ tabpagenr( [{arg}])		数値	現在または最後のタブページの番号
 tabpagewinnr( {tabarg}[, {arg}])
 				数値	タブページ内の現在のウィンドウの番号
 taglist( {expr})		リスト	{expr}にマッチするタグのリスト
-tagfiles()			リスト  使用しているタグファイルのリスと
+tagfiles()			リスト  使用しているタグファイルのリスト
 tempname()			文字列	テンポラリファイルの名前
 tan( {expr})			浮動小数点数	{expr}のタンジェント
 tanh( {expr})			浮動小数点数	{expr}のハイパボリックタンジェ
@@ -1920,8 +1920,7 @@ tolower( {expr})		文字列	文字列{expr}を小文字にする
 toupper( {expr})		文字列	文字列{expr}を大文字にする
 tr( {src}, {fromstr}, {tostr})	文字列	{src}中に現れる文字{fromstr}を{tostr}
 					に変換する。
-trunc( {expr}			浮動小数点数	浮動小数点数 {expr} を切り詰め
-				    	る
+trunc( {expr}			浮動小数点数	浮動小数点数{expr}を切り詰める
 type( {name})			数値	変数{name}の型
 undofile( {name})		文字列	{name}に対するアンドゥファイルの名前
 undotree()			リスト	アンドゥファイルツリー
@@ -5904,17 +5903,17 @@ cmdline_compl		|cmdline-completion| コマンドライン補完をサポート
 cmdline_hist		|cmdline-history| コマンドライン履歴をサポート
 cmdline_info		'showcmd'と'ruler'をサポート
 comments		|'comments'|をサポート
+compatible		Vi互換度を非常に高めてコンパイルされている
 cryptv			暗号化をサポート |encryption|
 cscope			|cscope|をサポート
-compatible		Vi互換度を非常に高めてコンパイルされている
 debug			デバッグバージョンである
 dialog_con		コンソールダイアログのサポート
 dialog_gui		GUIダイアログのサポート
 diff			Compiled with |vimdiff| and 'diff' support.
 digraphs		digraphsをサポート
 dnd			レジスタ"~をサポート |quote_~|.
-dos32			32ビットDOSバージョン (DJGPP)
 dos16			16ビットDOSバージョン
+dos32			32ビットDOSバージョン (DJGPP)
 ebcdic			EBCDIC文字集合のマシン用
 emacs_tags		Emacs式のタグファイルをサポート
 eval			式評価をサポート。もちろん常に真。
@@ -5934,15 +5933,15 @@ fork			system()の代わりにfork()/exec()を用いている
 gettext			翻訳メッセージをサポート |multi-lang|
 gui			GUIが有効である
 gui_athena		AthenaのGUIが有効である
-gui_gtk			GTK+のGUIが有効である
 gui_gnome		Gnomeサポート(gui_gtkも定義される)
+gui_gtk			GTK+のGUIが有効である
 gui_gtk2		GTK+ 2のGUIが有効である (gui_gtkも定義される)
 gui_mac			マッキントッシュのGUIが有効である
 gui_motif		MotifのGUIが有効である
 gui_photon		PhotonのGUIが有効である
+gui_running		VimがGUIモードで起動している、もしくは間もなくする
 gui_win32		Win32のGUIが有効である
 gui_win32s		Win32sのGUIが有効である (Windows 3.1)
-gui_running		VimがGUIモードで起動している、もしくは間もなくする
 hangul_input		ハングル入力サポート
 iconv			iconv()をサポート
 insert_expand		インサートモード時にCTRL-Xの展開がサポートされる
@@ -5962,20 +5961,20 @@ menu			|:menu|をサポート
 mksession		|:mksession|をサポート
 modify_fname		ファイル名変換子をサポート |filename-modifiers|
 mouse			マウスをサポート
-mouseshape		'mouseshape'をサポート
 mouse_dec		DECのターミナルマウスをサポート
 mouse_gpm		gpmをサポート (Linuxのコンソールマウス)
 mouse_netterm		nettermのマウスをサポート
 mouse_pterm		qnx ptermのマウスをサポート
 mouse_sysmouse		sysmouse (*BSD コンソールマウス)をサポート
 mouse_xterm		xtermのマウスをサポート
+mouseshape		'mouseshape'をサポート
 multi_byte		'encoding' をサポート
 multi_byte_encoding	'encoding' がマルチバイトエンコーディングになる
 multi_byte_ime		IMEによる入力をサポート
 multi_lang		複数言語をサポート
 mzscheme		MzSchemeインターフェイスをサポート |mzscheme|.
-netbeans_intg		|netbeans|をサポート
 netbeans_enabled	|netbeans|をサポートし、現在接続している
+netbeans_intg		|netbeans|をサポート
 ole			Win32にてOLEオートメーションをサポート
 os2			OS/2バージョン
 osfiletype		osfiletypesをサポート |+osfiletype|
@@ -5983,6 +5982,8 @@ path_extra		'path'と'tags'の上方・下方検索をサポート
 perl			Perlインターフェイスをサポート
 persistent_undo		永続アンドゥをサポート
 postscript		PostScriptファイルの印刷をサポート
+printer			|:hardcopy| をサポート
+profile			|:profile| をサポート
 python			Pythonインターフェイスをサポート
 qnx			QNXバージョン
 quickfix		|quickfix|をサポート
@@ -5994,11 +5995,11 @@ showcmd			'showcmd'をサポート
 signs			|:sign|をサポート
 smartindent		'smartindent'をサポート
 sniff			SniFFインターフェイスをサポート
+spell			スペルチェックをサポート |spell|
 startuptime		|--startuptime| をサポート
 statusline		'statusline', 'rulerformat'そして'titlestring'と
 			'iconstring'の特殊フォーマットをサポート
 sun_workshop		Sun |workshop|をサポート
-spell			スペルチェックをサポート |spell|
 syntax			構文ハイライトをサポート
 syntax_items		現在のバッファに有効なシンタックスが設定されている
 system			fork()/exec()の代わりにsystem()が使用されている
@@ -6014,9 +6015,9 @@ title			ウィンドウタイトルをサポート |'title'|.
 toolbar			|gui-toolbar|をサポート
 unix			UNIXバージョン
 user_commands		ユーザ定義コマンドをサポート
-viminfo			viminfoをサポート
-vim_starting		Vimの初期化プロセス中は真となる。|startup|
 vertsplit		ウィンドウの垂直分割をサポート |:vsplit|
+vim_starting		Vimの初期化プロセス中は真となる。|startup|
+viminfo			viminfoをサポート
 virtualedit		オプション'virtualedit'をサポート
 visual			ビジュアルモードをサポート
 visualextra		拡張Visualモードをサポート |blockwise-operators|
@@ -6024,13 +6025,13 @@ vms			VMSバージョン
 vreplace		コマンド|gR|と|gr|をサポート
 wildignore		オプション'wildignore'をサポート
 wildmenu		オプション'wildmenu'を指定してコンパイル
-windows			複数ウィンドウをサポート
-winaltkeys		オプション'winaltkeys'を指定してコンパイル
 win16			Win16バージョン(Windows 3.1)
 win32			Win32バージョン(Windows 95/98/ME/NT/2000/XP)
-win64			Win64バージョン(Windows 64 bit)
 win32unix		Win32バージョン。Unixファイルを使用 (Cygwin)
+win64			Win64バージョン(Windows 64 bit)
 win95			Win32バージョン。MS-Windows 95/98/ME用。
+winaltkeys		オプション'winaltkeys'を指定してコンパイル
+windows			複数ウィンドウをサポート
 writebackup		オプション'writebackup'が起動時にonになる
 xfontset		X fontsetをサポート |xfontset|
 xim			XIMをサポート |xim|

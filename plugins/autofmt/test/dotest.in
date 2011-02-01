@@ -1,4 +1,4 @@
 :set cp
-:map clean :set autoindent& expandtab& copyindent& formatoptions& textwidth& comments& formatlistpat&
+:map clean :set all& cp:source `=g:__vimrc`
 :map dotest /^STARTTESTj:set ff=unix cpo-=A:.,/ENDTEST/-1w! Xdotest:set ff& cpo+=Anj0:so! Xdotestcleandotest
 dotest

@@ -1,4 +1,4 @@
-*undo.txt*      For Vim バージョン 7.3.  Last change: 2010 Oct 21
+*undo.txt*      For Vim バージョン 7.3.  Last change: 2010 Dec 19
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -125,15 +125,22 @@ CTRL-G u を使います。インサートコマンドを部分ごと (例えば
 
 							*:undol* *:undolist*
 :undol[ist]		変更木 (tree) の、葉 (leaf) を一覧表示する。例:
-				number changes   time      saved ~
-				4      10	 10:34:11
-				18     4	 11:01:46  7
+			   number changes  when               saved ~
+			       88      88  2010/01/04 14:25:53
+			      108     107  08/07 12:47:51
+			      136      46  13:33:01             7
+			      166     164  3 seconds ago
 
 			"number" 列は変更番号です。この番号は連続的に増えてい
 			き、undo 可能な変更の識別番号として使えます。 |:undo|
 			参照。
 			"changes" 列は木のルートから葉までの変更の数です。
-			"time" 列は変更が加えられた時刻です。
+			"when" 列は変更が加えられた日付と時刻です。日時の表記
+			は 4 種類あります:
+			    N seconds ago        秒前
+			    HH:MM:SS             時:分:秒
+			    MM/DD HH:MM:SS       月/日 時:分:秒
+			    YYYY/MM/DD HH:MM:SS  年/月/日 時:分:秒
 			"saved" 列は変更がディスクに保存されたかどうか、そして
 			それがどの書き込みだったかを示します。この番号は
 			|:later| コマンドと |:earlier| コマンドで使用できま
