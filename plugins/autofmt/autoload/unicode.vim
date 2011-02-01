@@ -1,6 +1,6 @@
 " Maintainer:   Yukihiro Nakadaira <yukihiro.nakadaira@gmail.com>
 " License:      This file is placed in the public domain.
-" Last Change:  2011-01-08
+" Last Change:  2011-01-09
 
 if &encoding != "utf-8" && !has("iconv")
   echoerr "unicode.vim requires iconv() in non utf-8 encoding"
@@ -24,7 +24,7 @@ function s:lib.prop_line_break(char)
     let row = self.linebreak_bmp[ucs4 / 0x100]
     return len(row) == 1 ? row[0] : row[ucs4 % 0x100]
   endif
-  return self.prop_search(a:char, "XX", self.linebreak_table, self.lb_cache)
+  return self.prop_search(ucs4, "XX", self.linebreak_table, self.lb_cache)
 endfunction
 
 function s:lib.prop_search(ucs4, default, table, cache)
