@@ -1,4 +1,4 @@
-*debug.txt*     For Vim バージョン 7.3.  Last change: 2010 Sep 14
+*debug.txt*     For Vim バージョン 7.3.  Last change: 2010 Dec 22
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -21,9 +21,9 @@ Vim スクリプトや関数などのデバッグについては、|debug-script
 テストファイルで Vim がクラッシュした場合、gcc を使っているなら、以下の方法で
 場所を特定できます。MinGW でも同じようにできます。
 
-1. "-g" オプション付きで Vim をコンパイル (Makefile にそのための行があるのでコ
-   メントアウトしてください)。さらに "strip" を無効化 (strip をインストールし
-   ないか、"STRIP = /bin/true" の行を使う)。
+1. "-g" オプション付きで Vim をコンパイル (src/Makefile にそのための行があるの
+   で、それをコメントアウトしてください)。さらに "strip" を無効化 (strip をイ
+   ンストールしないか、"STRIP = /bin/true" の行を使う)。
 
 2. 次のコマンドを実行 ("11" の所を失敗したテストの番号に変えてください): >
 	cd testdir
