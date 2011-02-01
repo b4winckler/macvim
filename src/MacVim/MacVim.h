@@ -190,6 +190,7 @@ enum {
     SetTooltipMsgID,
     SetTooltipDelayMsgID,
     GestureMsgID,
+    AddToMRUMsgID,
     LastMsgID   // NOTE: MUST BE LAST MESSAGE IN ENUM!
 };
 

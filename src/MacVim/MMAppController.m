@@ -884,10 +884,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     //  a) filter out any already open files
     //  b) open any remaining files
     //
-    // A file is opened in an untitled window if there is one (it may be
-    // currently launching, or it may already be visible), otherwise a new
-    // window is opened.
-    //
     // Each launching Vim process has a dictionary of arguments that are passed
     // to the process when in checks in (via connectBackend:pid:).  The
     // arguments for each launching process can be looked up by its PID (in the
@@ -902,28 +898,8 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     // a) Filter out any already open files
     //
     NSString *firstFile = [filenames objectAtIndex:0];
-    MMVimController *firstController = nil;
     NSDictionary *openFilesDict = nil;
     filenames = [self filterOpenFiles:filenames openFilesDict:&openFilesDict];
-
-    // Pass arguments to vim controllers that had files open.
-    id key;
-    NSEnumerator *e = [openFilesDict keyEnumerator];
-
-    // (Indicate that we do not wish to open any files at the moment.)
-    [arguments setObject:[NSNumber numberWithBool:YES] forKey:@"dontOpen"];
-
-    while ((key = [e nextObject])) {
-        NSArray *files = [openFilesDict objectForKey:key];
-        [arguments setObject:files forKey:@"filenames"];
-
-        MMVimController *vc = [key pointerValue];
-        [vc passArguments:arguments];
-
-        // If this controller holds the first file, then remember it for later.
-        if ([files containsObject:firstFile])
-            firstController = vc;
-    }
 
     // The meaning of "layout" is defined by the WIN_* defines in main.c.
     NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
@@ -936,29 +912,46 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     if (layout < 0 || (layout > MMLayoutTabs && openInCurrentWindow))
         layout = MMLayoutTabs;
 
-    if ([filenames count] == 0) {
-        // Raise the window containing the first file that was already open,
-        // and make sure that the tab containing that file is selected.  Only
-        // do this when there are no more files to open, otherwise sometimes
-        // the window with 'firstFile' will be raised, other times it might be
-        // the window that will open with the files in the 'filenames' array.
-        firstFile = [firstFile stringByEscapingSpecialFilenameCharacters];
+    // Pass arguments to vim controllers that had files open.
+    id key;
+    NSEnumerator *e = [openFilesDict keyEnumerator];
 
-        NSString *bufCmd = @"tab sb";
-        switch (layout) {
-            case MMLayoutHorizontalSplit: bufCmd = @"sb"; break;
-            case MMLayoutVerticalSplit:   bufCmd = @"vert sb"; break;
-            case MMLayoutArglist:         bufCmd = @"b"; break;
+    // (Indicate that we do not wish to open any files at the moment.)
+    [arguments setObject:[NSNumber numberWithBool:YES] forKey:@"dontOpen"];
+
+    while ((key = [e nextObject])) {
+        MMVimController *vc = [key pointerValue];
+        NSArray *files = [openFilesDict objectForKey:key];
+        [arguments setObject:files forKey:@"filenames"];
+
+        if ([filenames count] == 0 && [files containsObject:firstFile]) {
+            // Raise the window containing the first file that was already
+            // open, and make sure that the tab containing that file is
+            // selected.  Only do this when there are no more files to open,
+            // otherwise sometimes the window with 'firstFile' will be raised,
+            // other times it might be the window that will open with the files
+            // in the 'filenames' array.
+            //
+            // NOTE: Raise window before passing arguments, otherwise the
+            // selection will be lost when selectionRange is set.
+            firstFile = [firstFile stringByEscapingSpecialFilenameCharacters];
+
+            NSString *bufCmd = @"tab sb";
+            switch (layout) {
+                case MMLayoutHorizontalSplit: bufCmd = @"sb"; break;
+                case MMLayoutVerticalSplit:   bufCmd = @"vert sb"; break;
+                case MMLayoutArglist:         bufCmd = @"b"; break;
+            }
+
+            NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>"
+                    ":let oldswb=&swb|let &swb=\"useopen,usetab\"|"
+                    "%@ %@|let &swb=oldswb|unl oldswb|"
+                    "cal foreground()<CR>", bufCmd, firstFile];
+
+            [vc addVimInput:input];
         }
 
-        NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>"
-                ":let oldswb=&swb|let &swb=\"useopen,usetab\"|"
-                "%@ %@|let &swb=oldswb|unl oldswb|"
-                "cal foreground()<CR>", bufCmd, firstFile];
-
-        [firstController addVimInput:input];
-
-        return YES;
+        [vc passArguments:arguments];
     }
 
     // Add filenames to "Recent Files" menu, unless they are being edited
@@ -967,6 +960,9 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         [[NSDocumentController sharedDocumentController]
                 noteNewRecentFilePaths:filenames];
     }
+
+    if ([filenames count] == 0)
+        return YES; // No files left to open (all were already open)
 
     //
     // b) Open any remaining files
@@ -1493,18 +1489,12 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         // The 'pidArguments' dictionary keeps arguments to be passed to the
         // process when it connects (this is in contrast to arguments which are
         // passed on the command line, like '-f' and '-g').
-        // If this method is called with nil arguments we take this as a hint
-        // that this is an "untitled window" being launched and add a null
-        // object to the 'pidArguments' dictionary.  This way we can detect if
-        // an untitled window is being launched by looking for null objects in
-        // this dictionary.
-        // If this method is called with non-nil arguments then it is assumed
-        // that the caller takes care of adding items to 'pidArguments' as
-        // necessary (only some arguments are passed on connect, e.g. files to
-        // open).
-        if (!args)
-            [pidArguments setObject:[NSNull null]
-                             forKey:[NSNumber numberWithInt:pid]];
+        // NOTE: If there are no arguments to pass we still add a null object
+        // so that we can use this dictionary to check if there are any
+        // processes loading.
+        NSNumber *pidKey = [NSNumber numberWithInt:pid];
+        if (![pidArguments objectForKey:pidKey])
+            [pidArguments setObject:[NSNull null] forKey:pidKey];
     } else {
         ASLogWarn(@"Failed to launch Vim process: args=%@, useLoginShell=%d",
                   args, useLoginShell);
@@ -1775,9 +1765,10 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
                     sr->unused2, sr->theDate);
 
             if (sr->lineNum < 0) {
-                // Should select a range of lines.
+                // Should select a range of characters.
                 range.location = sr->startRange + 1;
-                range.length = sr->endRange - sr->startRange + 1;
+                range.length = sr->endRange > sr->startRange
+                             ? sr->endRange - sr->startRange : 1;
             } else {
                 // Should only move cursor to a line.
                 range.location = sr->lineNum + 1;
@@ -2289,12 +2280,11 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
             [vc passArguments:args];
 
         // HACK!  MacVim does not get activated if it is launched from the
-        // terminal, so we forcibly activate here unless it is an untitled
-        // window opening.  Untitled windows are treated differently, else
-        // MacVim would steal the focus if another app was activated while the
-        // untitled window was loading.
-        if (!args || args != [NSNull null])
-            [self activateWhenNextWindowOpens];
+        // terminal, so we forcibly activate here.  Note that each process
+        // launched from MacVim has an entry in the pidArguments dictionary,
+        // which is how we detect if the process was launched from the
+        // terminal.
+        if (!args) [self activateWhenNextWindowOpens];
 
         if (args)
             [pidArguments removeObjectForKey:pidKey];
@@ -2356,11 +2346,12 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         NSRange r = NSRangeFromString(rangeString);
         [a addObject:@"-c"];
         if (r.length > 0) {
-            // Select given range.
-            [a addObject:[NSString stringWithFormat:@"norm %dGV%dGz.0",
-                                                NSMaxRange(r), r.location]];
+            // Select given range of characters.
+            // TODO: This only works for encodings where 1 byte == 1 character
+            [a addObject:[NSString stringWithFormat:@"norm %dgov%dgo",
+                                                r.location, NSMaxRange(r)-1]];
         } else {
-            // Position cursor on start of range.
+            // Position cursor on line at start of range.
             [a addObject:[NSString stringWithFormat:@"norm %dGz.0",
                                                                 r.location]];
         }

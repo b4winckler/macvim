@@ -23,7 +23,7 @@
 # include <limits.h>
 #endif
 
-#if FEAT_GUI_MACVIM
+#ifdef FEAT_GUI_MACVIM
 #include <objc/objc-runtime.h>  /* for objc_*() and sel_*() */
 #endif
 
@@ -173,7 +173,7 @@ main
     int		i;
 #endif
 
-#if FEAT_GUI_MACVIM
+#ifdef FEAT_GUI_MACVIM
     // Cocoa needs an NSAutoreleasePool in place or it will leak memory.
     // This particular pool will hold autorelease objects created during
     // initialization.
@@ -1001,7 +1001,7 @@ main
 
     TIME_MSG("before starting main loop");
 
-#if FEAT_GUI_MACVIM
+#ifdef FEAT_GUI_MACVIM
     // The autorelease pool might have filled up quite a bit during
     // initialization, so purge it before entering the main loop.
     objc_msgSend(autoreleasePool, sel_getUid("release"));
@@ -1024,7 +1024,7 @@ main
     mzscheme_main();
 #endif
 
-#if FEAT_GUI_MACVIM
+#ifdef FEAT_GUI_MACVIM
     objc_msgSend(autoreleasePool, sel_getUid("release"));
 #endif
 
@@ -1091,7 +1091,7 @@ main_loop(cmdwin, noexmode)
 #endif
 	    )
     {
-#if FEAT_GUI_MACVIM
+#ifdef FEAT_GUI_MACVIM
         // Cocoa needs an NSAutoreleasePool in place or it will leak memory.
         // This particular pool gets released once every loop.
         id autoreleasePool = objc_msgSend(objc_msgSend(
@@ -1328,7 +1328,7 @@ main_loop(cmdwin, noexmode)
 	else
 	    normal_cmd(&oa, TRUE);
 
-#if FEAT_GUI_MACVIM
+#ifdef FEAT_GUI_MACVIM
         // TODO! Make sure there are no continue statements that will cause
         // this not to be called or MacVim will leak memory!
         objc_msgSend(autoreleasePool, sel_getUid("release"));
@@ -1917,6 +1917,12 @@ command_line_scan(parmp)
 		else if (STRNICMP(argv[0] + argv_idx, "echo-wid", 8) == 0)
 		{
 		    /* already processed, skip */
+		}
+#endif
+#ifdef FEAT_GUI_MACVIM
+		else if (STRNICMP(argv[0] + argv_idx, "nomru", 5) == 0)
+		{
+		    /* processed in gui_macvim.m, skip */
 		}
 #endif
 		else
