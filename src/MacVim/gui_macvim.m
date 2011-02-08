@@ -65,6 +65,9 @@ macvim_early_init()
             preferredLocalizations] objectAtIndex:0];
 	if ([lang isEqualToString:@"Japanese"])
             vim_setenv((char_u*)"LANG", (char_u*)"ja_JP.UTF-8");
+
+	if (mch_isdir("/opt/local/share/terminfo") == FALSE)
+            vim_setenv((char_u*)"TERMINFO", (char_u*)"/usr/share/terminfo");
     }
 
 #if 0   // NOTE: setlocale(LC_ALL, "") seems to work after a restart so this is

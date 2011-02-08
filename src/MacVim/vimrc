@@ -3,7 +3,7 @@
 " An example for a Japanese version vimrc file.
 " 日本語版のデフォルト設定ファイル(vimrc) - Vim7用試作
 "
-" Last Change: 12-Jan-2011.
+" Last Change: 08-Feb-2011.
 " Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 "
 " 解説:
@@ -232,9 +232,6 @@ set formatexpr=autofmt#japanese#formatexpr()
 " MacVim-KaoriYa固有の設定
 "
 let $PATH = simplify($VIM . '/../../MacOS') . ':' . $PATH
-if !exists('$TERMINFO')
-  let $TERMINFO = '/usr/share/terminfo'
-end
 set runtimepath+=$VIM/plugins/pathogen
 set migemodict=$VIMRUNTIME/dict/migemo-dict
 set migemo
