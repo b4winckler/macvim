@@ -1616,6 +1616,11 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 {
     NSString *urlString = [[event paramDescriptorForKeyword:keyDirectObject]
         stringValue];
+    // Bug 316: The URL handler isn't properly handling paths with spaces 
+    // via percent escaped encoding.
+    // The fix seems to be to convert the incoming string to use percent
+    // escaping before converting it to a NSURL.
+    urlString = [urlString stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     NSURL *url = [NSURL URLWithString:urlString];
 
     // We try to be compatible with TextMate's URL scheme here, as documented
