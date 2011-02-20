@@ -212,6 +212,19 @@ fi
 AC_SUBST(OS_EXTRA_SRC)
 AC_SUBST(OS_EXTRA_OBJ)
 
+
+if test "x$MACOSX" = "xyes"; then
+  AC_MSG_CHECKING(--enable-envycoder argument)
+  AC_ARG_ENABLE(envycoder,
+    [  --enable-envycoder         Build with Envy Code R Bold font], ,
+    [enable_envycoder="no"])
+  AC_MSG_RESULT($enable_envycoder)
+  if test "$enable_envycoder" = "yes"; then
+    AC_DEFINE(FEAT_ENVYCODER)
+  fi
+fi
+
+
 dnl Add /usr/local/lib to $LDFLAGS and /usr/local/include to CFLAGS.
 dnl Only when the directory exists and it wasn't there yet.
 dnl For gcc don't do this when it is already in the default search path.

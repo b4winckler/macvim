@@ -13,8 +13,10 @@ try:
   # Load Envy Code R from a file and register it under its postscript name
   # Thanks to DamienG for this font (redistributed with permission):
   # http://damieng.com/blog/2008/05/26/envy-code-r-preview-7-coding-font-released
+  fontname = 'Envy Code R Bold.ttf'
   import loadfont
-  loadfont.loadfont('Envy Code R Bold.ttf')
+  if not loadfont.loadfont(fontname):
+    raise RuntimeError("Could not load font " + fontname)
 
   from Foundation import NSString
   from AppKit import *

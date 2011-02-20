@@ -1,8 +1,14 @@
 .PHONY: clean
 
+ifdef ENVYCODER
+	iconfont = Envy\ Code\ R\ Bold.ttf
+else
+	iconfont = 
+endif
+
 OUTDIR ?= .
 
-$(OUTDIR)/MacVim-generic.icns: make_icons.py vim-noshadow-512.png loadfont.so Envy\ Code\ R\ Bold.ttf
+$(OUTDIR)/MacVim-generic.icns: make_icons.py vim-noshadow-512.png loadfont.so $(iconfont)
 	$(MAKE) -C makeicns
 	/usr/bin/python make_icons.py $(OUTDIR)
 
