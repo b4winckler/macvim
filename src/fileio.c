@@ -551,7 +551,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
     int		using_b_fname;
 #endif
 
-    write_no_eol_lnum = 0;	/* in case it was set by the previous read */
+    curbuf->b_no_eol_lnum = 0;	/* in case it was set by the previous read */
 
     /*
      * If there is no file name yet, use the one for the read file.
@@ -2839,10 +2839,11 @@ failed:
 
     /*
      * Trick: We remember if the last line of the read didn't have
-     * an eol for when writing it again.  This is required for
+     * an eol even when 'binary' is off, for when writing it again with
+     * 'binary' on.  This is required for
      * ":autocmd FileReadPost *.gz set bin|'[,']!gunzip" to work.
      */
-    write_no_eol_lnum = read_no_eol_lnum;
+    curbuf->b_no_eol_lnum = read_no_eol_lnum;
 
     /* When reloading a buffer put the cursor at the first line that is
      * different. */
@@ -2890,12 +2891,16 @@ failed:
 							    FALSE, NULL, eap);
 	if (msg_scrolled == n)
 	    msg_scroll = m;
-#ifdef FEAT_EVAL
+# ifdef FEAT_EVAL
 	if (aborting())	    /* autocmds may abort script processing */
 	    return FAIL;
-#endif
+# endif
     }
 #endif
+
+    /* Reset now, following writes should not omit the EOL.  Also, the line
+     * number will become invalid because of edits. */
+    curbuf->b_no_eol_lnum = 0;
 
     if (recoverymode && error)
 	return FAIL;
@@ -4800,7 +4805,7 @@ restore_backup:
 	if (end == 0
 		|| (lnum == end
 		    && write_bin
-		    && (lnum == write_no_eol_lnum
+		    && (lnum == buf->b_no_eol_lnum
 			|| (lnum == buf->b_ml.ml_line_count && !buf->b_p_eol))))
 	{
 	    ++lnum;			/* written the line, count it */
@@ -5325,8 +5330,6 @@ nofail:
 #endif
     {
 	aco_save_T	aco;
-
-	write_no_eol_lnum = 0;	/* in case it was set by the previous read */
 
 	/*
 	 * Apply POST autocommands.
@@ -7496,8 +7499,8 @@ buf_store_time(buf, st, fname)
 write_lnum_adjust(offset)
     linenr_T	offset;
 {
-    if (write_no_eol_lnum != 0)		/* only if there is a missing eol */
-	write_no_eol_lnum += offset;
+    if (curbuf->b_no_eol_lnum != 0)	/* only if there is a missing eol */
+	curbuf->b_no_eol_lnum += offset;
 }
 
 #if defined(TEMPDIRNAMES) || defined(PROTO)
@@ -7699,7 +7702,10 @@ vim_tempname(extra_char)
 
     STRCPY(itmp, "");
     if (GetTempPath(_MAX_PATH, szTempFile) == 0)
-	szTempFile[0] = NUL;	/* GetTempPath() failed, use current dir */
+    {
+	szTempFile[0] = '.';	/* GetTempPath() failed, use current dir */
+	szTempFile[1] = NUL;
+    }
     strcpy(buf4, "VIM");
     buf4[2] = extra_char;   /* make it "VIa", "VIb", etc. */
     if (GetTempFileName(szTempFile, buf4, 0, itmp) == 0)
@@ -7720,8 +7726,11 @@ vim_tempname(extra_char)
 # else /* WIN3264 */
 
 #  ifdef USE_TMPNAM
+    char_u	*p;
+
     /* tmpnam() will make its own name */
-    if (*tmpnam((char *)itmp) == NUL)
+    p = tmpnam((char *)itmp);
+    if (p == NULL || *p == NUL)
 	return NULL;
 #  else
     char_u	*p;
