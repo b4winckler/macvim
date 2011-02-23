@@ -2568,6 +2568,24 @@
 				</array>
 			</dict>
 		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>VHDL source file</string>
+			<key>UTTypeIdentifier</key>
+			<string>org.vim.vhdl-file</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>vhdl</string>
+					<string>vhd</string>
+				</array>
+			</dict>
+		</dict>
 	</array>
 </dict>
 </plist>
