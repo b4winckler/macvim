@@ -1,13 +1,15 @@
-.PHONY: clean
+.PHONY: clean getenvy
 
 OUTDIR ?= .
 
-$(OUTDIR)/MacVim-generic.icns: make_icons.py vim-noshadow-512.png loadfont.so Envy\ Code\ R\ Bold.ttf
+$(OUTDIR)/MacVim-generic.icns: make_icons.py vim-noshadow-512.png loadfont.so 
 	$(MAKE) -C makeicns
 	/usr/bin/python make_icons.py $(OUTDIR)
 
 loadfont.so: loadfont.c
 	/usr/bin/python setup.py install --install-lib .
+
+getenvy: Envy\ Code\ R\ Bold.ttf
 
 Envy\ Code\ R\ Bold.ttf: EnvyCodeR.zip
 	unzip -jo EnvyCodeR.zip
@@ -15,7 +17,7 @@ Envy\ Code\ R\ Bold.ttf: EnvyCodeR.zip
 	# "now", so that the zip is not unzipped in every `make` run.`
 	touch Envy\ Code\ R\ Bold.ttf
 
-ENVYCODE_URL=http://download.damieng.com/latest/EnvyCodeR
+ENVYCODE_URL=http://download.damieng.com/fonts/original/EnvyCodeR-PR7.zip
 EnvyCodeR.zip:
 	curl ${ENVYCODE_URL} --location -o EnvyCodeR.zip
 
