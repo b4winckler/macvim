@@ -1828,7 +1828,7 @@ remote_peek( {serverid} [, {retvar}])
 remote_read( {serverid})	文字列	返信文字列を読み込む
 remote_send( {server}, {string} [, {idvar}])
 				文字列	キーシーケンスを送信する
-remove( {list}, {idx} [, {end}])  任意	{list}から{idx}〜{end}の要素を削除
+remove( {list}, {idx} [, {end}])  任意	{list}から{idx}と{end}間の要素を削除
 remove( {dict}, {key})		任意	{dict}から要素{key}を削除
 rename({from}, {to})		数値	{file}から{to}へファイル名変更
 repeat( {expr}, {count})	文字列	{expr}を{count}回繰り返す
@@ -2471,9 +2471,9 @@ deepcopy({expr}[, {noref}])				*deepcopy()* *E698*
 		要素があると、{noref}が1の場合は失敗する。
 		|copy()|も参照。
 
-							*delete()*
-delete({fname})	{fname}という名前のファイルを削除する。戻り値は数値で、削除に
-		成功したら0、失敗したら1が返る。
+delete({fname})							*delete()*
+		{fname}という名前のファイルを削除する。戻り値は数値で、削除に
+		成功したら0、失敗したら0以外が返る。
 		リスト|List|から要素を削除するには|remove()|を使う。
 
 							*did_filetype()*
