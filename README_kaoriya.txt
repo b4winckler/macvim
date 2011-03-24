@@ -1,9 +1,9 @@
                    Vim version 7.3 香り屋版 導入マニュアル
 
-                                                         Version: 1.5.3
+                                                         Version: 1.6.2
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 09-Jan-2011.
+                                                     Last Change: 21-Mar-2011.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -13,7 +13,7 @@
   加を行い香り屋版として公開しています。
 
   リリースには32bit版と64bit版があります。32bit OSでは必ず32bit版をご利用くだ
-  さい。64bit OSでは64bit版も32bit版もどちらもご利用いただけます。
+  さい。64bit OSでは64bit版と32bit版どちらでもご利用いただけます。
 
 
 インストール方法
@@ -21,12 +21,12 @@
   いるので、解凍してシステム内の好きな場所に配置してください。
 
   32bit版
-    配布ファイル: vim73-YYYYMMDD-kaoriya-msvc10_x32j.zip
-    Vimプログラムフォルダ: vim73-kaoriya-msvc10_x32j.zip
+    配布ファイル: vim73-kaoriya-win32-YYYYMMDD.zip
+    Vimプログラムフォルダ: vim73-kaoriya-win32.zip
 
   64bit版
-    配布ファイル: vim73-YYYYMMDD-kaoriya-msvc10_x64j.zip
-    Vimプログラムフォルダ: vim73-kaoriya-msvc10_x64j
+    配布ファイル: vim73-kaoriya-win64-YYYYMMDD.zip
+    Vimプログラムフォルダ: vim73-kaoriya-win64
 
   上記のYYYYMMDDにはリリースの年月日が入ります。
 
@@ -62,7 +62,7 @@ Vimの拡張機能について
   Perl(ActivePerl)との連携
     注意: PerlをインストールしなくてもVimは使用できます。
 
-    ActiveState社により公開されているActivePerl 5.10をインストールすることで、
+    ActiveState社により公開されているActivePerl 5.12をインストールすることで、
     Perlインターフェースを使用することができます。ActivePerlをインストールして
     いない場合は、Perlインターフェースは自動的に無効となります。Perlインター
     フェースの詳細については":help perl"としてVim付属のマニュアルを参照してく
@@ -77,7 +77,7 @@ Vimの拡張機能について
   Pythonとの連携
     注意: PythonをインストールしなくてもVimは使用できます。
 
-    Python.orgにより公開されているPython 2.6をインストールすることで、Pythonイ
+    Python.orgにより公開されているPython 2.7をインストールすることで、Pythonイ
     ンターフェースを使用することができます。Pythonをインストールしていない場合
     は、Pythonインターフェースは自動的に無効となります。Pythonインターフェース
     の詳細については":help python"としてVim付属のマニュアルを参照してくださ
@@ -88,6 +88,32 @@ Vimの拡張機能について
 
     - Python.org
         http://www.python.org/
+
+  Python3との連携
+    注意: Python3をインストールしなくてもVimは使用できます。
+
+    Python.orgにより公開されているPython 3.2をインストールすることで、Pythonイ
+    ンターフェースを使用することができます。Pythonをインストールしていない場合
+    は、Pythonインターフェースは自動的に無効となります。Pythonインターフェース
+    の詳細については":help python3"としてVim付属のマニュアルを参照してくださ
+    い。
+
+    64bit版のVimを使う場合は64bit版のPython3を、32bit版を使う場合は32bit版の
+    Python3をインストールしてください。
+
+    - Python.org
+        http://www.python.org/
+
+  Luaとの連携
+    注意: LuaをインストールしなくてもVimは利用できます。
+
+    LuaBinariesにより公開されているLua 5.1をインストールすることで、Luaイン
+    ターフェースを利用できます。Luaをインストールしていない場合は、Luaインター
+    フェースは自動的に無効となります。Luaインターフェースの詳細については
+    ":help lua"としてVim付属のマニュアルを参照してください。
+
+    - LuaBinaries
+        http://luabinaries.sourceforge.net/
 
   Rubyとの連携
     注意: Rubyとの連携機能は提供いたしません。
@@ -100,8 +126,8 @@ Vimの拡張機能について
         http://www.garbagecollect.jp/ruby/mswin32/ja/
 
 使用許諾
-  香り屋版のライセンスはオリジナルのVimに従います。詳しくはREADME.txtをご覧下
-  さい。
+  香り屋版のライセンスはオリジナルのVimに従います。詳しくはorigdoc/README.txt
+  をご覧下さい。
 
   Vimはチャリティーウェアと称していますが、オープンソースであり無料で使用する
   ことができます。しかしVimの利用に際して対価を支払いたいと考えたのならば、是
@@ -129,9 +155,9 @@ Vimの拡張機能について
 
 オリジナルとの相違点
   ソース差分
-    patchesフォルダ内にhg diffによって取得した差分を同梱しています。差分の使い
-    方や内容に関する質問やコメントなどありましたら香り屋版メンテナまで連絡くだ
-    さい。ソース1行1行に至るまでの検証も大歓迎します。
+    patchフォルダ内にhg diffによって取得した差分を同梱しています。差分の使い方
+    や内容に関する質問やコメントなどありましたら香り屋版メンテナまで連絡くださ
+    い。ソース1行1行に至るまでの検証も大歓迎します。
 
 既知の問題点
   * qkcの-njフラグでコンバートしたJISファイルは開けない(iconv.dll)
@@ -143,7 +169,7 @@ Vimの拡張機能について
   なことでもわからないことがあるのならばここで聞いてみると良いでしょう。きっと
   何らかの助けにはなるはずです。
 
-    http://groups.google.com/group/vim_jp?hl=ja
+    http://groups.google.com/group/vim_jp/?hl=ja
 
   もちろんメールで香り屋版メンテナに直接聞いてもらっても構いません。日本語化部
   分などの不都合は香り屋版メンテナまで連絡をいただければ、折をみて修正いたしま
@@ -159,7 +185,9 @@ Vimの拡張機能について
   - Vim日本語版情報
       http://www.kaoriya.net/#VIM
   - vim_jp Google グループ
-      http://groups.google.com/group/vim_jp?hl=ja
+      http://groups.google.com/group/vim_jp/?hl=ja
+  - Vimドキュメント翻訳(vimdoc-ja)
+      http://code.google.com/p/vimdoc-ja/?hl=ja
   - 香り屋版メンテナ
       MURAOKA Taro <koron.kaoriya@gmail.com>
 

@@ -291,7 +291,7 @@ Vimは初期化の時に、ランタイムファイルの在り処を自動的�
     |
     +-	$VIMRUNTIME/syntax/nosyntax.vimを読込んで古い構文を削除する
     |
-    +-	'runtimepath'から$VIMRUNTIME/syntax/synload.vimを読込む
+    +-	'runtimepath'からsyntax/synload.vimを読込む
     |	|
     |	+-  構文ハイライトの色を設定する。
     |	|   カラースキームが定義されている場合は":colors {name}"で再度読込む。

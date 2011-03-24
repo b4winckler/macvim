@@ -186,6 +186,9 @@ OBJDIR = $(OBJDIR)Z
 !if "$(DEBUG)" == "yes"
 OBJDIR = $(OBJDIR)d
 !endif
+!ifdef PROCESSOR_ARCHITECTURE
+OBJDIR = $(OBJDIR)-$(PROCESSOR_ARCHITECTURE)
+!endif
 
 # Win32.mak requires that CPU be set appropriately.
 # To cross-compile for Win64, set CPU=AMD64 or CPU=IA64.
@@ -910,7 +913,7 @@ $(VIM).exe: $(OUTDIR) $(OBJ) $(GUI_OBJ) $(OLE_OBJ) $(OLE_IDL) $(MZSCHEME_OBJ) \
 		$(LUA_OBJ) $(MZSCHEME_OBJ) $(PERL_OBJ) $(PYTHON_OBJ) $(PYTHON3_OBJ) $(RUBY_OBJ) \
 		$(TCL_OBJ) $(SNIFF_OBJ) $(CSCOPE_OBJ) $(NETBEANS_OBJ) \
 		$(XPM_OBJ) $(OUTDIR)\version.obj $(LINKARGS2)
-	IF EXIST $@.manifest mt -nologo -manifest $@.manifest kaoriya.mnf -outputresource:$@;1
+	IF EXIST $@.manifest mt -nologo -manifest $@.manifest gvim.exe.mnf -outputresource:$@;1
 
 $(VIM): $(VIM).exe
 
@@ -954,6 +957,7 @@ clean:
 	- if exist *.obj del *.obj
 	- if exist $(VIM).exe del $(VIM).exe
 	- if exist $(VIM).exe.manifest del $(VIM).exe.manifest
+	- if exist $(VIM).lib del $(VIM).lib
 	- if exist $(VIM).ilk del $(VIM).ilk
 	- if exist $(VIM).pdb del $(VIM).pdb
 	- if exist $(VIM).map del $(VIM).map
@@ -1153,7 +1157,7 @@ $(OUTDIR)/xpm_w32.obj: $(OUTDIR) xpm_w32.c
 	$(CC) $(CFLAGS) $(XPM_INC) xpm_w32.c
 
 $(OUTDIR)/vim.res:	$(OUTDIR) vim.rc gvim.exe.mnf version.h tools.bmp \
-				tearoff.bmp vim.ico vim_error.ico \
+				tearoff.bmp vim2.ico vim_error.ico \
 				vim_alert.ico vim_info.ico vim_quest.ico
 	$(RC) /l 0x409 /Fo$(OUTDIR)/vim.res $(RCFLAGS) vim.rc
 

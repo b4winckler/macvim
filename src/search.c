@@ -1072,14 +1072,14 @@ typedef struct _migemo migemo;
 typedef int (*MIGEMO_PROC_CHAR2INT)(unsigned char*, unsigned int*);
 typedef int (*MIGEMO_PROC_INT2CHAR)(unsigned int, unsigned char*);
 static HANDLE hDllMigemo = NULL;
-migemo* (*dll_migemo_open)(char*);
-void (*dll_migemo_close)(migemo*);
-unsigned char* (*dll_migemo_query)(migemo*, unsigned char*);
-void (*dll_migemo_release)(migemo*, unsigned char*);
-int (*dll_migemo_set_operator)(migemo*, int index, unsigned char* op);
-const unsigned char* (*dll_migemo_get_operator)(migemo*, int index);
-void (*dll_migemo_setproc_char2int)(migemo*, MIGEMO_PROC_CHAR2INT);
-void (*dll_migemo_setproc_int2char)(migemo*, MIGEMO_PROC_INT2CHAR);
+migemo* (__stdcall *dll_migemo_open)(char*);
+void (__stdcall *dll_migemo_close)(migemo*);
+unsigned char* (__stdcall *dll_migemo_query)(migemo*, unsigned char*);
+void (__stdcall *dll_migemo_release)(migemo*, unsigned char*);
+int (__stdcall *dll_migemo_set_operator)(migemo*, int index, unsigned char* op);
+const unsigned char* (__stdcall *dll_migemo_get_operator)(migemo*, int index);
+void (__stdcall *dll_migemo_setproc_char2int)(migemo*, MIGEMO_PROC_CHAR2INT);
+void (__stdcall *dll_migemo_setproc_int2char)(migemo*, MIGEMO_PROC_INT2CHAR);
 
 #  define migemo_open dll_migemo_open
 #  define migemo_close dll_migemo_close
@@ -1475,12 +1475,20 @@ do_search(oap, dirc, pat, count, options, tm)
 	{
 	    if (spats[RE_SEARCH].pat == NULL)	    /* no previous pattern */
 	    {
-		EMSG(_(e_noprevre));
-		retval = 0;
-		goto end_do_search;
+		pat = spats[RE_SUBST].pat;
+		if (pat == NULL)
+		{
+		    EMSG(_(e_noprevre));
+		    retval = 0;
+		    goto end_do_search;
+		}
+		searchstr = pat;
 	    }
-	    /* make search_regcomp() use spats[RE_SEARCH].pat */
-	    searchstr = (char_u *)"";
+	    else
+	    {
+		/* make search_regcomp() use spats[RE_SEARCH].pat */
+		searchstr = (char_u *)"";
+	    }
 	}
 
 	if (pat != NULL && *pat != NUL)	/* look for (new) offset */
@@ -4882,7 +4890,7 @@ linewhite(lnum)
 #if defined(FEAT_FIND_ID) || defined(PROTO)
 /*
  * Find identifiers or defines in included files.
- * if p_ic && (compl_cont_status & CONT_SOL) then ptr must be in lowercase.
+ * If p_ic && (compl_cont_status & CONT_SOL) then ptr must be in lowercase.
  */
     void
 find_pattern_in_path(ptr, dir, len, whole, skip_comments,
