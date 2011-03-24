@@ -3,7 +3,7 @@
 " An example for a Japanese version vimrc file.
 " 日本語版のデフォルト設定ファイル(vimrc) - Vim7用試作
 "
-" Last Change: 09-Jan-2011.
+" Last Change: 26-Feb-2011.
 " Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 "
 " 解説:
@@ -54,13 +54,16 @@ if 0 && exists('$HOME') && filereadable($HOME . '/.vimrc_first.vim')
   endif
 endif
 
+set runtimepath+=$VIM/plugins/kaoriya
+set runtimepath+=$VIM/plugins/autofmt
+
 "---------------------------------------------------------------------------
 " 日本語対応のための設定:
 "
 " ファイルを読込む時にトライする文字エンコードの順序を確定する。漢字コード自
 " 動判別機能を利用する場合には別途iconv.dllが必要。iconv.dllについては
 " README_w32j.txtを参照。ユーティリティスクリプトを読み込むことで設定される。
-source $VIMRUNTIME/encode_japan.vim
+source $VIM/plugins/kaoriya/encode_japan.vim
 " メッセージを日本語にする (Windowsでは自動的に判断・設定されている)
 if !(has('win32') || has('mac')) && has('multi_lang')
   if !exists('$LANG') || $LANG.'X' ==# 'X'
@@ -218,7 +221,6 @@ endif
 " KaoriYaでバンドルしているプラグインのための設定
 
 " autofmt: 日本語文章のフォーマット(折り返し)プラグイン.
-set runtimepath+=$VIM/plugins/autofmt
 set formatexpr=autofmt#japanese#formatexpr()
 
 " Copyright (C) 2011 KaoriYa/MURAOKA Taro
