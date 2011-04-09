@@ -1,5 +1,6 @@
 #import "MMFileDrawerController.h"
 #import "MMWindowController.h"
+#import "MMAppController.h"
 
 // The FileSystemItem class is an adaptation of Apple's example in the Outline
 // View Programming Topics document.
@@ -103,6 +104,7 @@ static NSMutableArray *leafNode = nil;
   drawer = [[NSDrawer alloc] initWithContentSize:NSMakeSize(200, 0) preferredEdge:NSMaxXEdge];
 
   NSOutlineView *filesView = [[NSOutlineView alloc] initWithFrame:NSZeroRect];
+  [filesView setDelegate:self];
   [filesView setDataSource:self];
   [filesView setHeaderView:nil];
   NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:nil];
@@ -163,6 +165,16 @@ static NSMutableArray *leafNode = nil;
 
 - (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item {
   return item == nil ? [rootItem relativePath] : [item relativePath];
+}
+
+
+// Delegate methods
+
+- (void)outlineViewSelectionDidChange:(NSNotification *)notification {
+  NSOutlineView *view = (NSOutlineView *)[self view];
+  NSString *path = [(FileSystemItem *)[view itemAtRow:[view selectedRow]] fullPath];
+  // TODO what's the good way?
+  [(MMAppController *)[NSApp delegate] openFiles:[NSArray arrayWithObject:path] withArguments:nil];
 }
 
 

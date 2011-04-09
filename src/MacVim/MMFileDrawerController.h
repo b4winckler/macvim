@@ -3,7 +3,7 @@
 @class MMWindowController;
 @class FileSystemItem;
 
-@interface MMFileDrawerController : NSViewController <NSOutlineViewDataSource> {
+@interface MMFileDrawerController : NSViewController <NSOutlineViewDataSource, NSOutlineViewDelegate> {
   MMWindowController *windowController;
   NSDrawer *drawer;
   FileSystemItem *rootItem;
