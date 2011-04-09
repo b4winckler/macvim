@@ -16,6 +16,7 @@
 @class MMFullscreenWindow;
 @class MMVimController;
 @class MMVimView;
+@class MMFileDrawerController;
 
 @interface MMWindowController : NSWindowController
 #if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
@@ -40,6 +41,7 @@
     int                 userCols;
     NSPoint             userTopLeft;
     NSPoint             defaultTopLeft;
+    MMFileDrawerController *fileDrawerController;
 }
 
 - (id)initWithVimController:(MMVimController *)controller;

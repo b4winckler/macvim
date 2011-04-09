@@ -65,6 +65,7 @@
 #import "MMVimView.h"
 #import "MMWindow.h"
 #import "MMWindowController.h"
+#import "MMFileDrawerController.h"
 #import "Miscellaneous.h"
 #import <PSMTabBarControl/PSMTabBarControl.h>
 
@@ -181,6 +182,8 @@
     if ([win respondsToSelector:@selector(_setContentHasShadow:)])
         [win _setContentHasShadow:NO];
 
+    fileDrawerController = [[MMFileDrawerController alloc] initWithWindowController:self];
+
     return self;
 }
 
@@ -188,6 +191,7 @@
 {
     ASLogDebug(@"");
 
+    [fileDrawerController release];  fileDrawerController = nil;
     [decoratedWindow release];  decoratedWindow = nil;
     [windowAutosaveKey release];  windowAutosaveKey = nil;
     [vimView release];  vimView = nil;
