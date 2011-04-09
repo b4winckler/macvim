@@ -2,7 +2,7 @@
 
 @class MMWindowController;
 
-@interface MMFileDrawerController : NSViewController {
+@interface MMFileDrawerController : NSViewController <NSOutlineViewDataSource> {
   MMWindowController *windowController;
   NSDrawer *drawer;
 }
