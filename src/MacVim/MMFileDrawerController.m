@@ -156,7 +156,7 @@ static NSMutableArray *leafNode = nil;
       valid = [[NSFileManager defaultManager] fileExistsAtPath:expandedPath isDirectory:&isDir];
       if (valid && isDir) {
         rootItem = [[FileSystemItem alloc] initWithPath:expandedPath parent:nil];
-        [self view]; // loads the view
+        [(NSOutlineView *)[self view] expandItem:rootItem];
         [drawer setParentWindow:[windowController window]];
         [drawer open];
       }
