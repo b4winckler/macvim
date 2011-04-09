@@ -5,12 +5,11 @@
 // View Programming Topics document.
 
 @interface FileSystemItem : NSObject {
-  NSString *relativePath;
+  NSString *path;
   FileSystemItem *parent;
   NSMutableArray *children;
 }
 
-+ (FileSystemItem *)rootItem;
 - (id)initWithPath:(NSString *)path parent:(FileSystemItem *)parentItem;
 - (NSInteger)numberOfChildren; // Returns -1 for leaf nodes
 - (FileSystemItem *)childAtIndex:(NSUInteger)n; // Invalid to call on leaf nodes
@@ -21,7 +20,6 @@
 
 @implementation FileSystemItem
 
-static FileSystemItem *rootItem = nil;
 static NSMutableArray *leafNode = nil;
 
 + (void)initialize {
@@ -30,16 +28,9 @@ static NSMutableArray *leafNode = nil;
   }
 }
 
-+ (FileSystemItem *)rootItem {
-  if (rootItem == nil) {
-    rootItem = [[FileSystemItem alloc] initWithPath:@"/" parent:nil];
-  }
-  return rootItem;
-}
-
-- (id)initWithPath:(NSString *)path parent:(FileSystemItem *)parentItem {
+- (id)initWithPath:(NSString *)thePath parent:(FileSystemItem *)parentItem {
   if ((self = [super init])) {
-    relativePath = [[path lastPathComponent] copy];
+    path = [thePath retain];
     parent = parentItem;
   }
   return self;
@@ -50,17 +41,15 @@ static NSMutableArray *leafNode = nil;
 - (NSArray *)children {
   if (children == nil) {
     NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSString *fullPath = [self fullPath];
+
     BOOL isDir, valid;
-
-    valid = [fileManager fileExistsAtPath:fullPath isDirectory:&isDir];
-
+    valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
     if (valid && isDir) {
-      NSArray *array = [fileManager contentsOfDirectoryAtPath:fullPath error:NULL];
+      NSArray *array = [fileManager contentsOfDirectoryAtPath:path error:NULL];
       children = [[NSMutableArray alloc] initWithCapacity:[array count]];
 
       for (NSString *childPath in array) {
-        FileSystemItem *child = [[FileSystemItem alloc] initWithPath:childPath parent:self];
+        FileSystemItem *child = [[FileSystemItem alloc] initWithPath:[path stringByAppendingPathComponent:childPath] parent:self];
         [children addObject:child];
         [child release];
       }
@@ -72,17 +61,11 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (NSString *)relativePath {
-  return relativePath;
+  return [path lastPathComponent];
 }
 
 - (NSString *)fullPath {
-  // If no parent, return our own relative path
-  if (parent == nil) {
-    return relativePath;
-  }
-
-  // recurse up the hierarchy, prepending each parent’s path
-  return [[parent fullPath] stringByAppendingPathComponent:relativePath];
+  return path;
 }
 
 - (FileSystemItem *)childAtIndex:(NSUInteger)n {
@@ -98,7 +81,7 @@ static NSMutableArray *leafNode = nil;
   if (children != leafNode) {
     [children release];
   }
-  [relativePath release];
+  [path release];
   [super dealloc];
 }
 
@@ -110,9 +93,7 @@ static NSMutableArray *leafNode = nil;
 - (id)initWithWindowController:(MMWindowController *)controller {
   if ((self = [super initWithNibName:nil bundle:nil])) {
     windowController = controller;
-    [self view]; // ensures the view is loaded
-    [drawer setParentWindow:[windowController window]];
-    [drawer open];
+    rootItem = nil;
   }
   return self;
 }
@@ -142,6 +123,30 @@ static NSMutableArray *leafNode = nil;
 }
 
 
+// TODO This is really not the right way to get the root path,
+// but for now I focus on getting the drawer done.
+- (void)setRootFilename:(NSString *)filename {
+  if (rootItem == nil) {
+    NSRange range = [filename rangeOfString:@"("];
+    if (range.location != NSNotFound) {
+      range.location += 1;
+      NSRange end = [filename rangeOfString:@")" options:NSBackwardsSearch];
+      range.length = end.location - range.location;
+      NSString *expandedPath = [[filename substringWithRange:range] stringByStandardizingPath];
+
+      BOOL isDir, valid;
+      valid = [[NSFileManager defaultManager] fileExistsAtPath:expandedPath isDirectory:&isDir];
+      if (valid && isDir) {
+        rootItem = [[FileSystemItem alloc] initWithPath:expandedPath parent:nil];
+        [self view]; // loads the view
+        [drawer setParentWindow:[windowController window]];
+        [drawer open];
+      }
+    }
+  }
+}
+
+
 // Data Source methods
  
 - (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item {
@@ -153,16 +158,17 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView child:(NSInteger)index ofItem:(id)item {
-  return item == nil ? [FileSystemItem rootItem] : [(FileSystemItem *)item childAtIndex:index];
+  return item == nil ? rootItem : [(FileSystemItem *)item childAtIndex:index];
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item {
-  return item == nil ? [[FileSystemItem rootItem] relativePath] : [item relativePath];
+  return item == nil ? [rootItem relativePath] : [item relativePath];
 }
 
 
 - (void)dealloc {
   [drawer release];
+  [rootItem release];
   [super dealloc];
 }
 

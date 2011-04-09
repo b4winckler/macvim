@@ -355,6 +355,10 @@
     if (!title)
         return;
 
+    // TODO This is really not the right way to get the root path,
+    // but for now I focus on getting the drawer done.
+    [fileDrawerController setRootFilename:title];
+
     [decoratedWindow setTitle:title];
     if (fullscreenEnabled) {
         [fullscreenWindow setTitle:title];
