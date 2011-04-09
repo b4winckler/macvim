@@ -1,14 +1,17 @@
 #import "MMFileDrawerController.h"
 #import "MMWindowController.h"
 #import "MMAppController.h"
+#import "ImageAndTextCell.h"
 
 // The FileSystemItem class is an adaptation of Apple's example in the Outline
 // View Programming Topics document.
 
+// TODO use NSTreeNode
 @interface FileSystemItem : NSObject {
   NSString *path;
   FileSystemItem *parent;
   NSMutableArray *children;
+  NSImage *icon;
 }
 
 - (id)initWithPath:(NSString *)path parent:(FileSystemItem *)parentItem;
@@ -33,6 +36,7 @@ static NSMutableArray *leafNode = nil;
   if ((self = [super init])) {
     path = [thePath retain];
     parent = parentItem;
+    icon = nil;
   }
   return self;
 }
@@ -78,11 +82,22 @@ static NSMutableArray *leafNode = nil;
   return tmp == leafNode ? -1 : [tmp count];
 }
 
+// TODO for now we don't really resize
+- (NSImage *)icon {
+  if (icon == nil) {
+    icon = [[NSWorkspace sharedWorkspace] iconForFiles:[NSArray arrayWithObject:path]];
+    [icon retain];
+    [icon setSize:NSMakeSize(16, 16)];
+  }
+  return icon;
+}
+
 - (void)dealloc {
   if (children != leafNode) {
     [children release];
   }
   [path release];
+  [icon release];
   [super dealloc];
 }
 
@@ -108,6 +123,7 @@ static NSMutableArray *leafNode = nil;
   [filesView setDataSource:self];
   [filesView setHeaderView:nil];
   NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:nil];
+  [column setDataCell:[[[ImageAndTextCell alloc] init] autorelease]];
   [filesView addTableColumn:column];
   [filesView setOutlineTableColumn:column];
   [column release];
@@ -175,6 +191,11 @@ static NSMutableArray *leafNode = nil;
   NSString *path = [(FileSystemItem *)[view itemAtRow:[view selectedRow]] fullPath];
   // TODO what's the good way?
   [(MMAppController *)[NSApp delegate] openFiles:[NSArray arrayWithObject:path] withArguments:nil];
+}
+
+- (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell *)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
+  ImageAndTextCell *imageAndTextCell = (ImageAndTextCell *)cell;
+  [imageAndTextCell setImage:[item icon]];
 }
 
 
