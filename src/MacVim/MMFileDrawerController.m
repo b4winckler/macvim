@@ -32,6 +32,7 @@
 - (FileSystemItem *)childAtIndex:(NSUInteger)n; // Invalid to call on leaf nodes
 - (NSString *)fullPath;
 - (NSString *)relativePath;
+- (BOOL)isLeaf;
 
 @end
 
@@ -76,6 +77,10 @@ static NSMutableArray *leafNode = nil;
     }
   }
   return children;
+}
+
+- (BOOL)isLeaf {
+  return [self children] == leafNode;
 }
 
 - (NSString *)relativePath {
@@ -217,15 +222,19 @@ static NSMutableArray *leafNode = nil;
 
 - (NSMenu *)menuForRow:(NSInteger)row {
   NSMenu *menu = [[[NSMenu alloc] init] autorelease];
+  NSMenuItem *item;
   //NSMenuItem *item = [menu addItemWithTitle:@"Rename…" action:@selector(renameFile:) keyEquivalent:@""];
   //[item setTarget:self];
   //[item setTag:row];
   FileSystemItem *fsItem = [self itemAtRow:row];
-  NSMenuItem *item = [menu addItemWithTitle:[NSString stringWithFormat:@"Reveal “%@” in Finder", [fsItem relativePath]]
-                                     action:@selector(revealInFinder:)
-                              keyEquivalent:@""];
-  [item setTarget:self];
-  [item setTag:row];
+  [menu addItemWithTitle:[NSString stringWithFormat:@"Reveal “%@” in Finder", [fsItem relativePath]]
+                  action:@selector(revealInFinder:)
+           keyEquivalent:@""];
+  [menu addItemWithTitle:@"New Folder" action:@selector(newFolder:) keyEquivalent:@""];
+  for (item in [menu itemArray]) {
+    [item setTarget:self];
+    [item setTag:row];
+  }
   return menu;
 }
 
@@ -242,6 +251,17 @@ static NSMutableArray *leafNode = nil;
   NSString *path = [[self itemAtRow:[sender tag]] fullPath];
   NSArray *urls = [NSArray arrayWithObject:[NSURL fileURLWithPath:path]];
   [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:urls];
+}
+
+- (void)newFolder:(NSMenuItem *)sender {
+  FileSystemItem *item = [self itemAtRow:[sender tag]];
+  NSString *path = [item fullPath];
+  if ([item isLeaf]) {
+    path = [path stringByDeletingLastPathComponent];
+  }
+  path = [path stringByAppendingPathComponent:@"untitled folder"];
+  NSLog(@"create new folder: %@", path);
+  [[NSFileManager defaultManager] createDirectoryAtPath:path withIntermediateDirectories:NO attributes:nil error:NULL];
 }
 
 
