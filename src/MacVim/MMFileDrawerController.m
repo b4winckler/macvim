@@ -118,6 +118,31 @@ static NSMutableArray *leafNode = nil;
   return icon;
 }
 
+- (FileSystemItem *)itemAtPath:(NSString *)itemPath {
+  NSArray *components = [itemPath pathComponents];
+  NSLog(@"Components: %@", components);
+  NSArray *root = [path pathComponents];
+  NSLog(@"Root: %@", root);
+  // minus one extra because paths from FSEvents have a trailing slash
+  components = [components subarrayWithRange:NSMakeRange([root count], [components count] - [root count] - 1)];
+  NSLog(@"Components: %@", components);
+  return [self _itemAtPath:components];
+}
+
+- (FileSystemItem *)_itemAtPath:(NSArray *)components {
+  if ([components count] == 0) {
+    return self;
+  } else {
+    NSString *component = [components objectAtIndex:0];
+    NSLog(@"Find: %@", component);
+    for (FileSystemItem *child in [self children]) {
+      if ([[child relativePath] isEqualToString:component]) {
+        return [child _itemAtPath:[components subarrayWithRange:NSMakeRange(1, [components count] - 1)]];
+      }
+    }
+  }
+}
+
 - (void)dealloc {
   if (children != leafNode) {
     [children release];
@@ -291,9 +316,10 @@ static void change_occured(ConstFSEventStreamRef stream,
 
 - (void)changeOccurredAtPath:(NSString *)path {
   NSLog(@"Change at: %@", path);
-  // For now we just reload everything
-  [rootItem clear];
-  [(FilesOutlineView *)[self view] reloadData];
+  FileSystemItem *item = [rootItem itemAtPath:path];
+  NSLog(@"Found item: %@", item);
+  [item clear];
+  [(FilesOutlineView *)[self view] reloadItem:item reloadChildren:YES];
 }
 
 - (void)watchRoot {
