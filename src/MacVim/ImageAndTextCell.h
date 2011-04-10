@@ -53,7 +53,7 @@
     NSImage *image;
 }
 
-@property(readwrite, assign) NSImage *image;
+@property(nonatomic, retain) NSImage *image;
 
 - (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView;
 - (NSSize)cellSize;

@@ -217,7 +217,13 @@ static NSMutableArray *leafNode = nil;
 
 - (NSMenu *)menuForRow:(NSInteger)row {
   NSMenu *menu = [[[NSMenu alloc] init] autorelease];
-  NSMenuItem *item = [menu addItemWithTitle:@"Rename…" action:@selector(renameFile:) keyEquivalent:@""];
+  //NSMenuItem *item = [menu addItemWithTitle:@"Rename…" action:@selector(renameFile:) keyEquivalent:@""];
+  //[item setTarget:self];
+  //[item setTag:row];
+  FileSystemItem *fsItem = [self itemAtRow:row];
+  NSMenuItem *item = [menu addItemWithTitle:[NSString stringWithFormat:@"Reveal “%@” in Finder", [fsItem relativePath]]
+                                     action:@selector(revealInFinder:)
+                              keyEquivalent:@""];
   [item setTarget:self];
   [item setTag:row];
   return menu;
@@ -230,6 +236,12 @@ static NSMutableArray *leafNode = nil;
   FileSystemItem *item = [self itemAtRow:[sender tag]];
   NSLog(@"Rename: %@", [item fullPath]);
   [(FilesOutlineView *)[self view] editColumn:0 row:[sender tag] withEvent:nil select:YES];
+}
+
+- (void)revealInFinder:(NSMenuItem *)sender {
+  NSString *path = [[self itemAtRow:[sender tag]] fullPath];
+  NSArray *urls = [NSArray arrayWithObject:[NSURL fileURLWithPath:path]];
+  [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:urls];
 }
 
 
