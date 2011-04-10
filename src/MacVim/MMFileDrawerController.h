@@ -11,5 +11,8 @@
 
 - (id)initWithWindowController:(MMWindowController *)controller;
 - (void)setRootFilename:(NSString *)filename;
+- (FileSystemItem *)itemAtRow:(NSInteger)row;
+- (FileSystemItem *)selectedItem;
+- (NSMenu *)menuForRow:(NSInteger)row;
 
 @end

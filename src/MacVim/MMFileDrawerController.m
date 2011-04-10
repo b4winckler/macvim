@@ -3,6 +3,19 @@
 #import "MMAppController.h"
 #import "ImageAndTextCell.h"
 
+
+@interface FilesOutlineView : NSOutlineView
+- (NSMenu *)menuForEvent:(NSEvent *)event;
+@end
+
+@implementation FilesOutlineView
+- (NSMenu *)menuForEvent:(NSEvent *)event {
+  NSInteger row = [self rowAtPoint:[self convertPoint:[event locationInWindow] fromView:nil]];
+  return [(MMFileDrawerController *)[self delegate] menuForRow:row];
+}
+@end
+
+
 // The FileSystemItem class is an adaptation of Apple's example in the Outline
 // View Programming Topics document.
 
@@ -118,26 +131,23 @@ static NSMutableArray *leafNode = nil;
 - (void)loadView {
   drawer = [[NSDrawer alloc] initWithContentSize:NSMakeSize(200, 0) preferredEdge:NSMaxXEdge];
 
-  NSOutlineView *filesView = [[NSOutlineView alloc] initWithFrame:NSZeroRect];
+  FilesOutlineView *filesView = [[[FilesOutlineView alloc] initWithFrame:NSZeroRect] autorelease];
   [filesView setDelegate:self];
   [filesView setDataSource:self];
   [filesView setHeaderView:nil];
-  NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:nil];
+  NSTableColumn *column = [[[NSTableColumn alloc] initWithIdentifier:nil] autorelease];
   [column setDataCell:[[[ImageAndTextCell alloc] init] autorelease]];
   [filesView addTableColumn:column];
   [filesView setOutlineTableColumn:column];
-  [column release];
 
-  NSScrollView *scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+  NSScrollView *scrollView = [[[NSScrollView alloc] initWithFrame:NSZeroRect] autorelease];
   [scrollView setHasHorizontalScroller:YES];
   [scrollView setHasVerticalScroller:YES];
   [scrollView setAutohidesScrollers:YES];
   [scrollView setDocumentView:filesView];
   [drawer setContentView:scrollView];
-  [scrollView release];
 
   [self setView:filesView];
-  [filesView release];
 }
 
 
@@ -164,6 +174,14 @@ static NSMutableArray *leafNode = nil;
   }
 }
 
+- (FileSystemItem *)itemAtRow:(NSInteger)row {
+  return [(FilesOutlineView *)[self view] itemAtRow:row];
+}
+
+- (FileSystemItem *)selectedItem {
+  return [self itemAtRow:[(FilesOutlineView *)[self view] selectedRow]];
+}
+
 
 // Data Source methods
  
@@ -187,15 +205,31 @@ static NSMutableArray *leafNode = nil;
 // Delegate methods
 
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
-  NSOutlineView *view = (NSOutlineView *)[self view];
-  NSString *path = [(FileSystemItem *)[view itemAtRow:[view selectedRow]] fullPath];
+  NSArray *files = [NSArray arrayWithObject:[[self selectedItem] fullPath]];
   // TODO what's the good way?
-  [(MMAppController *)[NSApp delegate] openFiles:[NSArray arrayWithObject:path] withArguments:nil];
+  [(MMAppController *)[NSApp delegate] openFiles:files withArguments:nil];
 }
 
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell *)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
   ImageAndTextCell *imageAndTextCell = (ImageAndTextCell *)cell;
   [imageAndTextCell setImage:[item icon]];
+}
+
+- (NSMenu *)menuForRow:(NSInteger)row {
+  NSMenu *menu = [[[NSMenu alloc] init] autorelease];
+  NSMenuItem *item = [menu addItemWithTitle:@"Rename…" action:@selector(renameFile:) keyEquivalent:@""];
+  [item setTarget:self];
+  [item setTag:row];
+  return menu;
+}
+
+
+// Actions
+
+- (void)renameFile:(NSMenuItem *)sender {
+  FileSystemItem *item = [self itemAtRow:[sender tag]];
+  NSLog(@"Rename: %@", [item fullPath]);
+  [(FilesOutlineView *)[self view] editColumn:0 row:[sender tag] withEvent:nil select:YES];
 }
 
 
