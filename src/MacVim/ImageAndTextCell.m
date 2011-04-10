@@ -66,7 +66,7 @@
 
 - (id)copyWithZone:(NSZone *)zone {
     ImageAndTextCell *cell = (ImageAndTextCell *)[super copyWithZone:zone];
-    cell.image = self.image;
+    cell->image = [self.image retain];
     return cell;
 }
 
