@@ -3,6 +3,8 @@
 #import "MMAppController.h"
 #import "ImageAndTextCell.h"
 
+#import <CoreServices/CoreServices.h>
+
 
 @interface FilesOutlineView : NSOutlineView
 - (NSMenu *)menuForEvent:(NSEvent *)event;
@@ -33,6 +35,7 @@
 - (NSString *)fullPath;
 - (NSString *)relativePath;
 - (BOOL)isLeaf;
+- (void)clear;
 
 @end
 
@@ -77,6 +80,11 @@ static NSMutableArray *leafNode = nil;
     }
   }
   return children;
+}
+
+- (void)clear {
+  [children release];
+  children = nil;
 }
 
 - (BOOL)isLeaf {
@@ -128,6 +136,7 @@ static NSMutableArray *leafNode = nil;
   if ((self = [super initWithNibName:nil bundle:nil])) {
     windowController = controller;
     rootItem = nil;
+    fsEventsStream = NULL;
   }
   return self;
 }
@@ -174,6 +183,7 @@ static NSMutableArray *leafNode = nil;
         [(NSOutlineView *)[self view] expandItem:rootItem];
         [drawer setParentWindow:[windowController window]];
         [drawer open];
+        [self watchRoot];
       }
     }
   }
@@ -265,9 +275,61 @@ static NSMutableArray *leafNode = nil;
 }
 
 
+// FSEvents
+
+static void change_occured(ConstFSEventStreamRef stream,
+                           void *watcher,
+                           size_t eventCount,
+                           void *paths,
+                           const FSEventStreamEventFlags flags[],
+                           const FSEventStreamEventId ids[]) {
+  MMFileDrawerController *self = (MMFileDrawerController *)watcher;
+  for (NSString *path in (NSArray *)paths) {
+    [self changeOccurredAtPath:path];
+  }
+}
+
+- (void)changeOccurredAtPath:(NSString *)path {
+  NSLog(@"Change at: %@", path);
+  // For now we just reload everything
+  [rootItem clear];
+  [(FilesOutlineView *)[self view] reloadData];
+}
+
+- (void)watchRoot {
+  NSString *path = [rootItem fullPath];
+  NSLog(@"Watch: %@", path);
+  
+  FSEventStreamContext context;
+  context.version = 0;
+  context.info = (void *)self;
+  context.retain = NULL;
+  context.release = NULL;
+  context.copyDescription = NULL;
+
+  fsEventsStream = FSEventStreamCreate(kCFAllocatorDefault,
+                                       &change_occured,
+                                       &context,
+                                       (CFArrayRef)[NSArray arrayWithObject:path],
+                                       kFSEventStreamEventIdSinceNow,
+                                       1.5,
+                                       // TODO MacVim doesn't deal with the root path changing afaik
+                                       //kFSEventStreamCreateFlagWatchRoot | kFSEventStreamCreateFlagUseCFTypes);
+                                       kFSEventStreamCreateFlagUseCFTypes);
+
+  FSEventStreamScheduleWithRunLoop(fsEventsStream, [[NSRunLoop currentRunLoop] getCFRunLoop], kCFRunLoopDefaultMode);
+  FSEventStreamStart(fsEventsStream);
+}
+
+
 - (void)dealloc {
   [drawer release];
   [rootItem release];
+  if (fsEventsStream != NULL) {
+    FSEventStreamStop(fsEventsStream);
+    FSEventStreamInvalidate(fsEventsStream);
+    FSEventStreamRelease(fsEventsStream);
+  }
   [super dealloc];
 }
 
