@@ -2,3 +2,4 @@
 * currently when a change occurs in a directory, we load all the children while looking for the directory even though the item might not have been opened in the browser. So stop traversing once a node is found that has not loaded its children yet.
 * add toggle menu item 'hide/show hidden files'
 * when an item is reloaded, the view seems to loose its width
+* think of a way to be able to open files in either a new tab, or as a new split window, possibly by holding down alt or something when clicking on the file?
