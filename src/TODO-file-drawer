@@ -1,0 +1,2 @@
+* removing a directory that contains several levels deep nested directories causes a segfault.
+* currently when a change occurs in a directory, we load all the children while looking for the directory even though the item might not have been opened in the browser. So stop traversing once a node is found that has not loaded its children yet.
