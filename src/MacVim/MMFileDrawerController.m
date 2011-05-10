@@ -2,6 +2,7 @@
 #import "MMWindowController.h"
 #import "MMAppController.h"
 #import "ImageAndTextCell.h"
+#import "Miscellaneous.h"
 
 #import <CoreServices/CoreServices.h>
 
@@ -247,7 +248,13 @@ static NSMutableArray *leafNode = nil;
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
   NSArray *files = [NSArray arrayWithObject:[[self selectedItem] fullPath]];
   // TODO what's the good way?
+  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+  BOOL openInCurrentWindow = [ud boolForKey:MMOpenInCurrentWindowKey];
+
+  // Force file to open in current window
+  [ud setBool:YES forKey:MMOpenInCurrentWindowKey];
   [(MMAppController *)[NSApp delegate] openFiles:files withArguments:nil];
+  [ud setBool:openInCurrentWindow forKey:MMOpenInCurrentWindowKey];
 }
 
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell *)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
