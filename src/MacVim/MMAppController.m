@@ -223,6 +223,7 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         [NSNumber numberWithBool:YES],  MMUseInlineImKey,
 #endif // INCLUDE_OLD_IM_CODE
         [NSNumber numberWithBool:NO],   MMSuppressTerminationAlertKey,
+        [NSNumber numberWithInt:0],     MMDrawerPreferredEdgeKey,
         nil];
 
     [[NSUserDefaults standardUserDefaults] registerDefaults:dict];

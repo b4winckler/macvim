@@ -200,7 +200,13 @@ static NSMutableArray *leafNode = nil;
 
 
 - (void)loadView {
-  drawer = [[NSDrawer alloc] initWithContentSize:NSMakeSize(200, 0) preferredEdge:NSMaxXEdge];
+  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+  NSRectEdge edge = [ud integerForKey:MMDrawerPreferredEdgeKey] <= 0
+                  ? NSMaxXEdge
+                  : NSMinXEdge;
+
+  drawer = [[NSDrawer alloc] initWithContentSize:NSMakeSize(200, 0)
+                                   preferredEdge:edge];
 
   FilesOutlineView *filesView = [[[FilesOutlineView alloc] initWithFrame:NSZeroRect] autorelease];
   [filesView setDelegate:self];
