@@ -222,30 +222,6 @@ static NSMutableArray *leafNode = nil;
 }
 
 
-// TODO This is really not the right way to get the root path,
-// but for now I focus on getting the drawer done.
-- (void)setRootFilename:(NSString *)filename {
-  if (rootItem == nil) {
-    NSRange range = [filename rangeOfString:@"("];
-    if (range.location != NSNotFound) {
-      range.location += 1;
-      NSRange end = [filename rangeOfString:@")" options:NSBackwardsSearch];
-      range.length = end.location - range.location;
-      NSString *expandedPath = [[filename substringWithRange:range] stringByStandardizingPath];
-
-      BOOL isDir, valid;
-      valid = [[NSFileManager defaultManager] fileExistsAtPath:expandedPath isDirectory:&isDir];
-      if (valid && isDir) {
-        rootItem = [[FileSystemItem alloc] initWithPath:expandedPath parent:nil];
-        [(NSOutlineView *)[self view] expandItem:rootItem];
-        [drawer setParentWindow:[windowController window]];
-        [drawer open];
-        [self watchRoot];
-      }
-    }
-  }
-}
-
 - (void)setRoot:(NSString *)root
 {
   root = [root stringByStandardizingPath];

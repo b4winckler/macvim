@@ -11,7 +11,6 @@
 }
 
 - (id)initWithWindowController:(MMWindowController *)controller;
-- (void)setRootFilename:(NSString *)filename;
 - (void)setRoot:(NSString *)root;
 - (void)open;
 - (void)close;
