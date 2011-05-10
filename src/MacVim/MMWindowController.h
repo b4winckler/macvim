@@ -98,5 +98,6 @@
 - (IBAction)zoom:(id)sender;
 - (IBAction)openDrawer:(id)sender;
 - (IBAction)closeDrawer:(id)sender;
+- (IBAction)toggleDrawer:(id)sender;
 
 @end

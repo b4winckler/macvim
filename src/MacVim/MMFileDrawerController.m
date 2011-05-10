@@ -284,6 +284,18 @@ static NSMutableArray *leafNode = nil;
   [drawer close];
 }
 
+- (void)toggle
+{
+  if (!rootItem) {
+    NSString *root = [[windowController vimController]
+                                                  objectForVimStateKey:@"pwd"];
+    [self setRoot:(root ? root : @"~/")];
+  }
+
+  [drawer setParentWindow:[windowController window]];
+  [drawer toggle:self];
+}
+
 - (FileSystemItem *)itemAtRow:(NSInteger)row {
   return [(FilesOutlineView *)[self view] itemAtRow:row];
 }

@@ -975,6 +975,11 @@
     [fileDrawerController close];
 }
 
+- (IBAction)toggleDrawer:(id)sender
+{
+    [fileDrawerController toggle];
+}
+
 
 // -- Services menu delegate -------------------------------------------------
 

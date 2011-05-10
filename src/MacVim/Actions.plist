@@ -68,6 +68,8 @@
 	<string></string>
 	<key>terminate:</key>
 	<string></string>
+	<key>toggleDrawer:</key>
+	<string></string>
 	<key>undo:</key>
 	<string></string>
 	<key>unhide:</key>

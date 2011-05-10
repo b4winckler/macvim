@@ -15,6 +15,7 @@
 - (void)setRoot:(NSString *)root;
 - (void)open;
 - (void)close;
+- (void)toggle;
 - (FileSystemItem *)itemAtRow:(NSInteger)row;
 - (FileSystemItem *)selectedItem;
 - (NSMenu *)menuForRow:(NSInteger)row;
