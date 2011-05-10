@@ -297,6 +297,7 @@ static NSMutableArray *leafNode = nil;
 }
 - (void)makeFirstResponder;
 - (NSMenu *)menuForEvent:(NSEvent *)event;
+- (void)cancelOperation:(id)sender;
 - (void)expandParentsOfItem:(id)item;
 - (void)selectItem:(id)item;
 @end
@@ -330,6 +331,11 @@ static NSMutableArray *leafNode = nil;
 - (void)makeFirstResponder {
   canBecomeFirstResponder = YES;
   [[self window] makeFirstResponder:self];
+}
+
+- (void)cancelOperation:(id)sender {
+  // Pressing Esc will select the next key view, which should be the text view
+  [[self window] selectNextKeyView:nil];
 }
 
 - (NSMenu *)menuForEvent:(NSEvent *)event {
@@ -424,6 +430,8 @@ static NSMutableArray *leafNode = nil;
   [column setDataCell:cell];
   [filesView addTableColumn:column];
   [filesView setOutlineTableColumn:column];
+  // Typing Tab (or Esc) in browser view sets keyboard focus to text view
+  [filesView setNextKeyView:[[windowController vimView] textView]];
 
   pathControl = [[NSPathControl alloc] initWithFrame:NSMakeRect(0, 0, 0, 20)];
   [pathControl setRefusesFirstResponder:YES];
