@@ -40,6 +40,20 @@
 
 @end
 
+
+BOOL isSwapFile(NSString *path) {
+  if (!path) return NO;
+  NSString *name = [path lastPathComponent];
+  if ([name length] < 4) return NO;
+
+  // NOTE: Vim swap files have names of type
+  //   .original-file-name.sXY
+  // where XY can be anything from "aa" to "wp".
+  // We only detect "swp" for now.
+  return [name characterAtIndex:0] == '.' &&
+         [[name pathExtension] isEqualToString:@"swp"];
+}
+
 @implementation FileSystemItem
 
 static NSMutableArray *leafNode = nil;
@@ -72,6 +86,10 @@ static NSMutableArray *leafNode = nil;
       children = [[NSMutableArray alloc] initWithCapacity:[array count]];
 
       for (NSString *childPath in array) {
+        // Don't add Vim swap files to browser
+        if (isSwapFile(childPath))
+          continue;
+
         FileSystemItem *child = [[FileSystemItem alloc] initWithPath:[path stringByAppendingPathComponent:childPath] parent:self];
         [children addObject:child];
         [child release];
