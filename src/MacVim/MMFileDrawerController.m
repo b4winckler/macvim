@@ -38,7 +38,11 @@
 - (NSString *)relativePath;
 - (BOOL)isLeaf;
 - (void)clear;
+- (FileSystemItem *)itemAtPath:(NSString *)itemPath;
+@end
 
+@interface FileSystemItem (Private)
+- (FileSystemItem *)_itemAtPath:(NSArray *)components;
 @end
 
 
@@ -161,6 +165,8 @@ static NSMutableArray *leafNode = nil;
       }
     }
   }
+
+  return nil;
 }
 
 - (void)dealloc {
@@ -413,9 +419,11 @@ static void change_occured(ConstFSEventStreamRef stream,
 - (void)changeOccurredAtPath:(NSString *)path {
   NSLog(@"Change at: %@", path);
   FileSystemItem *item = [rootItem itemAtPath:path];
-  NSLog(@"Found item: %@", item);
-  [item clear];
-  [(FilesOutlineView *)[self view] reloadItem:item reloadChildren:YES];
+  if (item) {
+    NSLog(@"Found item: %@", item);
+    [item clear];
+    [(FilesOutlineView *)[self view] reloadItem:item reloadChildren:YES];
+  }
 }
 
 - (void)watchRoot {
