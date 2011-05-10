@@ -96,5 +96,7 @@
 - (IBAction)fontSizeDown:(id)sender;
 - (IBAction)findAndReplace:(id)sender;
 - (IBAction)zoom:(id)sender;
+- (IBAction)openDrawer:(id)sender;
+- (IBAction)closeDrawer:(id)sender;
 
 @end

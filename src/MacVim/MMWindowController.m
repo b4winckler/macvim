@@ -965,6 +965,15 @@
     [vimController sendMessage:ZoomMsgID data:data];
 }
 
+- (IBAction)openDrawer:(id)sender
+{
+    [fileDrawerController open];
+}
+
+- (IBAction)closeDrawer:(id)sender
+{
+    [fileDrawerController close];
+}
 
 
 // -- Services menu delegate -------------------------------------------------

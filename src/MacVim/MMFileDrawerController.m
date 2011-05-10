@@ -233,6 +233,16 @@ static NSMutableArray *leafNode = nil;
   }
 }
 
+- (void)open
+{
+  [drawer open];
+}
+
+- (void)close
+{
+  [drawer close];
+}
+
 - (FileSystemItem *)itemAtRow:(NSInteger)row {
   return [(FilesOutlineView *)[self view] itemAtRow:row];
 }

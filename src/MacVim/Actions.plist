@@ -12,6 +12,8 @@
 	<string></string>
 	<key>clearRecentDocuments:</key>
 	<string></string>
+	<key>closeDrawer:</key>
+	<string></string>
 	<key>copy:</key>
 	<string></string>
 	<key>cut:</key>
@@ -33,6 +35,8 @@
 	<key>miniaturizeAll:</key>
 	<string></string>
 	<key>newWindow:</key>
+	<string></string>
+	<key>openDrawer:</key>
 	<string></string>
 	<key>openWebsite:</key>
 	<string></string>
