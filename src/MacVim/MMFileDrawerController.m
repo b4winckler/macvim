@@ -54,9 +54,9 @@ BOOL isSwapFile(NSString *path) {
   // NOTE: Vim swap files have names of type
   //   .original-file-name.sXY
   // where XY can be anything from "aa" to "wp".
-  // We only detect "swp" for now.
-  return [name characterAtIndex:0] == '.' &&
-         [[name pathExtension] isEqualToString:@"swp"];
+  if ([name characterAtIndex:0] != '.') return NO;
+  NSString *last3 = [name substringFromIndex:[name length]-3];
+  return [last3 compare:@"saa"] >= 0 && [last3 compare:@"swp"] <= 0;
 }
 
 @implementation FileSystemItem
