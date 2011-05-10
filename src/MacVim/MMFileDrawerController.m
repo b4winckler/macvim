@@ -10,12 +10,19 @@
 
 @interface FilesOutlineView : NSOutlineView
 - (NSMenu *)menuForEvent:(NSEvent *)event;
+- (void)cancelOperation:(id)sender;
 @end
 
 @implementation FilesOutlineView
 - (NSMenu *)menuForEvent:(NSEvent *)event {
   NSInteger row = [self rowAtPoint:[self convertPoint:[event locationInWindow] fromView:nil]];
   return [(MMFileDrawerController *)[self delegate] menuForRow:row];
+}
+
+- (void)cancelOperation:(id)sender
+{
+  // Pressing Esc will select the next key view, which should be the text view
+  [[self window] selectNextKeyView:nil];
 }
 @end
 
@@ -217,6 +224,9 @@ static NSMutableArray *leafNode = nil;
   [column setDataCell:[[[ImageAndTextCell alloc] init] autorelease]];
   [filesView addTableColumn:column];
   [filesView setOutlineTableColumn:column];
+
+  // Typing Tab (or Esc) in browser view sets keyboard focus to text view
+  [filesView setNextKeyView:[[windowController vimView] textView]];
 
   NSScrollView *scrollView = [[[NSScrollView alloc] initWithFrame:NSZeroRect] autorelease];
   [scrollView setHasHorizontalScroller:YES];
