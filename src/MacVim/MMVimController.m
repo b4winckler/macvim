@@ -800,6 +800,16 @@ static BOOL isUnsafeMessage(int msgid);
     } else if (SetVimStateMsgID == msgid) {
         NSDictionary *dict = [NSDictionary dictionaryWithData:data];
         if (dict) {
+            // HACK! Post notification if pwd changed.
+            NSString *oldPwd = [vimState objectForKey:@"pwd"];
+            NSString *newPwd = [dict objectForKey:@"pwd"];
+            if (![oldPwd isEqualToString:newPwd]) {
+                [[NSNotificationCenter defaultCenter]
+                    postNotificationName:@"MMPwdChanged"
+                                  object:self
+                                userInfo:dict];
+            }
+
             [vimState release];
             vimState = [dict retain];
         }

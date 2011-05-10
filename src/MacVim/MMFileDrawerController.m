@@ -184,6 +184,7 @@ static NSMutableArray *leafNode = nil;
 
 @interface MMFileDrawerController (Private)
 - (FilesOutlineView *)outlineView;
+- (void)pwdChanged:(NSNotification *)notification;
 @end
 
 
@@ -225,6 +226,11 @@ static NSMutableArray *leafNode = nil;
   [drawer setContentView:scrollView];
 
   [self setView:filesView];
+
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(pwdChanged:)
+                                               name:@"MMPwdChanged"
+                                             object:nil];
 }
 
 
@@ -456,6 +462,8 @@ static void change_occured(ConstFSEventStreamRef stream,
 }
 
 - (void)dealloc {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+
   [drawer release];
   [rootItem release];
   [self unwatchRoot];
@@ -467,6 +475,16 @@ static void change_occured(ConstFSEventStreamRef stream,
 - (FilesOutlineView *)outlineView
 {
   return (FilesOutlineView *)[self view];
+}
+
+- (void)pwdChanged:(NSNotification *)notification
+{
+  NSString *pwd = [[notification userInfo] objectForKey:@"pwd"];
+  if (pwd) {
+    [self setRoot:pwd];
+    [[self outlineView] reloadData];
+    [[self outlineView] expandItem:rootItem];
+  }
 }
 
 @end
