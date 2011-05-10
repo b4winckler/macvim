@@ -246,14 +246,21 @@ static NSMutableArray *leafNode = nil;
 // Delegate methods
 
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
-  NSArray *files = [NSArray arrayWithObject:[[self selectedItem] fullPath]];
-  // TODO what's the good way?
-  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
-  BOOL openInCurrentWindow = [ud boolForKey:MMOpenInCurrentWindowKey];
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  NSString *path = [[self selectedItem] fullPath];
+  BOOL isDir;
+  BOOL valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
+  if (!valid || isDir)
+    return; // Don't try to open directories
 
   // Force file to open in current window
+  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+  BOOL openInCurrentWindow = [ud boolForKey:MMOpenInCurrentWindowKey];
   [ud setBool:YES forKey:MMOpenInCurrentWindowKey];
+
+  NSArray *files = [NSArray arrayWithObject:path];
   [(MMAppController *)[NSApp delegate] openFiles:files withArguments:nil];
+
   [ud setBool:openInCurrentWindow forKey:MMOpenInCurrentWindowKey];
 }
 
