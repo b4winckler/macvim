@@ -3,6 +3,7 @@
 #import "MMAppController.h"
 #import "ImageAndTextCell.h"
 #import "Miscellaneous.h"
+#import "MMVimController.h"
 
 #import <CoreServices/CoreServices.h>
 
@@ -174,6 +175,12 @@ static NSMutableArray *leafNode = nil;
 @end
 
 
+
+@interface MMFileDrawerController (Private)
+- (FilesOutlineView *)outlineView;
+@end
+
+
 @implementation MMFileDrawerController
 
 - (id)initWithWindowController:(MMWindowController *)controller {
@@ -233,8 +240,36 @@ static NSMutableArray *leafNode = nil;
   }
 }
 
+- (void)setRoot:(NSString *)root
+{
+  root = [root stringByStandardizingPath];
+
+  BOOL isDir;
+  BOOL valid = [[NSFileManager defaultManager] fileExistsAtPath:root
+                                                    isDirectory:&isDir];
+  if (!(valid && isDir))
+    return;
+
+  if (rootItem) {
+    [self unwatchRoot];
+    [rootItem autorelease];
+    rootItem = nil;
+  }
+
+  rootItem = [[FileSystemItem alloc] initWithPath:root parent:nil];
+  [(NSOutlineView *)[self view] expandItem:rootItem];
+  [self watchRoot];
+}
+
 - (void)open
 {
+  if (!rootItem) {
+    NSString *root = [[windowController vimController]
+                                                  objectForVimStateKey:@"pwd"];
+    [self setRoot:(root ? root : @"~/")];
+  }
+
+  [drawer setParentWindow:[windowController window]];
   [drawer open];
 }
 
@@ -315,6 +350,25 @@ static NSMutableArray *leafNode = nil;
   return menu;
 }
 
+- (BOOL)outlineView:(NSOutlineView *)outlineView
+        shouldEditTableColumn:(NSTableColumn *)tableColumn
+                         item:(id)item
+{
+  // Called when an item was double-clicked.  Change the root to item clicked
+  // on and expand.
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  NSString *path = [item fullPath];
+  BOOL isDir;
+  BOOL valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
+  if (valid && isDir) {
+    [self setRoot:path];
+    [[self outlineView] reloadData];
+    [[self outlineView] expandItem:rootItem];
+  }
+
+  return NO;
+}
+
 
 // Actions
 
@@ -389,17 +443,28 @@ static void change_occured(ConstFSEventStreamRef stream,
   FSEventStreamStart(fsEventsStream);
 }
 
-
-- (void)dealloc {
-  [drawer release];
-  [rootItem release];
+- (void)unwatchRoot
+{
   if (fsEventsStream != NULL) {
     FSEventStreamStop(fsEventsStream);
     FSEventStreamInvalidate(fsEventsStream);
     FSEventStreamRelease(fsEventsStream);
+    fsEventsStream = NULL;
   }
+}
+
+- (void)dealloc {
+  [drawer release];
+  [rootItem release];
+  [self unwatchRoot];
+
   [super dealloc];
 }
 
+
+- (FilesOutlineView *)outlineView
+{
+  return (FilesOutlineView *)[self view];
+}
 
 @end
