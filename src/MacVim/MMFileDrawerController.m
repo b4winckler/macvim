@@ -36,7 +36,10 @@
   FileSystemItem *parent;
   NSMutableArray *children;
   NSImage *icon;
+  BOOL includesHiddenFiles;
 }
+
+@property (nonatomic, assign) BOOL includesHiddenFiles;
 
 - (id)initWithPath:(NSString *)path parent:(FileSystemItem *)parentItem;
 - (NSInteger)numberOfChildren; // Returns -1 for leaf nodes
@@ -76,11 +79,18 @@ static NSMutableArray *leafNode = nil;
   }
 }
 
+@synthesize includesHiddenFiles;
+
 - (id)initWithPath:(NSString *)thePath parent:(FileSystemItem *)parentItem {
   if ((self = [super init])) {
+    icon = nil;
     path = [thePath retain];
     parent = parentItem;
-    icon = nil;
+    if (parent) {
+      includesHiddenFiles = parent.includesHiddenFiles;
+    } else {
+      includesHiddenFiles = NO;
+    }
   }
   return self;
 }
@@ -101,6 +111,11 @@ static NSMutableArray *leafNode = nil;
         // Don't add Vim swap files to browser
         if (isSwapFile(childPath))
           continue;
+
+        if (!includesHiddenFiles) {
+          if ([[[childPath lastPathComponent] substringToIndex:1] isEqualToString:@"."])
+            continue;
+        }
 
         FileSystemItem *child = [[FileSystemItem alloc] initWithPath:[path stringByAppendingPathComponent:childPath] parent:self];
         [children addObject:child];
@@ -344,8 +359,7 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell *)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
-  ImageAndTextCell *imageAndTextCell = (ImageAndTextCell *)cell;
-  [imageAndTextCell setImage:[item icon]];
+  [(ImageAndTextCell *)cell setImage:[item icon]];
 }
 
 - (NSMenu *)menuForRow:(NSInteger)row {
@@ -359,6 +373,9 @@ static NSMutableArray *leafNode = nil;
                   action:@selector(revealInFinder:)
            keyEquivalent:@""];
   [menu addItemWithTitle:@"New Folder" action:@selector(newFolder:) keyEquivalent:@""];
+  [menu addItem:[NSMenuItem separatorItem]];
+  item = [menu addItemWithTitle:@"Show hidden files" action:@selector(toggleShowHiddenFiles:) keyEquivalent:@""];
+  [item setState:rootItem.includesHiddenFiles ? NSOnState : NSOffState];
   for (item in [menu itemArray]) {
     [item setTarget:self];
     [item setTag:row];
@@ -411,6 +428,12 @@ static NSMutableArray *leafNode = nil;
   [[NSFileManager defaultManager] createDirectoryAtPath:path withIntermediateDirectories:NO attributes:nil error:NULL];
 }
 
+- (void)toggleShowHiddenFiles:(NSMenuItem *)sender {
+  rootItem.includesHiddenFiles = !rootItem.includesHiddenFiles;
+  [rootItem clear];
+  [[self outlineView] reloadData];
+  [[self outlineView] expandItem:rootItem];
+}
 
 // FSEvents
 
