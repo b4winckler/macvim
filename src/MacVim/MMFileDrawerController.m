@@ -399,6 +399,9 @@ static NSMutableArray *leafNode = nil;
   [(MMAppController *)[NSApp delegate] openFiles:files withArguments:nil];
 
   [ud setBool:openInCurrentWindow forKey:MMOpenInCurrentWindowKey];
+
+  // And select the next key view, which should be the text view
+  [[windowController window] selectNextKeyView:nil];
 }
 
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell *)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
