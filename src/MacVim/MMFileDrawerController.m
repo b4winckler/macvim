@@ -417,7 +417,7 @@ static NSMutableArray *leafNode = nil;
   NSEvent *event = [NSApp currentEvent];
   if ([event modifierFlags] & NSAlternateKeyMask) {
     if (layout == MMLayoutTabs) {
-      // Yhe user normally creates a new tab when opening a file,
+      // The user normally creates a new tab when opening a file,
       // so open this file in the current one
       [ud setInteger:MMLayoutArglist forKey:MMOpenLayoutKey];
     } else {
