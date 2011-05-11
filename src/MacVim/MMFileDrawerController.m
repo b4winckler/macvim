@@ -111,7 +111,7 @@ static NSMutableArray *leafNode = nil;
 - (void)reloadRecursive:(BOOL)recursive {
   // Only reload items that have been loaded before
   if (children) {
-    NSLog(@"Reload: %@", path);
+    // NSLog(@"Reload: %@", path);
     if (parent) {
       includesHiddenFiles = parent.includesHiddenFiles;
     }
@@ -149,7 +149,7 @@ static NSMutableArray *leafNode = nil;
         }
       }
       if (child) {
-        NSLog(@"Already have item for child: %@", childName);
+        // NSLog(@"Already have item for child: %@", childName);
         // If an item already existed use it and reload its children
         [reloaded addObject:child];
         if (recursive && ![child isLeaf]) {
@@ -167,7 +167,7 @@ static NSMutableArray *leafNode = nil;
     [children release];
     children = reloaded;
   } else {
-    NSLog(@"Not loaded yet, so don't reload: %@", path);
+    // NSLog(@"Not loaded yet, so don't reload: %@", path);
   }
 }
 
@@ -503,7 +503,7 @@ static void change_occured(ConstFSEventStreamRef stream,
 - (void)changeOccurredAtPath:(NSString *)path {
   FileSystemItem *item = [rootItem itemAtPath:path];
   if (item) {
-    NSLog(@"Change occurred in path: %@", [item fullPath]);
+    // NSLog(@"Change occurred in path: %@", [item fullPath]);
     [item reloadRecursive:NO]; // the change occurred in *this* item only
     [(FilesOutlineView *)[self view] reloadItem:item reloadChildren:YES];
   }
@@ -511,7 +511,7 @@ static void change_occured(ConstFSEventStreamRef stream,
 
 - (void)watchRoot {
   NSString *path = [rootItem fullPath];
-  NSLog(@"Watch: %@", path);
+  // NSLog(@"Watch: %@", path);
   
   FSEventStreamContext context;
   context.version = 0;
