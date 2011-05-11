@@ -440,9 +440,14 @@ static NSMutableArray *leafNode = nil;
   BOOL isDir;
   BOOL valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
   if (valid && isDir) {
-    [self setRoot:path];
-    [[self outlineView] reloadData];
-    [[self outlineView] expandItem:rootItem];
+    // Tell Vim to change the pwd.  As a side effect this will cause a new root
+    // to be set to the folder the user just double-clicked on.
+    NSString *input = [NSString stringWithFormat:
+                  @"<C-\\><C-N>:exe \"cd \" . fnameescape(\"%@\")<CR>", path];
+    [[windowController vimController] addVimInput:input];
+
+    // Change keyboard focus the text view
+    [[outlineView window] selectNextKeyView:nil];
   }
 
   return NO;
