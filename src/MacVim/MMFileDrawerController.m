@@ -29,7 +29,6 @@
 // The FileSystemItem class is an adaptation of Apple's example in the Outline
 // View Programming Topics document.
 
-// TODO use NSTreeNode
 @interface FileSystemItem : NSObject {
   NSString *path;
   FileSystemItem *parent;
@@ -479,12 +478,24 @@ static NSMutableArray *leafNode = nil;
 - (void)newFolder:(NSMenuItem *)sender {
   FileSystemItem *item = [self itemAtRow:[sender tag]];
   NSString *path = [item fullPath];
+
   if ([item isLeaf]) {
     path = [path stringByDeletingLastPathComponent];
   }
   path = [path stringByAppendingPathComponent:@"untitled folder"];
-  NSLog(@"create new folder: %@", path);
-  [[NSFileManager defaultManager] createDirectoryAtPath:path withIntermediateDirectories:NO attributes:nil error:NULL];
+
+  int i = 2;
+  NSString *result = path;
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  while ([fileManager fileExistsAtPath:result]) {
+    result = [NSString stringWithFormat:@"%@ %d", path, i];
+    i++;
+  }
+
+  [fileManager createDirectoryAtPath:result
+         withIntermediateDirectories:NO
+                          attributes:nil
+                               error:NULL];
 }
 
 - (void)toggleShowHiddenFiles:(NSMenuItem *)sender {
