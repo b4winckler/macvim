@@ -298,7 +298,7 @@ static NSMutableArray *leafNode = nil;
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(pwdChanged:)
                                                name:@"MMPwdChanged"
-                                             object:nil];
+                                             object:[windowController vimController]];
 }
 
 
