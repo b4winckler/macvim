@@ -14,16 +14,16 @@
 @end
 
 @implementation FilesOutlineView
+
 - (NSMenu *)menuForEvent:(NSEvent *)event {
   NSInteger row = [self rowAtPoint:[self convertPoint:[event locationInWindow] fromView:nil]];
   return [(MMFileDrawerController *)[self delegate] menuForRow:row];
 }
 
-- (void)cancelOperation:(id)sender
-{
-  // Pressing Esc will select the next key view, which should be the text view
-  [[self window] selectNextKeyView:nil];
+- (BOOL)acceptsFirstResponder {
+  return NO;
 }
+
 @end
 
 
@@ -283,9 +283,6 @@ static NSMutableArray *leafNode = nil;
   [filesView addTableColumn:column];
   [filesView setOutlineTableColumn:column];
 
-  // Typing Tab (or Esc) in browser view sets keyboard focus to text view
-  [filesView setNextKeyView:[[windowController vimView] textView]];
-
   NSScrollView *scrollView = [[[NSScrollView alloc] initWithFrame:NSZeroRect] autorelease];
   [scrollView setHasHorizontalScroller:YES];
   [scrollView setHasVerticalScroller:YES];
@@ -399,9 +396,6 @@ static NSMutableArray *leafNode = nil;
   [(MMAppController *)[NSApp delegate] openFiles:files withArguments:nil];
 
   [ud setBool:openInCurrentWindow forKey:MMOpenInCurrentWindowKey];
-
-  // And select the next key view, which should be the text view
-  [[windowController window] selectNextKeyView:nil];
 }
 
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell *)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
@@ -445,9 +439,6 @@ static NSMutableArray *leafNode = nil;
     NSString *input = [NSString stringWithFormat:
                   @"<C-\\><C-N>:exe \"cd \" . fnameescape(\"%@\")<CR>", path];
     [[windowController vimController] addVimInput:input];
-
-    // Change keyboard focus the text view
-    [[outlineView window] selectNextKeyView:nil];
   }
 
   return NO;
