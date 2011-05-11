@@ -48,26 +48,15 @@
 - (NSString *)relativePath;
 - (BOOL)isLeaf;
 - (void)clear;
+- (void)reloadRecursive:(BOOL)recursive;
 - (FileSystemItem *)itemAtPath:(NSString *)itemPath;
+
 @end
 
 @interface FileSystemItem (Private)
 - (FileSystemItem *)_itemAtPath:(NSArray *)components;
 @end
 
-
-BOOL isSwapFile(NSString *path) {
-  if (!path) return NO;
-  NSString *name = [path lastPathComponent];
-  if ([name length] < 4) return NO;
-
-  // NOTE: Vim swap files have names of type
-  //   .original-file-name.sXY
-  // where XY can be anything from "aa" to "wp".
-  if ([name characterAtIndex:0] != '.') return NO;
-  NSString *last3 = [name substringFromIndex:[name length]-3];
-  return [last3 compare:@"saa"] >= 0 && [last3 compare:@"swp"] <= 0;
-}
 
 @implementation FileSystemItem
 
@@ -95,8 +84,8 @@ static NSMutableArray *leafNode = nil;
   return self;
 }
 
-// Creates, caches, and returns the array of children
-// Loads children incrementally
+// * Creates, caches, and returns the array of children
+// * Loads children incrementally
 - (NSArray *)children {
   if (children == nil) {
     NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -104,23 +93,9 @@ static NSMutableArray *leafNode = nil;
     BOOL isDir, valid;
     valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
     if (valid && isDir) {
-      NSArray *array = [fileManager contentsOfDirectoryAtPath:path error:NULL];
-      children = [[NSMutableArray alloc] initWithCapacity:[array count]];
-
-      for (NSString *childPath in array) {
-        // Don't add Vim swap files to browser
-        if (isSwapFile(childPath))
-          continue;
-
-        if (!includesHiddenFiles) {
-          if ([[[childPath lastPathComponent] substringToIndex:1] isEqualToString:@"."])
-            continue;
-        }
-
-        FileSystemItem *child = [[FileSystemItem alloc] initWithPath:[path stringByAppendingPathComponent:childPath] parent:self];
-        [children addObject:child];
-        [child release];
-      }
+      // Create a dummy array, which is replaced by -[FileSystemItem reloadRecursive]
+      children = [NSArray new];
+      [self reloadRecursive:NO];
     } else {
       children = leafNode;
     }
@@ -133,8 +108,77 @@ static NSMutableArray *leafNode = nil;
   children = nil;
 }
 
+- (void)reloadRecursive:(BOOL)recursive {
+  // Only reload items that have been loaded before
+  if (children) {
+    NSLog(@"Reload: %@", path);
+    if (parent) {
+      includesHiddenFiles = parent.includesHiddenFiles;
+    }
+
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSMutableArray *reloaded;
+
+    NSArray *entries = [fileManager contentsOfDirectoryAtPath:path error:NULL];
+    reloaded = [[NSMutableArray alloc] initWithCapacity:[entries count]];
+
+    for (NSString *childName in entries) {
+      BOOL isHiddenFile = [childName characterAtIndex:0] == '.';
+      if (isHiddenFile && !includesHiddenFiles) {
+        // It's a hidden file which are currently not visible.
+        continue;
+      } else if (isHiddenFile && [childName length] >= 4) {
+        // Does include hidden files, but never add Vim swap files to browser.
+        //
+        // Vim swap files have names of type
+        //   .original-file-name.sXY
+        // where XY can be anything from "aa" to "wp".
+        NSString *last3 = [childName substringFromIndex:[childName length]-3];
+        if ([last3 compare:@"saa"] >= 0 && [last3 compare:@"swp"] <= 0) {
+          // It's a swap file, ignore it.
+          continue;
+        }
+      }
+
+      FileSystemItem *child = nil;
+      // Check if we already have an item for the child path
+      for (FileSystemItem *item in children) {
+        if ([[item relativePath] isEqualToString:childName]) {
+          child = item;
+          break;
+        }
+      }
+      if (child) {
+        NSLog(@"Already have item for child: %@", childName);
+        // If an item already existed use it and reload its children
+        [reloaded addObject:child];
+        if (recursive && ![child isLeaf]) {
+          [child reloadRecursive:YES];
+        }
+        [children removeObject:child];
+      } else {
+        // New child, so create a new item
+        child = [[FileSystemItem alloc] initWithPath:[path stringByAppendingPathComponent:childName] parent:self];
+        [reloaded addObject:child];
+        [child release];
+      }
+    }
+
+    [children release];
+    children = reloaded;
+  } else {
+    NSLog(@"Not loaded yet, so don't reload: %@", path);
+  }
+}
+
 - (BOOL)isLeaf {
-  return [self children] == leafNode;
+  if (children) {
+    return children == leafNode;
+  } else {
+    BOOL isDir;
+    [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir];
+    return !isDir;
+  }
 }
 
 - (NSString *)relativePath {
@@ -150,8 +194,11 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (NSInteger)numberOfChildren {
-  NSArray *tmp = [self children];
-  return tmp == leafNode ? -1 : [tmp count];
+  if ([self isLeaf]) {
+    return -1;
+  } else {
+    return [[self children] count];
+  }
 }
 
 // TODO for now we don't really resize
@@ -166,12 +213,9 @@ static NSMutableArray *leafNode = nil;
 
 - (FileSystemItem *)itemAtPath:(NSString *)itemPath {
   NSArray *components = [itemPath pathComponents];
-  NSLog(@"Components: %@", components);
   NSArray *root = [path pathComponents];
-  NSLog(@"Root: %@", root);
   // minus one extra because paths from FSEvents have a trailing slash
   components = [components subarrayWithRange:NSMakeRange([root count], [components count] - [root count] - 1)];
-  NSLog(@"Components: %@", components);
   return [self _itemAtPath:components];
 }
 
@@ -180,7 +224,6 @@ static NSMutableArray *leafNode = nil;
     return self;
   } else {
     NSString *component = [components objectAtIndex:0];
-    NSLog(@"Find: %@", component);
     for (FileSystemItem *child in [self children]) {
       if ([[child relativePath] isEqualToString:component]) {
         return [child _itemAtPath:[components subarrayWithRange:NSMakeRange(1, [components count] - 1)]];
@@ -430,7 +473,7 @@ static NSMutableArray *leafNode = nil;
 
 - (void)toggleShowHiddenFiles:(NSMenuItem *)sender {
   rootItem.includesHiddenFiles = !rootItem.includesHiddenFiles;
-  [rootItem clear];
+  [rootItem reloadRecursive:YES];
   [[self outlineView] reloadData];
   [[self outlineView] expandItem:rootItem];
 }
@@ -450,11 +493,10 @@ static void change_occured(ConstFSEventStreamRef stream,
 }
 
 - (void)changeOccurredAtPath:(NSString *)path {
-  NSLog(@"Change at: %@", path);
   FileSystemItem *item = [rootItem itemAtPath:path];
   if (item) {
-    NSLog(@"Found item: %@", item);
-    [item clear];
+    NSLog(@"Change occurred in path: %@", [item fullPath]);
+    [item reloadRecursive:NO]; // the change occurred in *this* item only
     [(FilesOutlineView *)[self view] reloadItem:item reloadChildren:YES];
   }
 }
