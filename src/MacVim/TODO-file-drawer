@@ -1,3 +1,8 @@
 * Ignore by default:
   - .DS_Store
 * think of a way to be able to open files in either a new tab, or as a new split window, possibly by holding down alt or something when clicking on the file?
+* highlight the file that's open in the current window
+
+UNRELATED:
+
+* fix that annoying bug with the tab bar controller, I think it's caused when moving the first tab before itself or something.

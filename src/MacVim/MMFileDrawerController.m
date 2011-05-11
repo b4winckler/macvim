@@ -10,18 +10,17 @@
 
 @interface FilesOutlineView : NSOutlineView
 - (NSMenu *)menuForEvent:(NSEvent *)event;
-- (void)cancelOperation:(id)sender;
 @end
 
 @implementation FilesOutlineView
 
+- (BOOL)acceptsFirstResponder {
+  return NO;
+}
+
 - (NSMenu *)menuForEvent:(NSEvent *)event {
   NSInteger row = [self rowAtPoint:[self convertPoint:[event locationInWindow] fromView:nil]];
   return [(MMFileDrawerController *)[self delegate] menuForRow:row];
-}
-
-- (BOOL)acceptsFirstResponder {
-  return NO;
 }
 
 @end
@@ -379,29 +378,6 @@ static NSMutableArray *leafNode = nil;
 
 // Delegate methods
 
-- (void)outlineViewSelectionDidChange:(NSNotification *)notification {
-  NSFileManager *fileManager = [NSFileManager defaultManager];
-  NSString *path = [[self selectedItem] fullPath];
-  BOOL isDir;
-  BOOL valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
-  if (!valid || isDir)
-    return; // Don't try to open directories
-
-  // Force file to open in current window
-  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
-  BOOL openInCurrentWindow = [ud boolForKey:MMOpenInCurrentWindowKey];
-  [ud setBool:YES forKey:MMOpenInCurrentWindowKey];
-
-  NSArray *files = [NSArray arrayWithObject:path];
-  [(MMAppController *)[NSApp delegate] openFiles:files withArguments:nil];
-
-  [ud setBool:openInCurrentWindow forKey:MMOpenInCurrentWindowKey];
-}
-
-- (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell *)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
-  [(ImageAndTextCell *)cell setImage:[item icon]];
-}
-
 - (NSMenu *)menuForRow:(NSInteger)row {
   NSMenu *menu = [[[NSMenu alloc] init] autorelease];
   NSMenuItem *item;
@@ -421,6 +397,47 @@ static NSMutableArray *leafNode = nil;
     [item setTag:row];
   }
   return menu;
+}
+
+- (void)outlineViewSelectionDidChange:(NSNotification *)notification {
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  NSString *path = [[self selectedItem] fullPath];
+  BOOL isDir;
+  BOOL valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
+  if (!valid || isDir)
+    return; // Don't try to open directories
+
+  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+  BOOL openInCurrentWindow = [ud boolForKey:MMOpenInCurrentWindowKey];
+  int layout = [ud integerForKey:MMOpenLayoutKey];
+
+  // Force file to open in current window
+  [ud setBool:YES forKey:MMOpenInCurrentWindowKey];
+
+  NSEvent *event = [NSApp currentEvent];
+  if ([event modifierFlags] & NSAlternateKeyMask) {
+    if (layout == MMLayoutTabs) {
+      // Yhe user normally creates a new tab when opening a file,
+      // so open this file in the current one
+      [ud setInteger:MMLayoutArglist forKey:MMOpenLayoutKey];
+    } else {
+      // The user normally opens a file in the current tab,
+      // so open this file in a new one
+      [ud setInteger:MMLayoutTabs forKey:MMOpenLayoutKey];
+    }
+  }
+
+  // Open file
+  NSArray *files = [NSArray arrayWithObject:path];
+  [(MMAppController *)[NSApp delegate] openFiles:files withArguments:nil];
+
+  // Restore preferences
+  [ud setBool:openInCurrentWindow forKey:MMOpenInCurrentWindowKey];
+  [ud setInteger:layout forKey:MMOpenLayoutKey];
+}
+
+- (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell *)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
+  [(ImageAndTextCell *)cell setImage:[item icon]];
 }
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView
