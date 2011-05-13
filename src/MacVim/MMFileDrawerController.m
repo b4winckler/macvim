@@ -460,6 +460,17 @@ static NSMutableArray *leafNode = nil;
   return NO;
 }
 
+- (void)outlineView:(NSOutlineView *)outlineView setObjectValue:(id)object forTableColumn:(NSTableColumn *)tableColumn byItem:(id)item {
+  NSString *dir = [[item fullPath] stringByDeletingLastPathComponent];
+  NSString *newPath = [dir stringByAppendingPathComponent:(NSString *)object];
+  NSError *error = nil;
+  BOOL moved = [[NSFileManager defaultManager] moveItemAtPath:[item fullPath]
+                                                       toPath:newPath
+                                                        error:&error];
+  if (!moved) {
+    NSLog(@"[!] Unable to rename `%@' to `%@'. Error: %@", [item fullPath], newPath, [error localizedDescription]);
+  }
+}
 
 // Actions
 

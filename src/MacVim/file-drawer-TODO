@@ -1,3 +1,5 @@
+* After creating a new folder, immediately edit the name.
+* After changing the name of an item update the FileSystemItem immediately instead of waiting for FSEvents to run the callback.
 * Ignore by default:
   - .DS_Store
 * highlight the file that's open in the current window
