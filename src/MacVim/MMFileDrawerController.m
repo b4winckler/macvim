@@ -491,6 +491,10 @@ static NSMutableArray *leafNode = nil;
     [dirItem reloadRecursive:NO];
     [[self outlineView] reloadItem:dirItem reloadChildren:YES];
     dirItem.ignoreNextReload = YES;
+    // Select the renamed item
+    NSInteger row = [[self outlineView] rowForItem:[dirItem itemWithName:name]];
+    NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
+    [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
   } else {
     NSLog(@"[!] Unable to rename `%@' to `%@'. Error: %@", [item fullPath], newPath, [error localizedDescription]);
   }
