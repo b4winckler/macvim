@@ -408,6 +408,7 @@ static NSMutableArray *leafNode = nil;
                   action:@selector(revealInFinder:)
            keyEquivalent:@""];
   [menu addItemWithTitle:@"New Folder" action:@selector(newFolder:) keyEquivalent:@""];
+  [menu addItemWithTitle:@"Delete selected files" action:@selector(deleteSelectedFiles:) keyEquivalent:@""];
   [menu addItem:[NSMenuItem separatorItem]];
   item = [menu addItemWithTitle:@"Show hidden files" action:@selector(toggleShowHiddenFiles:) keyEquivalent:@""];
   [item setState:rootItem.includesHiddenFiles ? NSOnState : NSOffState];
@@ -545,6 +546,12 @@ static NSMutableArray *leafNode = nil;
   NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
   [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
   [[self outlineView] editColumn:0 row:row withEvent:nil select:YES];
+}
+
+// TODO needs multiple selection support
+- (void)deleteSelectedFiles:(NSMenuItem *)sender {
+  FileSystemItem *item = [self itemAtRow:[sender tag]];
+  NSLog(@"Delete: %@", [item fullPath]);
 }
 
 - (void)toggleShowHiddenFiles:(NSMenuItem *)sender {

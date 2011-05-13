@@ -1,3 +1,4 @@
+* Add support for multiple file selection in the contextual menu.
 * There's some duplication with regards to selecting a new/renamed item
 * highlight the file that's open in the current window
 * Instead of never allowing the view to become the first responder, we could also only allow it to become first responder when clicked a second time. This allows you to still browse through the files with arrows/enter. (This is what TextMate does.)
