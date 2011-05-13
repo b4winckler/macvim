@@ -404,14 +404,25 @@ static NSMutableArray *leafNode = nil;
 }
 
 // Ignores the user's preference by always opening in the current window for the
-// duration of the block. In addition it restores the layout preference as well.
-- (void)openInCurrentWindow:(NSArray *)files withPreferences:(void (^)(NSUserDefaults *userDefaults, int layout))block {
+// duration of the block. It restores, in addition, the layout preference.
+//
+// Any directory in `paths' is ignored.
+- (void)openInCurrentWindow:(NSArray *)paths withPreferences:(void (^)(NSUserDefaults *userDefaults, int layout))block {
   NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
   BOOL openInCurrentWindow = [ud boolForKey:MMOpenInCurrentWindowKey];
   [ud setBool:YES forKey:MMOpenInCurrentWindowKey];
   int layout = [ud integerForKey:MMOpenLayoutKey];
 
   block(ud, layout);
+  BOOL exists, isDir;
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  NSMutableArray *files = [NSMutableArray array];
+  for (NSString *path in paths) {
+    exists = [fileManager fileExistsAtPath:path isDirectory:&isDir];
+    if (exists && !isDir) {
+      [files addObject:path];
+    }
+  }
   [(MMAppController *)[NSApp delegate] openFiles:files withArguments:nil];
 
   [ud setBool:openInCurrentWindow forKey:MMOpenInCurrentWindowKey];
@@ -491,15 +502,8 @@ static NSMutableArray *leafNode = nil;
 
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
   if ([[self outlineView] numberOfSelectedRows] == 1) {
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSString *path = [[self selectedItem] fullPath];
-    BOOL isDir;
-    BOOL valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
-    if (!valid || isDir)
-      return; // Don't try to open directories
-
-    [self openInCurrentWindow:[NSArray arrayWithObject:path]
-              withPreferences:^(NSUserDefaults *ud, int layout) {
+    NSArray *paths = [NSArray arrayWithObject:[[self selectedItem] fullPath]];
+    [self openInCurrentWindow:paths withPreferences:^(NSUserDefaults *ud, int layout) {
       NSEvent *event = [NSApp currentEvent];
       if ([event modifierFlags] & NSAlternateKeyMask) {
         if (layout == MMLayoutTabs) {
