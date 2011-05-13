@@ -535,15 +535,17 @@ static NSMutableArray *leafNode = nil;
   // Add the new folder to the items
   [dirItem reloadRecursive:NO]; // for now let's not create the item ourselves
   [[self outlineView] reloadItem:dirItem reloadChildren:YES];
+  // Make sure that the next FSEvent for this item doesn't cause the view to stop editing
+  dirItem.ignoreNextReload = YES;
 
   // Edit the new folder
   FileSystemItem *newItem = [dirItem itemWithName:[result lastPathComponent]];
-  // Make sure that the next FSEvent for this item doesn't cause the view to stop editing
-  dirItem.ignoreNextReload = YES;
-  [[self outlineView] editColumn:0
-                             row:[[self outlineView] rowForItem:newItem]
-                       withEvent:nil
-                          select:YES];
+  NSInteger row = [[self outlineView] rowForItem:newItem];
+  [[self outlineView] editColumn:0 row:row withEvent:nil select:YES];
+
+  // Select the new folder
+  NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
+  [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
 }
 
 - (void)toggleShowHiddenFiles:(NSMenuItem *)sender {
