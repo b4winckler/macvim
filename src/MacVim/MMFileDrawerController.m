@@ -35,9 +35,11 @@
   NSMutableArray *children;
   NSImage *icon;
   BOOL includesHiddenFiles;
+  BOOL ignoreNextReload;
 }
 
-@property (nonatomic, assign) BOOL includesHiddenFiles;
+@property (nonatomic, assign) BOOL includesHiddenFiles, ignoreNextReload;
+@property (readonly) FileSystemItem *parent;
 
 - (id)initWithPath:(NSString *)path parent:(FileSystemItem *)parentItem;
 - (NSInteger)numberOfChildren; // Returns -1 for leaf nodes
@@ -46,8 +48,9 @@
 - (NSString *)relativePath;
 - (BOOL)isLeaf;
 - (void)clear;
-- (void)reloadRecursive:(BOOL)recursive;
+- (BOOL)reloadRecursive:(BOOL)recursive;
 - (FileSystemItem *)itemAtPath:(NSString *)itemPath;
+- (FileSystemItem *)itemWithName:(NSString *)name;
 
 @end
 
@@ -66,7 +69,7 @@ static NSMutableArray *leafNode = nil;
   }
 }
 
-@synthesize includesHiddenFiles;
+@synthesize parent, includesHiddenFiles, ignoreNextReload;
 
 - (id)initWithPath:(NSString *)thePath parent:(FileSystemItem *)parentItem {
   if ((self = [super init])) {
@@ -78,6 +81,7 @@ static NSMutableArray *leafNode = nil;
     } else {
       includesHiddenFiles = NO;
     }
+    ignoreNextReload = NO;
   }
   return self;
 }
@@ -106,9 +110,16 @@ static NSMutableArray *leafNode = nil;
   children = nil;
 }
 
-- (void)reloadRecursive:(BOOL)recursive {
-  // Only reload items that have been loaded before
-  if (children) {
+// Returns YES if the children have been reloaded, otherwise it returns NO.
+//
+// This is really only so the controller knows whether or not to reload the view.
+- (BOOL)reloadRecursive:(BOOL)recursive {
+  if (ignoreNextReload) {
+    // Next time around it will be reloaded again
+    ignoreNextReload = NO;
+
+  } else if (children) {
+    // Only reload items that have been loaded before
     // NSLog(@"Reload: %@", path);
     if (parent) {
       includesHiddenFiles = parent.includesHiddenFiles;
@@ -164,9 +175,11 @@ static NSMutableArray *leafNode = nil;
 
     [children release];
     children = reloaded;
+    return YES;
   } else {
     // NSLog(@"Not loaded yet, so don't reload: %@", path);
   }
+  return NO;
 }
 
 - (BOOL)isLeaf {
@@ -221,14 +234,20 @@ static NSMutableArray *leafNode = nil;
   if ([components count] == 0) {
     return self;
   } else {
-    NSString *component = [components objectAtIndex:0];
-    for (FileSystemItem *child in [self children]) {
-      if ([[child relativePath] isEqualToString:component]) {
-        return [child _itemAtPath:[components subarrayWithRange:NSMakeRange(1, [components count] - 1)]];
-      }
+    FileSystemItem *child = [self itemWithName:[components objectAtIndex:0]];
+    if (child) {
+      return [child _itemAtPath:[components subarrayWithRange:NSMakeRange(1, [components count] - 1)]];
     }
   }
+  return nil;
+}
 
+- (FileSystemItem *)itemWithName:(NSString *)name {
+  for (FileSystemItem *child in [self children]) {
+    if ([[child relativePath] isEqualToString:name]) {
+      return child;
+    }
+  }
   return nil;
 }
 
@@ -488,12 +507,8 @@ static NSMutableArray *leafNode = nil;
 
 - (void)newFolder:(NSMenuItem *)sender {
   FileSystemItem *item = [self itemAtRow:[sender tag]];
-  NSString *path = [item fullPath];
-
-  if ([item isLeaf]) {
-    path = [path stringByDeletingLastPathComponent];
-  }
-  path = [path stringByAppendingPathComponent:@"untitled folder"];
+  FileSystemItem *dirItem = [item isLeaf] ? item.parent : item;
+  NSString *path = [[dirItem fullPath] stringByAppendingPathComponent:@"untitled folder"];
 
   int i = 2;
   NSString *result = path;
@@ -507,6 +522,19 @@ static NSMutableArray *leafNode = nil;
          withIntermediateDirectories:NO
                           attributes:nil
                                error:NULL];
+
+  // Add the new folder to the items
+  [dirItem reloadRecursive:NO]; // for now let's not create the item ourselves
+  [[self outlineView] reloadItem:dirItem reloadChildren:YES];
+
+  // Edit the new folder
+  FileSystemItem *newItem = [dirItem itemWithName:[result lastPathComponent]];
+  // Make sure that the next FSEvent for this item doesn't cause the view to stop editing
+  dirItem.ignoreNextReload = YES;
+  [[self outlineView] editColumn:0
+                             row:[[self outlineView] rowForItem:newItem]
+                       withEvent:nil
+                          select:YES];
 }
 
 - (void)toggleShowHiddenFiles:(NSMenuItem *)sender {
@@ -534,8 +562,10 @@ static void change_occured(ConstFSEventStreamRef stream,
   FileSystemItem *item = [rootItem itemAtPath:path];
   if (item) {
     // NSLog(@"Change occurred in path: %@", [item fullPath]);
-    [item reloadRecursive:NO]; // the change occurred in *this* item only
-    [(FilesOutlineView *)[self view] reloadItem:item reloadChildren:YES];
+    // No need to reload recursive, the change occurred in *this* item only
+    if ([item reloadRecursive:NO]) {
+      [[self outlineView] reloadItem:item reloadChildren:YES];
+    }
   }
 }
 
