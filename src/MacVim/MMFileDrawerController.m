@@ -7,25 +7,9 @@
 
 #import <CoreServices/CoreServices.h>
 
-
-@interface FilesOutlineView : NSOutlineView
-- (NSMenu *)menuForEvent:(NSEvent *)event;
-@end
-
-@implementation FilesOutlineView
-
-- (BOOL)acceptsFirstResponder {
-  return NO;
-}
-
-- (NSMenu *)menuForEvent:(NSEvent *)event {
-  NSInteger row = [self rowAtPoint:[self convertPoint:[event locationInWindow] fromView:nil]];
-  [self selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
-  return [(MMFileDrawerController *)[self delegate] menuForRow:row];
-}
-
-@end
-
+// ****************************************************************************
+// File system model
+// ****************************************************************************
 
 // The FileSystemItem class is an adaptation of Apple's example in the Outline
 // View Programming Topics document.
@@ -268,12 +252,39 @@ static NSMutableArray *leafNode = nil;
 
 @end
 
+// ****************************************************************************
+// Outline view
+// ****************************************************************************
 
+@interface FilesOutlineView : NSOutlineView
+- (NSMenu *)menuForEvent:(NSEvent *)event;
+@end
+
+@implementation FilesOutlineView
+
+- (BOOL)acceptsFirstResponder {
+  return NO;
+}
+
+- (NSMenu *)menuForEvent:(NSEvent *)event {
+  NSInteger row = [self rowAtPoint:[self convertPoint:[event locationInWindow] fromView:nil]];
+  if ([self numberOfSelectedRows] <= 1) {
+    [self selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
+  }
+  return [(MMFileDrawerController *)[self delegate] menuForRow:row];
+}
+
+@end
+
+// ****************************************************************************
+// Controller
+// ****************************************************************************
 
 @interface MMFileDrawerController (Private)
 - (FilesOutlineView *)outlineView;
 - (void)pwdChanged:(NSNotification *)notification;
 - (void)changeWorkingDirectory:(NSString *)path;
+- (void)openInCurrentWindow:(NSArray *)files withPreferences:(void (^)(NSUserDefaults *userDefaults, int layout))block;
 @end
 
 
@@ -302,6 +313,7 @@ static NSMutableArray *leafNode = nil;
   [filesView setDelegate:self];
   [filesView setDataSource:self];
   [filesView setHeaderView:nil];
+  [filesView setAllowsMultipleSelection:YES];
   NSTableColumn *column = [[[NSTableColumn alloc] initWithIdentifier:nil] autorelease];
   ImageAndTextCell *cell = [[[ImageAndTextCell alloc] init] autorelease];
   [cell setEditable:YES];
@@ -391,8 +403,24 @@ static NSMutableArray *leafNode = nil;
   [[windowController vimController] addVimInput:input];
 }
 
+// Ignores the user's preference by always opening in the current window for the
+// duration of the block. In addition it restores the layout preference as well.
+- (void)openInCurrentWindow:(NSArray *)files withPreferences:(void (^)(NSUserDefaults *userDefaults, int layout))block {
+  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+  BOOL openInCurrentWindow = [ud boolForKey:MMOpenInCurrentWindowKey];
+  [ud setBool:YES forKey:MMOpenInCurrentWindowKey];
+  int layout = [ud integerForKey:MMOpenLayoutKey];
+
+  block(ud, layout);
+  [(MMAppController *)[NSApp delegate] openFiles:files withArguments:nil];
+
+  [ud setBool:openInCurrentWindow forKey:MMOpenInCurrentWindowKey];
+  [ud setInteger:layout forKey:MMOpenLayoutKey];
+}
+
 
 // Data Source methods
+// ===================
  
 - (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item {
   return item == nil ? 1 : [item numberOfChildren];
@@ -412,6 +440,7 @@ static NSMutableArray *leafNode = nil;
 
 
 // Delegate methods
+// ================
 
 - (NSMenu *)menuForRow:(NSInteger)row {
   NSMenu *menu = [[NSMenu new] autorelease];
@@ -461,40 +490,30 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
-  NSFileManager *fileManager = [NSFileManager defaultManager];
-  NSString *path = [[self selectedItem] fullPath];
-  BOOL isDir;
-  BOOL valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
-  if (!valid || isDir)
-    return; // Don't try to open directories
+  if ([[self outlineView] numberOfSelectedRows] == 1) {
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSString *path = [[self selectedItem] fullPath];
+    BOOL isDir;
+    BOOL valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
+    if (!valid || isDir)
+      return; // Don't try to open directories
 
-  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
-  BOOL openInCurrentWindow = [ud boolForKey:MMOpenInCurrentWindowKey];
-  int layout = [ud integerForKey:MMOpenLayoutKey];
-
-  // Force file to open in current window
-  [ud setBool:YES forKey:MMOpenInCurrentWindowKey];
-
-  NSEvent *event = [NSApp currentEvent];
-  if ([event modifierFlags] & NSAlternateKeyMask) {
-    if (layout == MMLayoutTabs) {
-      // The user normally creates a new tab when opening a file,
-      // so open this file in the current one
-      [ud setInteger:MMLayoutArglist forKey:MMOpenLayoutKey];
-    } else {
-      // The user normally opens a file in the current tab,
-      // so open this file in a new one
-      [ud setInteger:MMLayoutTabs forKey:MMOpenLayoutKey];
-    }
+    [self openInCurrentWindow:[NSArray arrayWithObject:path]
+              withPreferences:^(NSUserDefaults *ud, int layout) {
+      NSEvent *event = [NSApp currentEvent];
+      if ([event modifierFlags] & NSAlternateKeyMask) {
+        if (layout == MMLayoutTabs) {
+          // The user normally creates a new tab when opening a file,
+          // so open this file in the current one
+          [ud setInteger:MMLayoutArglist forKey:MMOpenLayoutKey];
+        } else {
+          // The user normally opens a file in the current tab,
+          // so open this file in a new one
+          [ud setInteger:MMLayoutTabs forKey:MMOpenLayoutKey];
+        }
+      }
+    }];
   }
-
-  // Open file
-  NSArray *files = [NSArray arrayWithObject:path];
-  [(MMAppController *)[NSApp delegate] openFiles:files withArguments:nil];
-
-  // Restore preferences
-  [ud setBool:openInCurrentWindow forKey:MMOpenInCurrentWindowKey];
-  [ud setInteger:layout forKey:MMOpenLayoutKey];
 }
 
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell *)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
@@ -538,18 +557,14 @@ static NSMutableArray *leafNode = nil;
   }
 }
 
+
 // Actions
+// =======
 
 - (void)renameFile:(NSMenuItem *)sender {
   FileSystemItem *item = [self itemAtRow:[sender tag]];
   NSLog(@"Rename: %@", [item fullPath]);
   [(FilesOutlineView *)[self view] editColumn:0 row:[sender tag] withEvent:nil select:YES];
-}
-
-- (void)revealInFinder:(NSMenuItem *)sender {
-  NSString *path = [[self itemAtRow:[sender tag]] fullPath];
-  NSArray *urls = [NSArray arrayWithObject:[NSURL fileURLWithPath:path]];
-  [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:urls];
 }
 
 - (void)newFolder:(NSMenuItem *)sender {
@@ -584,6 +599,20 @@ static NSMutableArray *leafNode = nil;
   [[self outlineView] editColumn:0 row:row withEvent:nil select:YES];
 }
 
+// Vim open/cwd
+
+- (void)openFilesInTabs:(NSMenuItem *)sender {
+  NSMutableArray *paths = [NSMutableArray array];
+  NSIndexSet *indexes = [[self outlineView] selectedRowIndexes];
+  [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
+    FileSystemItem *item = [self itemAtRow:index];
+    [paths addObject:[item fullPath]];
+  }];
+  [self openInCurrentWindow:paths withPreferences:^(NSUserDefaults *ud, int layout) {
+    [ud setInteger:MMLayoutTabs forKey:MMOpenLayoutKey];
+  }];
+}
+
 - (void)changeWorkingDirectoryToSelection:(NSMenuItem *)sender {
   FileSystemItem *dirItem = [[self itemAtRow:[sender tag]] dirItem];
   [self changeWorkingDirectory:[dirItem fullPath]];
@@ -606,7 +635,17 @@ static NSMutableArray *leafNode = nil;
   [[self outlineView] expandItem:rootItem];
 }
 
+// Open elsewhere
+
+- (void)revealInFinder:(NSMenuItem *)sender {
+  NSString *path = [[self itemAtRow:[sender tag]] fullPath];
+  NSArray *urls = [NSArray arrayWithObject:[NSURL fileURLWithPath:path]];
+  [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:urls];
+}
+
+
 // FSEvents
+// ========
 
 static void change_occured(ConstFSEventStreamRef stream,
                            void *watcher,
