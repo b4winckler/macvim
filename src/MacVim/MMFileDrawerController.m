@@ -538,14 +538,13 @@ static NSMutableArray *leafNode = nil;
   // Make sure that the next FSEvent for this item doesn't cause the view to stop editing
   dirItem.ignoreNextReload = YES;
 
-  // Edit the new folder
+  // Show, select and edit the new folder
+  [[self outlineView] expandItem:dirItem];
   FileSystemItem *newItem = [dirItem itemWithName:[result lastPathComponent]];
   NSInteger row = [[self outlineView] rowForItem:newItem];
-  [[self outlineView] editColumn:0 row:row withEvent:nil select:YES];
-
-  // Select the new folder
   NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
   [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
+  [[self outlineView] editColumn:0 row:row withEvent:nil select:YES];
 }
 
 - (void)toggleShowHiddenFiles:(NSMenuItem *)sender {
