@@ -551,7 +551,11 @@ static NSMutableArray *leafNode = nil;
 // TODO needs multiple selection support
 - (void)deleteSelectedFiles:(NSMenuItem *)sender {
   FileSystemItem *item = [self itemAtRow:[sender tag]];
-  NSLog(@"Delete: %@", [item fullPath]);
+  FileSystemItem *dirItem = item.parent;
+  [[NSFileManager defaultManager] removeItemAtPath:[item fullPath] error:NULL];
+  [dirItem reloadRecursive:NO];
+  [[self outlineView] reloadItem:dirItem reloadChildren:YES];
+  dirItem.ignoreNextReload = YES;
 }
 
 - (void)toggleShowHiddenFiles:(NSMenuItem *)sender {
