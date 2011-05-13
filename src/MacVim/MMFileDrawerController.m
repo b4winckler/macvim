@@ -277,7 +277,9 @@ static NSMutableArray *leafNode = nil;
   [filesView setDataSource:self];
   [filesView setHeaderView:nil];
   NSTableColumn *column = [[[NSTableColumn alloc] initWithIdentifier:nil] autorelease];
-  [column setDataCell:[[[ImageAndTextCell alloc] init] autorelease]];
+  ImageAndTextCell *cell = [[[ImageAndTextCell alloc] init] autorelease];
+  [cell setEditable:YES];
+  [column setDataCell:cell];
   [filesView addTableColumn:column];
   [filesView setOutlineTableColumn:column];
 
@@ -380,10 +382,8 @@ static NSMutableArray *leafNode = nil;
 - (NSMenu *)menuForRow:(NSInteger)row {
   NSMenu *menu = [[[NSMenu alloc] init] autorelease];
   NSMenuItem *item;
-  //NSMenuItem *item = [menu addItemWithTitle:@"Rename…" action:@selector(renameFile:) keyEquivalent:@""];
-  //[item setTarget:self];
-  //[item setTag:row];
   FileSystemItem *fsItem = [self itemAtRow:row];
+  [menu addItemWithTitle:@"Rename…" action:@selector(renameFile:) keyEquivalent:@""];
   [menu addItemWithTitle:[NSString stringWithFormat:@"Reveal “%@” in Finder", [fsItem relativePath]]
                   action:@selector(revealInFinder:)
            keyEquivalent:@""];
