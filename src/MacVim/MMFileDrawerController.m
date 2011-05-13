@@ -479,14 +479,18 @@ static NSMutableArray *leafNode = nil;
   return NO;
 }
 
-- (void)outlineView:(NSOutlineView *)outlineView setObjectValue:(id)object forTableColumn:(NSTableColumn *)tableColumn byItem:(id)item {
-  NSString *dir = [[item fullPath] stringByDeletingLastPathComponent];
-  NSString *newPath = [dir stringByAppendingPathComponent:(NSString *)object];
+- (void)outlineView:(NSOutlineView *)outlineView setObjectValue:(NSString *)name forTableColumn:(NSTableColumn *)tableColumn byItem:(FileSystemItem *)item {
+  FileSystemItem *dirItem = item.parent;
+  NSString *newPath = [[dirItem fullPath] stringByAppendingPathComponent:name];
   NSError *error = nil;
   BOOL moved = [[NSFileManager defaultManager] moveItemAtPath:[item fullPath]
                                                        toPath:newPath
                                                         error:&error];
-  if (!moved) {
+  if (moved) {
+    [dirItem reloadRecursive:NO];
+    [[self outlineView] reloadItem:dirItem reloadChildren:YES];
+    dirItem.ignoreNextReload = YES;
+  } else {
     NSLog(@"[!] Unable to rename `%@' to `%@'. Error: %@", [item fullPath], newPath, [error localizedDescription]);
   }
 }
