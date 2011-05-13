@@ -414,21 +414,45 @@ static NSMutableArray *leafNode = nil;
 // Delegate methods
 
 - (NSMenu *)menuForRow:(NSInteger)row {
-  NSMenu *menu = [[[NSMenu alloc] init] autorelease];
+  NSMenu *menu = [[NSMenu new] autorelease];
   NSMenuItem *item;
   FileSystemItem *fsItem = [self itemAtRow:row];
-  [menu addItemWithTitle:@"Rename…" action:@selector(renameFile:) keyEquivalent:@""];
-  [menu addItemWithTitle:[NSString stringWithFormat:@"Reveal “%@” in Finder", [fsItem relativePath]]
-                  action:@selector(revealInFinder:)
-           keyEquivalent:@""];
+
+  // File operations
+  [menu addItemWithTitle:@"New File" action:@selector(newFile:) keyEquivalent:@""];
   [menu addItemWithTitle:@"New Folder" action:@selector(newFolder:) keyEquivalent:@""];
+  [menu addItemWithTitle:@"Rename…" action:@selector(renameFile:) keyEquivalent:@""];
+  [menu addItemWithTitle:@"Delete selected Files" action:@selector(deleteSelectedFiles:) keyEquivalent:@""];
+
+  // Vim open/cwd
+  [menu addItem:[NSMenuItem separatorItem]];
+  [menu addItemWithTitle:@"Open selected Files in Tabs" action:@selector(openFilesInTabs:) keyEquivalent:@""];
+  [menu addItemWithTitle:@"Open selected Files in Horizontal Split Views" action:@selector(openFilesInHorizontalSplitViews:) keyEquivalent:@""];
+  [menu addItemWithTitle:@"Open selected Files in Vertical Split Views" action:@selector(openFilesInHorizontalSplitViews:) keyEquivalent:@""];
   [menu addItemWithTitle:[NSString stringWithFormat:@"Change working directory to “%@”", [[fsItem dirItem] relativePath]]
                   action:@selector(changeWorkingDirectoryToSelection:)
            keyEquivalent:@""];
-  [menu addItemWithTitle:@"Delete selected files" action:@selector(deleteSelectedFiles:) keyEquivalent:@""];
+
+  // Open elsewhere
+  NSString *filename = [fsItem relativePath];
   [menu addItem:[NSMenuItem separatorItem]];
-  item = [menu addItemWithTitle:@"Show hidden files" action:@selector(toggleShowHiddenFiles:) keyEquivalent:@""];
+  [menu addItemWithTitle:[NSString stringWithFormat:@"Reveal “%@” in Finder", filename]
+                  action:@selector(revealInFinder:)
+           keyEquivalent:@""];
+  [menu addItemWithTitle:[NSString stringWithFormat:@"Open “%@” with Finder", filename]
+                  action:@selector(openWithFinder:)
+           keyEquivalent:@""];
+  NSMenu *submenu = [[NSMenu new] autorelease];
+  item = [menu addItemWithTitle:[NSString stringWithFormat:@"Open “%@” with…", filename]
+                         action:NULL
+                  keyEquivalent:@""];
+  [item setSubmenu:submenu];
+
+  // Misc
+  [menu addItem:[NSMenuItem separatorItem]];
+  item = [menu addItemWithTitle:@"Show hidden Files" action:@selector(toggleShowHiddenFiles:) keyEquivalent:@""];
   [item setState:rootItem.includesHiddenFiles ? NSOnState : NSOffState];
+
   for (item in [menu itemArray]) {
     [item setTarget:self];
     [item setTag:row];
