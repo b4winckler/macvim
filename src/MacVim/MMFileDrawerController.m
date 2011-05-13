@@ -193,6 +193,11 @@ static NSMutableArray *leafNode = nil;
   }
 }
 
+// Returns `self' if it's a directory item, otherwise it returns the parent item.
+- (FileSystemItem *)dirItem {
+  return [self isLeaf] ? parent : self;
+}
+
 - (NSString *)relativePath {
   return [path lastPathComponent];
 }
@@ -268,6 +273,7 @@ static NSMutableArray *leafNode = nil;
 @interface MMFileDrawerController (Private)
 - (FilesOutlineView *)outlineView;
 - (void)pwdChanged:(NSNotification *)notification;
+- (void)changeWorkingDirectory:(NSString *)path;
 @end
 
 
@@ -370,11 +376,19 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (FileSystemItem *)itemAtRow:(NSInteger)row {
-  return [(FilesOutlineView *)[self view] itemAtRow:row];
+  return [[self outlineView] itemAtRow:row];
 }
 
 - (FileSystemItem *)selectedItem {
   return [self itemAtRow:[(FilesOutlineView *)[self view] selectedRow]];
+}
+
+- (void)changeWorkingDirectory:(NSString *)path {
+  // Tell Vim to change the pwd.  As a side effect this will cause a new root
+  // to be set to the folder the user just double-clicked on.
+  NSString *input = [NSString stringWithFormat:
+                @"<C-\\><C-N>:exe \"cd \" . fnameescape(\"%@\")<CR>", path];
+  [[windowController vimController] addVimInput:input];
 }
 
 
@@ -408,6 +422,9 @@ static NSMutableArray *leafNode = nil;
                   action:@selector(revealInFinder:)
            keyEquivalent:@""];
   [menu addItemWithTitle:@"New Folder" action:@selector(newFolder:) keyEquivalent:@""];
+  [menu addItemWithTitle:[NSString stringWithFormat:@"Change working directory to “%@”", [[fsItem dirItem] relativePath]]
+                  action:@selector(changeWorkingDirectoryToSelection:)
+           keyEquivalent:@""];
   [menu addItemWithTitle:@"Delete selected files" action:@selector(deleteSelectedFiles:) keyEquivalent:@""];
   [menu addItem:[NSMenuItem separatorItem]];
   item = [menu addItemWithTitle:@"Show hidden files" action:@selector(toggleShowHiddenFiles:) keyEquivalent:@""];
@@ -471,11 +488,7 @@ static NSMutableArray *leafNode = nil;
   BOOL isDir;
   BOOL valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
   if (valid && isDir) {
-    // Tell Vim to change the pwd.  As a side effect this will cause a new root
-    // to be set to the folder the user just double-clicked on.
-    NSString *input = [NSString stringWithFormat:
-                  @"<C-\\><C-N>:exe \"cd \" . fnameescape(\"%@\")<CR>", path];
-    [[windowController vimController] addVimInput:input];
+    [self changeWorkingDirectory:path];
   }
 
   return NO;
@@ -516,8 +529,7 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (void)newFolder:(NSMenuItem *)sender {
-  FileSystemItem *item = [self itemAtRow:[sender tag]];
-  FileSystemItem *dirItem = [item isLeaf] ? item.parent : item;
+  FileSystemItem *dirItem = [[self itemAtRow:[sender tag]] dirItem];
   NSString *path = [[dirItem fullPath] stringByAppendingPathComponent:@"untitled folder"];
 
   int i = 2;
@@ -546,6 +558,11 @@ static NSMutableArray *leafNode = nil;
   NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
   [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
   [[self outlineView] editColumn:0 row:row withEvent:nil select:YES];
+}
+
+- (void)changeWorkingDirectoryToSelection:(NSMenuItem *)sender {
+  FileSystemItem *dirItem = [[self itemAtRow:[sender tag]] dirItem];
+  [self changeWorkingDirectory:[dirItem fullPath]];
 }
 
 // TODO needs multiple selection support

@@ -1,3 +1,8 @@
+* Add menu items to open the file in
+  * current tab
+  * new tab
+  * current tab, vertical split
+  * current tab, horizontal split
 * Add support for multiple file selection in the contextual menu.
 * There's some duplication with regards to selecting a new/renamed item
 * highlight the file that's open in the current window
