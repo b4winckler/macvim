@@ -1,6 +1,9 @@
-* Ignore by default:
-  - .DS_Store
+* Collapse a folder when creating a new folder inside it
 * highlight the file that's open in the current window
+* Instead of never allowing the view to become the first responder, we could also only allow it to become first responder when clicked a second time. This allows you to still browse through the files with arrows/enter. (This is what TextMate does.)
+
+* Files that should always be ignored:
+  - .DS_Store
 
 UNRELATED:
 

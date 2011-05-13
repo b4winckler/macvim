@@ -20,6 +20,7 @@
 
 - (NSMenu *)menuForEvent:(NSEvent *)event {
   NSInteger row = [self rowAtPoint:[self convertPoint:[event locationInWindow] fromView:nil]];
+  [self selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
   return [(MMFileDrawerController *)[self delegate] menuForRow:row];
 }
 
