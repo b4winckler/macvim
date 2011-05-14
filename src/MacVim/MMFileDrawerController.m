@@ -617,6 +617,18 @@ static NSMutableArray *leafNode = nil;
   }];
 }
 
+- (void)openFilesInHorizontalSplitViews:(NSMenuItem *)sender {
+  NSMutableArray *paths = [NSMutableArray array];
+  NSIndexSet *indexes = [[self outlineView] selectedRowIndexes];
+  [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
+    FileSystemItem *item = [self itemAtRow:index];
+    [paths addObject:[item fullPath]];
+  }];
+  [self openInCurrentWindow:paths withPreferences:^(NSUserDefaults *ud, int layout) {
+    [ud setInteger:MMLayoutHorizontalSplit forKey:MMOpenLayoutKey];
+  }];
+}
+
 - (void)changeWorkingDirectoryToSelection:(NSMenuItem *)sender {
   FileSystemItem *dirItem = [[self itemAtRow:[sender tag]] dirItem];
   [self changeWorkingDirectory:[dirItem fullPath]];
