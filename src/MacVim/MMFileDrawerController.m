@@ -468,7 +468,7 @@ static NSMutableArray *leafNode = nil;
   [menu addItem:[NSMenuItem separatorItem]];
   [menu addItemWithTitle:@"Open selected Files in Tabs" action:@selector(openFilesInTabs:) keyEquivalent:@""];
   [menu addItemWithTitle:@"Open selected Files in Horizontal Split Views" action:@selector(openFilesInHorizontalSplitViews:) keyEquivalent:@""];
-  [menu addItemWithTitle:@"Open selected Files in Vertical Split Views" action:@selector(openFilesInHorizontalSplitViews:) keyEquivalent:@""];
+  [menu addItemWithTitle:@"Open selected Files in Vertical Split Views" action:@selector(openFilesInVerticalSplitViews:) keyEquivalent:@""];
   [menu addItemWithTitle:[NSString stringWithFormat:@"Change working directory to “%@”", [[fsItem dirItem] relativePath]]
                   action:@selector(changeWorkingDirectoryToSelection:)
            keyEquivalent:@""];
@@ -626,6 +626,18 @@ static NSMutableArray *leafNode = nil;
   }];
   [self openInCurrentWindow:paths withPreferences:^(NSUserDefaults *ud, int layout) {
     [ud setInteger:MMLayoutHorizontalSplit forKey:MMOpenLayoutKey];
+  }];
+}
+
+- (void)openFilesInVerticalSplitViews:(NSMenuItem *)sender {
+  NSMutableArray *paths = [NSMutableArray array];
+  NSIndexSet *indexes = [[self outlineView] selectedRowIndexes];
+  [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
+    FileSystemItem *item = [self itemAtRow:index];
+    [paths addObject:[item fullPath]];
+  }];
+  [self openInCurrentWindow:paths withPreferences:^(NSUserDefaults *ud, int layout) {
+    [ud setInteger:MMLayoutVerticalSplit forKey:MMOpenLayoutKey];
   }];
 }
 

@@ -1,8 +1,5 @@
 * Opening files in split views does so in a new tab instead of in the current.
 * Should we disable the cwd menu item if that dir is already the wd?
-* Add menu items to open the file in
-  * current tab, vertical split
-  * current tab, horizontal split
 * Add support for multiple file selection in the contextual menu.
 * There's some duplication with regards to selecting a new/renamed item
 * highlight the file that's open in the current window
