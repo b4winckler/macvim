@@ -284,7 +284,12 @@ static NSMutableArray *leafNode = nil;
 - (FilesOutlineView *)outlineView;
 - (void)pwdChanged:(NSNotification *)notification;
 - (void)changeWorkingDirectory:(NSString *)path;
-- (void)openInCurrentWindow:(NSArray *)files withPreferences:(void (^)(NSUserDefaults *userDefaults, int layout))block;
+- (NSArray *)selectedItemPaths;
+- (void)openSelectedFilesInCurrentWindowWithLayout:(int)layout;
+- (FileSystemItem *)itemAtRow:(NSInteger)row;
+- (void)watchRoot;
+- (void)unwatchRoot;
+- (void)changeOccurredAtPath:(NSString *)path;
 @end
 
 
@@ -391,8 +396,16 @@ static NSMutableArray *leafNode = nil;
   return [[self outlineView] itemAtRow:row];
 }
 
-- (FileSystemItem *)selectedItem {
-  return [self itemAtRow:[(FilesOutlineView *)[self view] selectedRow]];
+- (NSArray *)selectedItemPaths {
+  NSMutableArray *paths = [NSMutableArray array];
+  NSIndexSet *indexes = [[self outlineView] selectedRowIndexes];
+  [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
+    FileSystemItem *item = [self itemAtRow:index];
+    if ([item isLeaf]) {
+      [paths addObject:[item fullPath]];
+    }
+  }];
+  return paths;
 }
 
 - (void)changeWorkingDirectory:(NSString *)path {
@@ -407,26 +420,20 @@ static NSMutableArray *leafNode = nil;
 // duration of the block. It restores, in addition, the layout preference.
 //
 // Any directory in `paths' is ignored.
-- (void)openInCurrentWindow:(NSArray *)paths withPreferences:(void (^)(NSUserDefaults *userDefaults, int layout))block {
-  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
-  BOOL openInCurrentWindow = [ud boolForKey:MMOpenInCurrentWindowKey];
-  [ud setBool:YES forKey:MMOpenInCurrentWindowKey];
-  int layout = [ud integerForKey:MMOpenLayoutKey];
+- (void)openSelectedFilesInCurrentWindowWithLayout:(int)layout {
+  NSArray *paths = [self selectedItemPaths];
+  if ([paths count] > 0) {
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    BOOL openInCurrentWindow = [ud boolForKey:MMOpenInCurrentWindowKey];
+    [ud setBool:YES forKey:MMOpenInCurrentWindowKey];
+    int layoutBefore = [ud integerForKey:MMOpenLayoutKey];
+    [ud setInteger:layout forKey:MMOpenLayoutKey];
 
-  block(ud, layout);
-  BOOL exists, isDir;
-  NSFileManager *fileManager = [NSFileManager defaultManager];
-  NSMutableArray *files = [NSMutableArray array];
-  for (NSString *path in paths) {
-    exists = [fileManager fileExistsAtPath:path isDirectory:&isDir];
-    if (exists && !isDir) {
-      [files addObject:path];
-    }
+    [(MMAppController *)[NSApp delegate] openFiles:paths withArguments:nil];
+
+    [ud setBool:openInCurrentWindow forKey:MMOpenInCurrentWindowKey];
+    [ud setInteger:layoutBefore forKey:MMOpenLayoutKey];
   }
-  [(MMAppController *)[NSApp delegate] openFiles:files withArguments:nil];
-
-  [ud setBool:openInCurrentWindow forKey:MMOpenInCurrentWindowKey];
-  [ud setInteger:layout forKey:MMOpenLayoutKey];
 }
 
 
@@ -502,21 +509,20 @@ static NSMutableArray *leafNode = nil;
 
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
   if ([[self outlineView] numberOfSelectedRows] == 1) {
-    NSArray *paths = [NSArray arrayWithObject:[[self selectedItem] fullPath]];
-    [self openInCurrentWindow:paths withPreferences:^(NSUserDefaults *ud, int layout) {
-      NSEvent *event = [NSApp currentEvent];
-      if ([event modifierFlags] & NSAlternateKeyMask) {
-        if (layout == MMLayoutTabs) {
-          // The user normally creates a new tab when opening a file,
-          // so open this file in the current one
-          [ud setInteger:MMLayoutArglist forKey:MMOpenLayoutKey];
-        } else {
-          // The user normally opens a file in the current tab,
-          // so open this file in a new one
-          [ud setInteger:MMLayoutTabs forKey:MMOpenLayoutKey];
-        }
+    NSEvent *event = [NSApp currentEvent];
+    int layout = [[NSUserDefaults standardUserDefaults] integerForKey:MMOpenLayoutKey];
+    if ([event modifierFlags] & NSAlternateKeyMask) {
+      if (layout == MMLayoutTabs) {
+        // The user normally creates a new tab when opening a file,
+        // so open this file in the current one
+        layout = MMLayoutArglist;
+      } else {
+        // The user normally opens a file in the current tab,
+        // so open this file in a new one
+        layout = MMLayoutTabs;
       }
-    }];
+    }
+    [self openSelectedFilesInCurrentWindowWithLayout:layout];
   }
 }
 
@@ -606,39 +612,15 @@ static NSMutableArray *leafNode = nil;
 // Vim open/cwd
 
 - (void)openFilesInTabs:(NSMenuItem *)sender {
-  NSMutableArray *paths = [NSMutableArray array];
-  NSIndexSet *indexes = [[self outlineView] selectedRowIndexes];
-  [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
-    FileSystemItem *item = [self itemAtRow:index];
-    [paths addObject:[item fullPath]];
-  }];
-  [self openInCurrentWindow:paths withPreferences:^(NSUserDefaults *ud, int layout) {
-    [ud setInteger:MMLayoutTabs forKey:MMOpenLayoutKey];
-  }];
+  [self openSelectedFilesInCurrentWindowWithLayout:MMLayoutTabs];
 }
 
 - (void)openFilesInHorizontalSplitViews:(NSMenuItem *)sender {
-  NSMutableArray *paths = [NSMutableArray array];
-  NSIndexSet *indexes = [[self outlineView] selectedRowIndexes];
-  [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
-    FileSystemItem *item = [self itemAtRow:index];
-    [paths addObject:[item fullPath]];
-  }];
-  [self openInCurrentWindow:paths withPreferences:^(NSUserDefaults *ud, int layout) {
-    [ud setInteger:MMLayoutHorizontalSplit forKey:MMOpenLayoutKey];
-  }];
+  [self openSelectedFilesInCurrentWindowWithLayout:MMLayoutHorizontalSplit];
 }
 
 - (void)openFilesInVerticalSplitViews:(NSMenuItem *)sender {
-  NSMutableArray *paths = [NSMutableArray array];
-  NSIndexSet *indexes = [[self outlineView] selectedRowIndexes];
-  [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
-    FileSystemItem *item = [self itemAtRow:index];
-    [paths addObject:[item fullPath]];
-  }];
-  [self openInCurrentWindow:paths withPreferences:^(NSUserDefaults *ud, int layout) {
-    [ud setInteger:MMLayoutVerticalSplit forKey:MMOpenLayoutKey];
-  }];
+  [self openSelectedFilesInCurrentWindowWithLayout:MMLayoutVerticalSplit];
 }
 
 - (void)changeWorkingDirectoryToSelection:(NSMenuItem *)sender {

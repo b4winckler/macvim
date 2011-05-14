@@ -15,11 +15,7 @@
 - (void)open;
 - (void)close;
 - (void)toggle;
-- (FileSystemItem *)itemAtRow:(NSInteger)row;
-- (FileSystemItem *)selectedItem;
+
 - (NSMenu *)menuForRow:(NSInteger)row;
-- (void)watchRoot;
-- (void)unwatchRoot;
-- (void)changeOccurredAtPath:(NSString *)path;
 
 @end
