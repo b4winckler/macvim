@@ -108,8 +108,10 @@ enum {
                name:NSApplicationDidChangeScreenParametersNotification
              object:NSApp];
 
+#if 0   // Enabling this breaks NSSplitView's mouse cursor handling
     // NOTE: Vim needs to process mouse moved events, so enable them here.
     [self setAcceptsMouseMovedEvents:YES];
+#endif
 
     return self;
 }

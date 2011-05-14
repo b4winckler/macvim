@@ -65,7 +65,8 @@ enum {
 - (NSSize)vimViewSizeForTextViewSize:(NSSize)textViewSize;
 - (NSRect)textViewRectForVimViewSize:(NSSize)contentSize;
 - (NSTabView *)tabView;
-- (void)frameSizeMayHaveChanged;
+//- (void)frameSizeMayHaveChanged;
+- (void)textViewFrameDidChange:(NSNotification *)notification;
 @end
 
 
@@ -120,7 +121,7 @@ enum {
     int top = [ud integerForKey:MMTextInsetTopKey];
     [textView setTextContainerInset:NSMakeSize(left, top)];
 
-    [textView setAutoresizingMask:NSViewNotSizable];
+    [textView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
     [self addSubview:textView];
     
     // Create the tab view (which is never visible, but the tab bar control
@@ -161,6 +162,12 @@ enum {
     [tabBarControl awakeFromNib];
 
     [self addSubview:tabBarControl];
+
+    [[NSNotificationCenter defaultCenter]
+                                addObserver:self
+                                   selector:@selector(textViewFrameDidChange:)
+                                       name:NSViewFrameDidChangeNotification
+                                     object:textView];
 
     return self;
 }
@@ -256,10 +263,13 @@ enum {
     [tabBarControl setTabView:nil];
     [[self window] setDelegate:nil];
 
+    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+    [nc removeObserver:self];
+
     // NOTE! There is another bug in PSMTabBarControl where the control is not
     // removed as an observer, so remove it here (failing to remove an observer
     // may lead to very strange bugs).
-    [[NSNotificationCenter defaultCenter] removeObserver:tabBarControl];
+    [nc removeObserver:tabBarControl];
 
     [tabBarControl removeFromSuperviewWithoutNeedingDisplay];
     [textView removeFromSuperviewWithoutNeedingDisplay];
@@ -598,6 +608,7 @@ enum {
     [super viewDidEndLiveResize];
 }
 
+#if 0
 - (void)setFrameSize:(NSSize)size
 {
     // NOTE: Instead of only acting when a frame was resized, we do some
@@ -615,6 +626,8 @@ enum {
     [super setFrame:frame];
     [self frameSizeMayHaveChanged];
 }
+#endif
+
 
 @end // MMVimView
 
@@ -848,6 +861,7 @@ enum {
     return tabView;
 }
 
+#if 0
 - (void)frameSizeMayHaveChanged
 {
     // NOTE: Whenever a call is made that may have changed the frame size we
@@ -899,6 +913,52 @@ enum {
                     constrained[1], constrained[0]]];
         }
     }
+}
+#endif
+
+- (void)textViewFrameDidChange:(NSNotification *)notification
+{
+#if 1
+    // It is possible that the current number of (rows,columns) is too big or
+    // too small to fit the new frame.  If so, notify Vim that the text
+    // dimensions should change, but don't actually change the number of
+    // (rows,columns).  These numbers may only change when Vim initiates the
+    // change (as opposed to the user dragging the window resizer, for
+    // example).
+    //
+    // Note that the message sent to Vim depends on whether we're in
+    // a live resize or not -- this is necessary to avoid the window jittering
+    // when the user drags to resize.
+    int constrained[2];
+    NSSize textViewSize = [textView frame].size;
+    [textView constrainRows:&constrained[0] columns:&constrained[1]
+                     toSize:textViewSize];
+
+    int rows, cols;
+    [textView getMaxRows:&rows columns:&cols];
+
+    if (constrained[0] != rows || constrained[1] != cols) {
+        NSData *data = [NSData dataWithBytes:constrained length:2*sizeof(int)];
+        int msgid = [self inLiveResize] ? LiveResizeMsgID
+                                        : SetTextDimensionsMsgID;
+
+        ASLogDebug(@"Notify Vim that text dimensions changed from %dx%d to "
+                   "%dx%d (%s)", cols, rows, constrained[1], constrained[0],
+                   MessageStrings[msgid]);
+
+        [vimController sendMessage:msgid data:data];
+
+        // We only want to set the window title if this resize came from
+        // a live-resize, not (for example) setting 'columns' or 'lines'.
+        if ([self inLiveResize]) {
+            [[self window] setTitle:[NSString stringWithFormat:@"%dx%d",
+                    constrained[1], constrained[0]]];
+        }
+    } else {
+        //ASLogTmp(@"Force a redraw");
+        [vimController sendMessage:ForceRedrawMsgID data:nil];
+    }
+#endif
 }
 
 @end // MMVimView (Private)

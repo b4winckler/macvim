@@ -129,6 +129,14 @@ enum {
 @end
 
 
+@interface NSView (MMExtras)
+// Convert from view coordinate to screen coordinate
+- (NSPoint)convertToScreen:(NSPoint)point;
+// Convert to view coordinate from screen coordinate
+- (NSPoint)convertFromScreen:(NSPoint)point;
+@end
+
+
 
 // Create a view with a "show hidden files" button to be used as accessory for
 // open/save panels.  This function assumes ownership of the view so do not

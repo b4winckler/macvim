@@ -54,7 +54,9 @@
 
 - (void)viewWillStartLiveResize;
 - (void)viewDidEndLiveResize;
+#if 0
 - (void)setFrameSize:(NSSize)size;
 - (void)setFrame:(NSRect)frame;
+#endif
 
 @end

@@ -2086,6 +2086,15 @@ static void netbeansReadCallback(CFSocketRef s,
         [self setImState:YES];
     } else if (DeactivatedImMsgID == msgid) {
         [self setImState:NO];
+    } else if (ForceRedrawMsgID == msgid) {
+        // TODO: Figure out if there is a "right" way to redraw the screen.
+        // This magic sequence of calls seems to clear the screen properly.
+        screenclear();
+        update_screen(NOT_VALID);
+        setcursor();
+        out_flush();
+        gui_update_cursor(FALSE, FALSE);
+        maketitle();
     } else {
         ASLogWarn(@"Unknown message received (msgid=%d)", msgid);
     }

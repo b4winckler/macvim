@@ -58,8 +58,15 @@
     [contentView setAutoresizesSubviews:YES];
     [contentView addSubview:tablineSeparator];
 
+#if 0   // Enabling this breaks NSSplitView's mouse cursor handling
     // NOTE: Vim needs to process mouse moved events, so enable them here.
     [self setAcceptsMouseMovedEvents:YES];
+#endif
+
+    [self setPreservesContentDuringLiveResize:YES];
+
+    // Temporary hack
+    [self setShowsResizeIndicator:NO];
 
     return self;
 }

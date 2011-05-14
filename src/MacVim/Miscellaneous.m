@@ -263,6 +263,27 @@ NSString *MMDrawerPreferredEdgeKey      = @"MMDrawerPreferredEdge";
 
 
 
+@implementation NSView (MMExtras)
+
+// Convert from view coordinate to screen coordinate
+- (NSPoint)convertToScreen:(NSPoint)point
+{
+    NSWindow *win = [self window];
+    return [win convertBaseToScreen:[self convertPoint:point toView:nil]];
+}
+
+// Convert to view coordinate from screen coordinate
+- (NSPoint)convertFromScreen:(NSPoint)point
+{
+    NSWindow *win = [self window];
+    return [win convertScreenToBase:[self convertPoint:point fromView:nil]];
+}
+
+@end
+
+
+
+
     NSView *
 showHiddenFilesView()
 {

@@ -39,6 +39,9 @@
     CGGlyph                     *glyphs;
     CGSize                      *advances;
 
+    NSPoint                     lastLowerLeft;
+    NSPoint                     lastUpperRight;
+
     // These are used in MMCoreTextView+ToolTip.m
     id trackingRectOwner_;              // (not retained)
     void *trackingRectUserData_;

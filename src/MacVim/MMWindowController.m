@@ -70,6 +70,21 @@
 #import <PSMTabBarControl/PSMTabBarControl.h>
 
 
+@interface MMSplitView : NSSplitView
+@end
+
+@implementation MMSplitView
+- (CGFloat)dividerThickness
+{
+    return 1.0;
+}
+
+- (void)drawDividerInRect:(NSRect)rect
+{
+    [[NSColor blackColor] set];
+    NSRectFill(rect);
+}
+@end
 
 @interface MMWindowController (Private)
 - (NSSize)contentSize;
@@ -150,8 +165,26 @@
 
     vimView = [[MMVimView alloc] initWithFrame:[contentView frame]
                                  vimController:vimController];
-    [vimView setAutoresizingMask:NSViewNotSizable];
-    [contentView addSubview:vimView];
+    [vimView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
+
+    splitView = [[NSSplitView alloc] initWithFrame:[contentView frame]];
+    [splitView setVertical:YES];
+    //[splitView setDividerStyle:NSSplitViewDividerStyleThin];
+    [splitView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
+    [splitView setDelegate:self];
+
+#if 1
+    NSRect tempFrame = [contentView frame];
+    tempFrame.size.width = 150;
+    NSImageView *view = [[NSImageView alloc] initWithFrame:tempFrame];
+    [view setImage:[NSImage imageNamed:@"Attention"]];
+    [view setImageFrameStyle:NSImageFrameGroove];
+    sideView = view;
+#endif
+    [splitView addSubview:sideView];
+    [splitView addSubview:vimView];
+    [splitView adjustSubviews];
+    [contentView addSubview:splitView];
 
     [win setDelegate:self];
     [win setInitialFirstResponder:[vimView textView]];
@@ -195,6 +228,8 @@
     [decoratedWindow release];  decoratedWindow = nil;
     [windowAutosaveKey release];  windowAutosaveKey = nil;
     [vimView release];  vimView = nil;
+    [sideView release];  sideView = nil;
+    [splitView release];  splitView = nil;
 
     [super dealloc];
 }
@@ -279,8 +314,8 @@
 
     [[MMAppController sharedInstance] windowControllerWillOpen:self];
     [self updateResizeConstraints];
-    [self resizeWindowToFitContentSize:[vimView desiredSize]
-                          keepOnScreen:YES];
+    //[self resizeWindowToFitContentSize:[vimView desiredSize]
+    //                      keepOnScreen:YES];
     [[self window] makeKeyAndOrderFront:self];
 
     // Flag that the window is now placed on screen.  From now on it is OK for
@@ -467,6 +502,7 @@
     if (updateToolbarFlag != 0)
         [self updateToolbar];
 
+#if 0
     // NOTE: If the window has not been presented then we must avoid resizing
     // the views since it will cause them to be constrained to the screen which
     // has not yet been set!
@@ -479,7 +515,7 @@
         int rows = 0, cols = 0;
         contentSize = [vimView constrainRows:&rows columns:&cols
                                       toSize:contentSize];
-        [vimView setFrameSize:contentSize];
+        //[vimView setFrameSize:contentSize];
 
         if (fullscreenEnabled) {
             // NOTE! Don't mark the fullscreen content view as needing an
@@ -492,8 +528,8 @@
                 [fullscreenWindow centerView];
             }
         } else {
-            [self resizeWindowToFitContentSize:contentSize
-                                  keepOnScreen:keepOnScreen];
+            //[self resizeWindowToFitContentSize:contentSize
+            //                      keepOnScreen:keepOnScreen];
 
             if (windowAutosaveKey && rows > 0 && cols > 0) {
                 // Autosave rows and columns now that they should have been
@@ -510,6 +546,12 @@
 
         keepOnScreen = NO;
     }
+#else
+    if (windowPresented && shouldResizeVimView) {
+        shouldResizeVimView = NO;
+        keepOnScreen = NO;
+    }
+#endif
 }
 
 - (void)showTabBar:(BOOL)on
@@ -625,8 +667,8 @@
         // Sending of synchronous message failed.  Force the window size to
         // match the last dimensions received from Vim, otherwise we end up
         // with inconsistent states.
-        [self resizeWindowToFitContentSize:[vimView desiredSize]
-                              keepOnScreen:NO];
+        //[self resizeWindowToFitContentSize:[vimView desiredSize]
+        //                      keepOnScreen:NO];
     }
 
     // If we saved the original title while resizing, restore it.
@@ -886,17 +928,6 @@
     [vimController sendMessage:SetWindowPositionMsgID data:data];
 }
 
-- (void)windowDidResize:(id)sender
-{
-    if (!setupDone || fullscreenEnabled) return;
-
-    // NOTE: Since we have no control over when the window may resize (Cocoa
-    // may resize automatically) we simply set the view to fill the entire
-    // window.  The vim view takes care of notifying Vim if the number of
-    // (rows,columns) changed.
-    [vimView setFrameSize:[self contentSize]];
-}
-
 // This is not an NSWindow delegate method, our custom MMWindow class calls it
 // instead of the usual windowWillUseStandardFrame:defaultFrame:.
 - (IBAction)zoom:(id)sender
@@ -1017,6 +1048,94 @@
     return NO;
 }
 
+
+// -- Split view delegate ----------------------------------------------------
+
+// NOTE: A general assumption in these delegate messages is that there is a
+// main view (the Vim view) and a side view, and that the split is vertical.
+// If more views are added to the split view or if the split is changed to
+// horizontal then these delegate methods need to be updated.
+
+#if 0
+- (void)splitView:(NSSplitView *)sv resizeSubviewsWithOldSize:(NSSize)oldSize
+{
+    // This code assumes that there are at most two views in a vertical split
+    // arrangement.  Horizontal space changes are accumulated into the vimView,
+    // the other view has a fixed width.
+
+    NSSize size = [splitView frame].size;
+
+    if (sideView && ![sideView isHidden]) {
+        CGFloat d = size.width - oldSize.width;
+        NSSize vsize = [vimView frame].size;
+        NSSize ssize = [sideView frame].size;
+
+        vsize.width += d;
+        vsize.height = ssize.height = size.height;
+
+        [vimView setFrameSize:vsize];
+        [sideView setFrameSize:ssize];
+    } else {
+        ASLogTmp(@"");
+        [vimView setFrameSize:size];
+    }
+}
+
+#else
+
+- (BOOL)splitView:(NSSplitView *)sv shouldAdjustSizeOfSubview:(NSView *)subview
+{
+    // Only the Vim view should resize when the split view changes size.
+    return subview == vimView;
+}
+
+#endif
+
+- (BOOL)splitView:(NSSplitView *)sv canCollapseSubview:(NSView *)subview
+{
+    // Only the side view can collapse
+    return sideView && subview == sideView;
+}
+
+- (BOOL)splitView:(NSSplitView *)sv
+                shouldCollapseSubview:(NSView *)subview
+       forDoubleClickOnDividerAtIndex:(NSInteger)idx
+{
+    // Only the side view can collapse
+    return sideView && subview == sideView;
+}
+
+- (CGFloat)splitView:(NSSplitView *)sv
+        constrainMinCoordinate:(CGFloat)proposedMin
+                   ofSubviewAt:(NSInteger)idx
+{
+    // Constrain Vim size minimum size when on the left.  Note that this only
+    // applies when dragging the divider.
+
+    NSArray *views = [splitView subviews];
+    if ([views count] < 1)
+        return proposedMin;
+
+    return ([views objectAtIndex:0] == vimView) ? [vimView minSize].width
+                                                : proposedMin;
+}
+
+- (CGFloat)splitView:(NSSplitView *)sv
+        constrainMaxCoordinate:(CGFloat)proposedMax
+                   ofSubviewAt:(NSInteger)idx
+{
+    // Constrain Vim size minimum size when on the right.  Note that this only
+    // applies when dragging the divider.
+
+    NSArray *views = [splitView subviews];
+    if ([views count] < 2)
+        return proposedMax;
+
+    return [views objectAtIndex:1] == vimView
+                    ? [splitView frame].size.width - [vimView minSize].width
+                    : proposedMax;
+}
+
 @end // MMWindowController
 
 
@@ -1135,6 +1254,7 @@
 
 - (void)updateResizeConstraints
 {
+#if 0
     if (!setupDone) return;
 
     // Set the resize increments to exactly match the font size; this way the
@@ -1144,6 +1264,7 @@
 
     NSSize minSize = [vimView minSize];
     [decoratedWindow setContentMinSize:minSize];
+#endif
 }
 
 - (NSTabViewItem *)addNewTabViewItem
@@ -1179,6 +1300,12 @@
         // size.
         [self updateResizeConstraints];
         shouldResizeVimView = YES;
+
+        NSSize size = [[decoratedWindow contentView] frame].size;
+        if (hide) ++size.height;
+        else      --size.height;
+
+        [splitView setFrameSize:size];
     }
 }
 
