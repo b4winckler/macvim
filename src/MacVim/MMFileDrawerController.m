@@ -286,6 +286,7 @@ static NSMutableArray *leafNode = nil;
 - (void)changeWorkingDirectory:(NSString *)path;
 - (NSArray *)selectedItemPaths;
 - (void)openSelectedFilesInCurrentWindowWithLayout:(int)layout;
+- (NSArray *)appsAssociatedWithItem:(FileSystemItem *)item;
 - (FileSystemItem *)itemAtRow:(NSInteger)row;
 - (void)watchRoot;
 - (void)unwatchRoot;
@@ -436,6 +437,23 @@ static NSMutableArray *leafNode = nil;
   }
 }
 
+// TODO move into FileSystemItem
+- (NSArray *)appsAssociatedWithItem:(FileSystemItem *)item {
+  NSString *uti = [[NSWorkspace sharedWorkspace] typeOfFile:[item fullPath] error:NULL];
+  if (uti) {
+    NSArray *identifiers = (NSArray *)LSCopyAllRoleHandlersForContentType((CFStringRef)uti, kLSRolesAll);
+    NSMutableArray *paths = [NSMutableArray array];
+    for (NSString *identifier in identifiers) {
+      NSString *appPath = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:identifier];
+      if (appPath) {
+        [paths addObject:appPath];
+      }
+    }
+    return [paths count] == 0 ? nil : paths;
+  }
+  return nil;
+}
+
 
 // Data Source methods
 // ===================
@@ -489,11 +507,26 @@ static NSMutableArray *leafNode = nil;
   [menu addItemWithTitle:[NSString stringWithFormat:@"Open “%@” with Finder", filename]
                   action:@selector(openWithFinder:)
            keyEquivalent:@""];
-  NSMenu *submenu = [[NSMenu new] autorelease];
-  item = [menu addItemWithTitle:[NSString stringWithFormat:@"Open “%@” with…", filename]
-                         action:NULL
-                  keyEquivalent:@""];
-  [item setSubmenu:submenu];
+
+  NSMenuItem *openWithFinderItem = [menu addItemWithTitle:[NSString stringWithFormat:@"Open “%@” with…", filename]
+                                                   action:NULL
+                                            keyEquivalent:@""];
+  NSArray *appPaths = [self appsAssociatedWithItem:fsItem];
+  if (appPaths) {
+    NSMenu *submenu = [[NSMenu new] autorelease];
+    NSInteger i;
+    for (i = 0; i < [appPaths count]; i++) {
+      NSString *appPath = [appPaths objectAtIndex:i];
+      NSString *appName = [[NSFileManager defaultManager] displayNameAtPath:appPath];
+      NSImage *appIcon = [[NSWorkspace sharedWorkspace] iconForFile:appPath];
+      [appIcon setSize:NSMakeSize(16, 16)];
+      item = [submenu addItemWithTitle:appName action:@selector(openFileWithApp:) keyEquivalent:@""];
+      [item setTarget:self];
+      [item setTag:i];
+      [item setImage:appIcon];
+    }
+    [openWithFinderItem setSubmenu:submenu];
+  }
 
   // Misc
   [menu addItem:[NSMenuItem separatorItem]];
@@ -656,6 +689,20 @@ static NSMutableArray *leafNode = nil;
 
 - (void)openWithFinder:(NSMenuItem *)sender {
   [[NSWorkspace sharedWorkspace] openFile:[[self itemAtRow:[sender tag]] fullPath]];
+}
+
+// TODO really need to use selected items instead of tags on the menu item!
+- (void)openFileWithApp:(NSMenuItem *)sender {
+  NSMenu *menu = [sender menu];
+  NSInteger index = [[menu supermenu] indexOfItemWithSubmenu:menu];
+  NSMenuItem *parentMenuItem = [[menu supermenu] itemAtIndex:index];
+  FileSystemItem *item = [self itemAtRow:[parentMenuItem tag]];
+  NSArray *appPaths = [self appsAssociatedWithItem:item];
+  if (appPaths) {
+    // Actually this action should never be called if there are no associated apps, but let's keep it safe
+    NSString *selectedApp = [appPaths objectAtIndex:[sender tag]];
+    [[NSWorkspace sharedWorkspace] openFile:[item fullPath] withApplication:selectedApp];
+  }
 }
 
 

@@ -1,3 +1,5 @@
+* In actions get the selected items instead of using the menu item tag
+* Don't include MacVim in the list of apps to open a file with.
 * Opening files in split views does so in a new tab instead of in the current.
 * Should we disable the cwd menu item if that dir is already the wd?
 * Add support for multiple file selection in the contextual menu.
