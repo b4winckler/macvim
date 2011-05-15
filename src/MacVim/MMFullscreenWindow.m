@@ -30,7 +30,7 @@
 #import "MMWindowController.h"
 #import "Miscellaneous.h"
 #import <Carbon/Carbon.h>
-#import <PSMTabBarControl/PSMTabBarControl.h>
+//#import <PSMTabBarControl/PSMTabBarControl.h>
 
 // These have to be the same as in option.h
 #define FUOPT_MAXVERT         0x001
@@ -162,8 +162,8 @@ enum {
     // make target's window controller believe that it's now controlling us
     [[target windowController] setWindow:self];
 
-    oldTabBarStyle = [[view tabBarControl] styleName];
-    [[view tabBarControl] setStyleNamed:@"Unified"];
+    //oldTabBarStyle = [[view tabBarControl] styleName];
+    //[[view tabBarControl] setStyleNamed:@"Unified"];
 
     // add text view
     oldPosition = [view frame].origin;
@@ -268,7 +268,7 @@ enum {
     [self retain];  // NSWindowController releases us once
     [[self windowController] setWindow:target];
 
-    [[view tabBarControl] setStyleNamed:oldTabBarStyle];
+    //[[view tabBarControl] setStyleNamed:oldTabBarStyle];
 
     // fix delegate
     id delegate = [self delegate];
