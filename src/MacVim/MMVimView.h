@@ -12,17 +12,13 @@
 
 
 
-@class PSMTabBarControl;
 @class MMTextView;
 @class MMScroller;
 @class MMVimController;
 
 
 @interface MMVimView : NSView {
-    PSMTabBarControl    *tabBarControl;
-    NSTabView           *tabView;
     MMVimController     *vimController;
-    BOOL                vimTaskSelectedTab;
     MMTextView          *textView;
     NSMutableArray      *scrollbars;
 }
@@ -36,12 +32,6 @@
 - (NSSize)minSize;
 - (NSSize)constrainRows:(int *)r columns:(int *)c toSize:(NSSize)size;
 - (void)setDesiredRows:(int)r columns:(int)c;
-
-- (PSMTabBarControl *)tabBarControl;
-- (IBAction)addNewTab:(id)sender;
-- (void)updateTabsWithData:(NSData *)data;
-- (void)selectTabWithIndex:(int)idx;
-- (NSTabViewItem *)addNewTabViewItem;
 
 - (void)createScrollbarWithIdentifier:(int32_t)ident type:(int)type;
 - (BOOL)destroyScrollbarWithIdentifier:(int32_t)ident;

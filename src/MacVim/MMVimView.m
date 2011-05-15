@@ -29,7 +29,6 @@
 #import "MMVimController.h"
 #import "MMVimView.h"
 #import "MMWindowController.h"
-#import <PSMTabBarControl/PSMTabBarControl.h>
 
 
 
@@ -60,11 +59,9 @@ enum {
 - (BOOL)leftScrollbarVisible;
 - (BOOL)rightScrollbarVisible;
 - (void)placeScrollbars;
-- (NSUInteger)representedIndexOfTabViewItem:(NSTabViewItem *)tvi;
 - (MMScroller *)scrollbarForIdentifier:(int32_t)ident index:(unsigned *)idx;
 - (NSSize)vimViewSizeForTextViewSize:(NSSize)textViewSize;
 - (NSRect)textViewRectForVimViewSize:(NSSize)contentSize;
-- (NSTabView *)tabView;
 //- (void)frameSizeMayHaveChanged;
 - (void)textViewFrameDidChange:(NSNotification *)notification;
 @end
@@ -124,45 +121,6 @@ enum {
     [textView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
     [self addSubview:textView];
     
-    // Create the tab view (which is never visible, but the tab bar control
-    // needs it to function).
-    tabView = [[NSTabView alloc] initWithFrame:NSZeroRect];
-
-    // Create the tab bar control (which is responsible for actually
-    // drawing the tabline and tabs).
-    NSRect tabFrame = { { 0, frame.size.height - 22 },
-                        { frame.size.width, 22 } };
-    tabBarControl = [[PSMTabBarControl alloc] initWithFrame:tabFrame];
-
-    [tabView setDelegate:tabBarControl];
-
-    [tabBarControl setTabView:tabView];
-    [tabBarControl setDelegate:self];
-    [tabBarControl setHidden:YES];
-
-    [tabBarControl setCellMinWidth:[ud integerForKey:MMTabMinWidthKey]];
-    [tabBarControl setCellMaxWidth:[ud integerForKey:MMTabMaxWidthKey]];
-    [tabBarControl setCellOptimumWidth:
-                                     [ud integerForKey:MMTabOptimumWidthKey]];
-
-    [tabBarControl setShowAddTabButton:[ud boolForKey:MMShowAddTabButtonKey]];
-    [[tabBarControl addTabButton] setTarget:self];
-    [[tabBarControl addTabButton] setAction:@selector(addNewTab:)];
-    [tabBarControl setAllowsDragBetweenWindows:NO];
-    [tabBarControl registerForDraggedTypes:
-                            [NSArray arrayWithObject:NSFilenamesPboardType]];
-
-    [tabBarControl setAutoresizingMask:NSViewWidthSizable|NSViewMinYMargin];
-    
-    //[tabBarControl setPartnerView:textView];
-    
-    // tab bar resizing only works if awakeFromNib is called (that's where
-    // the NSViewFrameDidChangeNotification callback is installed). Sounds like
-    // a PSMTabBarControl bug, let's live with it for now.
-    [tabBarControl awakeFromNib];
-
-    [self addSubview:tabBarControl];
-
     [[NSNotificationCenter defaultCenter]
                                 addObserver:self
                                    selector:@selector(textViewFrameDidChange:)
@@ -176,8 +134,6 @@ enum {
 {
     ASLogDebug(@"");
 
-    [tabBarControl release];  tabBarControl = nil;
-    [tabView release];  tabView = nil;
     [scrollbars release];  scrollbars = nil;
 
     // HACK! The text storage is the principal owner of the text system, but we
@@ -246,32 +202,15 @@ enum {
     return textView;
 }
 
-- (PSMTabBarControl *)tabBarControl
-{
-    return tabBarControl;
-}
-
 - (void)cleanup
 {
     vimController = nil;
     
-    // NOTE! There is a bug in PSMTabBarControl in that it retains the delegate
-    // so reset the delegate here, otherwise the delegate may never get
-    // released.
-    [tabView setDelegate:nil];
-    [tabBarControl setDelegate:nil];
-    [tabBarControl setTabView:nil];
     [[self window] setDelegate:nil];
 
-    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-    [nc removeObserver:self];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 
-    // NOTE! There is another bug in PSMTabBarControl where the control is not
-    // removed as an observer, so remove it here (failing to remove an observer
-    // may lead to very strange bugs).
-    [nc removeObserver:tabBarControl];
-
-    [tabBarControl removeFromSuperviewWithoutNeedingDisplay];
+#if 0
     [textView removeFromSuperviewWithoutNeedingDisplay];
 
     unsigned i, count = [scrollbars count];
@@ -279,8 +218,7 @@ enum {
         MMScroller *sb = [scrollbars objectAtIndex:i];
         [sb removeFromSuperviewWithoutNeedingDisplay];
     }
-
-    [tabView removeAllTabViewItems];
+#endif
 }
 
 - (NSSize)desiredSize
@@ -303,115 +241,6 @@ enum {
 - (void)setDesiredRows:(int)r columns:(int)c
 {
     [textView setMaxRows:r columns:c];
-}
-
-- (IBAction)addNewTab:(id)sender
-{
-    [vimController sendMessage:AddNewTabMsgID data:nil];
-}
-
-- (void)updateTabsWithData:(NSData *)data
-{
-    const void *p = [data bytes];
-    const void *end = p + [data length];
-    int tabIdx = 0;
-
-    // HACK!  Current tab is first in the message.  This way it is not
-    // necessary to guess which tab should be the selected one (this can be
-    // problematic for instance when new tabs are created).
-    int curtabIdx = *((int*)p);  p += sizeof(int);
-
-    NSArray *tabViewItems = [[self tabBarControl] representedTabViewItems];
-
-    while (p < end) {
-        NSTabViewItem *tvi = nil;
-
-        //int wincount = *((int*)p);  p += sizeof(int);
-        int infoCount = *((int*)p); p += sizeof(int);
-        unsigned i;
-        for (i = 0; i < infoCount; ++i) {
-            int length = *((int*)p);  p += sizeof(int);
-            if (length <= 0)
-                continue;
-
-            NSString *val = [[NSString alloc]
-                    initWithBytes:(void*)p length:length
-                         encoding:NSUTF8StringEncoding];
-            p += length;
-
-            switch (i) {
-                case MMTabLabel:
-                    // Set the label of the tab, adding a new tab when needed.
-                    tvi = [[self tabView] numberOfTabViewItems] <= tabIdx
-                            ? [self addNewTabViewItem]
-                            : [tabViewItems objectAtIndex:tabIdx];
-                    [tvi setLabel:val];
-                    ++tabIdx;
-                    break;
-                case MMTabToolTip:
-                    if (tvi)
-                        [[self tabBarControl] setToolTip:val
-                                          forTabViewItem:tvi];
-                    break;
-                default:
-                    ASLogWarn(@"Unknown tab info for index: %d", i);
-            }
-
-            [val release];
-        }
-    }
-
-    // Remove unused tabs from the NSTabView.  Note that when a tab is closed
-    // the NSTabView will automatically select another tab, but we want Vim to
-    // take care of which tab to select so set the vimTaskSelectedTab flag to
-    // prevent the tab selection message to be passed on to the VimTask.
-    vimTaskSelectedTab = YES;
-    int i, count = [[self tabView] numberOfTabViewItems];
-    for (i = count-1; i >= tabIdx; --i) {
-        id tvi = [tabViewItems objectAtIndex:i];
-        [[self tabView] removeTabViewItem:tvi];
-    }
-    vimTaskSelectedTab = NO;
-
-    [self selectTabWithIndex:curtabIdx];
-}
-
-- (void)selectTabWithIndex:(int)idx
-{
-    NSArray *tabViewItems = [[self tabBarControl] representedTabViewItems];
-    if (idx < 0 || idx >= [tabViewItems count]) {
-        ASLogWarn(@"No tab with index %d exists.", idx);
-        return;
-    }
-
-    // Do not try to select a tab if already selected.
-    NSTabViewItem *tvi = [tabViewItems objectAtIndex:idx];
-    if (tvi != [[self tabView] selectedTabViewItem]) {
-        vimTaskSelectedTab = YES;
-        [[self tabView] selectTabViewItem:tvi];
-        vimTaskSelectedTab = NO;
-
-        // We might need to change the scrollbars that are visible.
-        [self placeScrollbars];
-    }
-}
-
-- (NSTabViewItem *)addNewTabViewItem
-{
-    // NOTE!  A newly created tab is not by selected by default; Vim decides
-    // which tab should be selected at all times.  However, the AppKit will
-    // automatically select the first tab added to a tab view.
-
-    NSTabViewItem *tvi = [[NSTabViewItem alloc] initWithIdentifier:nil];
-
-    // NOTE: If this is the first tab it will be automatically selected.
-    vimTaskSelectedTab = YES;
-    [[self tabView] addTabViewItem:tvi];
-    vimTaskSelectedTab = NO;
-
-    [tvi autorelease];
-
-    return tvi;
 }
 
 - (void)createScrollbarWithIdentifier:(int32_t)ident type:(int)type
@@ -500,92 +329,6 @@ enum {
     [textView setDefaultColorsBackground:back foreground:fore];
 }
 
-
-// -- PSMTabBarControl delegate ----------------------------------------------
-
-
-- (BOOL)tabView:(NSTabView *)theTabView shouldSelectTabViewItem:
-    (NSTabViewItem *)tabViewItem
-{
-    // NOTE: It would be reasonable to think that 'shouldSelect...' implies
-    // that this message only gets sent when the user clicks the tab.
-    // Unfortunately it is not so, which is why we need the
-    // 'vimTaskSelectedTab' flag.
-    //
-    // HACK!  The selection message should not be propagated to Vim if Vim
-    // selected the tab (e.g. as opposed the user clicking the tab).  The
-    // delegate method has no way of knowing who initiated the selection so a
-    // flag is set when Vim initiated the selection.
-    if (!vimTaskSelectedTab) {
-        // Propagate the selection message to Vim.
-        NSUInteger idx = [self representedIndexOfTabViewItem:tabViewItem];
-        if (NSNotFound != idx) {
-            int i = (int)idx;   // HACK! Never more than MAXINT tabs?!
-            NSData *data = [NSData dataWithBytes:&i length:sizeof(int)];
-            [vimController sendMessage:SelectTabMsgID data:data];
-        }
-    }
-
-    // Unless Vim selected the tab, return NO, and let Vim decide if the tab
-    // should get selected or not.
-    return vimTaskSelectedTab;
-}
-
-- (BOOL)tabView:(NSTabView *)theTabView shouldCloseTabViewItem:
-        (NSTabViewItem *)tabViewItem
-{
-    // HACK!  This method is only called when the user clicks the close button
-    // on the tab.  Instead of letting the tab bar close the tab, we return NO
-    // and pass a message on to Vim to let it handle the closing.
-    NSUInteger idx = [self representedIndexOfTabViewItem:tabViewItem];
-    int i = (int)idx;   // HACK! Never more than MAXINT tabs?!
-    NSData *data = [NSData dataWithBytes:&i length:sizeof(int)];
-    [vimController sendMessage:CloseTabMsgID data:data];
-
-    return NO;
-}
-
-- (void)tabView:(NSTabView *)theTabView didDragTabViewItem:
-        (NSTabViewItem *)tabViewItem toIndex:(int)idx
-{
-    NSMutableData *data = [NSMutableData data];
-    [data appendBytes:&idx length:sizeof(int)];
-
-    [vimController sendMessage:DraggedTabMsgID data:data];
-}
-
-- (NSDragOperation)tabBarControl:(PSMTabBarControl *)theTabBarControl
-        draggingEntered:(id <NSDraggingInfo>)sender
-        forTabAtIndex:(NSUInteger)tabIndex
-{
-    NSPasteboard *pb = [sender draggingPasteboard];
-    return [[pb types] containsObject:NSFilenamesPboardType]
-            ? NSDragOperationCopy
-            : NSDragOperationNone;
-}
-
-- (BOOL)tabBarControl:(PSMTabBarControl *)theTabBarControl
-        performDragOperation:(id <NSDraggingInfo>)sender
-        forTabAtIndex:(NSUInteger)tabIndex
-{
-    NSPasteboard *pb = [sender draggingPasteboard];
-    if ([[pb types] containsObject:NSFilenamesPboardType]) {
-        NSArray *filenames = [pb propertyListForType:NSFilenamesPboardType];
-        if ([filenames count] == 0)
-            return NO;
-        if (tabIndex != NSNotFound) {
-            // If dropping on a specific tab, only open one file
-            [vimController file:[filenames objectAtIndex:0]
-                draggedToTabAtIndex:tabIndex];
-        } else {
-            // Files were dropped on empty part of tab bar; open them all
-            [vimController filesDraggedToTabBar:filenames];
-        }
-        return YES;
-    } else {
-        return NO;
-    }
-}
 
 
 
@@ -798,12 +541,6 @@ enum {
     [[self window] setShowsResizeIndicator:(rightSbVisible||botSbVisible)];
 }
 
-- (NSUInteger)representedIndexOfTabViewItem:(NSTabViewItem *)tvi
-{
-    NSArray *tabViewItems = [[self tabBarControl] representedTabViewItems];
-    return [tabViewItems indexOfObject:tvi];
-}
-
 - (MMScroller *)scrollbarForIdentifier:(int32_t)ident index:(unsigned *)idx
 {
     unsigned i, count = [scrollbars count];
@@ -822,9 +559,6 @@ enum {
 {
     NSSize size = textViewSize;
 
-    if (![[self tabBarControl] isHidden])
-        size.height += [[self tabBarControl] frame].size.height;
-
     if ([self bottomScrollbarVisible])
         size.height += [NSScroller scrollerWidth];
     if ([self leftScrollbarVisible])
@@ -839,9 +573,6 @@ enum {
 {
     NSRect rect = { {0, 0}, {contentSize.width, contentSize.height} };
 
-    if (![[self tabBarControl] isHidden])
-        rect.size.height -= [[self tabBarControl] frame].size.height;
-
     if ([self bottomScrollbarVisible]) {
         rect.size.height -= [NSScroller scrollerWidth];
         rect.origin.y += [NSScroller scrollerWidth];
@@ -854,11 +585,6 @@ enum {
         rect.size.width -= [NSScroller scrollerWidth];
 
     return rect;
-}
-
-- (NSTabView *)tabView
-{
-    return tabView;
 }
 
 #if 0

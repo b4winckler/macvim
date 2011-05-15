@@ -98,6 +98,7 @@
 - (void)hideTablineSeparator:(BOOL)hide;
 - (void)doFindNext:(BOOL)next;
 - (void)updateToolbar;
+- (NSUInteger)representedIndexOfTabViewItem:(NSTabViewItem *)tvi;
 @end
 
 
@@ -161,20 +162,65 @@
     // because of full-screen considerations, and because its size depends
     // on whether the tabline separator is visible or not.
     NSView *contentView = [win contentView];
+    NSRect frame = [contentView frame];
     [contentView setAutoresizesSubviews:YES];
 
-    vimView = [[MMVimView alloc] initWithFrame:[contentView frame]
+    // Create the tab view (which is never visible, but the tab bar control
+    // needs it to function).
+    tabView = [[NSTabView alloc] initWithFrame:NSZeroRect];
+
+    // Create the tab bar control (which is responsible for actually
+    // drawing the tabline and tabs).
+    NSRect tabFrame = { { 0, frame.size.height - 22 },
+                        { frame.size.width, 22 } };
+    tabBarControl = [[PSMTabBarControl alloc] initWithFrame:tabFrame];
+
+    [tabView setDelegate:tabBarControl];
+
+    [tabBarControl setTabView:tabView];
+    [tabBarControl setDelegate:self];
+    [tabBarControl setHidden:YES];
+
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    [tabBarControl setCellMinWidth:[ud integerForKey:MMTabMinWidthKey]];
+    [tabBarControl setCellMaxWidth:[ud integerForKey:MMTabMaxWidthKey]];
+    [tabBarControl setCellOptimumWidth:
+                                     [ud integerForKey:MMTabOptimumWidthKey]];
+
+    [tabBarControl setShowAddTabButton:[ud boolForKey:MMShowAddTabButtonKey]];
+    [[tabBarControl addTabButton] setTarget:self];
+    [[tabBarControl addTabButton] setAction:@selector(addNewTab:)];
+    [tabBarControl setAllowsDragBetweenWindows:NO];
+    [tabBarControl registerForDraggedTypes:
+                            [NSArray arrayWithObject:NSFilenamesPboardType]];
+
+    [tabBarControl setAutoresizingMask:NSViewWidthSizable|NSViewMinYMargin];
+    
+    // Tab bar resizing only works if awakeFromNib is called (that's where the
+    // NSViewFrameDidChangeNotification callback is installed). Sounds like a
+    // PSMTabBarControl bug, let's live with it for now.
+    [tabBarControl awakeFromNib];
+
+    [contentView addSubview:tabBarControl];
+
+    //frame.size.height -= 22;
+    if (styleMask & NSTexturedBackgroundWindowMask)
+        --frame.size.height;
+
+    vimView = [[MMVimView alloc] initWithFrame:frame
                                  vimController:vimController];
     [vimView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
 
-    splitView = [[NSSplitView alloc] initWithFrame:[contentView frame]];
+    splitView = [[NSSplitView alloc] initWithFrame:frame];
     [splitView setVertical:YES];
     //[splitView setDividerStyle:NSSplitViewDividerStyleThin];
     [splitView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
     [splitView setDelegate:self];
 
+    [tabBarControl setPartnerView:splitView];
+    
 #if 1
-    NSRect tempFrame = [contentView frame];
+    NSRect tempFrame = frame;
     tempFrame.size.width = 150;
     NSImageView *view = [[NSImageView alloc] initWithFrame:tempFrame];
     [view setImage:[NSImage imageNamed:@"Attention"]];
@@ -230,6 +276,8 @@
     [vimView release];  vimView = nil;
     [sideView release];  sideView = nil;
     [splitView release];  splitView = nil;
+    [tabBarControl release];  tabBarControl = nil;
+    [tabView release];  tabView = nil;
 
     [super dealloc];
 }
@@ -277,7 +325,20 @@
     setupDone = NO;
     vimController = nil;
 
-    [vimView removeFromSuperviewWithoutNeedingDisplay];
+    // NOTE! There is a bug in PSMTabBarControl in that it retains the delegate
+    // so reset the delegate here, otherwise the delegate may never get
+    // released.
+    [tabView setDelegate:nil];
+    [tabBarControl setDelegate:nil];
+    [tabBarControl setTabView:nil];
+
+    // NOTE! There is another bug in PSMTabBarControl where the control is not
+    // removed as an observer, so remove it here (failing to remove an observer
+    // may lead to very strange bugs).
+    [[NSNotificationCenter defaultCenter] removeObserver:tabBarControl];
+
+    //[tabBarControl removeFromSuperviewWithoutNeedingDisplay];
+    //[vimView removeFromSuperviewWithoutNeedingDisplay];
     [vimView cleanup];
 
     // It is feasible (though unlikely) that the user quits before the window
@@ -286,6 +347,8 @@
     [decoratedWindow setDocumentEdited:NO];
 
     [[self window] orderOut:self];
+
+    //[tabView removeAllTabViewItems];
 }
 
 - (void)openWindow
@@ -330,16 +393,6 @@
     }
 
     return YES;
-}
-
-- (void)updateTabsWithData:(NSData *)data
-{
-    [vimView updateTabsWithData:data];
-}
-
-- (void)selectTabWithIndex:(int)idx
-{
-    [vimView selectTabWithIndex:idx];
 }
 
 - (void)setTextDimensionsWithRows:(int)rows columns:(int)cols isLive:(BOOL)live
@@ -556,7 +609,9 @@
 
 - (void)showTabBar:(BOOL)on
 {
-    [[vimView tabBarControl] setHidden:!on];
+    BOOL separator = NO;
+
+    [tabBarControl setHidden:!on];
 
     // Showing the tabline may result in the tabline separator being hidden or
     // shown; this does not apply to full-screen mode.
@@ -564,18 +619,30 @@
         NSToolbar *toolbar = [decoratedWindow toolbar]; 
         if (([decoratedWindow styleMask] & NSTexturedBackgroundWindowMask)
                 == 0) {
-            [self hideTablineSeparator:![toolbar isVisible]];
+            separator = [toolbar isVisible];
         } else {
-            [self hideTablineSeparator:NO];
+            separator = YES;
         }
     } else {
         if (([decoratedWindow styleMask] & NSTexturedBackgroundWindowMask)
                 == 0) {
-            [self hideTablineSeparator:on];
+            separator = !on;
         } else {
-            [self hideTablineSeparator:YES];
+            separator = NO;
         }
     }
+
+    [self hideTablineSeparator:!separator];
+
+#if 1
+    NSSize size = [[decoratedWindow contentView] frame].size;
+    if (on)        size.height -= 22;
+    if (separator) size.height -= 1;
+
+    if (!NSEqualSizes(size, [splitView frame].size)) {
+        [splitView setFrameSize:size];
+    }
+#endif
 }
 
 - (void)showToolbar:(BOOL)on size:(int)size mode:(int)mode
@@ -758,10 +825,93 @@
     return NO;
 }
 
+- (void)updateTabsWithData:(NSData *)data
+{
+    const void *p = [data bytes];
+    const void *end = p + [data length];
+    int tabIdx = 0;
+
+    // HACK!  Current tab is first in the message.  This way it is not
+    // necessary to guess which tab should be the selected one (this can be
+    // problematic for instance when new tabs are created).
+    int curtabIdx = *((int*)p);  p += sizeof(int);
+
+    NSArray *tabViewItems = [tabBarControl representedTabViewItems];
+
+    while (p < end) {
+        NSTabViewItem *tvi = nil;
+
+        //int wincount = *((int*)p);  p += sizeof(int);
+        int infoCount = *((int*)p); p += sizeof(int);
+        unsigned i;
+        for (i = 0; i < infoCount; ++i) {
+            int length = *((int*)p);  p += sizeof(int);
+            if (length <= 0)
+                continue;
+
+            NSString *val = [[NSString alloc]
+                    initWithBytes:(void*)p length:length
+                         encoding:NSUTF8StringEncoding];
+            p += length;
+
+            switch (i) {
+                case MMTabLabel:
+                    // Set the label of the tab, adding a new tab when needed.
+                    tvi = [tabView numberOfTabViewItems] <= tabIdx
+                            ? [self addNewTabViewItem]
+                            : [tabViewItems objectAtIndex:tabIdx];
+                    [tvi setLabel:val];
+                    ++tabIdx;
+                    break;
+                case MMTabToolTip:
+                    if (tvi)
+                        [tabBarControl setToolTip:val
+                                          forTabViewItem:tvi];
+                    break;
+                default:
+                    ASLogWarn(@"Unknown tab info for index: %d", i);
+            }
+
+            [val release];
+        }
+    }
+
+    // Remove unused tabs from the NSTabView.  Note that when a tab is closed
+    // the NSTabView will automatically select another tab, but we want Vim to
+    // take care of which tab to select so set the vimTaskSelectedTab flag to
+    // prevent the tab selection message to be passed on to the VimTask.
+    vimTaskSelectedTab = YES;
+    int i, count = [tabView numberOfTabViewItems];
+    for (i = count-1; i >= tabIdx; --i) {
+        id tvi = [tabViewItems objectAtIndex:i];
+        [tabView removeTabViewItem:tvi];
+    }
+    vimTaskSelectedTab = NO;
+
+    [self selectTabWithIndex:curtabIdx];
+}
+
+- (void)selectTabWithIndex:(int)idx
+{
+    NSArray *tabViewItems = [tabBarControl representedTabViewItems];
+    if (idx < 0 || idx >= [tabViewItems count]) {
+        ASLogWarn(@"No tab with index %d exists.", idx);
+        return;
+    }
+
+    // Do not try to select a tab if already selected.
+    NSTabViewItem *tvi = [tabViewItems objectAtIndex:idx];
+    if (tvi != [tabView selectedTabViewItem]) {
+        vimTaskSelectedTab = YES;
+        [tabView selectTabViewItem:tvi];
+        vimTaskSelectedTab = NO;
+    }
+}
+
 
 - (IBAction)addNewTab:(id)sender
 {
-    [vimView addNewTab:sender];
+    [vimController sendMessage:AddNewTabMsgID data:nil];
 }
 
 - (IBAction)toggleToolbar:(id)sender
@@ -1136,6 +1286,92 @@
                     : proposedMax;
 }
 
+// -- PSMTabBarControl delegate ----------------------------------------------
+
+
+- (BOOL)tabView:(NSTabView *)theTabView shouldSelectTabViewItem:
+    (NSTabViewItem *)tabViewItem
+{
+    // NOTE: It would be reasonable to think that 'shouldSelect...' implies
+    // that this message only gets sent when the user clicks the tab.
+    // Unfortunately it is not so, which is why we need the
+    // 'vimTaskSelectedTab' flag.
+    //
+    // HACK!  The selection message should not be propagated to Vim if Vim
+    // selected the tab (e.g. as opposed the user clicking the tab).  The
+    // delegate method has no way of knowing who initiated the selection so a
+    // flag is set when Vim initiated the selection.
+    if (!vimTaskSelectedTab) {
+        // Propagate the selection message to Vim.
+        NSUInteger idx = [self representedIndexOfTabViewItem:tabViewItem];
+        if (NSNotFound != idx) {
+            int i = (int)idx;   // HACK! Never more than MAXINT tabs?!
+            NSData *data = [NSData dataWithBytes:&i length:sizeof(int)];
+            [vimController sendMessage:SelectTabMsgID data:data];
+        }
+    }
+
+    // Unless Vim selected the tab, return NO, and let Vim decide if the tab
+    // should get selected or not.
+    return vimTaskSelectedTab;
+}
+
+- (BOOL)tabView:(NSTabView *)theTabView shouldCloseTabViewItem:
+        (NSTabViewItem *)tabViewItem
+{
+    // HACK!  This method is only called when the user clicks the close button
+    // on the tab.  Instead of letting the tab bar close the tab, we return NO
+    // and pass a message on to Vim to let it handle the closing.
+    NSUInteger idx = [self representedIndexOfTabViewItem:tabViewItem];
+    int i = (int)idx;   // HACK! Never more than MAXINT tabs?!
+    NSData *data = [NSData dataWithBytes:&i length:sizeof(int)];
+    [vimController sendMessage:CloseTabMsgID data:data];
+
+    return NO;
+}
+
+- (void)tabView:(NSTabView *)theTabView didDragTabViewItem:
+        (NSTabViewItem *)tabViewItem toIndex:(int)idx
+{
+    NSMutableData *data = [NSMutableData data];
+    [data appendBytes:&idx length:sizeof(int)];
+
+    [vimController sendMessage:DraggedTabMsgID data:data];
+}
+
+- (NSDragOperation)tabBarControl:(PSMTabBarControl *)theTabBarControl
+        draggingEntered:(id <NSDraggingInfo>)sender
+        forTabAtIndex:(NSUInteger)tabIndex
+{
+    NSPasteboard *pb = [sender draggingPasteboard];
+    return [[pb types] containsObject:NSFilenamesPboardType]
+            ? NSDragOperationCopy
+            : NSDragOperationNone;
+}
+
+- (BOOL)tabBarControl:(PSMTabBarControl *)theTabBarControl
+        performDragOperation:(id <NSDraggingInfo>)sender
+        forTabAtIndex:(NSUInteger)tabIndex
+{
+    NSPasteboard *pb = [sender draggingPasteboard];
+    if ([[pb types] containsObject:NSFilenamesPboardType]) {
+        NSArray *filenames = [pb propertyListForType:NSFilenamesPboardType];
+        if ([filenames count] == 0)
+            return NO;
+        if (tabIndex != NSNotFound) {
+            // If dropping on a specific tab, only open one file
+            [vimController file:[filenames objectAtIndex:0]
+                draggedToTabAtIndex:tabIndex];
+        } else {
+            // Files were dropped on empty part of tab bar; open them all
+            [vimController filesDraggedToTabBar:filenames];
+        }
+        return YES;
+    } else {
+        return NO;
+    }
+}
+
 @end // MMWindowController
 
 
@@ -1269,7 +1505,20 @@
 
 - (NSTabViewItem *)addNewTabViewItem
 {
-    return [vimView addNewTabViewItem];
+    // NOTE!  A newly created tab is not by selected by default; Vim decides
+    // which tab should be selected at all times.  However, the AppKit will
+    // automatically select the first tab added to a tab view.
+
+    NSTabViewItem *tvi = [[NSTabViewItem alloc] initWithIdentifier:nil];
+
+    // NOTE: If this is the first tab it will be automatically selected.
+    vimTaskSelectedTab = YES;
+    [tabView addTabViewItem:tvi];
+    vimTaskSelectedTab = NO;
+
+    [tvi autorelease];
+
+    return tvi;
 }
 
 - (BOOL)askBackendForStarRegister:(NSPasteboard *)pb
@@ -1301,11 +1550,13 @@
         [self updateResizeConstraints];
         shouldResizeVimView = YES;
 
+#if 0
         NSSize size = [[decoratedWindow contentView] frame].size;
         if (hide) ++size.height;
         else      --size.height;
 
         [splitView setFrameSize:size];
+#endif
     }
 }
 
@@ -1364,17 +1615,23 @@
         if (!on) {
             [self hideTablineSeparator:YES];
         } else {
-            [self hideTablineSeparator:![[vimView tabBarControl] isHidden]];
+            [self hideTablineSeparator:![tabBarControl isHidden]];
         }
     } else {
         // Textured windows don't have a line below there title bar, so we
         // need the separator in this case as well. In fact, the only case
         // where we don't need the separator is when the tab bar control
         // is visible (because it brings its own separator).
-        [self hideTablineSeparator:![[vimView tabBarControl] isHidden]];
+        [self hideTablineSeparator:![tabBarControl isHidden]];
     }
 
     updateToolbarFlag = 0;
+}
+
+- (NSUInteger)representedIndexOfTabViewItem:(NSTabViewItem *)tvi
+{
+    NSArray *tabViewItems = [tabBarControl representedTabViewItems];
+    return [tabViewItems indexOfObject:tvi];
 }
 
 @end // MMWindowController (Private)

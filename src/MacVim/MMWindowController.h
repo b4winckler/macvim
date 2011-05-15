@@ -12,6 +12,7 @@
 
 
 
+@class PSMTabBarControl;
 @class MMWindow;
 @class MMFullscreenWindow;
 @class MMVimController;
@@ -24,6 +25,8 @@
     <NSWindowDelegate, NSSplitViewDelegate>
 #endif
 {
+    NSTabView           *tabView;
+    PSMTabBarControl    *tabBarControl;
     MMVimController     *vimController;
     NSSplitView         *splitView;
     MMVimView           *vimView;
@@ -43,6 +46,7 @@
     int                 userCols;
     NSPoint             userTopLeft;
     NSPoint             defaultTopLeft;
+    BOOL                vimTaskSelectedTab;
     MMFileDrawerController *fileDrawerController;
 }
 
@@ -54,8 +58,6 @@
 - (void)cleanup;
 - (void)openWindow;
 - (BOOL)presentWindow:(id)unused;
-- (void)updateTabsWithData:(NSData *)data;
-- (void)selectTabWithIndex:(int)idx;
 - (void)setTextDimensionsWithRows:(int)rows columns:(int)cols isLive:(BOOL)live
                      keepOnScreen:(BOOL)onScreen;
 - (void)zoomWithRows:(int)rows columns:(int)cols state:(int)state;
@@ -86,6 +88,9 @@
 - (void)setBufferModified:(BOOL)mod;
 - (void)setTopLeft:(NSPoint)pt;
 - (BOOL)getDefaultTopLeft:(NSPoint*)pt;
+
+- (void)updateTabsWithData:(NSData *)data;
+- (void)selectTabWithIndex:(int)idx;
 
 - (IBAction)addNewTab:(id)sender;
 - (IBAction)toggleToolbar:(id)sender;
