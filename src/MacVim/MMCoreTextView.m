@@ -605,7 +605,9 @@ defaultAdvanceForFont(NSFont *font)
 
         [drawData removeAllObjects];
     }
-#if 1
+#if 0
+    // The following code causes parts of the view to clear unnecessarily when
+    // the toolbar is toggled, so disable it for now.
     else {
         // Some parts of the view may have been exposed but we have no data to
         // draw, so clear the exposed areas to avoid ugliness.

@@ -48,5 +48,6 @@
 - (void)setFrameSize:(NSSize)size;
 - (void)setFrame:(NSRect)frame;
 #endif
+- (void)placeViews;
 
 @end

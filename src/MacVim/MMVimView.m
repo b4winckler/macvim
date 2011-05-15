@@ -371,6 +371,12 @@ enum {
 }
 #endif
 
+- (void)placeViews
+{
+    NSRect frame = [self frame];
+    [self placeScrollbars];
+    [textView setFrame:[self textViewRectForVimViewSize:frame.size]];
+}
 
 @end // MMVimView
 
@@ -684,6 +690,10 @@ enum {
         //ASLogTmp(@"Force a redraw");
         [vimController sendMessage:ForceRedrawMsgID data:nil];
     }
+
+    // Must make sure scrollbars are in place or they might not cover the
+    // correct part of the text view during live resize.
+    [self placeScrollbars];
 #endif
 }
 
@@ -710,7 +720,21 @@ enum {
     type = theType;
     [self setHidden:YES];
     [self setEnabled:YES];
-    [self setAutoresizingMask:NSViewNotSizable];
+
+    // Ensure that scrollbars stay fixed at the size during live resizing.  The
+    // actual sizing of scrollbars is too complicated for the autoresizing code
+    // so it is done manually in placeScrollbars.
+    switch (type) {
+        case MMScrollerTypeBottom:
+            [self setAutoresizingMask:NSViewMaxYMargin];
+            break;
+        case MMScrollerTypeLeft:
+            [self setAutoresizingMask:NSViewMaxXMargin];
+            break;
+        case MMScrollerTypeRight:
+            [self setAutoresizingMask:NSViewMinXMargin];
+            break;
+    }
 
     return self;
 }

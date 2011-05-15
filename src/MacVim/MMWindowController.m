@@ -217,7 +217,7 @@
     [splitView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
     [splitView setDelegate:self];
 
-    [tabBarControl setPartnerView:splitView];
+    //[tabBarControl setPartnerView:splitView];
     
 #if 1
     NSRect tempFrame = frame;
@@ -602,6 +602,7 @@
 #else
     if (windowPresented && shouldResizeVimView) {
         shouldResizeVimView = NO;
+        [vimView placeViews];
         keepOnScreen = NO;
     }
 #endif
@@ -633,6 +634,8 @@
     }
 
     [self hideTablineSeparator:!separator];
+
+    shouldResizeVimView = YES;
 
 #if 1
     NSSize size = [[decoratedWindow contentView] frame].size;
