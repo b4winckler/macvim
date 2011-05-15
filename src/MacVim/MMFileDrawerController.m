@@ -481,6 +481,7 @@ static NSMutableArray *leafNode = nil;
 - (NSMenu *)menuForRow:(NSInteger)row {
   NSMenu *menu = [[NSMenu new] autorelease];
   NSMenuItem *item;
+  NSString *title;
   FileSystemItem *fsItem = [self itemAtRow:row];
 
   // File operations
@@ -494,23 +495,19 @@ static NSMutableArray *leafNode = nil;
   [menu addItemWithTitle:@"Open selected Files in Tabs" action:@selector(openFilesInTabs:) keyEquivalent:@""];
   [menu addItemWithTitle:@"Open selected Files in Horizontal Split Views" action:@selector(openFilesInHorizontalSplitViews:) keyEquivalent:@""];
   [menu addItemWithTitle:@"Open selected Files in Vertical Split Views" action:@selector(openFilesInVerticalSplitViews:) keyEquivalent:@""];
-  [menu addItemWithTitle:[NSString stringWithFormat:@"Change working directory to “%@”", [[fsItem dirItem] relativePath]]
-                  action:@selector(changeWorkingDirectoryToSelection:)
-           keyEquivalent:@""];
+  title = [NSString stringWithFormat:@"Change working directory to “%@”", [[fsItem dirItem] relativePath]];
+  [menu addItemWithTitle:title action:@selector(changeWorkingDirectoryToSelection:) keyEquivalent:@""];
 
   // Open elsewhere
   NSString *filename = [fsItem relativePath];
   [menu addItem:[NSMenuItem separatorItem]];
-  [menu addItemWithTitle:[NSString stringWithFormat:@"Reveal “%@” in Finder", filename]
-                  action:@selector(revealInFinder:)
-           keyEquivalent:@""];
-  [menu addItemWithTitle:[NSString stringWithFormat:@"Open “%@” with Finder", filename]
-                  action:@selector(openWithFinder:)
-           keyEquivalent:@""];
-
-  NSMenuItem *openWithFinderItem = [menu addItemWithTitle:[NSString stringWithFormat:@"Open “%@” with…", filename]
-                                                   action:NULL
-                                            keyEquivalent:@""];
+  title = [NSString stringWithFormat:@"Reveal “%@” in Finder", filename];
+  [menu addItemWithTitle:title action:@selector(revealInFinder:) keyEquivalent:@""];
+  title = [NSString stringWithFormat:@"Open “%@” with Finder", filename];
+  [menu addItemWithTitle:title action:@selector(openWithFinder:) keyEquivalent:@""];
+  // open with app submenu
+  title = [NSString stringWithFormat:@"Open “%@” with…", filename];
+  NSMenuItem *openWithFinderItem = [menu addItemWithTitle:title action:NULL keyEquivalent:@""];
   NSArray *appPaths = [self appsAssociatedWithItem:fsItem];
   if (appPaths) {
     NSMenu *submenu = [[NSMenu new] autorelease];
