@@ -647,10 +647,15 @@ static NSMutableArray *leafNode = nil;
 
 // Open elsewhere
 
+// TODO add multiple selection support
 - (void)revealInFinder:(NSMenuItem *)sender {
   NSString *path = [[self itemAtRow:[sender tag]] fullPath];
   NSArray *urls = [NSArray arrayWithObject:[NSURL fileURLWithPath:path]];
   [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:urls];
+}
+
+- (void)openWithFinder:(NSMenuItem *)sender {
+  [[NSWorkspace sharedWorkspace] openFile:[[self itemAtRow:[sender tag]] fullPath]];
 }
 
 
