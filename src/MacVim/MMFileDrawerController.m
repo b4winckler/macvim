@@ -301,6 +301,7 @@ static NSMutableArray *leafNode = nil;
     windowController = controller;
     rootItem = nil;
     fsEventsStream = NULL;
+    userHasChangedSelection = NO;
   }
   return self;
 }
@@ -537,8 +538,14 @@ static NSMutableArray *leafNode = nil;
   return menu;
 }
 
+// TODO is this the proper way to differentiate between selection changes because the user selected a file
+// and a programmatic selection change?
+- (void)outlineViewSelectionIsChanging:(NSNotification *)aNotification {
+  userHasChangedSelection = YES;
+}
+
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
-  if ([[self outlineView] numberOfSelectedRows] == 1) {
+  if (userHasChangedSelection && [[self outlineView] numberOfSelectedRows] == 1) {
     NSEvent *event = [NSApp currentEvent];
     int layout = [[NSUserDefaults standardUserDefaults] integerForKey:MMOpenLayoutKey];
     if ([event modifierFlags] & NSAlternateKeyMask) {
@@ -554,6 +561,7 @@ static NSMutableArray *leafNode = nil;
     }
     [self openSelectedFilesInCurrentWindowWithLayout:layout];
   }
+  userHasChangedSelection = NO;
 }
 
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell *)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {

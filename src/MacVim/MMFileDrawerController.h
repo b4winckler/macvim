@@ -8,6 +8,7 @@
   NSDrawer *drawer;
   FileSystemItem *rootItem;
   FSEventStreamRef fsEventsStream;
+  BOOL userHasChangedSelection;
 }
 
 - (id)initWithWindowController:(MMWindowController *)controller;
