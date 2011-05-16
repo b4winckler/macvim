@@ -486,7 +486,7 @@ static NSMutableArray *leafNode = nil;
   FileSystemItem *fsItem = [self itemAtRow:row];
 
   // File operations
-  [menu addItemWithTitle:@"New File" action:@selector(newFile:) keyEquivalent:@""];
+  //[menu addItemWithTitle:@"New File" action:@selector(newFile:) keyEquivalent:@""];
   [menu addItemWithTitle:@"New Folder" action:@selector(newFolder:) keyEquivalent:@""];
   [menu addItemWithTitle:@"Rename…" action:@selector(renameFile:) keyEquivalent:@""];
   [menu addItemWithTitle:@"Delete selected Files" action:@selector(deleteSelectedFiles:) keyEquivalent:@""];
@@ -614,6 +614,9 @@ static NSMutableArray *leafNode = nil;
   NSLog(@"Rename: %@", [item fullPath]);
   [(FilesOutlineView *)[self view] editColumn:0 row:[sender tag] withEvent:nil select:YES];
 }
+
+//- (void)newFile:(NSMenuItem *)sender {
+//}
 
 - (void)newFolder:(NSMenuItem *)sender {
   FileSystemItem *dirItem = [[self itemAtRow:[sender tag]] dirItem];

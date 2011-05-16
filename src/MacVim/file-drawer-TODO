@@ -1,3 +1,5 @@
+* After renaming a file/dir we should re-open buffers that reference that file.
+* How should we handle creating a new file?
 * In actions get the selected items instead of using the menu item tag
 * Don't include MacVim in the list of apps to open a file with.
 * Opening files in split views does so in a new tab instead of in the current.
