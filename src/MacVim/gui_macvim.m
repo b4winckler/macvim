@@ -56,10 +56,17 @@ macvim_early_init()
         // Set environment variables $VIM and $VIMRUNTIME
         NSString *path = [[bundle resourcePath]
                                         stringByAppendingPathComponent:@"vim"];
-        vim_setenv((char_u*)"VIM", (char_u*)[path UTF8String]);
 
-        path = [path stringByAppendingPathComponent:@"runtime"];
-        vim_setenv((char_u*)"VIMRUNTIME", (char_u*)[path UTF8String]);
+        char_u *p = mch_getenv((char_u *)"VIM");
+        if (p == NULL || *p == NUL) {
+            vim_setenv((char_u*)"VIM", (char_u*)[path UTF8String]);
+        }
+
+        p = mch_getenv((char_u *)"VIMRUNTIME");
+        if (p == NULL || *p == NUL) {
+            path = [path stringByAppendingPathComponent:@"runtime"];
+            vim_setenv((char_u*)"VIMRUNTIME", (char_u*)[path UTF8String]);
+        }
 
         NSString *lang = [[[NSBundle mainBundle]
             preferredLocalizations] objectAtIndex:0];
@@ -1156,13 +1163,6 @@ gui_mch_draw_part_cursor(int w, int h, guicolor_T color)
     // the shape_table to determine the shape and size of the cursor (just like
     // gui_update_cursor() does).
 
-#ifdef FEAT_RIGHTLEFT
-    // If 'rl' is set the insert mode cursor must be drawn on the right-hand
-    // side of a text cell.
-    int rl = curwin ? curwin->w_p_rl : FALSE;
-#else
-    int rl = FALSE;
-#endif
     int idx = get_shape_idx(FALSE);
     int shape = MMInsertionPointBlock;
     switch (shape_table[idx].shape) {
@@ -1170,8 +1170,13 @@ gui_mch_draw_part_cursor(int w, int h, guicolor_T color)
             shape = MMInsertionPointHorizontal;
             break;
         case SHAPE_VER:
-            shape = rl ? MMInsertionPointVerticalRight
-                       : MMInsertionPointVertical;
+            shape =
+#ifdef FEAT_RIGHTLEFT
+                    // If 'rl' is set the insert mode cursor may be drawn on
+                    // the right-hand side of a text cell.
+                    CURSOR_BAR_RIGHT ? MMInsertionPointVerticalRight :
+#endif
+                    MMInsertionPointVertical;
             break;
     }
 
