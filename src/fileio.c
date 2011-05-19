@@ -6263,15 +6263,19 @@ make_bom(buf, name)
 shorten_fname1(full_path)
     char_u	*full_path;
 {
-    char_u	dirname[MAXPATHL];
+    char_u	*dirname;
     char_u	*p = full_path;
 
+    dirname = alloc(MAXPATHL);
+    if (dirname == NULL)
+	return full_path;
     if (mch_dirname(dirname, MAXPATHL) == OK)
     {
 	p = shorten_fname(full_path, dirname);
 	if (p == NULL || *p == NUL)
 	    p = full_path;
     }
+    vim_free(dirname);
     return p;
 }
 #endif
@@ -6788,6 +6792,21 @@ vim_rename(from, to)
 	if (mch_stat((char *)to, &st_to) >= 0
 		&& st.st_dev == st_to.st_dev
 		&& st.st_ino == st_to.st_ino)
+	    use_tmp_file = TRUE;
+    }
+#endif
+#ifdef WIN3264
+    {
+	BY_HANDLE_FILE_INFORMATION info1, info2;
+
+	/* It's possible for the source and destination to be the same file.
+	 * In that case go through a temp file name.  This makes rename("foo",
+	 * "./foo") a no-op (in a complicated way). */
+	if (win32_fileinfo(from, &info1) == FILEINFO_OK
+		&& win32_fileinfo(to, &info2) == FILEINFO_OK
+		&& info1.dwVolumeSerialNumber == info2.dwVolumeSerialNumber
+		&& info1.nFileIndexHigh == info2.nFileIndexHigh
+		&& info1.nFileIndexLow == info2.nFileIndexLow)
 	    use_tmp_file = TRUE;
     }
 #endif

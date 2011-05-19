@@ -2552,6 +2552,9 @@ get_winopts(buf)
     if (p_fdls >= 0)
 	curwin->w_p_fdl = p_fdls;
 #endif
+#ifdef FEAT_SYN_HL
+    check_colorcolumn(curwin);
+#endif
 }
 
 /*
@@ -3201,7 +3204,7 @@ maketitle()
 	    /* format: "fname + (path) (1 of 2) - VIM" */
 
 	    if (curbuf->b_fname == NULL)
-		STRCPY(buf, _("[No Name]"));
+		vim_strncpy(buf, (char_u *)_("[No Name]"), IOSIZE - 100);
 	    else
 	    {
 		p = transstr(gettail(curbuf->b_fname));
@@ -3257,7 +3260,7 @@ maketitle()
 	    if (serverName != NULL)
 	    {
 		STRCAT(buf, " - ");
-		STRCAT(buf, serverName);
+		vim_strcat(buf, serverName, IOSIZE);
 	    }
 	    else
 #endif

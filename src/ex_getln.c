@@ -3719,6 +3719,7 @@ ExpandEscape(xp, str, numfiles, files, options)
     if (options & WILD_ESCAPE)
     {
 	if (xp->xp_context == EXPAND_FILES
+		|| xp->xp_context == EXPAND_FILES_IN_PATH
 		|| xp->xp_context == EXPAND_SHELLCMD
 		|| xp->xp_context == EXPAND_BUFFERS
 		|| xp->xp_context == EXPAND_DIRECTORIES)
