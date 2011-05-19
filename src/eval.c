@@ -854,6 +854,7 @@ eval_init()
 
     init_var_dict(&globvardict, &globvars_var);
     init_var_dict(&vimvardict, &vimvars_var);
+    vimvardict.dv_lock = VAR_FIXED;
     hash_init(&compat_hashtab);
     hash_init(&func_hashtab);
 
@@ -2794,6 +2795,8 @@ get_lval(name, rettv, lp, unlet, skip, quiet, fne_flags)
 	    {
 		if (lp->ll_range && !lp->ll_empty2)
 		    clear_tv(&var2);
+		if (!quiet)
+		    EMSGN(_(e_listidx), lp->ll_n1);
 		return NULL;
 	    }
 
@@ -2811,7 +2814,11 @@ get_lval(name, rettv, lp, unlet, skip, quiet, fne_flags)
 		{
 		    ni = list_find(lp->ll_list, lp->ll_n2);
 		    if (ni == NULL)
+		    {
+			if (!quiet)
+			    EMSGN(_(e_listidx), lp->ll_n2);
 			return NULL;
+		    }
 		    lp->ll_n2 = list_idx_of_item(lp->ll_list, ni);
 		}
 
@@ -2819,7 +2826,11 @@ get_lval(name, rettv, lp, unlet, skip, quiet, fne_flags)
 		if (lp->ll_n1 < 0)
 		    lp->ll_n1 = list_idx_of_item(lp->ll_list, lp->ll_li);
 		if (lp->ll_n2 < lp->ll_n1)
+		{
+		    if (!quiet)
+			EMSGN(_(e_listidx), lp->ll_n2);
 		    return NULL;
+		}
 	    }
 
 	    lp->ll_tv = &lp->ll_li->li_tv;
@@ -8548,7 +8559,7 @@ f_add(argvars, rettv)
     if (argvars[0].v_type == VAR_LIST)
     {
 	if ((l = argvars[0].vval.v_list) != NULL
-		&& !tv_check_lock(l->lv_lock, (char_u *)"add()")
+		&& !tv_check_lock(l->lv_lock, (char_u *)_("add() argument"))
 		&& list_append_tv(l, &argvars[1]) == OK)
 	    copy_tv(&argvars[0], rettv);
     }
@@ -9949,6 +9960,8 @@ f_extend(argvars, rettv)
     typval_T	*argvars;
     typval_T	*rettv;
 {
+    char      *arg_errmsg = N_("extend() argument");
+
     if (argvars[0].v_type == VAR_LIST && argvars[1].v_type == VAR_LIST)
     {
 	list_T		*l1, *l2;
@@ -9958,7 +9971,7 @@ f_extend(argvars, rettv)
 
 	l1 = argvars[0].vval.v_list;
 	l2 = argvars[1].vval.v_list;
-	if (l1 != NULL && !tv_check_lock(l1->lv_lock, (char_u *)"extend()")
+	if (l1 != NULL && !tv_check_lock(l1->lv_lock, (char_u *)_(arg_errmsg))
 		&& l2 != NULL)
 	{
 	    if (argvars[2].v_type != VAR_UNKNOWN)
@@ -9997,7 +10010,7 @@ f_extend(argvars, rettv)
 
 	d1 = argvars[0].vval.v_dict;
 	d2 = argvars[1].vval.v_dict;
-	if (d1 != NULL && !tv_check_lock(d1->dv_lock, (char_u *)"extend()")
+	if (d1 != NULL && !tv_check_lock(d1->dv_lock, (char_u *)_(arg_errmsg))
 		&& d2 != NULL)
 	{
 	    /* Check the third argument. */
@@ -10239,20 +10252,22 @@ filter_map(argvars, rettv, map)
     typval_T	save_key;
     int		rem;
     int		todo;
-    char_u	*ermsg = map ? (char_u *)"map()" : (char_u *)"filter()";
+    char_u	*ermsg = (char_u *)(map ? "map()" : "filter()");
+    char	*arg_errmsg = (map ? N_("map() argument")
+				   : N_("filter() argument"));
     int		save_did_emsg;
     int		idx = 0;
 
     if (argvars[0].v_type == VAR_LIST)
     {
 	if ((l = argvars[0].vval.v_list) == NULL
-		|| (map && tv_check_lock(l->lv_lock, ermsg)))
+		|| tv_check_lock(l->lv_lock, (char_u *)_(arg_errmsg)))
 	    return;
     }
     else if (argvars[0].v_type == VAR_DICT)
     {
 	if ((d = argvars[0].vval.v_dict) == NULL
-		|| (map && tv_check_lock(d->dv_lock, ermsg)))
+		|| tv_check_lock(d->dv_lock, (char_u *)_(arg_errmsg)))
 	    return;
     }
     else
@@ -10289,7 +10304,8 @@ filter_map(argvars, rettv, map)
 		{
 		    --todo;
 		    di = HI2DI(hi);
-		    if (tv_check_lock(di->di_tv.v_lock, ermsg))
+		    if (tv_check_lock(di->di_tv.v_lock,
+						     (char_u *)_(arg_errmsg)))
 			break;
 		    vimvars[VV_KEY].vv_str = vim_strsave(di->di_key);
 		    if (filter_map_one(&di->di_tv, expr, map, &rem) == FAIL
@@ -10308,7 +10324,7 @@ filter_map(argvars, rettv, map)
 
 	    for (li = l->lv_first; li != NULL; li = nli)
 	    {
-		if (tv_check_lock(li->li_tv.v_lock, ermsg))
+		if (tv_check_lock(li->li_tv.v_lock, (char_u *)_(arg_errmsg)))
 		    break;
 		nli = li->li_next;
 		vimvars[VV_KEY].vv_nr = idx;
@@ -11104,18 +11120,22 @@ f_getcwd(argvars, rettv)
     typval_T	*argvars UNUSED;
     typval_T	*rettv;
 {
-    char_u	cwd[MAXPATHL];
+    char_u	*cwd;
 
     rettv->v_type = VAR_STRING;
-    if (mch_dirname(cwd, MAXPATHL) == FAIL)
-	rettv->vval.v_string = NULL;
-    else
+    rettv->vval.v_string = NULL;
+    cwd = alloc(MAXPATHL);
+    if (cwd != NULL)
     {
-	rettv->vval.v_string = vim_strsave(cwd);
+	if (mch_dirname(cwd, MAXPATHL) != FAIL)
+	{
+	    rettv->vval.v_string = vim_strsave(cwd);
 #ifdef BACKSLASH_IN_FILENAME
-	if (rettv->vval.v_string != NULL)
-	    slash_adjust(rettv->vval.v_string);
+	    if (rettv->vval.v_string != NULL)
+		slash_adjust(rettv->vval.v_string);
 #endif
+	}
+	vim_free(cwd);
     }
 }
 
@@ -12943,7 +12963,7 @@ f_insert(argvars, rettv)
     if (argvars[0].v_type != VAR_LIST)
 	EMSG2(_(e_listarg), "insert()");
     else if ((l = argvars[0].vval.v_list) != NULL
-	    && !tv_check_lock(l->lv_lock, (char_u *)"insert()"))
+	    && !tv_check_lock(l->lv_lock, (char_u *)_("insert() argument")))
     {
 	if (argvars[2].v_type != VAR_UNKNOWN)
 	    before = get_tv_number_chk(&argvars[2], &error);
@@ -14356,9 +14376,9 @@ f_readfile(argvars, rettv)
 	{
 	    if (buf[filtd] == '\n' || readlen <= 0)
 	    {
-		/* Only when in binary mode add an empty list item when the
-		 * last line ends in a '\n'. */
-		if (!binary && readlen == 0 && filtd == 0)
+		/* In binary mode add an empty list item when the last
+		 * non-empty line ends in a '\n'. */
+		if (!binary && readlen == 0 && filtd == 0 && prev == NULL)
 		    break;
 
 		/* Found end-of-line or end-of-file: add a text line to the
@@ -14423,25 +14443,28 @@ f_readfile(argvars, rettv)
 
 	if (tolist == 0)
 	{
-	    /* "buf" is full, need to move text to an allocated buffer */
-	    if (prev == NULL)
+	    if (buflen >= FREAD_SIZE / 2)
 	    {
-		prev = vim_strnsave(buf, buflen);
-		prevlen = buflen;
-	    }
-	    else
-	    {
-		s = alloc((unsigned)(prevlen + buflen));
-		if (s != NULL)
+		/* "buf" is full, need to move text to an allocated buffer */
+		if (prev == NULL)
 		{
-		    mch_memmove(s, prev, prevlen);
-		    mch_memmove(s + prevlen, buf, buflen);
-		    vim_free(prev);
-		    prev = s;
-		    prevlen += buflen;
+		    prev = vim_strnsave(buf, buflen);
+		    prevlen = buflen;
 		}
+		else
+		{
+		    s = alloc((unsigned)(prevlen + buflen));
+		    if (s != NULL)
+		    {
+			mch_memmove(s, prev, prevlen);
+			mch_memmove(s + prevlen, buf, buflen);
+			vim_free(prev);
+			prev = s;
+			prevlen += buflen;
+		    }
+		}
+		filtd = 0;
 	    }
-	    filtd = 0;
 	}
 	else
 	{
@@ -14831,13 +14854,14 @@ f_remove(argvars, rettv)
     char_u	*key;
     dict_T	*d;
     dictitem_T	*di;
+    char	*arg_errmsg = N_("remove() argument");
 
     if (argvars[0].v_type == VAR_DICT)
     {
 	if (argvars[2].v_type != VAR_UNKNOWN)
 	    EMSG2(_(e_toomanyarg), "remove()");
 	else if ((d = argvars[0].vval.v_dict) != NULL
-		&& !tv_check_lock(d->dv_lock, (char_u *)"remove() argument"))
+		&& !tv_check_lock(d->dv_lock, (char_u *)_(arg_errmsg)))
 	{
 	    key = get_tv_string_chk(&argvars[1]);
 	    if (key != NULL)
@@ -14857,7 +14881,7 @@ f_remove(argvars, rettv)
     else if (argvars[0].v_type != VAR_LIST)
 	EMSG2(_(e_listdictarg), "remove()");
     else if ((l = argvars[0].vval.v_list) != NULL
-	    && !tv_check_lock(l->lv_lock, (char_u *)"remove() argument"))
+	    && !tv_check_lock(l->lv_lock, (char_u *)_(arg_errmsg)))
     {
 	int	    error = FALSE;
 
@@ -14987,6 +15011,9 @@ f_resolve(argvars, rettv)
     typval_T	*rettv;
 {
     char_u	*p;
+#ifdef HAVE_READLINK
+    char_u	*buf = NULL;
+#endif
 
     p = get_tv_string(&argvars[0]);
 #ifdef FEAT_SHORTCUT
@@ -15002,7 +15029,6 @@ f_resolve(argvars, rettv)
 #else
 # ifdef HAVE_READLINK
     {
-	char_u	buf[MAXPATHL + 1];
 	char_u	*cpy;
 	int	len;
 	char_u	*remain = NULL;
@@ -15029,6 +15055,10 @@ f_resolve(argvars, rettv)
 	    remain = vim_strsave(q - 1);
 	    q[-1] = NUL;
 	}
+
+	buf = alloc(MAXPATHL + 1);
+	if (buf == NULL)
+	    goto fail;
 
 	for (;;)
 	{
@@ -15173,6 +15203,7 @@ f_resolve(argvars, rettv)
 
 #ifdef HAVE_READLINK
 fail:
+    vim_free(buf);
 #endif
     rettv->v_type = VAR_STRING;
 }
@@ -15191,7 +15222,7 @@ f_reverse(argvars, rettv)
     if (argvars[0].v_type != VAR_LIST)
 	EMSG2(_(e_listarg), "reverse()");
     else if ((l = argvars[0].vval.v_list) != NULL
-	    && !tv_check_lock(l->lv_lock, (char_u *)"reverse()"))
+	    && !tv_check_lock(l->lv_lock, (char_u *)_("reverse() argument")))
     {
 	li = l->lv_last;
 	l->lv_first = l->lv_last = NULL;
@@ -16488,7 +16519,8 @@ f_sort(argvars, rettv)
     else
     {
 	l = argvars[0].vval.v_list;
-	if (l == NULL || tv_check_lock(l->lv_lock, (char_u *)"sort()"))
+	if (l == NULL || tv_check_lock(l->lv_lock,
+					     (char_u *)_("sort() argument")))
 	    return;
 	rettv->vval.v_list = l;
 	rettv->v_type = VAR_LIST;
@@ -17652,11 +17684,14 @@ f_tagfiles(argvars, rettv)
     typval_T	*argvars UNUSED;
     typval_T	*rettv;
 {
-    char_u	fname[MAXPATHL + 1];
+    char_u	*fname;
     tagname_T	tn;
     int		first;
 
     if (rettv_list_alloc(rettv) == FAIL)
+	return;
+    fname = alloc(MAXPATHL);
+    if (fname == NULL)
 	return;
 
     for (first = TRUE; ; first = FALSE)
@@ -17664,6 +17699,7 @@ f_tagfiles(argvars, rettv)
 		|| list_append_string(rettv->vval.v_list, fname, -1) == FAIL)
 	    break;
     tagname_free(&tn);
+    vim_free(fname);
 }
 
 /*

@@ -3338,19 +3338,23 @@ msgmore(n)
 	if (pn == 1)
 	{
 	    if (n > 0)
-		STRCPY(msg_buf, _("1 more line"));
+		vim_strncpy(msg_buf, (char_u *)_("1 more line"),
+							     MSG_BUF_LEN - 1);
 	    else
-		STRCPY(msg_buf, _("1 line less"));
+		vim_strncpy(msg_buf, (char_u *)_("1 line less"),
+							     MSG_BUF_LEN - 1);
 	}
 	else
 	{
 	    if (n > 0)
-		sprintf((char *)msg_buf, _("%ld more lines"), pn);
+		vim_snprintf((char *)msg_buf, MSG_BUF_LEN,
+						     _("%ld more lines"), pn);
 	    else
-		sprintf((char *)msg_buf, _("%ld fewer lines"), pn);
+		vim_snprintf((char *)msg_buf, MSG_BUF_LEN,
+						    _("%ld fewer lines"), pn);
 	}
 	if (got_int)
-	    STRCAT(msg_buf, _(" (Interrupted)"));
+	    vim_strcat(msg_buf, (char_u *)_(" (Interrupted)"), MSG_BUF_LEN);
 	if (msg(msg_buf))
 	{
 	    set_keep_msg(msg_buf, 0);
@@ -3507,7 +3511,7 @@ init_homedir()
     if (enc_utf8 && var != NULL)
     {
 	int	len;
-	char_u  *pp;
+	char_u  *pp = NULL;
 
 	/* Convert from active codepage to UTF-8.  Other conversions are
 	 * not done, because they would fail for non-ASCII characters. */
@@ -3874,11 +3878,13 @@ expand_env_esc(srcp, dst, dstlen, esc, one, startstr)
  * Vim's version of getenv().
  * Special handling of $HOME, $VIM and $VIMRUNTIME.
  * Also does ACP to 'enc' conversion for Win32.
+ * "mustfree" is set to TRUE when returned is allocated, it must be
+ * initialized to FALSE by the caller.
  */
     char_u *
 vim_getenv(name, mustfree)
     char_u	*name;
-    int		*mustfree;	/* set to TRUE when returned is allocated */
+    int		*mustfree;
 {
     char_u	*p;
     char_u	*pend;
@@ -3900,7 +3906,7 @@ vim_getenv(name, mustfree)
 	if (enc_utf8)
 	{
 	    int	    len;
-	    char_u  *pp;
+	    char_u  *pp = NULL;
 
 	    /* Convert from active codepage to UTF-8.  Other conversions are
 	     * not done, because they would fail for non-ASCII characters. */
@@ -3944,7 +3950,7 @@ vim_getenv(name, mustfree)
 	    if (enc_utf8)
 	    {
 		int	len;
-		char_u  *pp;
+		char_u  *pp = NULL;
 
 		/* Convert from active codepage to UTF-8.  Other conversions
 		 * are not done, because they would fail for non-ASCII
@@ -3952,7 +3958,7 @@ vim_getenv(name, mustfree)
 		acp_to_enc(p, (int)STRLEN(p), &pp, &len);
 		if (pp != NULL)
 		{
-		    if (mustfree)
+		    if (*mustfree)
 			vim_free(p);
 		    p = pp;
 		    *mustfree = TRUE;
@@ -5398,8 +5404,7 @@ cin_get_equal_amount(lnum)
 cin_ispreproc(s)
     char_u *s;
 {
-    s = skipwhite(s);
-    if (*s == '#')
+    if (*skipwhite(s) == '#')
 	return TRUE;
     return FALSE;
 }
@@ -5515,6 +5520,10 @@ cin_isfuncdecl(sp, first_lnum)
     else
 	s = *sp;
 
+    /* Ignore line starting with #. */
+    if (cin_ispreproc(s))
+	return FALSE;
+
     while (*s && *s != '(' && *s != ';' && *s != '\'' && *s != '"')
     {
 	if (cin_iscomment(s))	/* ignore comments */
@@ -5540,13 +5549,29 @@ cin_isfuncdecl(sp, first_lnum)
 		retval = TRUE;
 	    goto done;
 	}
-	if (*s == ',' && cin_nocode(s + 1))
+	if ((*s == ',' && cin_nocode(s + 1)) || s[1] == NUL || cin_nocode(s))
 	{
-	    /* ',' at the end: continue looking in the next line */
+	    int comma = (*s == ',');
+
+	    /* ',' at the end: continue looking in the next line.
+	     * At the end: check for ',' in the next line, for this style:
+	     * func(arg1
+	     *       , arg2) */
+	    for (;;)
+	    {
+		if (lnum >= curbuf->b_ml.ml_line_count)
+		    break;
+		s = ml_get(++lnum);
+		if (!cin_ispreproc(s))
+		    break;
+	    }
 	    if (lnum >= curbuf->b_ml.ml_line_count)
 		break;
-
-	    s = ml_get(++lnum);
+	    /* Require a comma at end of the line or a comma or ')' at the
+	     * start of next line. */
+	    s = skipwhite(s);
+	    if (!comma && *s != ',' && *s != ')')
+		break;
 	}
 	else if (cin_iscomment(s))	/* ignore comments */
 	    s = cin_skipcomment(s);
@@ -6439,6 +6464,8 @@ get_c_indent()
 	/* find how indented the line beginning the comment is */
 	getvcol(curwin, trypos, &col, NULL, NULL);
 	amount = col;
+	*lead_start = NUL;
+	*lead_middle = NUL;
 
 	p = curbuf->b_p_com;
 	while (*p != NUL)
@@ -6779,8 +6806,7 @@ get_c_indent()
 		{
 		    curwin->w_cursor.lnum = our_paren_pos.lnum;
 		    curwin->w_cursor.col = col;
-		    if ((trypos = find_match_paren(ind_maxparen,
-						     ind_maxcomment)) != NULL)
+		    if (find_match_paren(ind_maxparen, ind_maxcomment) != NULL)
 			amount += ind_unclosed2;
 		    else
 			amount += ind_unclosed;

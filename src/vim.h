@@ -1461,6 +1461,8 @@ typedef UINT32_TYPEDEF UINT32_T;
 
 #define IOSIZE	   (1024+1)	/* file i/o and sprintf buffer size */
 
+#define DIALOG_MSG_SIZE 1000	/* buffer size for dialog_msg() */
+
 #ifdef FEAT_MBYTE
 # define MSG_BUF_LEN 480	/* length of buffer for small messages */
 # define MSG_BUF_CLEN  (MSG_BUF_LEN / 6)    /* cell length (worst case: utf-8
@@ -2240,5 +2242,11 @@ typedef int VimClipboard;	/* This is required for the prototypes. */
 #define KEYLEN_PART_KEY -1	/* keylen value for incomplete key-code */
 #define KEYLEN_PART_MAP -2	/* keylen value for incomplete mapping */
 #define KEYLEN_REMOVED  9999	/* keylen value for removed sequence */
+
+/* Return values from win32_fileinfo(). */
+#define FILEINFO_OK	     0
+#define FILEINFO_ENC_FAIL    1	/* enc_to_utf16() failed */
+#define FILEINFO_READ_FAIL   2	/* CreateFile() failed */
+#define FILEINFO_INFO_FAIL   3	/* GetFileInformationByHandle() failed */
 
 #endif /* VIM__H */
