@@ -3,7 +3,7 @@
 " An example for a Japanese version vimrc file.
 " 日本語版のデフォルト設定ファイル(vimrc) - Vim7用試作
 "
-" Last Change: 26-Feb-2011.
+" Last Change: 29-Apr-2011.
 " Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 "
 " 解説:
@@ -54,8 +54,10 @@ if 0 && exists('$HOME') && filereadable($HOME . '/.vimrc_first.vim')
   endif
 endif
 
-set runtimepath+=$VIM/plugins/kaoriya
-set runtimepath+=$VIM/plugins/autofmt
+" plugins下のディレクトリをruntimepathへ追加する。
+for path in split(glob($VIM.'/plugins/*'), '\n')
+  if isdirectory(path) | let &runtimepath = &runtimepath.','.path | end
+endfor
 
 "---------------------------------------------------------------------------
 " 日本語対応のための設定:
