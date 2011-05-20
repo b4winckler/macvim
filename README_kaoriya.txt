@@ -1,9 +1,9 @@
                    Vim version 7.3 香り屋版 導入マニュアル
 
-                                                         Version: 1.6.2
+                                                         Version: 1.6.4
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 21-Mar-2011.
+                                                     Last Change: 29-Apr-2011.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -116,14 +116,20 @@ Vimの拡張機能について
         http://luabinaries.sourceforge.net/
 
   Rubyとの連携
-    注意: Rubyとの連携機能は提供いたしません。
+    注意: RubyをインストールしなくてもVimは使用できます。
 
-    一般的に配布されているRuby(64bit版)との間でコンパイラのバージョンが異なる
-    ため、Vim側で対応することが容易ではありません。
+    Ruby-mswin32の1.9.2をインストールすることで、Rubyインターフェースを利用で
+    きます。Rubyをインストールしていない場合は、Rubyインターフェーエスは自動的
+    に無効となります。Rubyインターフェースの詳細については":help ruby"として
+    Vim付属のマニュアルを参照してください。
+
+    64bit版のVimを使う場合は64bit版のRubyを、32bit版を使う場合は32bit版の
+    Rubyをインストールしてください。
 
     - Ruby-mswin32 配布サイト
-        http://www.ruby-lang.org/ja/
         http://www.garbagecollect.jp/ruby/mswin32/ja/
+    - Ruby全般の情報
+        http://www.ruby-lang.org/ja/
 
 使用許諾
   香り屋版のライセンスはオリジナルのVimに従います。詳しくはorigdoc/README.txt
@@ -190,6 +196,7 @@ Vimの拡張機能について
       http://code.google.com/p/vimdoc-ja/?hl=ja
   - 香り屋版メンテナ
       MURAOKA Taro <koron.kaoriya@gmail.com>
+      Twitter @kaoriya
 
 謝辞
   何よりも、素晴らしいエディタであるVimをフリーソフトウェアとして公開&管理し、
@@ -207,6 +214,7 @@ Vimの拡張機能について
     runtime/keymap/tutcode_cp932.vim
   - MATSUMOTO Yasuhiro <mattn_jp@hotmail.com>
     diffs/ (一部コード流用/アドバイス/遊び仲間)
+    googletranslate.vim
   - NAKADAIRA Yukihiro <http://code.google.com/u/yukihiro.nakadaira/>
     plugins/autofmt
   - NISHIOKA Takuhiro <takuhiro@super.win.ne.jp>

@@ -2,8 +2,8 @@
 "
 " 日本語向けにエンコードを設定するサンプル - Vim7用
 "
-" Last Change: 01-Aug-2007.
-" Maintainer:  MURAOKA Taro <koron@tka.att.ne.jp>
+" Last Change: 15-May-2011.
+" Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 
 " 各エンコードを示す文字列のデフォルト値。s:CheckIconvCapabilityを()呼ぶことで
 " 実環境に合わせた値に修正される。
@@ -39,7 +39,7 @@ function! s:DetermineFileencodings()
   let value = 'ucs-bom,ucs-2le,ucs-2'
   if &encoding ==? 'utf-8'
     " UTF-8環境向けにfileencodingsを設定する
-    let value = value. ','.s:enc_jisx. ','.s:enc_cp932. ','.s:enc_eucjp
+    let value = s:enc_jisx. ','.s:enc_cp932. ','.s:enc_eucjp. ','.value
   elseif &encoding ==? 'cp932'
     " CP932環境向けにfileencodingsを設定する
     let value = value. ','.s:enc_jisx. ','.s:enc_utf8. ','.s:enc_eucjp
@@ -58,6 +58,10 @@ endfunction
 
 " 本ファイルを読み込み(sourceした)時に、最適な設定を実行する。
 "
-set encoding=japan
+if kaoriya#switch#enabled('utf-8')
+  set encoding=utf-8
+else
+  set encoding=japan
+endif
 call s:CheckIconvCapability()
 call s:DetermineFileencodings()
