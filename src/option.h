@@ -1014,9 +1014,6 @@ enum
     , BV_MMTA
 #endif
     , BV_NF
-#ifdef FEAT_OSFILETYPE
-    , BV_OFT
-#endif
 #ifdef FEAT_COMPL_FUNC
     , BV_OFU
 #endif
