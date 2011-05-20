@@ -184,9 +184,6 @@
 #  define SIZEOF_INT 2
 # endif
 #endif
-#ifdef RISCOS
-# define SIZEOF_INT 4
-#endif
 
 
 #include "feature.h"	/* #defines for optionals and features */
@@ -338,10 +335,6 @@
 #  define HAVE_SETENV
 # endif
 # include "os_mac.h"
-#endif
-
-#ifdef RISCOS
-# include "os_riscos.h"
 #endif
 
 #ifdef __QNX__
@@ -795,6 +788,7 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define EXPAND_FILETYPE		37
 #define EXPAND_FILES_IN_PATH	38
 #define EXPAND_OWNSYNTAX	39
+#define EXPAND_LOCALES		40
 
 /* Values for exmode_active (0 is no exmode) */
 #define EXMODE_NORMAL		1
@@ -1293,6 +1287,7 @@ enum auto_event
     EVENT_WINENTER,		/* after entering a window */
     EVENT_WINLEAVE,		/* before leaving a window */
     EVENT_ENCODINGCHANGED,	/* after changing the 'encoding' option */
+    EVENT_INSERTCHARPRE,	/* before inserting a char */
     EVENT_CURSORHOLD,		/* cursor in same position for a while */
     EVENT_CURSORHOLDI,		/* idem, in Insert mode */
     EVENT_FUNCUNDEFINED,	/* if calling a function which doesn't exist */

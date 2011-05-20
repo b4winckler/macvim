@@ -437,11 +437,6 @@ static char *(features[]) =
 	"-ole",
 # endif
 #endif
-#ifdef FEAT_OSFILETYPE
-	"+osfiletype",
-#else
-	"-osfiletype",
-#endif
 #ifdef FEAT_PATH_EXTRA
 	"+path_extra",
 #else
@@ -725,6 +720,48 @@ static char *(features[]) =
 
 static int included_patches[] =
 {   /* Add new patch number below this line */
+/**/
+    198,
+/**/
+    197,
+/**/
+    196,
+/**/
+    195,
+/**/
+    194,
+/**/
+    193,
+/**/
+    192,
+/**/
+    191,
+/**/
+    190,
+/**/
+    189,
+/**/
+    188,
+/**/
+    187,
+/**/
+    186,
+/**/
+    185,
+/**/
+    184,
+/**/
+    183,
+/**/
+    182,
+/**/
+    181,
+/**/
+    180,
+/**/
+    179,
+/**/
+    178,
 /**/
     177,
 /**/
@@ -1198,9 +1235,6 @@ list_version()
 # endif
 #endif
 
-#ifdef RISCOS
-    MSG_PUTS(_("\nRISC OS version"));
-#endif
 #ifdef VMS
     MSG_PUTS(_("\nOpenVMS version"));
 # ifdef HAVE_PATHDEF

@@ -998,9 +998,6 @@ enum
     , BV_MOD
     , BV_MPS
     , BV_NF
-#ifdef FEAT_OSFILETYPE
-    , BV_OFT
-#endif
 #ifdef FEAT_COMPL_FUNC
     , BV_OFU
 #endif
