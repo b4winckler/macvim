@@ -501,19 +501,31 @@ static NSMutableArray *leafNode = nil;
 // ===================
  
 - (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item {
-  return item == nil ? 1 : [item numberOfChildren];
+  if (item == nil) {
+    item = rootItem;
+  }
+  return [item numberOfChildren];
 }
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView isItemExpandable:(id)item {
-  return item == nil ? YES : ([item numberOfChildren] != -1);
+  if (item == nil) {
+    item = rootItem;
+  }
+  return ([item numberOfChildren] != -1);
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView child:(NSInteger)index ofItem:(id)item {
-  return item == nil ? rootItem : [(FileSystemItem *)item childAtIndex:index];
+  if (item == nil) {
+    item = rootItem;
+  }
+  return [(FileSystemItem *)item childAtIndex:index];
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item {
-  return item == nil ? [rootItem relativePath] : [item relativePath];
+  if (item == nil) {
+    item = rootItem;
+  }  
+  return [item relativePath];
 }
 
 
