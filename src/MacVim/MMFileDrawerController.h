@@ -6,6 +6,7 @@
 @interface MMFileDrawerController : NSViewController <NSOutlineViewDataSource, NSOutlineViewDelegate> {
   MMWindowController *windowController;
   NSDrawer *drawer;
+  NSPopUpButton *pathComponentsPopup;
   FileSystemItem *rootItem;
   FSEventStreamRef fsEventsStream;
   BOOL userHasChangedSelection;
