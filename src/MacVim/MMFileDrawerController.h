@@ -20,3 +20,8 @@
 - (NSMenu *)menuForRow:(NSInteger)row;
 
 @end
+
+
+@interface FlippedView : NSView {
+}
+@end

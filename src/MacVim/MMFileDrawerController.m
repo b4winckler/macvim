@@ -315,7 +315,10 @@ static NSMutableArray *leafNode = nil;
 
   drawer = [[NSDrawer alloc] initWithContentSize:NSMakeSize(200, 0)
                                    preferredEdge:edge];
-
+  
+  FlippedView *drawerView = [[[FlippedView alloc] initWithFrame:NSZeroRect] autorelease];
+  drawerView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+  
   FilesOutlineView *filesView = [[[FilesOutlineView alloc] initWithFrame:NSZeroRect] autorelease];
   [filesView setDelegate:self];
   [filesView setDataSource:self];
@@ -328,15 +331,24 @@ static NSMutableArray *leafNode = nil;
   [filesView addTableColumn:column];
   [filesView setOutlineTableColumn:column];
 
+  NSPopUpButton *popUpButton = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(0, 0, 0, 25)] autorelease];
+  popUpButton.autoresizingMask = NSViewWidthSizable;
+
   NSScrollView *scrollView = [[[NSScrollView alloc] initWithFrame:NSZeroRect] autorelease];
   [scrollView setHasHorizontalScroller:YES];
   [scrollView setHasVerticalScroller:YES];
   [scrollView setAutohidesScrollers:YES];
   [scrollView setDocumentView:filesView];
-  [drawer setContentView:scrollView];
+  
+  scrollView.frame = CGRectMake(0, popUpButton.frame.size.height, 0, 0);
+  scrollView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+  
+  [drawerView addSubview:scrollView];
+  [drawerView addSubview:popUpButton];
+  [drawer setContentView:drawerView];
 
   [self setView:filesView];
-
+  
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(pwdChanged:)
                                                name:@"MMPwdChanged"
@@ -799,6 +811,15 @@ static void change_occured(ConstFSEventStreamRef stream,
     [[self outlineView] reloadData];
     [[self outlineView] expandItem:rootItem];
   }
+}
+
+@end
+
+
+@implementation FlippedView
+
+- (BOOL) isFlipped {
+  return YES;
 }
 
 @end
