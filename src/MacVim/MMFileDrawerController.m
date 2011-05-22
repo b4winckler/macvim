@@ -485,6 +485,11 @@ static NSMutableArray *leafNode = nil;
     NSMenuItem *item = [[[NSMenuItem alloc] initWithTitle:[fileManager displayNameAtPath:subPath] action:@selector(changeWorkingDirectoryToSelection:) keyEquivalent:@""] autorelease];
     [item setTarget:self];
     [item setRepresentedObject:subPath];
+    
+    NSImage *icon = [[NSWorkspace sharedWorkspace] iconForFile:subPath];
+    [icon setSize:NSMakeSize(16, 16)];
+    [item setImage:icon];
+
     [menu addItem:item];
   }
   
