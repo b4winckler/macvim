@@ -482,7 +482,7 @@ static NSMutableArray *leafNode = nil;
     NSArray *subPathComponents = [pathComponents subarrayWithRange:NSMakeRange(0, i)];
     NSString *subPath = [NSString pathWithComponents:subPathComponents];
     
-    NSMenuItem *item = [[[NSMenuItem alloc] initWithTitle:[fileManager displayNameAtPath:subPath] action:@selector(changeWorkingDirectoryFromPathComponentSelection:) keyEquivalent:@""] autorelease];
+    NSMenuItem *item = [[[NSMenuItem alloc] initWithTitle:[fileManager displayNameAtPath:subPath] action:@selector(changeWorkingDirectoryToSelection:) keyEquivalent:@""] autorelease];
     [item setTarget:self];
     [item setRepresentedObject:subPath];
     [menu addItem:item];
@@ -570,6 +570,7 @@ static NSMutableArray *leafNode = nil;
   for (item in [menu itemArray]) {
     [item setTarget:self];
     [item setTag:row];
+    [item setRepresentedObject:[fsItem fullPath]];
   }
   return menu;
 }
@@ -701,11 +702,6 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (void)changeWorkingDirectoryToSelection:(NSMenuItem *)sender {
-  FileSystemItem *dirItem = [[self itemAtRow:[sender tag]] dirItem];
-  [self changeWorkingDirectory:[dirItem fullPath]];
-}
-
-- (void)changeWorkingDirectoryFromPathComponentSelection:(NSMenuItem *)sender {
   [self changeWorkingDirectory:[sender representedObject]];
 }
 
