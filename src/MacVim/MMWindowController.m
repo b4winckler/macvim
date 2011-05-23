@@ -978,8 +978,7 @@
 
 - (IBAction)selectInDrawer:(id)sender
 {
-    [fileDrawerController open];
-    [fileDrawerController selectCurrentBuffer];
+    [fileDrawerController selectInDrawer];
 }
 
 

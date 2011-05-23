@@ -17,7 +17,7 @@
 - (void)open;
 - (void)close;
 - (void)toggle;
-- (void)selectCurrentBuffer;
+- (void)selectInDrawer;
 
 - (NSMenu *)menuForRow:(NSInteger)row;
 

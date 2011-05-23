@@ -475,15 +475,16 @@ static NSMutableArray *leafNode = nil;
   [drawer setParentWindow:[windowController window]];
   [drawer toggle:self];
 
-  if([drawer state] == NSDrawerOpeningState)
-    [self selectCurrentBuffer];
+    [self selectInDrawer];
 }
 
-- (void)selectCurrentBuffer {
-  NSString *bufName = [[windowController vimController]
+- (void)selectInDrawer {
+  if([drawer state] != NSDrawerOpeningState && [drawer state] != NSDrawerOpenState)
+    return;
+  NSString *fn = [[windowController vimController]
                                                   evaluateVimExpression:@"expand('%:p')"];
-  if([bufName length] > 0) {
-    FileSystemItem *item = [rootItem itemAtPath:bufName];
+  if([fn length] > 0) {
+    FileSystemItem *item = [rootItem itemAtPath:fn];
     [[self outlineView] selectItem:item];
   }
 }
