@@ -911,10 +911,10 @@ static void change_occured(ConstFSEventStreamRef stream,
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
 
-  [drawer release];
-  [rootItem release];
-  [pathComponentsPopup release];
   [self unwatchRoot];
+  [rootItem release];
+  [drawer release];
+  [pathComponentsPopup release];
 
   [super dealloc];
 }
