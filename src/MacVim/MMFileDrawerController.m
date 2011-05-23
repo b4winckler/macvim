@@ -18,15 +18,16 @@
   NSString *path;
   FileSystemItem *parent;
   NSMutableArray *children;
+  MMVimController *vim;
   NSImage *icon;
   BOOL includesHiddenFiles;
   BOOL ignoreNextReload;
 }
 
-@property (nonatomic, assign) BOOL includesHiddenFiles, ignoreNextReload;
+@property (nonatomic, assign) BOOL includesHiddenFiles, ignoreNextReload, useWildIgnore;
 @property (readonly) FileSystemItem *parent;
 
-- (id)initWithPath:(NSString *)path parent:(FileSystemItem *)parentItem;
+- (id)initWithPath:(NSString *)path parent:(FileSystemItem *)parentItem vim:(MMVimController *)vim;
 - (NSInteger)numberOfChildren; // Returns -1 for leaf nodes
 - (FileSystemItem *)childAtIndex:(NSUInteger)n; // Invalid to call on leaf nodes
 - (NSString *)fullPath;
@@ -36,11 +37,13 @@
 - (BOOL)reloadRecursive:(BOOL)recursive;
 - (FileSystemItem *)itemAtPath:(NSString *)itemPath;
 - (FileSystemItem *)itemWithName:(NSString *)name;
+- (NSArray *)parents;
 
 @end
 
 @interface FileSystemItem (Private)
 - (FileSystemItem *)_itemAtPath:(NSArray *)components;
+- (BOOL)_wildIgnored:(NSString *)name;
 @end
 
 
@@ -54,17 +57,20 @@ static NSMutableArray *leafNode = nil;
   }
 }
 
-@synthesize parent, includesHiddenFiles, ignoreNextReload;
+@synthesize parent, includesHiddenFiles, ignoreNextReload, useWildIgnore;
 
-- (id)initWithPath:(NSString *)thePath parent:(FileSystemItem *)parentItem {
+- (id)initWithPath:(NSString *)thePath parent:(FileSystemItem *)parentItem vim:(MMVimController *)vimInstance {
   if ((self = [super init])) {
     icon = nil;
     path = [thePath retain];
     parent = parentItem;
+    vim = [vimInstance retain];
     if (parent) {
       includesHiddenFiles = parent.includesHiddenFiles;
+      useWildIgnore = parent.useWildIgnore;
     } else {
       includesHiddenFiles = NO;
+      useWildIgnore = YES;
     }
     ignoreNextReload = NO;
   }
@@ -108,6 +114,7 @@ static NSMutableArray *leafNode = nil;
     // NSLog(@"Reload: %@", path);
     if (parent) {
       includesHiddenFiles = parent.includesHiddenFiles;
+      useWildIgnore = parent.useWildIgnore;
     }
 
     NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -132,6 +139,8 @@ static NSMutableArray *leafNode = nil;
           // It's a swap file, ignore it.
           continue;
         }
+      } else if (useWildIgnore && [self _wildIgnored:childName]) {
+        continue;
       }
 
       FileSystemItem *child = nil;
@@ -152,7 +161,9 @@ static NSMutableArray *leafNode = nil;
         [children removeObject:child];
       } else {
         // New child, so create a new item
-        child = [[FileSystemItem alloc] initWithPath:[path stringByAppendingPathComponent:childName] parent:self];
+        child = [[FileSystemItem alloc] initWithPath:[path stringByAppendingPathComponent:childName]
+                                              parent:self
+                                                 vim:vim];
         [reloaded addObject:child];
         [child release];
       }
@@ -165,6 +176,12 @@ static NSMutableArray *leafNode = nil;
     // NSLog(@"Not loaded yet, so don't reload: %@", path);
   }
   return NO;
+}
+
+- (BOOL)_wildIgnored:(NSString *)fileName {
+  NSString *eval = [NSString stringWithFormat:@"empty(expand(fnameescape('%@')))", fileName];
+  NSString *result = [vim evaluateVimExpression: eval];
+  return [result isEqualToString:@"1"];
 }
 
 - (BOOL)isLeaf {
@@ -213,10 +230,12 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (FileSystemItem *)itemAtPath:(NSString *)itemPath {
+  if ([itemPath hasSuffix:@"/"])
+    itemPath = [itemPath stringByStandardizingPath];
   NSArray *components = [itemPath pathComponents];
   NSArray *root = [path pathComponents];
   // minus one extra because paths from FSEvents have a trailing slash
-  components = [components subarrayWithRange:NSMakeRange([root count], [components count] - [root count] - 1)];
+  components = [components subarrayWithRange:NSMakeRange([root count], [components count] - [root count])];
   return [self _itemAtPath:components];
 }
 
@@ -241,12 +260,23 @@ static NSMutableArray *leafNode = nil;
   return nil;
 }
 
+- (NSArray *)parents {
+  NSMutableArray *result = [[[NSMutableArray alloc] init] autorelease];
+  id item = parent;
+  while(item != nil) {
+    [result addObject:item];
+    item = [item parent];
+  }
+  return result;
+}
+
 - (void)dealloc {
   if (children != leafNode) {
     [children release];
   }
   [path release];
   [icon release];
+  [vim release];
   [super dealloc];
 }
 
@@ -258,6 +288,8 @@ static NSMutableArray *leafNode = nil;
 
 @interface FilesOutlineView : NSOutlineView
 - (NSMenu *)menuForEvent:(NSEvent *)event;
+- (void)expandParentsOfItem:(id)item;
+- (void)selectItem:(id)item;
 @end
 
 @implementation FilesOutlineView
@@ -272,6 +304,34 @@ static NSMutableArray *leafNode = nil;
     [self selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
   }
   return [(MMFileDrawerController *)[self delegate] menuForRow:row];
+}
+
+- (void)expandParentsOfItem:(id)item {
+  NSArray *parents = [item parents];
+  NSEnumerator *e = [parents reverseObjectEnumerator];
+
+  // expand root node
+  [self expandItem: nil];
+
+  id parent;
+  while((parent = [e nextObject])) {
+    if(![self isExpandable:parent])
+      break;
+    if(![self isItemExpanded:parent])
+      [self expandItem: parent];
+  }
+}
+
+- (void)selectItem:(id)item {
+  NSInteger itemIndex = [self rowForItem:item];
+  if(itemIndex < 0) {
+    [self expandParentsOfItem:item];
+    itemIndex = [self rowForItem: item];
+    if(itemIndex < 0)
+      return;
+  }
+  [self selectRowIndexes:[NSIndexSet indexSetWithIndex:itemIndex] byExtendingSelection:NO];
+  [self scrollRowToVisible:itemIndex];
 }
 
 @end
@@ -327,6 +387,7 @@ static NSMutableArray *leafNode = nil;
   [filesView setAllowsMultipleSelection:YES];
   NSTableColumn *column = [[[NSTableColumn alloc] initWithIdentifier:nil] autorelease];
   ImageAndTextCell *cell = [[[ImageAndTextCell alloc] init] autorelease];
+  [cell setFont:[NSFont fontWithName:[[cell font] fontName] size:11]];
   [cell setEditable:YES];
   [column setDataCell:cell];
   [filesView addTableColumn:column];
@@ -374,7 +435,9 @@ static NSMutableArray *leafNode = nil;
     rootItem = nil;
   }
 
-  rootItem = [[FileSystemItem alloc] initWithPath:root parent:nil];
+  rootItem = [[FileSystemItem alloc] initWithPath:root
+                                           parent:nil
+                                              vim:[windowController vimController]];
   [self updatePathComponentsPopup];
   [(NSOutlineView *)[self view] expandItem:rootItem];
   [self watchRoot];
@@ -382,6 +445,8 @@ static NSMutableArray *leafNode = nil;
 
 - (void)open
 {
+  if([drawer state] == NSDrawerOpenState || [drawer state] == NSDrawerOpeningState)
+    return;
   if (!rootItem) {
     NSString *root = [[windowController vimController]
                                                   objectForVimStateKey:@"pwd"];
@@ -394,6 +459,8 @@ static NSMutableArray *leafNode = nil;
 
 - (void)close
 {
+  if([drawer state] == NSDrawerClosedState || [drawer state] == NSDrawerClosingState)
+    return;
   [drawer close];
 }
 
@@ -407,6 +474,18 @@ static NSMutableArray *leafNode = nil;
 
   [drawer setParentWindow:[windowController window]];
   [drawer toggle:self];
+
+  if([drawer state] == NSDrawerOpeningState)
+    [self selectCurrentBuffer];
+}
+
+- (void)selectCurrentBuffer {
+  NSString *bufName = [[windowController vimController]
+                                                  evaluateVimExpression:@"expand('%:p')"];
+  if([bufName length] > 0) {
+    FileSystemItem *item = [rootItem itemAtPath:bufName];
+    [[self outlineView] selectItem:item];
+  }
 }
 
 - (FileSystemItem *)itemAtRow:(NSInteger)row {

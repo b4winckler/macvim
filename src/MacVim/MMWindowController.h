@@ -99,5 +99,6 @@
 - (IBAction)openDrawer:(id)sender;
 - (IBAction)closeDrawer:(id)sender;
 - (IBAction)toggleDrawer:(id)sender;
+- (IBAction)selectInDrawer:(id)sender;
 
 @end

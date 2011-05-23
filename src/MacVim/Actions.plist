@@ -70,6 +70,8 @@
 	<string></string>
 	<key>toggleDrawer:</key>
 	<string></string>
+	<key>selectInDrawer:</key>
+	<string></string>
 	<key>undo:</key>
 	<string></string>
 	<key>unhide:</key>
