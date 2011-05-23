@@ -376,10 +376,10 @@ static NSMutableArray *leafNode = nil;
 
   drawer = [[NSDrawer alloc] initWithContentSize:NSMakeSize(200, 0)
                                    preferredEdge:edge];
-  
+
   FlippedView *drawerView = [[[FlippedView alloc] initWithFrame:NSZeroRect] autorelease];
   drawerView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-  
+
   FilesOutlineView *filesView = [[[FilesOutlineView alloc] initWithFrame:NSZeroRect] autorelease];
   [filesView setDelegate:self];
   [filesView setDataSource:self];
@@ -401,17 +401,17 @@ static NSMutableArray *leafNode = nil;
   [scrollView setHasVerticalScroller:YES];
   [scrollView setAutohidesScrollers:YES];
   [scrollView setDocumentView:filesView];
-  
+
   /* scrollView.frame = CGRectMake(0, pathComponentsPopup.frame.size.height, 0, 0); */
   scrollView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable | NSViewMaxYMargin;
-  
+
   [drawerView addSubview:scrollView];
   [drawerView addSubview:pathComponentsPopup];
   [drawer setContentView:drawerView];
 
   [self setView:filesView];
   [self updatePathComponentsPopup];
-  
+
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(pwdChanged:)
                                                name:@"MMPwdChanged"
@@ -554,32 +554,32 @@ static NSMutableArray *leafNode = nil;
   NSString *path = [rootItem fullPath];
   NSFileManager *fileManager = [NSFileManager defaultManager];
   NSMenu *menu = [[[NSMenu alloc] init] autorelease];
-  
+
   NSArray *pathComponents = [path pathComponents];
   int i;
   int pathLen = [pathComponents count];
   for (i = pathLen; i > 0; i--) {
     NSArray *subPathComponents = [pathComponents subarrayWithRange:NSMakeRange(0, i)];
     NSString *subPath = [NSString pathWithComponents:subPathComponents];
-    
+
     NSMenuItem *item = [[[NSMenuItem alloc] initWithTitle:[fileManager displayNameAtPath:subPath] action:@selector(changeWorkingDirectoryToSelection:) keyEquivalent:@""] autorelease];
     [item setTarget:self];
     [item setRepresentedObject:subPath];
-    
+
     NSImage *icon = [[NSWorkspace sharedWorkspace] iconForFile:subPath];
     [icon setSize:NSMakeSize(16, 16)];
     [item setImage:icon];
 
     [menu addItem:item];
   }
-  
+
   [pathComponentsPopup setMenu:menu];
   [pathComponentsPopup selectItemAtIndex:0];
 }
 
 // Data Source methods
 // ===================
- 
+
 - (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item {
   if (item == nil) {
     item = rootItem;
@@ -604,7 +604,7 @@ static NSMutableArray *leafNode = nil;
 - (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item {
   if (item == nil) {
     item = rootItem;
-  }  
+  }
   return [item relativePath];
 }
 
@@ -868,7 +868,11 @@ static void change_occured(ConstFSEventStreamRef stream,
     // NSLog(@"Change occurred in path: %@", [item fullPath]);
     // No need to reload recursive, the change occurred in *this* item only
     if ([item reloadRecursive:NO]) {
-      [[self outlineView] reloadItem:item reloadChildren:YES];
+      if(rootItem == item) {
+        [[self outlineView] reloadData];
+      }
+      else
+        [[self outlineView] reloadItem:item reloadChildren:YES];
     }
   }
 }
@@ -876,7 +880,7 @@ static void change_occured(ConstFSEventStreamRef stream,
 - (void)watchRoot {
   NSString *path = [rootItem fullPath];
   // NSLog(@"Watch: %@", path);
-  
+
   FSEventStreamContext context;
   context.version = 0;
   context.info = (void *)self;
