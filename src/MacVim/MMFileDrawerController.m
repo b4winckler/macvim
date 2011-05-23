@@ -396,14 +396,14 @@ static NSMutableArray *leafNode = nil;
   pathComponentsPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0, 0, 0, 25)];
   pathComponentsPopup.autoresizingMask = NSViewWidthSizable;
 
-  NSScrollView *scrollView = [[[NSScrollView alloc] initWithFrame:NSZeroRect] autorelease];
+  NSScrollView *scrollView = [[[NSScrollView alloc] initWithFrame:NSMakeRect(0, 25, 0, 0)] autorelease];
   [scrollView setHasHorizontalScroller:YES];
   [scrollView setHasVerticalScroller:YES];
   [scrollView setAutohidesScrollers:YES];
   [scrollView setDocumentView:filesView];
   
-  scrollView.frame = CGRectMake(0, pathComponentsPopup.frame.size.height, 0, 0);
-  scrollView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+  /* scrollView.frame = CGRectMake(0, pathComponentsPopup.frame.size.height, 0, 0); */
+  scrollView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable | NSViewMaxYMargin;
   
   [drawerView addSubview:scrollView];
   [drawerView addSubview:pathComponentsPopup];
