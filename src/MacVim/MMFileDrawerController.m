@@ -317,7 +317,7 @@ static NSMutableArray *leafNode = nil;
                                    preferredEdge:edge];
   
   FlippedView *drawerView = [[[FlippedView alloc] initWithFrame:NSZeroRect] autorelease];
-  drawerView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+  [drawerView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
   
   FilesOutlineView *filesView = [[[FilesOutlineView alloc] initWithFrame:NSZeroRect] autorelease];
   [filesView setDelegate:self];
@@ -332,8 +332,10 @@ static NSMutableArray *leafNode = nil;
   [filesView setOutlineTableColumn:column];
 
   pathControl = [[[NSPathControl alloc] initWithFrame:NSMakeRect(0, 0, 0, 21)] autorelease];
-  pathControl.autoresizingMask = NSViewWidthSizable;
-  pathControl.pathStyle = NSPathStylePopUp;
+  [pathControl setAutoresizingMask:NSViewWidthSizable];
+  [pathControl setPathStyle:NSPathStylePopUp];
+  [pathControl setTarget:self];
+  [pathControl setAction:@selector(changeWorkingDirectoryFromPathControl:)];
   
   // NOTE: does this belong here?
   [pathControl setURL:[NSURL fileURLWithPath:[rootItem fullPath]]];
@@ -344,8 +346,8 @@ static NSMutableArray *leafNode = nil;
   [scrollView setAutohidesScrollers:YES];
   [scrollView setDocumentView:filesView];
   
-  scrollView.frame = CGRectMake(0, pathControl.frame.size.height, 0, 0);
-  scrollView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+  [scrollView setFrame:CGRectMake(0, pathControl.frame.size.height, 0, 0)];
+  [scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
   
   [drawerView addSubview:scrollView];
   [drawerView addSubview:pathControl];
@@ -696,6 +698,11 @@ static NSMutableArray *leafNode = nil;
 
 - (void)changeWorkingDirectoryToSelection:(NSMenuItem *)sender {
   [self changeWorkingDirectory:[sender representedObject]];
+}
+
+- (void)changeWorkingDirectoryFromPathControl:(NSPathControl *)sender {
+  NSPathComponentCell *clickedCell = [sender clickedPathComponentCell];
+  [self changeWorkingDirectory:[[clickedCell URL] path]];
 }
 
 // TODO needs multiple selection support
