@@ -389,7 +389,9 @@ static NSMutableArray *leafNode = nil;
 
   pathControl = [[[NSPathControl alloc] initWithFrame:NSMakeRect(0, 0, 0, 20)] autorelease];
   [pathControl setAutoresizingMask:NSViewWidthSizable];
+  [pathControl setBackgroundColor:[NSColor whiteColor]];
   [pathControl setPathStyle:NSPathStylePopUp];
+  [pathControl setFont:[NSFont fontWithName:[[pathControl font] fontName] size:12]];
   [pathControl setTarget:self];
   [pathControl setAction:@selector(changeWorkingDirectoryFromPathControl:)];
 
