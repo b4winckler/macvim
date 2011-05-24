@@ -545,6 +545,7 @@ static NSMutableArray *leafNode = nil;
         [paths addObject:appPath];
       }
     }
+    [identifiers release];
     return [paths count] == 0 ? nil : paths;
   }
   return nil;
