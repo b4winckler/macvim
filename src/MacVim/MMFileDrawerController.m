@@ -64,7 +64,7 @@ static NSMutableArray *leafNode = nil;
     icon = nil;
     path = [thePath retain];
     parent = parentItem;
-    vim = [vimInstance retain];
+    vim = vimInstance;
     if (parent) {
       includesHiddenFiles = parent.includesHiddenFiles;
       useWildIgnore = parent.useWildIgnore;
@@ -276,7 +276,7 @@ static NSMutableArray *leafNode = nil;
   }
   [path release];
   [icon release];
-  [vim release];
+  vim = nil;
   [super dealloc];
 }
 
