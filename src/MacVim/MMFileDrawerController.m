@@ -331,7 +331,7 @@ static NSMutableArray *leafNode = nil;
   [filesView addTableColumn:column];
   [filesView setOutlineTableColumn:column];
 
-  pathControl = [[[NSPathControl alloc] initWithFrame:NSMakeRect(0, 0, 0, 21)] autorelease];
+  pathControl = [[[NSPathControl alloc] initWithFrame:NSMakeRect(0, 0, 0, 20)] autorelease];
   [pathControl setAutoresizingMask:NSViewWidthSizable];
   [pathControl setPathStyle:NSPathStylePopUp];
   [pathControl setTarget:self];
