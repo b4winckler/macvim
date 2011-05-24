@@ -790,7 +790,10 @@ static NSMutableArray *leafNode = nil;
   FileSystemItem *dirItem = item.parent;
   [[NSFileManager defaultManager] removeItemAtPath:[item fullPath] error:NULL];
   [dirItem reloadRecursive:NO];
-  [[self outlineView] reloadItem:dirItem reloadChildren:YES];
+  if(rootItem == dirItem)
+    [[self outlineView] reloadData];
+  else
+    [[self outlineView] reloadItem:dirItem reloadChildren:YES];
   dirItem.ignoreNextReload = YES;
 }
 
