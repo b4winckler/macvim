@@ -402,7 +402,6 @@ static NSMutableArray *leafNode = nil;
   [scrollView setAutohidesScrollers:YES];
   [scrollView setDocumentView:filesView];
 
-  /* scrollView.frame = CGRectMake(0, pathComponentsPopup.frame.size.height, 0, 0); */
   scrollView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable | NSViewMaxYMargin;
 
   [drawerView addSubview:scrollView];
@@ -916,8 +915,8 @@ static void change_occured(ConstFSEventStreamRef stream,
   [[NSNotificationCenter defaultCenter] removeObserver:self];
 
   [self unwatchRoot];
-  [rootItem release];
   [drawer release];
+  [rootItem release];
   [pathComponentsPopup release];
 
   [super dealloc];
