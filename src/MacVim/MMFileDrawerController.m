@@ -283,7 +283,6 @@ static NSMutableArray *leafNode = nil;
 @interface MMFileDrawerController (Private)
 - (FilesOutlineView *)outlineView;
 - (void)pwdChanged:(NSNotification *)notification;
-- (void)updatePathComponentsPopup;
 - (void)changeWorkingDirectory:(NSString *)path;
 - (NSArray *)selectedItemPaths;
 - (void)openSelectedFilesInCurrentWindowWithLayout:(int)layout;
@@ -318,7 +317,7 @@ static NSMutableArray *leafNode = nil;
                                    preferredEdge:edge];
   
   FlippedView *drawerView = [[[FlippedView alloc] initWithFrame:NSZeroRect] autorelease];
-  drawerView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+  [drawerView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
   
   FilesOutlineView *filesView = [[[FilesOutlineView alloc] initWithFrame:NSZeroRect] autorelease];
   [filesView setDelegate:self];
@@ -332,8 +331,14 @@ static NSMutableArray *leafNode = nil;
   [filesView addTableColumn:column];
   [filesView setOutlineTableColumn:column];
 
-  pathComponentsPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0, 0, 0, 25)];
-  pathComponentsPopup.autoresizingMask = NSViewWidthSizable;
+  pathControl = [[[NSPathControl alloc] initWithFrame:NSMakeRect(0, 0, 0, 20)] autorelease];
+  [pathControl setAutoresizingMask:NSViewWidthSizable];
+  [pathControl setPathStyle:NSPathStylePopUp];
+  [pathControl setTarget:self];
+  [pathControl setAction:@selector(changeWorkingDirectoryFromPathControl:)];
+  
+  // NOTE: does this belong here?
+  [pathControl setURL:[NSURL fileURLWithPath:[rootItem fullPath]]];
 
   NSScrollView *scrollView = [[[NSScrollView alloc] initWithFrame:NSZeroRect] autorelease];
   [scrollView setHasHorizontalScroller:YES];
@@ -341,15 +346,14 @@ static NSMutableArray *leafNode = nil;
   [scrollView setAutohidesScrollers:YES];
   [scrollView setDocumentView:filesView];
   
-  scrollView.frame = CGRectMake(0, pathComponentsPopup.frame.size.height, 0, 0);
-  scrollView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+  [scrollView setFrame:CGRectMake(0, pathControl.frame.size.height, 0, 0)];
+  [scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
   
   [drawerView addSubview:scrollView];
-  [drawerView addSubview:pathComponentsPopup];
+  [drawerView addSubview:pathControl];
   [drawer setContentView:drawerView];
 
   [self setView:filesView];
-  [self updatePathComponentsPopup];
   
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(pwdChanged:)
@@ -375,7 +379,7 @@ static NSMutableArray *leafNode = nil;
   }
 
   rootItem = [[FileSystemItem alloc] initWithPath:root parent:nil];
-  [self updatePathComponentsPopup];
+  [pathControl setURL:[NSURL fileURLWithPath:root]];
   [(NSOutlineView *)[self view] expandItem:rootItem];
   [self watchRoot];
 }
@@ -470,32 +474,6 @@ static NSMutableArray *leafNode = nil;
   return nil;
 }
 
-- (void) updatePathComponentsPopup {
-  NSString *path = [rootItem fullPath];
-  NSFileManager *fileManager = [NSFileManager defaultManager];
-  NSMenu *menu = [[[NSMenu alloc] init] autorelease];
-  
-  NSArray *pathComponents = [path pathComponents];
-  int i;
-  int pathLen = [pathComponents count];
-  for (i = pathLen; i > 0; i--) {
-    NSArray *subPathComponents = [pathComponents subarrayWithRange:NSMakeRange(0, i)];
-    NSString *subPath = [NSString pathWithComponents:subPathComponents];
-    
-    NSMenuItem *item = [[[NSMenuItem alloc] initWithTitle:[fileManager displayNameAtPath:subPath] action:@selector(changeWorkingDirectoryToSelection:) keyEquivalent:@""] autorelease];
-    [item setTarget:self];
-    [item setRepresentedObject:subPath];
-    
-    NSImage *icon = [[NSWorkspace sharedWorkspace] iconForFile:subPath];
-    [icon setSize:NSMakeSize(16, 16)];
-    [item setImage:icon];
-
-    [menu addItem:item];
-  }
-  
-  [pathComponentsPopup setMenu:menu];
-  [pathComponentsPopup selectItemAtIndex:0];
-}
 
 // Data Source methods
 // ===================
@@ -722,6 +700,11 @@ static NSMutableArray *leafNode = nil;
   [self changeWorkingDirectory:[sender representedObject]];
 }
 
+- (void)changeWorkingDirectoryFromPathControl:(NSPathControl *)sender {
+  NSPathComponentCell *clickedCell = [sender clickedPathComponentCell];
+  [self changeWorkingDirectory:[[clickedCell URL] path]];
+}
+
 // TODO needs multiple selection support
 - (void)deleteSelectedFiles:(NSMenuItem *)sender {
   FileSystemItem *item = [self itemAtRow:[sender tag]];
@@ -832,8 +815,8 @@ static void change_occured(ConstFSEventStreamRef stream,
   [[NSNotificationCenter defaultCenter] removeObserver:self];
 
   [drawer release];
+  [pathControl release];
   [rootItem release];
-  [pathComponentsPopup release];
   [self unwatchRoot];
 
   [super dealloc];
