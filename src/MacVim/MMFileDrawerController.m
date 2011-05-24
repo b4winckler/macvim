@@ -43,7 +43,7 @@
 
 @interface FileSystemItem (Private)
 - (FileSystemItem *)_itemAtPath:(NSArray *)components;
-- (BOOL)_wildIgnored:(NSString *)name;
+- (BOOL)_ignoreFile:(NSString *)filename;
 @end
 
 
@@ -120,22 +120,7 @@ static NSMutableArray *leafNode = nil;
     reloaded = [[NSMutableArray alloc] initWithCapacity:[entries count]];
 
     for (NSString *childName in entries) {
-      BOOL isHiddenFile = [childName characterAtIndex:0] == '.';
-      if (isHiddenFile && !includesHiddenFiles) {
-        // It's a hidden file which are currently not visible.
-        continue;
-      } else if (isHiddenFile && [childName length] >= 4) {
-        // Does include hidden files, but never add Vim swap files to browser.
-        //
-        // Vim swap files have names of type
-        //   .original-file-name.sXY
-        // where XY can be anything from "aa" to "wp".
-        NSString *last3 = [childName substringFromIndex:[childName length]-3];
-        if ([last3 compare:@"saa"] >= 0 && [last3 compare:@"swp"] <= 0) {
-          // It's a swap file, ignore it.
-          continue;
-        }
-      } else if (useWildIgnore && [self _wildIgnored:childName]) {
+      if ([self _ignoreFile:childName]) {
         continue;
       }
 
@@ -174,10 +159,28 @@ static NSMutableArray *leafNode = nil;
   return NO;
 }
 
-- (BOOL)_wildIgnored:(NSString *)fileName {
-  NSString *eval = [NSString stringWithFormat:@"empty(expand(fnameescape('%@')))", fileName];
-  NSString *result = [vim evaluateVimExpression: eval];
-  return [result isEqualToString:@"1"];
+- (BOOL)_ignoreFile:(NSString *)filename {
+  BOOL isHiddenFile = [filename characterAtIndex:0] == '.';
+  if (isHiddenFile && !includesHiddenFiles) {
+    // It's a hidden file which are currently not visible.
+    return YES;
+  } else if (isHiddenFile && [filename length] >= 4) {
+    // Does include hidden files, but never add Vim swap files to browser.
+    //
+    // Vim swap files have names of type
+    //   .original-file-name.sXY
+    // where XY can be anything from "aa" to "wp".
+    NSString *last3 = [filename substringFromIndex:[filename length]-3];
+    if ([last3 compare:@"saa"] >= 0 && [last3 compare:@"swp"] <= 0) {
+      // It's a swap file, ignore it.
+      return YES;
+    }
+  } else if (useWildIgnore) {
+    NSString *eval = [NSString stringWithFormat:@"empty(expand(fnameescape('%@')))", filename];
+    NSString *result = [vim evaluateVimExpression:eval];
+    return [result isEqualToString:@"1"];
+  }
+  return NO;
 }
 
 - (BOOL)isLeaf {
