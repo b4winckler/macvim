@@ -382,7 +382,6 @@ static NSMutableArray *leafNode = nil;
   [filesView setAllowsMultipleSelection:YES];
   NSTableColumn *column = [[[NSTableColumn alloc] initWithIdentifier:nil] autorelease];
   ImageAndTextCell *cell = [[[ImageAndTextCell alloc] init] autorelease];
-  [cell setFont:[NSFont fontWithName:[[cell font] fontName] size:11]];
   [cell setEditable:YES];
   [column setDataCell:cell];
   [filesView addTableColumn:column];
