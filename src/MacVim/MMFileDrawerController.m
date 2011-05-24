@@ -105,11 +105,7 @@ static NSMutableArray *leafNode = nil;
 //
 // This is really only so the controller knows whether or not to reload the view.
 - (BOOL)reloadRecursive:(BOOL)recursive {
-  if (ignoreNextReload) {
-    // Next time around it will be reloaded again
-    ignoreNextReload = NO;
-
-  } else if (children) {
+  if (children) {
     // Only reload items that have been loaded before
     // NSLog(@"Reload: %@", path);
     if (parent) {
@@ -700,18 +696,23 @@ static NSMutableArray *leafNode = nil;
   FileSystemItem *dirItem = item.parent;
   NSString *newPath = [[dirItem fullPath] stringByAppendingPathComponent:name];
   NSError *error = nil;
+  dirItem.ignoreNextReload = YES;
   BOOL moved = [[NSFileManager defaultManager] moveItemAtPath:[item fullPath]
                                                        toPath:newPath
                                                         error:&error];
   if (moved) {
     [dirItem reloadRecursive:NO];
-    [[self outlineView] reloadItem:dirItem reloadChildren:YES];
-    dirItem.ignoreNextReload = YES;
+    if(dirItem == rootItem)
+      [[self outlineView] reloadData];
+    else
+      [[self outlineView] reloadItem:dirItem reloadChildren:YES];
     // Select the renamed item
     NSInteger row = [[self outlineView] rowForItem:[dirItem itemWithName:name]];
     NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
     [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
+    // TODO: should reopen all open buffers with files inside of this directory
   } else {
+    dirItem.ignoreNextReload = NO;
     NSLog(@"[!] Unable to rename `%@' to `%@'. Error: %@", [item fullPath], newPath, [error localizedDescription]);
   }
 }
@@ -730,7 +731,8 @@ static NSMutableArray *leafNode = nil;
 //}
 
 - (void)newFolder:(NSMenuItem *)sender {
-  FileSystemItem *dirItem = [[self itemAtRow:[sender tag]] dirItem];
+  FileSystemItem *selItem = [self itemAtRow:[sender tag]];
+  FileSystemItem *dirItem = selItem ? [selItem dirItem] : rootItem;
   NSString *path = [[dirItem fullPath] stringByAppendingPathComponent:@"untitled folder"];
 
   int i = 2;
@@ -741,6 +743,9 @@ static NSMutableArray *leafNode = nil;
     i++;
   }
 
+  // Make sure that the next FSEvent for this item doesn't cause the view to stop editing
+  dirItem.ignoreNextReload = YES;
+
   [fileManager createDirectoryAtPath:result
          withIntermediateDirectories:NO
                           attributes:nil
@@ -748,12 +753,13 @@ static NSMutableArray *leafNode = nil;
 
   // Add the new folder to the items
   [dirItem reloadRecursive:NO]; // for now let's not create the item ourselves
-  [[self outlineView] reloadItem:dirItem reloadChildren:YES];
-  // Make sure that the next FSEvent for this item doesn't cause the view to stop editing
-  dirItem.ignoreNextReload = YES;
+  if(dirItem == rootItem)
+    [[self outlineView] reloadData];
+  else
+    [[self outlineView] reloadItem:dirItem reloadChildren:YES];
 
   // Show, select and edit the new folder
-  [[self outlineView] expandItem:dirItem];
+  if(selItem) [[self outlineView] expandItem:dirItem];
   FileSystemItem *newItem = [dirItem itemWithName:[result lastPathComponent]];
   NSInteger row = [[self outlineView] rowForItem:newItem];
   NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
@@ -788,20 +794,19 @@ static NSMutableArray *leafNode = nil;
 - (void)deleteSelectedFiles:(NSMenuItem *)sender {
   FileSystemItem *item = [self itemAtRow:[sender tag]];
   FileSystemItem *dirItem = item.parent;
+  dirItem.ignoreNextReload = YES;
   [[NSFileManager defaultManager] removeItemAtPath:[item fullPath] error:NULL];
   [dirItem reloadRecursive:NO];
   if(rootItem == dirItem)
     [[self outlineView] reloadData];
   else
     [[self outlineView] reloadItem:dirItem reloadChildren:YES];
-  dirItem.ignoreNextReload = YES;
 }
 
 - (void)toggleShowHiddenFiles:(NSMenuItem *)sender {
   rootItem.includesHiddenFiles = !rootItem.includesHiddenFiles;
   [rootItem reloadRecursive:YES];
   [[self outlineView] reloadData];
-  [[self outlineView] expandItem:rootItem];
 }
 
 // Open elsewhere
@@ -850,6 +855,10 @@ static void change_occured(ConstFSEventStreamRef stream,
 - (void)changeOccurredAtPath:(NSString *)path {
   FileSystemItem *item = [rootItem itemAtPath:path];
   if (item) {
+    if (item.ignoreNextReload) {
+      item.ignoreNextReload = NO;
+      return;
+    }
     // NSLog(@"Change occurred in path: %@", [item fullPath]);
     // No need to reload recursive, the change occurred in *this* item only
     if ([item reloadRecursive:NO]) {
