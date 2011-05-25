@@ -699,11 +699,15 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (void)outlineView:(NSOutlineView *)outlineView setObjectValue:(NSString *)name forTableColumn:(NSTableColumn *)tableColumn byItem:(FileSystemItem *)item {
+  // save these here, cause by moving the file and reloading the view 'item' will be released
+  BOOL isLeaf = [item isLeaf];
+  NSString *fullPath = [item fullPath];
+
   FileSystemItem *dirItem = item.parent;
   NSString *newPath = [[dirItem fullPath] stringByAppendingPathComponent:name];
   NSError *error = nil;
   dirItem.ignoreNextReload = YES;
-  BOOL moved = [[NSFileManager defaultManager] moveItemAtPath:[item fullPath]
+  BOOL moved = [[NSFileManager defaultManager] moveItemAtPath:fullPath
                                                        toPath:newPath
                                                         error:&error];
   if (moved) {
@@ -716,7 +720,19 @@ static NSMutableArray *leafNode = nil;
     NSInteger row = [[self outlineView] rowForItem:[dirItem itemWithName:name]];
     NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
     [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
-    // TODO: should reopen all open buffers with files inside of this directory
+    if(isLeaf) {
+      MMVimController *vim = [windowController vimController];
+      NSString *bufName = [vim evaluateVimExpression:[NSString stringWithFormat:@"bufname('%@')", fullPath]];
+      if([bufName length] != 0) {
+        newPath = [newPath stringByEscapingSpecialFilenameCharacters];
+        NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>"
+                                                   ":bdelete %@|edit %@<CR>", bufName, newPath];
+        [vim addVimInput:input];
+      }
+    }
+    else {
+      // TODO: should reopen all open buffers with files inside of this directory
+    }
   } else {
     dirItem.ignoreNextReload = NO;
     NSLog(@"[!] Unable to rename `%@' to `%@'. Error: %@", [item fullPath], newPath, [error localizedDescription]);
