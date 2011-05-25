@@ -726,7 +726,7 @@ static NSMutableArray *leafNode = nil;
       if([bufName length] != 0) {
         newPath = [newPath stringByEscapingSpecialFilenameCharacters];
         NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>"
-                                                   ":bdelete %@|edit %@<CR>", bufName, newPath];
+                                                   ":bdelete! %@|edit %@<CR>", bufName, newPath];
         [vim addVimInput:input];
       }
     }
