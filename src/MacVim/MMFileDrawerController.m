@@ -510,11 +510,15 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (void)changeWorkingDirectory:(NSString *)path {
-  // Tell Vim to change the pwd.  As a side effect this will cause a new root
-  // to be set to the folder the user just double-clicked on.
-  NSString *input = [NSString stringWithFormat:
-                @"<C-\\><C-N>:exe \"cd \" . fnameescape(\"%@\")<CR>", path];
-  [[windowController vimController] addVimInput:input];
+  BOOL isDir;
+  if([[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir]) {
+    if(!isDir) path = [path stringByDeletingLastPathComponent];
+    // Tell Vim to change the pwd.  As a side effect this will cause a new root
+    // to be set to the folder the user just double-clicked on.
+    NSString *input = [NSString stringWithFormat:
+                                   @"<C-\\><C-N>:exe \"cd \" . fnameescape(\"%@\")<CR>", path];
+    [[windowController vimController] addVimInput:input];
+  }
 }
 
 // Ignores the user's preference by always opening in the current window for the
