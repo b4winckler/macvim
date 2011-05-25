@@ -815,14 +815,27 @@ static NSMutableArray *leafNode = nil;
 // TODO needs multiple selection support
 - (void)deleteSelectedFiles:(NSMenuItem *)sender {
   FileSystemItem *item = [self itemAtRow:[sender tag]];
+  NSString *fullPath = [item fullPath];
+  BOOL isLeaf = [item isLeaf];
   FileSystemItem *dirItem = item.parent;
+
   dirItem.ignoreNextReload = YES;
-  [[NSFileManager defaultManager] removeItemAtPath:[item fullPath] error:NULL];
+  [[NSFileManager defaultManager] removeItemAtPath:fullPath error:NULL];
   [dirItem reloadRecursive:NO];
   if(rootItem == dirItem)
     [[self outlineView] reloadData];
   else
     [[self outlineView] reloadItem:dirItem reloadChildren:YES];
+
+  if(isLeaf) {
+    MMVimController *vim = [windowController vimController];
+    NSString *bufName = [vim evaluateVimExpression:[NSString stringWithFormat:@"bufname('%@')", fullPath]];
+    if([bufName length] != 0) {
+      NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>"
+                                                 ":bdelete! %@<CR>", bufName];
+      [vim addVimInput:input];
+    }
+  }
 }
 
 - (void)toggleShowHiddenFiles:(NSMenuItem *)sender {
