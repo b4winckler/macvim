@@ -479,7 +479,7 @@ static NSMutableArray *leafNode = nil;
   [drawer setParentWindow:[windowController window]];
   [drawer toggle:self];
 
-    [self selectInDrawer];
+  [self selectInDrawer];
 }
 
 - (void)selectInDrawer {
@@ -603,7 +603,7 @@ static NSMutableArray *leafNode = nil;
   BOOL isLeaf = [fsItem isLeaf];
 
   // File operations
-  //[menu addItemWithTitle:@"New File" action:@selector(newFile:) keyEquivalent:@""];
+  [menu addItemWithTitle:@"New File" action:@selector(newFile:) keyEquivalent:@""];
   [menu addItemWithTitle:@"New Folder" action:@selector(newFolder:) keyEquivalent:@""];
   if(fsItem) {
     [menu addItemWithTitle:@"Rename…" action:@selector(renameFile:) keyEquivalent:@""];
@@ -730,14 +730,17 @@ static NSMutableArray *leafNode = nil;
     NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
     [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
     if(isLeaf) {
+      NSString *input = [NSString string];
+      newPath = [newPath stringByEscapingSpecialFilenameCharacters];
       MMVimController *vim = [windowController vimController];
       NSString *bufName = [vim evaluateVimExpression:[NSString stringWithFormat:@"bufname('%@')", fullPath]];
       if([bufName length] != 0) {
-        newPath = [newPath stringByEscapingSpecialFilenameCharacters];
-        NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>"
-                                                   ":bdelete! %@|edit %@<CR>", bufName, newPath];
-        [vim addVimInput:input];
+        input = [NSString stringWithFormat:@"<C-\\><C-N>"
+                                         ":bdelete! %@<CR>", bufName];
       }
+      input = [input stringByAppendingString:[NSString stringWithFormat:@"<C-\\><C-N>"
+                                           ":edit %@<CR>", newPath]];
+      [vim addVimInput:input];
     }
     else {
       // TODO: should reopen all open buffers with files inside of this directory
@@ -758,8 +761,39 @@ static NSMutableArray *leafNode = nil;
   [(FilesOutlineView *)[self view] editColumn:0 row:[sender tag] withEvent:nil select:YES];
 }
 
-//- (void)newFile:(NSMenuItem *)sender {
-//}
+- (void)newFile:(NSMenuItem *)sender {
+  FileSystemItem *item = [self itemAtRow:[sender tag]];
+  if(!item) item = rootItem;
+  if([item isLeaf]) item = [item parent];
+  NSString *path = [[item fullPath] stringByAppendingPathComponent:@"new file"];
+
+  int i = 2;
+  NSString *result = path;
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  while ([fileManager fileExistsAtPath:result]) {
+   result = [NSString stringWithFormat:@"%@ %d", path, i];
+   i++;
+  }
+
+  item.ignoreNextReload = YES;
+  BOOL isOK = [fileManager createFileAtPath:result contents:[NSData data] attributes:nil];
+  if(isOK) {
+    [item reloadRecursive: NO];
+    if(item == rootItem)
+      [[self outlineView] reloadData];
+    else
+      [[self outlineView] reloadItem:item reloadChildren:YES];
+    if(item != rootItem) [[self outlineView] expandItem:item];
+    FileSystemItem *newItem = [item itemWithName:[result lastPathComponent]];
+    NSInteger row = [[self outlineView] rowForItem:newItem];
+    NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
+    [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
+    [[self outlineView] editColumn:0 row:row withEvent:nil select:YES];
+  }
+  else {
+    NSLog(@"Failed to create file %@", path);
+  }
+}
 
 - (void)newFolder:(NSMenuItem *)sender {
   FileSystemItem *selItem = [self itemAtRow:[sender tag]];
@@ -954,9 +988,9 @@ static void change_occured(ConstFSEventStreamRef stream,
   [[NSNotificationCenter defaultCenter] removeObserver:self];
 
   [self unwatchRoot];
-  [rootItem release]; rootItem = nil;
   [drawer release]; drawer = nil;
   [pathControl release]; pathControl = nil;
+  [rootItem release]; rootItem = nil;
 
   [super dealloc];
 }
