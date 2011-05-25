@@ -600,6 +600,7 @@ static NSMutableArray *leafNode = nil;
   NSMenuItem *item;
   NSString *title;
   FileSystemItem *fsItem = [self itemAtRow:row];
+  BOOL isLeaf = [fsItem isLeaf];
 
   // File operations
   //[menu addItemWithTitle:@"New File" action:@selector(newFile:) keyEquivalent:@""];
@@ -610,9 +611,11 @@ static NSMutableArray *leafNode = nil;
 
     // Vim open/cwd
     [menu addItem:[NSMenuItem separatorItem]];
-    [menu addItemWithTitle:@"Open selected Files in Tabs" action:@selector(openFilesInTabs:) keyEquivalent:@""];
-    [menu addItemWithTitle:@"Open selected Files in Horizontal Split Views" action:@selector(openFilesInHorizontalSplitViews:) keyEquivalent:@""];
-    [menu addItemWithTitle:@"Open selected Files in Vertical Split Views" action:@selector(openFilesInVerticalSplitViews:) keyEquivalent:@""];
+    if(isLeaf) {
+      [menu addItemWithTitle:@"Open selected Files in Tabs" action:@selector(openFilesInTabs:) keyEquivalent:@""];
+      [menu addItemWithTitle:@"Open selected Files in Horizontal Split Views" action:@selector(openFilesInHorizontalSplitViews:) keyEquivalent:@""];
+      [menu addItemWithTitle:@"Open selected Files in Vertical Split Views" action:@selector(openFilesInVerticalSplitViews:) keyEquivalent:@""];
+    }
     title = [NSString stringWithFormat:@"Change working directory to “%@”", [[fsItem dirItem] relativePath]];
     [menu addItemWithTitle:title action:@selector(changeWorkingDirectoryToSelection:) keyEquivalent:@""];
 
