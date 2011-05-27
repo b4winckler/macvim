@@ -1,12 +1,11 @@
-* After renaming a file/dir we should re-open buffers that reference that file.
-* How should we handle creating a new file?
+* After deleting files the open buffers should be deleted.
+* Always highlight the file in the browser that's open in the current window, unless the enclosed folder is closed. (In which case it should only be openend when explicitely requested by the user.)
 * In actions get the selected items instead of using the menu item tag
 * Don't include MacVim in the list of apps to open a file with.
 * Opening files in split views does so in a new tab instead of in the current.
 * Should we disable the cwd menu item if that dir is already the wd?
 * Add support for multiple file selection in the contextual menu.
 * There's some duplication with regards to selecting a new/renamed item
-* highlight the file that's open in the current window
 * Instead of never allowing the view to become the first responder, we could also only allow it to become first responder when clicked a second time. This allows you to still browse through the files with arrows/enter. (This is what TextMate does.)
 
 * Files that should always be ignored:
