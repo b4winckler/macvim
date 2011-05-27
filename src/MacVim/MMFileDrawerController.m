@@ -235,7 +235,7 @@ static NSMutableArray *leafNode = nil;
   NSArray *root = [path pathComponents];
 
   // check if itemPath is enclosed into the current directory
-  if([components count] - 1 < [root count])
+  if([components count] < [root count])
     return nil;
   if(![[components subarrayWithRange:NSMakeRange(0, [root count])] isEqualToArray:root])
     return nil;
