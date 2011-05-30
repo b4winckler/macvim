@@ -292,7 +292,10 @@ static NSMutableArray *leafNode = nil;
 // Outline view
 // ****************************************************************************
 
-@interface FilesOutlineView : NSOutlineView
+@interface FilesOutlineView : NSOutlineView {
+  BOOL canBecomeFirstResponder;
+}
+- (void)makeFirstResponder;
 - (NSMenu *)menuForEvent:(NSEvent *)event;
 - (void)expandParentsOfItem:(id)item;
 - (void)selectItem:(id)item;
@@ -300,8 +303,33 @@ static NSMutableArray *leafNode = nil;
 
 @implementation FilesOutlineView
 
+- (id)initWithFrame:(NSRect)frame {
+  if ((self = [super initWithFrame:frame])) {
+    canBecomeFirstResponder = NO;
+  }
+  return self;
+}
+
 - (BOOL)acceptsFirstResponder {
-  return NO;
+  return YES;
+}
+
+- (BOOL)becomeFirstResponder {
+  if (canBecomeFirstResponder) {
+    [self setNeedsDisplay];
+  }
+  return canBecomeFirstResponder;
+}
+
+- (BOOL)resignFirstResponder {
+  canBecomeFirstResponder = NO;
+  [self setNeedsDisplay];
+  return YES;
+}
+
+- (void)makeFirstResponder {
+  canBecomeFirstResponder = YES;
+  [[self window] makeFirstResponder:self];
 }
 
 - (NSMenu *)menuForEvent:(NSEvent *)event {
@@ -612,13 +640,13 @@ static NSMutableArray *leafNode = nil;
   // File operations
   [menu addItemWithTitle:@"New File" action:@selector(newFile:) keyEquivalent:@""];
   [menu addItemWithTitle:@"New Folder" action:@selector(newFolder:) keyEquivalent:@""];
-  if(fsItem) {
+  if (fsItem) {
     [menu addItemWithTitle:@"Rename…" action:@selector(renameFile:) keyEquivalent:@""];
     [menu addItemWithTitle:@"Delete selected Files" action:@selector(deleteSelectedFiles:) keyEquivalent:@""];
 
     // Vim open/cwd
     [menu addItem:[NSMenuItem separatorItem]];
-    if(isLeaf) {
+    if (isLeaf) {
       [menu addItemWithTitle:@"Open selected Files in Tabs" action:@selector(openFilesInTabs:) keyEquivalent:@""];
       [menu addItemWithTitle:@"Open selected Files in Horizontal Split Views" action:@selector(openFilesInHorizontalSplitViews:) keyEquivalent:@""];
       [menu addItemWithTitle:@"Open selected Files in Vertical Split Views" action:@selector(openFilesInVerticalSplitViews:) keyEquivalent:@""];
@@ -701,16 +729,8 @@ static NSMutableArray *leafNode = nil;
         shouldEditTableColumn:(NSTableColumn *)tableColumn
                          item:(id)item
 {
-  // Called when an item was double-clicked.  Change the root to item clicked
-  // on and expand.
-  NSFileManager *fileManager = [NSFileManager defaultManager];
-  NSString *path = [item fullPath];
-  BOOL isDir;
-  BOOL valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
-  if (valid && isDir) {
-    [self changeWorkingDirectory:path];
-  }
-
+  // Called when an item was double-clicked, in which case we do make the browser the first responder.
+  [outlineView makeFirstResponder];
   return NO;
 }
 
