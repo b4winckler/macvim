@@ -215,7 +215,7 @@
 
     splitView = [[NSSplitView alloc] initWithFrame:frame];
     [splitView setVertical:YES];
-    //[splitView setDividerStyle:NSSplitViewDividerStyleThin];
+    [splitView setDividerStyle:NSSplitViewDividerStyleThin];
     [splitView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
     [splitView setDelegate:self];
 
@@ -229,8 +229,8 @@
     [view setImageFrameStyle:NSImageFrameGroove];
     sideView = view;
 #endif
-    [splitView addSubview:sideView];
     [splitView addSubview:vimView];
+    [splitView addSubview:sideView];
     [splitView adjustSubviews];
     [contentView addSubview:splitView];
 
@@ -1415,8 +1415,8 @@
 
     NSSize s0 = [vimView frame].size;
     NSSize s1 = [vimView desiredSize];
-    CGFloat aw = s0.width - floor(s0.width / cs.width) * cs.width;
-    CGFloat ah = s0.height - floor(s0.height / cs.height) * cs.height;
+    //CGFloat aw = s0.width - floor(s0.width / cs.width) * cs.width;
+    //CGFloat ah = s0.height - floor(s0.height / cs.height) * cs.height;
     CGFloat dw = s1.width - s0.width;
     CGFloat dh = s1.height - s0.height;
 
@@ -1434,10 +1434,11 @@
         frame.size.height += dh;
         frame.origin.y -= dh;
 
+        // NOTE: This should be the only place where the window is resized!
         [decoratedWindow setFrame:frame display:YES];
 
         // If it was not possible to use the frame we requested (probably
-        // becuase it was too large to fit on the screen) then tell the Vim
+        // because it was too large to fit on the screen) then tell the Vim
         // view to adjust its text view dimensions to fit the current size of
         // the window.  If we fail to do this, then repeated ":set lines=900"
         // calls could cause the text view to be too large to fit the window.
