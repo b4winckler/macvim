@@ -279,6 +279,42 @@ NSString *MMDrawerPreferredEdgeKey      = @"MMDrawerPreferredEdge";
     return [win convertScreenToBase:[self convertPoint:point fromView:nil]];
 }
 
+- (NSSize)calculateDesiredSize
+{
+    // Call 'desiredSize' to get desired size for view _if_ we respond to this
+    // selector.  Since 'desiredSize' returns an NSSize we have to jump through
+    // hoops to actually call this selector.
+    // If we do not support this selector then it is assumed that the desired
+    // size equals the current size.
+    NSSize size = [self frame].size;
+    if ([self respondsToSelector:@selector(desiredSize)]) {
+        // Get method signature for method which takes no argument and returns
+        // an NSSize (we don't use 'desiredSize' since it is defined in a class
+        // which should not included here).
+        NSMethodSignature *sig = [NSWindow instanceMethodSignatureForSelector:
+                                                    @selector(contentMaxSize)];
+        NSInvocation *inv = [NSInvocation invocationWithMethodSignature:sig];
+        [inv setSelector:@selector(desiredSize)];
+        [inv setTarget:self];
+        [inv invoke];
+        [inv getReturnValue:&size];
+        ASLogTmp(@"size=%@  desired=%@", NSStringFromSize([self frame].size),
+                NSStringFromSize(size));
+    }
+
+    NSEnumerator *e = [[self subviews] objectEnumerator];
+    NSView *v;
+    while ((v = [e nextObject])) {
+        NSSize desiredSize = [v calculateDesiredSize];
+        NSSize actualSize  = [v frame].size;
+
+        size.width  += desiredSize.width  - actualSize.width + 1;
+        size.height += desiredSize.height - actualSize.height + 2;
+    }
+
+    return size;
+}
+
 @end
 
 

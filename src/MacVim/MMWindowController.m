@@ -86,8 +86,10 @@
 }
 @end
 
+
 @interface MMWindowController (Private)
 - (NSSize)contentSize;
+- (void)adjustWindowFrame;
 - (void)resizeWindowToFitContentSize:(NSSize)contentSize
                         keepOnScreen:(BOOL)onScreen;
 - (NSSize)constrainContentSizeToScreenSize:(NSSize)contentSize;
@@ -367,6 +369,8 @@
 
 - (BOOL)presentWindow:(id)unused
 {
+    ASLogTmp(@"");
+
     // If openWindow hasn't already been called then the window will be
     // displayed later.
     if (!setupDone) return NO;
@@ -379,6 +383,7 @@
     [self updateResizeConstraints];
     //[self resizeWindowToFitContentSize:[vimView desiredSize]
     //                      keepOnScreen:YES];
+    [self adjustWindowFrame];
     [[self window] makeKeyAndOrderFront:self];
 
     // Flag that the window is now placed on screen.  From now on it is OK for
@@ -395,11 +400,17 @@
     return YES;
 }
 
-- (void)setTextDimensionsWithRows:(int)rows columns:(int)cols isLive:(BOOL)live
-                     keepOnScreen:(BOOL)onScreen
+- (void)setTextDimensionsWithRows:(int)rows
+                          columns:(int)cols
+                           isLive:(BOOL)live
+                          isReply:(BOOL)reply
 {
-    ASLogDebug(@"setTextDimensionsWithRows:%d columns:%d isLive:%d "
-            "keepOnScreen:%d", rows, cols, live, onScreen);
+    int maxRows, maxCols;
+    [[vimView textView] getMaxRows:&maxRows columns:&maxCols];
+
+    ASLogTmp(@"setTextDimensionsWithRows:%d columns:%d isLive:%d "
+            "isReply:%d (rows=%d, cols=%d, setupDone=%d)",
+            rows, cols, live, reply, maxRows, maxCols, setupDone);
 
     // NOTE: The only place where the (rows,columns) of the vim view are
     // modified is here and when entering/leaving full-screen.  Setting these
@@ -412,11 +423,14 @@
     // size when this flag is set, otherwise the window might jitter when the
     // user drags to resize the window.
 
+    if (maxRows == rows && maxCols == cols)
+        return;
+
     [vimView setDesiredRows:rows columns:cols];
 
     if (setupDone && !live) {
-        shouldResizeVimView = YES;
-        keepOnScreen = onScreen;
+        shouldPlaceVimView = YES;
+        shouldResizeWindow = !reply;
     }
 }
 
@@ -425,7 +439,7 @@
     [self setTextDimensionsWithRows:rows
                             columns:cols
                              isLive:NO
-                       keepOnScreen:YES];
+                            isReply:NO];
 
     // NOTE: If state==0 then the window should be put in the non-zoomed
     // "user state".  That is, move the window back to the last stored
@@ -490,7 +504,7 @@
 - (BOOL)destroyScrollbarWithIdentifier:(int32_t)ident
 {
     BOOL scrollbarHidden = [vimView destroyScrollbarWithIdentifier:ident];   
-    shouldResizeVimView = shouldResizeVimView || scrollbarHidden;
+    shouldPlaceVimView = shouldPlaceVimView || scrollbarHidden;
 
     return scrollbarHidden;
 }
@@ -499,7 +513,7 @@
 {
     BOOL scrollbarToggled = [vimView showScrollbarWithIdentifier:ident
                                                            state:visible];
-    shouldResizeVimView = shouldResizeVimView || scrollbarToggled;
+    shouldPlaceVimView = shouldPlaceVimView || scrollbarToggled;
 
     return scrollbarToggled;
 }
@@ -559,8 +573,8 @@
     // NOTE: If the window has not been presented then we must avoid resizing
     // the views since it will cause them to be constrained to the screen which
     // has not yet been set!
-    if (windowPresented && shouldResizeVimView) {
-        shouldResizeVimView = NO;
+    if (windowPresented && shouldPlaceVimView) {
+        shouldPlaceVimView = NO;
 
         NSSize originalSize = [vimView frame].size;
         NSSize contentSize = [vimView desiredSize];
@@ -582,7 +596,7 @@
             }
         } else {
             //[self resizeWindowToFitContentSize:contentSize
-            //                      keepOnScreen:keepOnScreen];
+            //                      keepOnScreen:isReply];
 
             if (windowAutosaveKey && rows > 0 && cols > 0) {
                 // Autosave rows and columns now that they should have been
@@ -596,14 +610,16 @@
                 [ud synchronize];
             }
         }
-
-        keepOnScreen = NO;
     }
 #else
-    if (windowPresented && shouldResizeVimView) {
-        shouldResizeVimView = NO;
+    if (windowPresented && shouldPlaceVimView) {
+        if (shouldResizeWindow) {
+            [self adjustWindowFrame];
+            shouldResizeWindow = NO;
+        }
+
         [vimView placeViews];
-        keepOnScreen = NO;
+        shouldPlaceVimView = NO;
     }
 #endif
 }
@@ -635,7 +651,7 @@
 
     [self hideTablineSeparator:!separator];
 
-    shouldResizeVimView = YES;
+    shouldPlaceVimView = YES;
 
 #if 1
     NSSize size = [[decoratedWindow contentView] frame].size;
@@ -677,7 +693,7 @@
 {
     if (vimView && [vimView textView]) {
         [[vimView textView] setLinespace:(float)linespace];
-        shouldResizeVimView = YES;
+        shouldPlaceVimView = YES;
     }
 }
 
@@ -771,7 +787,7 @@
 
         // The resize handle disappears so the vim view needs to update the
         // scrollbars.
-        shouldResizeVimView = YES;
+        shouldPlaceVimView = YES;
     } else {
         ASLogDebug(@"Delay enter full screen");
     }
@@ -787,7 +803,7 @@
     fullscreenWindow = nil;
 
     // The vim view may be too large to fit the screen, so update it.
-    shouldResizeVimView = YES;
+    shouldPlaceVimView = YES;
 }
 
 - (void)setFullscreenBackgroundColor:(NSColor *)back
@@ -1390,11 +1406,53 @@
     return [win contentRectForFrameRect:[win frame]].size;
 }
 
+- (void)adjustWindowFrame
+{
+    ASLogTmp(@"");
+
+    NSSize cs = [[vimView textView] cellSize];
+    if (cs.width == 0 || cs.height == 0) return;
+
+    NSSize s0 = [vimView frame].size;
+    NSSize s1 = [vimView desiredSize];
+    CGFloat aw = s0.width - floor(s0.width / cs.width) * cs.width;
+    CGFloat ah = s0.height - floor(s0.height / cs.height) * cs.height;
+    CGFloat dw = s1.width - s0.width;
+    CGFloat dh = s1.height - s0.height;
+
+    //CGFloat dw = trunc((s1.width - s0.width)/cs.width) * cs.width;
+    //CGFloat dh = trunc((s1.height - s0.height)/cs.height) * cs.height;
+    //ASLogTmp(@"dw=%f dh=%f", dw, dh);
+
+    //if (-dw >= cs.width || dw > 0 || -dh >= cs.height || dh > 0) {
+    if (abs(dw) > 0 || abs(dh) > 0) {
+        //ASLogTmp(@"size=%@  desired=%@",
+        //NSStringFromSize(s0),
+        //NSStringFromSize(s1));
+        NSRect frame = [decoratedWindow frame];
+        frame.size.width += dw;
+        frame.size.height += dh;
+        frame.origin.y -= dh;
+
+        [decoratedWindow setFrame:frame display:YES];
+
+        // If it was not possible to use the frame we requested (probably
+        // becuase it was too large to fit on the screen) then tell the Vim
+        // view to adjust its text view dimensions to fit the current size of
+        // the window.  If we fail to do this, then repeated ":set lines=900"
+        // calls could cause the text view to be too large to fit the window.
+        if (!NSEqualRects(frame, [decoratedWindow frame]))
+            [vimView adjustTextViewDimensions];
+    }
+}
+
 - (void)resizeWindowToFitContentSize:(NSSize)contentSize
                         keepOnScreen:(BOOL)onScreen
 {
     NSRect frame = [decoratedWindow frame];
     NSRect contentRect = [decoratedWindow contentRectForFrameRect:frame];
+    ASLogTmp(@"old=%@  new=%@", NSStringFromSize(contentRect.size),
+            NSStringFromSize(contentSize));
 
     // Keep top-left corner of the window fixed when resizing.
     contentRect.origin.y -= contentSize.height - contentRect.size.height;
@@ -1551,7 +1609,7 @@
         // The tabline separator was toggled so the content view must change
         // size.
         [self updateResizeConstraints];
-        shouldResizeVimView = YES;
+        shouldPlaceVimView = YES;
 
 #if 0
         NSSize size = [[decoratedWindow contentView] frame].size;

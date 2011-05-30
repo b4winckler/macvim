@@ -33,10 +33,10 @@
     NSView              *sideView;
     BOOL                setupDone;
     BOOL                windowPresented;
-    BOOL                shouldResizeVimView;
+    BOOL                shouldPlaceVimView;
+    BOOL                shouldResizeWindow;
     BOOL                shouldRestoreUserTopLeft;
     int                 updateToolbarFlag;
-    BOOL                keepOnScreen;
     BOOL                fullscreenEnabled;
     NSString            *windowAutosaveKey;
     MMFullscreenWindow  *fullscreenWindow;
@@ -58,8 +58,10 @@
 - (void)cleanup;
 - (void)openWindow;
 - (BOOL)presentWindow:(id)unused;
-- (void)setTextDimensionsWithRows:(int)rows columns:(int)cols isLive:(BOOL)live
-                     keepOnScreen:(BOOL)onScreen;
+- (void)setTextDimensionsWithRows:(int)rows
+                          columns:(int)cols
+                           isLive:(BOOL)live
+                          isReply:(BOOL)reply;
 - (void)zoomWithRows:(int)rows columns:(int)cols state:(int)state;
 - (void)setTitle:(NSString *)title;
 - (void)setDocumentFilename:(NSString *)filename;

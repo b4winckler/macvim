@@ -378,6 +378,55 @@ enum {
     [textView setFrame:[self textViewRectForVimViewSize:frame.size]];
 }
 
+- (void)adjustTextViewDimensions
+{
+    // It is possible that the current number of (rows,columns) is too big or
+    // too small to fit the new frame.  If so, notify Vim that the text
+    // dimensions should change, but don't actually change the number of
+    // (rows,columns).  These numbers may only change when Vim initiates the
+    // change (as opposed to the user dragging the window resizer, for
+    // example).
+    //
+    // Note that the message sent to Vim depends on whether we're in
+    // a live resize or not -- this is necessary to avoid the window jittering
+    // when the user drags to resize.
+    int rows, cols;
+    [textView getMaxRows:&rows columns:&cols];
+    if (rows == 0 && cols ==0)
+        return; // Ignore frame change if rows & cols have not yet been set
+
+    int constrained[2];
+    NSSize textViewSize = [textView frame].size;
+    [textView constrainRows:&constrained[0] columns:&constrained[1]
+                     toSize:textViewSize];
+
+    if (constrained[0] != rows || constrained[1] != cols) {
+        NSData *data = [NSData dataWithBytes:constrained length:2*sizeof(int)];
+        int msgid = [self inLiveResize] ? LiveResizeMsgID
+                                        : SetTextDimensionsMsgID;
+
+        ASLogTmp(@"Notify Vim that text dimensions changed from %dx%d to "
+                   "%dx%d (%s)", cols, rows, constrained[1], constrained[0],
+                   MessageStrings[msgid]);
+
+        [vimController sendMessage:msgid data:data];
+
+        // We only want to set the window title if this resize came from
+        // a live-resize, not (for example) setting 'columns' or 'lines'.
+        if ([self inLiveResize]) {
+            [[self window] setTitle:[NSString stringWithFormat:@"%dx%d",
+                    constrained[1], constrained[0]]];
+        }
+    } else if ([self inLiveResize]) {
+        //ASLogTmp(@"Force a redraw");
+        [vimController sendMessage:ForceRedrawMsgID data:nil];
+    }
+
+    // Must make sure scrollbars are in place or they might not cover the
+    // correct part of the text view during live resize.
+    [self placeScrollbars];
+}
+
 @end // MMVimView
 
 
@@ -650,51 +699,7 @@ enum {
 
 - (void)textViewFrameDidChange:(NSNotification *)notification
 {
-#if 1
-    // It is possible that the current number of (rows,columns) is too big or
-    // too small to fit the new frame.  If so, notify Vim that the text
-    // dimensions should change, but don't actually change the number of
-    // (rows,columns).  These numbers may only change when Vim initiates the
-    // change (as opposed to the user dragging the window resizer, for
-    // example).
-    //
-    // Note that the message sent to Vim depends on whether we're in
-    // a live resize or not -- this is necessary to avoid the window jittering
-    // when the user drags to resize.
-    int constrained[2];
-    NSSize textViewSize = [textView frame].size;
-    [textView constrainRows:&constrained[0] columns:&constrained[1]
-                     toSize:textViewSize];
-
-    int rows, cols;
-    [textView getMaxRows:&rows columns:&cols];
-
-    if (constrained[0] != rows || constrained[1] != cols) {
-        NSData *data = [NSData dataWithBytes:constrained length:2*sizeof(int)];
-        int msgid = [self inLiveResize] ? LiveResizeMsgID
-                                        : SetTextDimensionsMsgID;
-
-        ASLogDebug(@"Notify Vim that text dimensions changed from %dx%d to "
-                   "%dx%d (%s)", cols, rows, constrained[1], constrained[0],
-                   MessageStrings[msgid]);
-
-        [vimController sendMessage:msgid data:data];
-
-        // We only want to set the window title if this resize came from
-        // a live-resize, not (for example) setting 'columns' or 'lines'.
-        if ([self inLiveResize]) {
-            [[self window] setTitle:[NSString stringWithFormat:@"%dx%d",
-                    constrained[1], constrained[0]]];
-        }
-    } else {
-        //ASLogTmp(@"Force a redraw");
-        [vimController sendMessage:ForceRedrawMsgID data:nil];
-    }
-
-    // Must make sure scrollbars are in place or they might not cover the
-    // correct part of the text view during live resize.
-    [self placeScrollbars];
-#endif
+    [self adjustTextViewDimensions];
 }
 
 @end // MMVimView (Private)

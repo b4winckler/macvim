@@ -49,5 +49,6 @@
 - (void)setFrame:(NSRect)frame;
 #endif
 - (void)placeViews;
+- (void)adjustTextViewDimensions;
 
 @end

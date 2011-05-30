@@ -134,6 +134,7 @@ enum {
 - (NSPoint)convertToScreen:(NSPoint)point;
 // Convert to view coordinate from screen coordinate
 - (NSPoint)convertFromScreen:(NSPoint)point;
+- (NSSize)calculateDesiredSize;
 @end
 
 
