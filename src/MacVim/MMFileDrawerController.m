@@ -292,6 +292,8 @@ static NSMutableArray *leafNode = nil;
 // Outline view
 // ****************************************************************************
 
+#define ENTER_KEY 36
+
 @interface FilesOutlineView : NSOutlineView {
   BOOL canBecomeFirstResponder;
 }
@@ -336,6 +338,15 @@ static NSMutableArray *leafNode = nil;
 - (void)cancelOperation:(id)sender {
   // Pressing Esc will select the next key view, which should be the text view
   [[self window] selectNextKeyView:nil];
+}
+
+- (void)keyDown:(NSEvent *)event {
+  if (event.keyCode == ENTER_KEY) {
+    [(id<NSOutlineViewDelegate>)self.delegate outlineViewSelectionIsChanging:nil];
+    [(id<NSOutlineViewDelegate>)self.delegate outlineViewSelectionDidChange:nil];
+  } else {
+    [super keyDown:event];
+  }
 }
 
 - (NSMenu *)menuForEvent:(NSEvent *)event {
