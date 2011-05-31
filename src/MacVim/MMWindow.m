@@ -150,6 +150,7 @@
     return YES;
 }
 
+#if 0
 - (IBAction)zoom:(id)sender
 {
     // NOTE: We shortcut the usual zooming behavior and provide custom zooming
@@ -158,5 +159,6 @@
     // (Use performSelector:: to avoid compilation warning.)
     [[self delegate] performSelector:@selector(zoom:) withObject:sender];
 }
+#endif
 
 @end // MMWindow

@@ -604,13 +604,25 @@ defaultAdvanceForFont(NSFont *font)
             [self batchDrawData:data];
 
         [drawData removeAllObjects];
+        return;
     }
-#if 0
-    // The following code causes parts of the view to clear unnecessarily when
-    // the toolbar is toggled, so disable it for now.
-    else {
+
+    // If view has increased in size from what it was when we last drew to it,
+    // then we may need to clear parts of it.
+    // If we always clear then there will be redraw issues when the toolbar is
+    // toggled due the animation of the toolbar.
+    NSPoint ll = [self convertToScreen:lowerLeft];
+    NSPoint ur = [self convertToScreen:upperRight];
+    if (ur.x - ll.x <= lastUpperRight.x - lastLowerLeft.x
+            && ur.y - ll.y <= lastUpperRight.y - lastLowerLeft.y)
+        return;
+
+#if 1
+    if ([self inLiveResize]) {
         // Some parts of the view may have been exposed but we have no data to
-        // draw, so clear the exposed areas to avoid ugliness.
+        // draw, so clear the exposed areas to avoid ugliness.  Without this
+        // clearing the view will not look right after dragging the split view
+        // divider.
         NSPoint ll = [self convertToScreen:lowerLeft];
         NSPoint ur = [self convertToScreen:upperRight];
 
@@ -657,6 +669,13 @@ defaultAdvanceForFont(NSFont *font)
                 lastUpperRight.y += h;
             }
         }
+    } else {
+        // The view was probably resized as a result of the window changing
+        // size (maybe the user zoomed the window).  As a precaution we clear
+        // everything.
+        // Without this, the window flashes annoyingly after a zoom.
+        [defaultBackgroundColor set];
+        NSRectFill(rect);
     }
 #endif
 }

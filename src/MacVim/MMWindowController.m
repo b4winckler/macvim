@@ -1097,6 +1097,27 @@
     [vimController sendMessage:SetWindowPositionMsgID data:data];
 }
 
+- (NSRect)windowWillUseStandardFrame:(NSWindow *)window
+                        defaultFrame:(NSRect)newFrame
+{
+    // Decide whether too zoom horizontally or not (always zoom vertically).
+    NSEvent *event = [NSApp currentEvent];
+    BOOL cmdLeftClick = [event type] == NSLeftMouseUp &&
+                        [event modifierFlags] & NSCommandKeyMask;
+    BOOL zoomBoth = [[NSUserDefaults standardUserDefaults]
+                                                    boolForKey:MMZoomBothKey];
+    zoomBoth = (zoomBoth && !cmdLeftClick) || (!zoomBoth && cmdLeftClick);
+
+    if (!zoomBoth) {
+        // Only zoom vertically.
+        NSRect frame = [window frame];
+        newFrame.origin.x = frame.origin.x;
+        newFrame.size.width = frame.size.width;
+    }
+
+    return newFrame;
+}
+
 // This is not an NSWindow delegate method, our custom MMWindow class calls it
 // instead of the usual windowWillUseStandardFrame:defaultFrame:.
 - (IBAction)zoom:(id)sender
