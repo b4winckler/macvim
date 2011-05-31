@@ -4644,7 +4644,7 @@ ExpandFromContext(xp, pat, num_file, file, options)
 #endif
 	    {EXPAND_ENV_VARS, get_env_name, TRUE, TRUE},
 #ifdef FEAT_GUI_MACVIM
-	    {EXPAND_MACACTION, get_macaction_name, FALSE, TRUE},
+	    {EXPAND_MACACTION, get_macaction_name, FALSE, FALSE},
 #endif
 	};
 	int	i;
