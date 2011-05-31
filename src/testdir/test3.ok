@@ -787,6 +787,69 @@ main()
 	   df */
 	hello
 }
+
+/* valid namespaces with normal indent */
+namespace
+{
+	{
+		111111111111;
+	}
+}
+namespace /* test */
+{
+	11111111111111111;
+}
+namespace // test
+{
+	111111111111111111;
+}
+namespace
+{
+	111111111111111111;
+}
+namespace test
+{
+	111111111111111111;
+}
+namespace{
+	111111111111111111;
+}
+namespace test{
+	111111111111111111;
+}
+namespace {
+	111111111111111111;
+}
+namespace test {
+	111111111111111111;
+	namespace test2 {
+		22222222222222222;
+	}
+}
+
+/* invalid namespaces use block indent */
+namespace test test2 {
+	111111111111111111111;
+}
+namespace11111111111 {
+	111111111111;
+}
+namespace() {
+	1111111111111;
+}
+namespace()
+{
+	111111111111111111;
+}
+namespace test test2
+{
+	1111111111111111111;
+}
+namespace111111111
+{
+	111111111111111111;
+}
+
 /* end of AUTO */
 
 
@@ -1261,4 +1324,80 @@ void func(void)
 	 */
 	foo();
 }
+
+
+void func(void)
+{
+	for (int i = 0; i < 10; ++i)
+		if (i & 1) {
+			foo(1);
+		} else
+			foo(0);
+	baz();
+}
+
+
+/* valid namespaces with normal indent */
+namespace
+{
+{
+	111111111111;
+}
+}
+namespace /* test */
+{
+11111111111111111;
+}
+namespace // test
+{
+111111111111111111;
+}
+namespace
+{
+111111111111111111;
+}
+namespace test
+{
+111111111111111111;
+}
+namespace{
+111111111111111111;
+}
+namespace test{
+111111111111111111;
+}
+namespace {
+111111111111111111;
+}
+namespace test {
+111111111111111111;
+namespace test2 {
+22222222222222222;
+}
+}
+
+/* invalid namespaces use block indent */
+namespace test test2 {
+	111111111111111111111;
+}
+namespace11111111111 {
+	111111111111;
+}
+namespace() {
+	1111111111111;
+}
+namespace()
+{
+	111111111111111111;
+}
+namespace test test2
+{
+	1111111111111111111;
+}
+namespace111111111
+{
+	111111111111111111;
+}
+NAMESPACEEND
+
 
