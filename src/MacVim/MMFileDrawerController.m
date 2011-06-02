@@ -756,21 +756,31 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
-  if (userHasChangedSelection && [[self outlineView] numberOfSelectedRows] == 1) {
-    NSEvent *event = [NSApp currentEvent];
-    int layout = [[NSUserDefaults standardUserDefaults] integerForKey:MMOpenLayoutKey];
-    if ([event modifierFlags] & NSAlternateKeyMask) {
-      if (layout == MMLayoutTabs) {
-        // The user normally creates a new tab when opening a file,
-        // so open this file in the current one
-        layout = MMLayoutArglist;
+  FilesOutlineView *outlineView = [self outlineView];
+  if (userHasChangedSelection && [outlineView numberOfSelectedRows] == 1) {
+    FileSystemItem *item = [self itemAtRow:[outlineView selectedRow]];
+    if ([item isLeaf]) {
+      NSEvent *event = [NSApp currentEvent];
+      int layout = [[NSUserDefaults standardUserDefaults] integerForKey:MMOpenLayoutKey];
+      if ([event modifierFlags] & NSAlternateKeyMask) {
+        if (layout == MMLayoutTabs) {
+          // The user normally creates a new tab when opening a file,
+          // so open this file in the current one
+          layout = MMLayoutArglist;
+        } else {
+          // The user normally opens a file in the current tab,
+          // so open this file in a new one
+          layout = MMLayoutTabs;
+        }
+      }
+      [self openSelectedFilesInCurrentWindowWithLayout:layout];
+    } else {
+      if ([outlineView isItemExpanded:item]) {
+        [outlineView collapseItem:item];
       } else {
-        // The user normally opens a file in the current tab,
-        // so open this file in a new one
-        layout = MMLayoutTabs;
+        [outlineView expandItem:item];
       }
     }
-    [self openSelectedFilesInCurrentWindowWithLayout:layout];
   }
   userHasChangedSelection = NO;
 }
