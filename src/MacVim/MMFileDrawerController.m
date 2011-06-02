@@ -292,7 +292,13 @@ static NSMutableArray *leafNode = nil;
 // Outline view
 // ****************************************************************************
 
-#define ENTER_KEY 36
+#define ENTER_KEY_CODE 36
+#define J_KEY_CODE 38
+#define DOWN_KEY_CODE 125
+#define K_KEY_CODE 40
+#define UP_KEY_CODE 126
+
+static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 @interface FilesOutlineView : NSOutlineView {
   BOOL canBecomeFirstResponder;
@@ -341,12 +347,41 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (void)keyDown:(NSEvent *)event {
-  if (event.keyCode == ENTER_KEY) {
+  switch (event.keyCode) {
+  case ENTER_KEY_CODE:
     [(id<NSOutlineViewDelegate>)self.delegate outlineViewSelectionIsChanging:nil];
     [(id<NSOutlineViewDelegate>)self.delegate outlineViewSelectionDidChange:nil];
-  } else {
-    [super keyDown:event];
+    return;
+
+  case J_KEY_CODE:
+    DOWN_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf701];
+    event = [NSEvent keyEventWithType:event.type
+                             location:event.locationInWindow
+                        modifierFlags:event.modifierFlags
+                            timestamp:event.timestamp
+                         windowNumber:event.windowNumber
+                              context:event.context
+                           characters:DOWN_KEY_CHAR
+          charactersIgnoringModifiers:DOWN_KEY_CHAR
+                            isARepeat:event.isARepeat
+                              keyCode:DOWN_KEY_CODE];
+    break;
+
+  case K_KEY_CODE:
+    UP_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf700];
+    event = [NSEvent keyEventWithType:event.type
+                             location:event.locationInWindow
+                        modifierFlags:event.modifierFlags
+                            timestamp:event.timestamp
+                         windowNumber:event.windowNumber
+                              context:event.context
+                           characters:UP_KEY_CHAR
+          charactersIgnoringModifiers:UP_KEY_CHAR
+                            isARepeat:event.isARepeat
+                              keyCode:UP_KEY_CODE];
+    break;
   }
+  [super keyDown:event];
 }
 
 - (NSMenu *)menuForEvent:(NSEvent *)event {
