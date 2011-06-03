@@ -505,6 +505,10 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
   [self setView:filesView];
 
+  // Tell Vim to select the file in the current tab in the outline view.
+  NSString *input = @"<C-\\><C-N>:au WinEnter,BufEnter * macaction selectInDrawer:<CR>";
+  [[windowController vimController] addVimInput:input];
+
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(pwdChanged:)
                                                name:@"MMPwdChanged"
