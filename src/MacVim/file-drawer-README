@@ -4,7 +4,10 @@ What it currently does:
 
 * Track filesystem changes with FSEvents.
 * Toggle hidden file visibility.
-* Create new folders.
+* Create new files and folders.
 * Rename files and folders.
 * Double click a folder to change the project work-directory.
 * Open a file in the current or a new tab, depending on your normal settings, with alt+click.
+* Open files in split views.
+* Open files with external apps.
+* Browse with the j and k keys.
