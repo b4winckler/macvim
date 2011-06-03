@@ -24,7 +24,7 @@
   BOOL ignoreNextReload;
 }
 
-@property (nonatomic, assign) BOOL includesHiddenFiles, ignoreNextReload, useWildIgnore;
+@property (nonatomic, assign) BOOL includesHiddenFiles, ignoreNextReload;
 @property (readonly) FileSystemItem *parent;
 
 - (id)initWithPath:(NSString *)path parent:(FileSystemItem *)parentItem vim:(MMVimController *)vim;
@@ -57,7 +57,7 @@ static NSMutableArray *leafNode = nil;
   }
 }
 
-@synthesize parent, includesHiddenFiles, ignoreNextReload, useWildIgnore;
+@synthesize parent, includesHiddenFiles, ignoreNextReload;
 
 - (id)initWithPath:(NSString *)thePath parent:(FileSystemItem *)parentItem vim:(MMVimController *)vimInstance {
   if ((self = [super init])) {
@@ -67,10 +67,8 @@ static NSMutableArray *leafNode = nil;
     vim = vimInstance;
     if (parent) {
       includesHiddenFiles = parent.includesHiddenFiles;
-      useWildIgnore = parent.useWildIgnore;
     } else {
       includesHiddenFiles = NO;
-      useWildIgnore = YES;
     }
     ignoreNextReload = NO;
   }
@@ -110,7 +108,6 @@ static NSMutableArray *leafNode = nil;
     // NSLog(@"Reload: %@", path);
     if (parent) {
       includesHiddenFiles = parent.includesHiddenFiles;
-      useWildIgnore = parent.useWildIgnore;
     }
 
     NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -175,12 +172,11 @@ static NSMutableArray *leafNode = nil;
       // It's a swap file, ignore it.
       return YES;
     }
-  } else if (useWildIgnore) {
+  } else {
     NSString *eval = [NSString stringWithFormat:@"empty(expand(fnameescape('%@')))", filename];
     NSString *result = [vim evaluateVimExpression:eval];
     return [result isEqualToString:@"1"];
   }
-  return NO;
 }
 
 - (BOOL)isLeaf {
