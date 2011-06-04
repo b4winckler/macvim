@@ -436,6 +436,8 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)watchRoot;
 - (void)unwatchRoot;
 - (void)changeOccurredAtPath:(NSString *)path;
+- (void)installVimHandlers;
+- (void)deleteBufferByPath:(NSString *)path;
 @end
 
 
@@ -504,16 +506,13 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
   [self setView:filesView];
 
-  // Tell Vim to select the file in the current tab in the outline view.
-  NSString *input = @"<C-\\><C-N>:au WinEnter,BufEnter * macaction selectInDrawer:<CR>";
-  [[windowController vimController] addVimInput:input];
+  [self installVimHandlers];
 
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(pwdChanged:)
                                                name:@"MMPwdChanged"
                                              object:[windowController vimController]];
 }
-
 
 - (void)setRoot:(NSString *)root
 {
@@ -651,6 +650,24 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   return nil;
 }
 
+// Vim related methods
+// ===================
+
+- (void)installVimHandlers {
+  NSString *input;
+  MMVimController *vim = [windowController vimController];
+  // Tell Vim to select the file in the current tab in the outline view.
+  input = @"<C-\\><C-N>:au WinEnter,BufEnter * macaction selectInDrawer:<CR>";
+  [vim addVimInput:input];
+  // Add function that takes a path and deletes the buffer that has that path opened.
+  input = @"<C-\\><C-N>:exe \"function MMDeleteBufferByPath(path)\\nexe 'bdelete! ' . bufname(a:path)\\nendfunction\"<CR>";
+  [vim addVimInput:input];
+}
+
+- (void)deleteBufferByPath:(NSString *)path {
+  NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>:call MMDeleteBufferByPath('%@')<CR>", path];
+  [[windowController vimController] addVimInput:input];
+}
 
 // Data Source methods
 // ===================
@@ -815,7 +832,7 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
                                                         error:&error];
   if (moved) {
     [dirItem reloadRecursive:NO];
-    if(dirItem == rootItem)
+    if (dirItem == rootItem)
       [[self outlineView] reloadData];
     else
       [[self outlineView] reloadItem:dirItem reloadChildren:YES];
@@ -823,18 +840,11 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
     NSInteger row = [[self outlineView] rowForItem:[dirItem itemWithName:name]];
     NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
     [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
-    if(isLeaf) {
-      NSString *input = [NSString string];
+    if (isLeaf) {
+      [self deleteBufferByPath:fullPath];
       newPath = [newPath stringByEscapingSpecialFilenameCharacters];
-      MMVimController *vim = [windowController vimController];
-      NSString *bufName = [vim evaluateVimExpression:[NSString stringWithFormat:@"bufname('%@')", fullPath]];
-      if([bufName length] != 0) {
-        input = [NSString stringWithFormat:@"<C-\\><C-N>"
-                                         ":bdelete! %@<CR>", bufName];
-      }
-      input = [input stringByAppendingString:[NSString stringWithFormat:@"<C-\\><C-N>"
-                                           ":edit %@<CR>", newPath]];
-      [vim addVimInput:input];
+      NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>:edit %@<CR>", newPath];
+      [[windowController vimController] addVimInput:input];
     }
     else {
       // TODO: should reopen all open buffers with files inside of this directory
@@ -962,14 +972,8 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   else
     [[self outlineView] reloadItem:dirItem reloadChildren:YES];
 
-  if(isLeaf) {
-    MMVimController *vim = [windowController vimController];
-    NSString *bufName = [vim evaluateVimExpression:[NSString stringWithFormat:@"bufname('%@')", fullPath]];
-    if([bufName length] != 0) {
-      NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>"
-                                                 ":bdelete! %@<CR>", bufName];
-      [vim addVimInput:input];
-    }
+  if (isLeaf) {
+    [self deleteBufferByPath:fullPath];
   }
 }
 
