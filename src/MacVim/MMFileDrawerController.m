@@ -544,16 +544,15 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)open
 {
-  if([drawer state] == NSDrawerOpenState || [drawer state] == NSDrawerOpeningState)
-    return;
-  if (!rootItem) {
-    NSString *root = [[windowController vimController]
-                                                  objectForVimStateKey:@"pwd"];
-    [self setRoot:(root ? root : @"~/")];
+  if ([drawer state] != NSDrawerOpenState && [drawer state] != NSDrawerOpeningState) {
+    if (!rootItem) {
+      NSString *root = [[windowController vimController] objectForVimStateKey:@"pwd"];
+      [self setRoot:(root ? root : @"~/")];
+    }
+    [drawer setParentWindow:[windowController window]];
+    [drawer open];
   }
-
-  [drawer setParentWindow:[windowController window]];
-  [drawer open];
+  [self.outlineView makeFirstResponder];
 }
 
 - (void)close

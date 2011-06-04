@@ -110,6 +110,7 @@ function MMDeleteBufferByPath(path)
   exe 'bdelete! ' . bufname(a:path)
 endfunction
 
+
 " Restore the previous value of 'cpoptions'.
 let &cpo = s:cpo_save
 unlet s:cpo_save
