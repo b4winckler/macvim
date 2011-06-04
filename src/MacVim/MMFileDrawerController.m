@@ -290,12 +290,16 @@ static NSMutableArray *leafNode = nil;
 // ****************************************************************************
 
 #define ENTER_KEY_CODE 36
+#define H_KEY_CODE 4
+#define LEFT_KEY_CODE 123
+#define L_KEY_CODE 37
+#define RIGHT_KEY_CODE 124
 #define J_KEY_CODE 38
 #define DOWN_KEY_CODE 125
 #define K_KEY_CODE 40
 #define UP_KEY_CODE 126
 
-static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
+static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 @interface FilesOutlineView : NSOutlineView {
   BOOL canBecomeFirstResponder;
@@ -305,6 +309,7 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)cancelOperation:(id)sender;
 - (void)expandParentsOfItem:(id)item;
 - (void)selectItem:(id)item;
+- (NSEvent *)keyEventWithEvent:(NSEvent *)event character:(NSString *)character code:(unsigned short)code;
 @end
 
 @implementation FilesOutlineView
@@ -343,6 +348,19 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [[self window] selectNextKeyView:nil];
 }
 
+- (NSEvent *)keyEventWithEvent:(NSEvent *)event character:(NSString *)character code:(unsigned short)code {
+  return [NSEvent keyEventWithType:event.type
+                          location:event.locationInWindow
+                     modifierFlags:event.modifierFlags
+                         timestamp:event.timestamp
+                      windowNumber:event.windowNumber
+                           context:event.context
+                        characters:character
+       charactersIgnoringModifiers:character
+                         isARepeat:event.isARepeat
+                           keyCode:code];
+}
+
 - (void)keyDown:(NSEvent *)event {
   switch (event.keyCode) {
   case ENTER_KEY_CODE:
@@ -352,32 +370,21 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
     [self.delegate performSelector:@selector(outlineViewSelectionDidChange:) withObject:self];
     return;
 
+  case H_KEY_CODE:
+    LEFT_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf702];
+    event = [self keyEventWithEvent:event character:LEFT_KEY_CHAR code:LEFT_KEY_CODE];
+    break;
+  case L_KEY_CODE:
+    RIGHT_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf703];
+    event = [self keyEventWithEvent:event character:RIGHT_KEY_CHAR code:RIGHT_KEY_CODE];
+    break;
   case J_KEY_CODE:
     DOWN_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf701];
-    event = [NSEvent keyEventWithType:event.type
-                             location:event.locationInWindow
-                        modifierFlags:event.modifierFlags
-                            timestamp:event.timestamp
-                         windowNumber:event.windowNumber
-                              context:event.context
-                           characters:DOWN_KEY_CHAR
-          charactersIgnoringModifiers:DOWN_KEY_CHAR
-                            isARepeat:event.isARepeat
-                              keyCode:DOWN_KEY_CODE];
+    event = [self keyEventWithEvent:event character:DOWN_KEY_CHAR code:DOWN_KEY_CODE];
     break;
-
   case K_KEY_CODE:
     UP_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf700];
-    event = [NSEvent keyEventWithType:event.type
-                             location:event.locationInWindow
-                        modifierFlags:event.modifierFlags
-                            timestamp:event.timestamp
-                         windowNumber:event.windowNumber
-                              context:event.context
-                           characters:UP_KEY_CHAR
-          charactersIgnoringModifiers:UP_KEY_CHAR
-                            isARepeat:event.isARepeat
-                              keyCode:UP_KEY_CODE];
+    event = [self keyEventWithEvent:event character:UP_KEY_CHAR code:UP_KEY_CODE];
     break;
   }
   [super keyDown:event];
