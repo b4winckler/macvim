@@ -1,5 +1,5 @@
 * Move focus to file drawer by using cmd+shift+e (and open if it's closed) and close drawer with alt+cmd+e?
-* Eliminate use of evaluateVimExpression: and replace with addVimInput:, create a function which takes the path and deletes in one go.
+* Eliminate use of evaluateVimExpression: and replace with addVimInput:
 * Deleting a file in a folder with spaces in it doesn't close the buffer, because it can't find it by name.
 * Creating a new file doesn't honor the preferences regarding opening a new tab or not.
 * Should we check if the option key is pressed down while opening the contextual menu and creating a new file which would make it open a new tab/current tab?
