@@ -177,6 +177,7 @@ static NSMutableArray *leafNode = nil;
     NSString *result = [vim evaluateVimExpression:eval];
     return [result isEqualToString:@"1"];
   }
+  return NO;
 }
 
 - (BOOL)isLeaf {
@@ -345,8 +346,10 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)keyDown:(NSEvent *)event {
   switch (event.keyCode) {
   case ENTER_KEY_CODE:
-    [(id<NSOutlineViewDelegate>)self.delegate outlineViewSelectionIsChanging:nil];
-    [(id<NSOutlineViewDelegate>)self.delegate outlineViewSelectionDidChange:nil];
+    // These methods aren't really included in the NSOutlineViewDelegate protocol (the docs say
+    // it's because of some error), so use performSelector to get rid of warnings.
+    [self.delegate performSelector:@selector(outlineViewSelectionIsChanging:) withObject:self];
+    [self.delegate performSelector:@selector(outlineViewSelectionDidChange:) withObject:self];
     return;
 
   case J_KEY_CODE:
@@ -794,7 +797,7 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
                          item:(id)item
 {
   // Called when an item was double-clicked, in which case we do make the browser the first responder.
-  [outlineView makeFirstResponder];
+  [(FilesOutlineView *)outlineView makeFirstResponder];
   return NO;
 }
 
