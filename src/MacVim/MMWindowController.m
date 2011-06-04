@@ -70,23 +70,6 @@
 #import <PSMTabBarControl/PSMTabBarControl.h>
 
 
-@interface MMSplitView : NSSplitView
-@end
-
-@implementation MMSplitView
-- (CGFloat)dividerThickness
-{
-    return 1.0;
-}
-
-- (void)drawDividerInRect:(NSRect)rect
-{
-    [[NSColor blackColor] set];
-    NSRectFill(rect);
-}
-@end
-
-
 @interface MMWindowController (Private)
 - (NSSize)contentSize;
 - (void)adjustWindowFrame;
@@ -227,10 +210,9 @@
     NSImageView *view = [[NSImageView alloc] initWithFrame:tempFrame];
     [view setImage:[NSImage imageNamed:@"Attention"]];
     [view setImageFrameStyle:NSImageFrameGroove];
-    sideView = view;
 #endif
     [splitView addSubview:vimView];
-    [splitView addSubview:sideView];
+    [self setSideView:view leftEdge:NO];
     [splitView adjustSubviews];
     [contentView addSubview:splitView];
 
@@ -925,6 +907,18 @@
         [tabView selectTabViewItem:tvi];
         vimTaskSelectedTab = NO;
     }
+}
+
+- (void)setSideView:(NSView *)view leftEdge:(BOOL)left
+{
+    NSArray *subviews = left
+                      ? [NSArray arrayWithObjects:view, vimView, nil]
+                      : [NSArray arrayWithObjects:vimView, view, nil];
+
+    [sideView autorelease];
+    sideView = [view retain];
+
+    [splitView setSubviews:subviews];
 }
 
 
