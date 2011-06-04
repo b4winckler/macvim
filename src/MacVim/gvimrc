@@ -107,7 +107,7 @@ endif " exists("macvim_hig_shift_movement")
 au WinEnter,BufEnter * macaction selectInDrawer:
 
 function MMDeleteBufferByPath(path)
-  exe 'bdelete! ' . bufname(a:path)
+  exe 'bwipeout! ' . bufname(a:path)
 endfunction
 
 
