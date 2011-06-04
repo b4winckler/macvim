@@ -484,8 +484,6 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [column setDataCell:cell];
   [filesView addTableColumn:column];
   [filesView setOutlineTableColumn:column];
-  // Typing Tab (or Esc) in browser view sets keyboard focus to text view
-  [filesView setNextKeyView:[[windowController vimView] textView]];
 
   pathControl = [[NSPathControl alloc] initWithFrame:NSMakeRect(0, 0, 0, 20)];
   [pathControl setRefusesFirstResponder:YES];
@@ -543,8 +541,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [self watchRoot];
 }
 
-- (void)open
-{
+- (void)open {
   if ([drawer state] != NSDrawerOpenState && [drawer state] != NSDrawerOpeningState) {
     if (!rootItem) {
       NSString *root = [[windowController vimController] objectForVimStateKey:@"pwd"];
@@ -552,6 +549,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
     }
     [drawer setParentWindow:[windowController window]];
     [drawer open];
+    // Typing Tab (or Esc) in browser view sets keyboard focus to text view
+    [self.outlineView setNextKeyView:[[windowController vimView] textView]];
   }
   [self.outlineView makeFirstResponder];
   if ([self.outlineView numberOfSelectedRows] == 0) {
