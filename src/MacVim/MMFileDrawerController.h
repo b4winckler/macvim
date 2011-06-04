@@ -18,6 +18,7 @@
 - (void)close;
 - (void)toggle;
 - (void)selectInDrawer;
+- (void)selectInDrawerByExpandingItems;
 
 - (NSMenu *)menuForRow:(NSInteger)row;
 

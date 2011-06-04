@@ -444,6 +444,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)unwatchRoot;
 - (void)changeOccurredAtPath:(NSString *)path;
 - (void)deleteBufferByPath:(NSString *)path;
+- (void)selectInDrawerByExpandingItems:(BOOL)expand;
 @end
 
 
@@ -553,6 +554,9 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
     [drawer open];
   }
   [self.outlineView makeFirstResponder];
+  if ([self.outlineView numberOfSelectedRows] == 0) {
+    [self selectInDrawer];
+  }
 }
 
 - (void)close
@@ -577,13 +581,26 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)selectInDrawer {
+  [self selectInDrawerByExpandingItems:NO];
+}
+
+- (void)selectInDrawerByExpandingItems {
+  [self selectInDrawerByExpandingItems:YES];
+}
+
+- (void)selectInDrawerByExpandingItems:(BOOL)expand {
   if([drawer state] != NSDrawerOpeningState && [drawer state] != NSDrawerOpenState)
     return;
   NSString *fn = [[windowController vimController]
                                                   evaluateVimExpression:@"expand('%:p')"];
   if([fn length] > 0) {
     FileSystemItem *item = [rootItem itemAtPath:fn];
-    [[self outlineView] selectItem:item];
+    // always select file if `expand' is `YES', otherwise only if its parent is expanded
+    if (expand || item.parent == rootItem || [self.outlineView isItemExpanded:item.parent]) {
+      [self.outlineView selectItem:item];
+    } else {
+      [self.outlineView selectRowIndexes:nil byExtendingSelection:NO];
+    }
   }
 }
 
@@ -750,6 +767,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
   // Misc
   [menu addItem:[NSMenuItem separatorItem]];
+  [menu addItemWithTitle:@"Reveal Current File in File Browser" action:@selector(selectInDrawerByExpandingItems) keyEquivalent:@""];
   item = [menu addItemWithTitle:@"Show hidden Files" action:@selector(toggleShowHiddenFiles:) keyEquivalent:@""];
   [item setState:rootItem.includesHiddenFiles ? NSOnState : NSOffState];
 
