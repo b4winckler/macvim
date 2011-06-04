@@ -101,6 +101,15 @@ if exists("macvim_hig_shift_movement")
 endif " exists("macvim_hig_shift_movement")
 
 
+" File drawer related.
+
+" Select current file (buffer) in file drawer
+au WinEnter,BufEnter * macaction selectInDrawer:
+
+function MMDeleteBufferByPath(path)
+  exe 'bdelete! ' . bufname(a:path)
+endfunction
+
 " Restore the previous value of 'cpoptions'.
 let &cpo = s:cpo_save
 unlet s:cpo_save

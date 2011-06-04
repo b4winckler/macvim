@@ -436,7 +436,6 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)watchRoot;
 - (void)unwatchRoot;
 - (void)changeOccurredAtPath:(NSString *)path;
-- (void)installVimHandlers;
 - (void)deleteBufferByPath:(NSString *)path;
 @end
 
@@ -505,8 +504,6 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [drawer setContentView:drawerView];
 
   [self setView:filesView];
-
-  [self installVimHandlers];
 
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(pwdChanged:)
@@ -652,17 +649,6 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 // Vim related methods
 // ===================
-
-- (void)installVimHandlers {
-  NSString *input;
-  MMVimController *vim = [windowController vimController];
-  // Tell Vim to select the file in the current tab in the outline view.
-  input = @"<C-\\><C-N>:au WinEnter,BufEnter * macaction selectInDrawer:<CR>";
-  [vim addVimInput:input];
-  // Add function that takes a path and deletes the buffer that has that path opened.
-  input = @"<C-\\><C-N>:exe \"function MMDeleteBufferByPath(path)\\nexe 'bdelete! ' . bufname(a:path)\\nendfunction\"<CR>";
-  [vim addVimInput:input];
-}
 
 - (void)deleteBufferByPath:(NSString *)path {
   NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>:call MMDeleteBufferByPath('%@')<CR>", path];
