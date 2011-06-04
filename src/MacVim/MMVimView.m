@@ -400,6 +400,10 @@ enum {
     [textView constrainRows:&constrained[0] columns:&constrained[1]
                      toSize:textViewSize];
 
+    // Paranoia check: rows&cols should never get too small.
+    if (constrained[0] < MMMinRows)    constrained[0] = MMMinRows;
+    if (constrained[1] < MMMinColumns) constrained[1] = MMMinColumns;
+
     if (constrained[0] != rows || constrained[1] != cols) {
         NSData *data = [NSData dataWithBytes:constrained length:2*sizeof(int)];
         int msgid = [self inLiveResize] ? LiveResizeMsgID

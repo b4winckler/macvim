@@ -1436,34 +1436,48 @@
 
     NSSize s0 = [vimView frame].size;
     NSSize s1 = [vimView desiredSize];
-    //CGFloat aw = s0.width - floor(s0.width / cs.width) * cs.width;
-    //CGFloat ah = s0.height - floor(s0.height / cs.height) * cs.height;
     CGFloat dw = s1.width - s0.width;
     CGFloat dh = s1.height - s0.height;
 
-    //CGFloat dw = trunc((s1.width - s0.width)/cs.width) * cs.width;
-    //CGFloat dh = trunc((s1.height - s0.height)/cs.height) * cs.height;
-    //ASLogTmp(@"dw=%f dh=%f", dw, dh);
-
-    //if (-dw >= cs.width || dw > 0 || -dh >= cs.height || dh > 0) {
     if (abs(dw) > 0 || abs(dh) > 0) {
-        //ASLogTmp(@"size=%@  desired=%@",
-        //NSStringFromSize(s0),
-        //NSStringFromSize(s1));
         NSRect frame = [decoratedWindow frame];
         frame.size.width += dw;
         frame.size.height += dh;
         frame.origin.y -= dh;
 
+        // Make sure window still fits on the screen before resizing it.  If
+        // there are multiple screens, this will cause the window to be
+        // constrained to fit on one screen only.  Constraining the window so
+        // that it fits on multiple screens is tricky, which is why we
+        // constrain it to one screen only.
+        // NOTE: It is not possible to override constrainFrameRect:toScreen:
+        // and rely on it to automatically constrain the window since it is
+        // called at moments we cannot control (e.g. when window moves between
+        // screens etc.).
+        NSScreen *screen = [decoratedWindow screen];
+        NSRect origFrame = frame;
+        if (screen) {
+            NSRect container = [screen visibleFrame];
+            if (frame.size.height > container.size.height)
+                frame.size.height = container.size.height;
+            if (frame.size.width > container.size.width)
+                frame.size.width = container.size.width;
+            if (frame.origin.y < container.origin.y)
+                frame.origin.y = container.origin.y;
+            CGFloat delta = NSMaxX(frame) - NSMaxX(container);
+            if (delta > 0)
+                frame.origin.x -= delta;
+        }
+
         // NOTE: This should be the only place where the window is resized!
         [decoratedWindow setFrame:frame display:YES];
 
-        // If it was not possible to use the frame we requested (probably
-        // because it was too large to fit on the screen) then tell the Vim
-        // view to adjust its text view dimensions to fit the current size of
-        // the window.  If we fail to do this, then repeated ":set lines=900"
-        // calls could cause the text view to be too large to fit the window.
-        if (!NSEqualRects(frame, [decoratedWindow frame]))
+        // If we had to adjust the window frame to fit the screen then we need
+        // to tell the Vim view to adjust its text view dimensions to fit the
+        // current size of the window.  If we fail to do this, then repeated
+        // ":set lines=900" calls could cause the text view to be too large to
+        // fit the window.
+        if (!NSEqualRects(frame, origFrame))
             [vimView adjustTextViewDimensions];
     }
 }
