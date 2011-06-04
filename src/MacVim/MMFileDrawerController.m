@@ -850,8 +850,6 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 // =======
 
 - (void)renameFile:(NSMenuItem *)sender {
-  FileSystemItem *item = [self itemAtRow:[sender tag]];
-  NSLog(@"Rename: %@", [item fullPath]);
   [(FilesOutlineView *)[self view] editColumn:0 row:[sender tag] withEvent:nil select:YES];
 }
 
@@ -859,7 +857,7 @@ static NSString *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   FileSystemItem *item = [self itemAtRow:[sender tag]];
   if(!item) item = rootItem;
   if([item isLeaf]) item = [item parent];
-  NSString *path = [[item fullPath] stringByAppendingPathComponent:@"new file"];
+  NSString *path = [[item fullPath] stringByAppendingPathComponent:@"untitled file"];
 
   int i = 2;
   NSString *result = path;
