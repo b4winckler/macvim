@@ -161,4 +161,14 @@
 }
 #endif
 
+- (NSRect)constrainFrameRect:(NSRect)frameRect toScreen:(NSScreen *)screen
+{
+    // NOTE: super's implementation restricts the frame to the height of
+    // -[NSScreen visibleFrame] but it is possible to drag the window to be
+    // larger than this.  This discrepancy is particularly annoying when the
+    // "dragged size" fits one more line than the "visibleFrame size".  For
+    // this reason we do not constrain the window size.
+    return frameRect;
+}
+
 @end // MMWindow

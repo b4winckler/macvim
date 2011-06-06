@@ -147,6 +147,11 @@ enum {
 @end
 
 
+@interface NSScreen (MMExtras)
+- (NSRect)resizableFrame;
+@end
+
+
 
 // Create a view with a "show hidden files" button to be used as accessory for
 // open/save panels.  This function assumes ownership of the view so do not

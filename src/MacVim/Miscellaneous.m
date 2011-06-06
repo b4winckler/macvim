@@ -320,6 +320,30 @@ NSString *MMDrawerPreferredEdgeKey      = @"MMDrawerPreferredEdge";
 
 
 
+@implementation NSScreen (MMExtras)
+
+// Return the frame (in screen coordinates) where it is possible to drag to
+// resize a window.
+- (NSRect)resizableFrame
+{
+    NSRect f = [self frame];
+    NSRect v = [self visibleFrame];
+
+    // We assume that "visibleFrame" may be smaller than "frame" to compensate
+    // for the Dock or menu bar.  The Dock is assumed to be positioned
+    // left/right/bottom of the screen and the menu at the top.
+    v.size.width = f.size.width;
+    v.size.height += v.origin.y - f.origin.y;
+    v.origin = f.origin;
+
+    return v;
+}
+
+@end
+
+
+
+
     NSView *
 showHiddenFilesView()
 {

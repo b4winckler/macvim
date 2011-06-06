@@ -414,6 +414,15 @@
         shouldPlaceVimView = YES;
         shouldResizeWindow = !reply;
     }
+
+    if (!fullscreenEnabled && windowAutosaveKey
+            && rows > MMMinRows && cols > MMMinColumns) {
+        // Autosave rows and columns
+        NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+        [ud setInteger:rows forKey:MMAutosaveRowsKey];
+        [ud setInteger:cols forKey:MMAutosaveColumnsKey];
+        [ud synchronize];
+    }
 }
 
 - (void)zoomWithRows:(int)rows columns:(int)cols state:(int)state
@@ -737,6 +746,7 @@
         // with inconsistent states.
         //[self resizeWindowToFitContentSize:[vimView desiredSize]
         //                      keepOnScreen:NO];
+        [self adjustWindowFrame];
     }
 
     // If we saved the original title while resizing, restore it.
@@ -1444,14 +1454,14 @@
         // constrained to fit on one screen only.  Constraining the window so
         // that it fits on multiple screens is tricky, which is why we
         // constrain it to one screen only.
-        // NOTE: It is not possible to override constrainFrameRect:toScreen:
-        // and rely on it to automatically constrain the window since it is
-        // called at moments we cannot control (e.g. when window moves between
-        // screens etc.).
         NSScreen *screen = [decoratedWindow screen];
         NSRect origFrame = frame;
         if (screen) {
-            NSRect container = [screen visibleFrame];
+            // HACK: Use resizableFrame (a custom method) instead of
+            // visibleFrame, otherwise it would not be possible to
+            // programmatically resize the window to be as large as when
+            // dragged to resize.
+            NSRect container = [screen resizableFrame];
             if (frame.size.height > container.size.height)
                 frame.size.height = container.size.height;
             if (frame.size.width > container.size.width)
