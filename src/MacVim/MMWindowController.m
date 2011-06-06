@@ -204,15 +204,15 @@
 
     //[tabBarControl setPartnerView:splitView];
     
-#if 1
+#if 0
     NSRect tempFrame = frame;
     tempFrame.size.width = 150;
     NSImageView *view = [[NSImageView alloc] initWithFrame:tempFrame];
     [view setImage:[NSImage imageNamed:@"Attention"]];
     [view setImageFrameStyle:NSImageFrameGroove];
+    [self setSideView:view leftEdge:NO];
 #endif
     [splitView addSubview:vimView];
-    [self setSideView:view leftEdge:NO];
     [splitView adjustSubviews];
     [contentView addSubview:splitView];
 
@@ -361,11 +361,11 @@
     // made as to which screen the window should be on.  This means that all
     // code that is executed before this point must not depend on the screen!
 
+    [self adjustWindowFrame];
     [[MMAppController sharedInstance] windowControllerWillOpen:self];
     [self updateResizeConstraints];
     //[self resizeWindowToFitContentSize:[vimView desiredSize]
     //                      keepOnScreen:YES];
-    [self adjustWindowFrame];
     [[self window] makeKeyAndOrderFront:self];
 
     // Flag that the window is now placed on screen.  From now on it is OK for
