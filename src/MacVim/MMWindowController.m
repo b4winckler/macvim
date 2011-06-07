@@ -413,9 +413,11 @@
         shouldResizeWindow = !reply;
     }
 
-    if (!fullscreenEnabled && windowAutosaveKey
+    // Autosave rows and columns.
+    if (windowAutosaveKey && !fullscreenEnabled && [tabBarControl isHidden]
             && rows > MMMinRows && cols > MMMinColumns) {
-        // Autosave rows and columns
+        // NOTE: Don't save if tabline is visible.  Otherwise new windows will
+        // look like they are missing a line or two (depending on font size).
         NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
         [ud setInteger:rows forKey:MMAutosaveRowsKey];
         [ud setInteger:cols forKey:MMAutosaveColumnsKey];
