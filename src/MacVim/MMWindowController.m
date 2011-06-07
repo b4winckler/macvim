@@ -68,6 +68,7 @@
 #import "MMFileDrawerController.h"
 #import "Miscellaneous.h"
 #import <PSMTabBarControl/PSMTabBarControl.h>
+#import <Carbon/Carbon.h>
 
 
 @interface MMWindowController (Private)
@@ -84,6 +85,9 @@
 - (void)doFindNext:(BOOL)next;
 - (void)updateToolbar;
 - (NSUInteger)representedIndexOfTabViewItem:(NSTabViewItem *)tvi;
+- (void)enableFullscreen;
+- (void)disableFullscreen;
+- (void)applicationDidChangeScreenParameters:(NSNotification *)notification;
 @end
 
 
@@ -247,6 +251,12 @@
 
     fileDrawerController = [[MMFileDrawerController alloc] initWithWindowController:self];
 
+    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+    [nc addObserver:self
+           selector:@selector(applicationDidChangeScreenParameters:)
+               name:NSApplicationDidChangeScreenParametersNotification
+             object:NSApp];
+
     return self;
 }
 
@@ -316,10 +326,13 @@
     [tabBarControl setDelegate:nil];
     [tabBarControl setTabView:nil];
 
+    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+    [nc removeObserver:self];
+
     // NOTE! There is another bug in PSMTabBarControl where the control is not
     // removed as an observer, so remove it here (failing to remove an observer
     // may lead to very strange bugs).
-    [[NSNotificationCenter defaultCenter] removeObserver:tabBarControl];
+    [nc removeObserver:tabBarControl];
 
     //[tabBarControl removeFromSuperviewWithoutNeedingDisplay];
     //[vimView removeFromSuperviewWithoutNeedingDisplay];
@@ -373,8 +386,7 @@
     if (fullscreenWindow) {
         // Delayed entering of full screen happens here (a ":set fu" in a
         // GUIEnter auto command could cause this).
-        [fullscreenWindow enterFullscreen];
-        fullscreenEnabled = YES;
+        [self enableFullscreen];
     }
 
     return YES;
@@ -410,7 +422,7 @@
 
     if (setupDone && !live) {
         shouldPlaceVimView = YES;
-        shouldResizeWindow = !reply;
+        shouldResizeWindow = !reply && !fullscreenEnabled;
     }
 
     // Autosave rows and columns.
@@ -604,9 +616,15 @@
     }
 #else
     if (windowPresented && shouldPlaceVimView) {
-        if (shouldResizeWindow) {
-            [self adjustWindowFrame];
-            shouldResizeWindow = NO;
+        if (fullscreenEnabled) {
+            // This has the effect of disallowing dimension changes while in
+            // full-screen mode.
+            [vimView adjustTextViewDimensions];
+        } else {
+            if (shouldResizeWindow) {
+                [self adjustWindowFrame];
+                shouldResizeWindow = NO;
+            }
         }
 
         [vimView placeViews];
@@ -645,9 +663,17 @@
     shouldPlaceVimView = YES;
 
 #if 1
-    NSSize size = [[decoratedWindow contentView] frame].size;
-    if (on)        size.height -= 22;
-    if (separator) size.height -= 1;
+    NSSize size;
+    if (fullscreenEnabled) {
+        size = [[fullscreenWindow contentView] frame].size;
+    } else {
+        size = [[decoratedWindow contentView] frame].size;
+        if (separator)
+            size.height -= 1;
+    }
+
+    if (on)
+        size.height -= 22;
 
     if (!NSEqualSizes(size, [splitView frame].size)) {
         [splitView setFrameSize:size];
@@ -773,24 +799,24 @@
 
     // NOTE: Do not enter full screen until the window has been presented since
     // we don't actually know which screen to use before then.
-    if (windowPresented) {
-        [fullscreenWindow enterFullscreen];
-        fullscreenEnabled = YES;
-
-        // The resize handle disappears so the vim view needs to update the
-        // scrollbars.
-        shouldPlaceVimView = YES;
-    } else {
+    if (!windowPresented) {
         ASLogDebug(@"Delay enter full screen");
+        return;
     }
+
+    [self enableFullscreen];
+
+    // The resize handle disappears so the vim view needs to update the
+    // scrollbars.
+    shouldPlaceVimView = YES;
 }
 
 - (void)leaveFullscreen
 {
     if (!fullscreenEnabled) return;
 
-    fullscreenEnabled = NO;
-    [fullscreenWindow leaveFullscreen];    
+    [self disableFullscreen];
+
     [fullscreenWindow release];
     fullscreenWindow = nil;
 
@@ -1047,6 +1073,23 @@
 
 - (void)windowDidBecomeMain:(NSNotification *)notification
 {
+    if (fullscreenEnabled) {
+        // Hide menu and dock, both appear on demand.
+        //
+        // Another way to deal with several fullscreen windows would be to
+        // hide/reveal the dock only when the first fullscreen window is
+        // created and show it again after the last one has been closed, but
+        // toggling on each focus gain/loss works better with Spaces. The
+        // downside is that the menu bar flashes shortly when switching between
+        // two fullscreen windows.
+
+        // XXX: If you have a fullscreen window on a secondary monitor and
+        // unplug the monitor, this will probably not work right.
+
+        if ([fullscreenWindow isOnPrimaryScreen])
+            SetSystemUIMode(kUIModeAllSuppressed, 0); //requires 10.3
+    }
+
     [[MMAppController sharedInstance] setMainMenu:[vimController mainMenu]];
     [vimController sendMessage:GotFocusMsgID data:nil];
 
@@ -1058,6 +1101,12 @@
 
 - (void)windowDidResignMain:(NSNotification *)notification
 {
+    if (fullscreenEnabled) {
+        // Order menu and dock back in
+        if ([fullscreenWindow isOnPrimaryScreen])
+            SetSystemUIMode(kUIModeNormal, 0);
+    }
+
     [vimController sendMessage:LostFocusMsgID data:nil];
 }
 
@@ -1075,30 +1124,38 @@
         return;
 
     if (fullscreenEnabled) {
-        // NOTE: The full-screen is not supposed to be able to be moved.  If we
-        // do get here while in full-screen something unexpected happened (e.g.
-        // the full-screen window was on an external display that got
-        // unplugged).
-        return;
+        // Window may move as a result of being dragged between Spaces.
+        ASLogDebug(@"Full-screen window moved, "
+                "ensuring it covers the screen...");
+
+        // The full-screen window may have moved to/off the screen with the
+        // menu bar, so we hide/show the menu bar as a precaution.
+        if ([fullscreenWindow isOnPrimaryScreen])
+            SetSystemUIMode(kUIModeAllSuppressed, 0);
+        else
+            SetSystemUIMode(kUIModeNormal, 0);
+
+        [fullscreenWindow setFrame:[[fullscreenWindow screen] frame]
+                           display:NO];
+    } else {
+        NSRect frame = [decoratedWindow frame];
+        NSPoint topLeft = { frame.origin.x, NSMaxY(frame) };
+        if (windowAutosaveKey) {
+            NSString *topLeftString = NSStringFromPoint(topLeft);
+
+            [[NSUserDefaults standardUserDefaults]
+                setObject:topLeftString forKey:windowAutosaveKey];
+        }
+
+        // NOTE: This method is called when the user drags the window, but not
+        // when the top left point changes programmatically.
+        // NOTE 2: Vim counts Y-coordinates from the top of the screen.
+        int pos[2] = {
+                (int)topLeft.x,
+                (int)(NSMaxY([[decoratedWindow screen] frame]) - topLeft.y) };
+        NSData *data = [NSData dataWithBytes:pos length:2*sizeof(int)];
+        [vimController sendMessage:SetWindowPositionMsgID data:data];
     }
-
-    NSRect frame = [decoratedWindow frame];
-    NSPoint topLeft = { frame.origin.x, NSMaxY(frame) };
-    if (windowAutosaveKey) {
-        NSString *topLeftString = NSStringFromPoint(topLeft);
-
-        [[NSUserDefaults standardUserDefaults]
-            setObject:topLeftString forKey:windowAutosaveKey];
-    }
-
-    // NOTE: This method is called when the user drags the window, but not when
-    // the top left point changes programmatically.
-    // NOTE 2: Vim counts Y-coordinates from the top of the screen.
-    int pos[2] = {
-            (int)topLeft.x,
-            (int)(NSMaxY([[decoratedWindow screen] frame]) - topLeft.y) };
-    NSData *data = [NSData dataWithBytes:pos length:2*sizeof(int)];
-    [vimController sendMessage:SetWindowPositionMsgID data:data];
 }
 
 - (NSRect)windowWillUseStandardFrame:(NSWindow *)window
@@ -1728,6 +1785,198 @@
 {
     NSArray *tabViewItems = [tabBarControl representedTabViewItems];
     return [tabViewItems indexOfObject:tvi];
+}
+
+- (void)enableFullscreen
+{
+    ASLogDebug(@"Enable full-screen now");
+
+    // Hide Dock and menu bar now to avoid the hide animation from playing
+    // after the fade to black (see also windowDidBecomeMain:).
+    if ([fullscreenWindow isOnPrimaryScreen])
+        SetSystemUIMode(kUIModeAllSuppressed, 0);
+
+    // Fade to black
+    Boolean didBlend = NO;
+    CGDisplayFadeReservationToken token;
+    if (CGAcquireDisplayFadeReservation(.5, &token) == kCGErrorSuccess) {
+        CGDisplayFade(token, .25, kCGDisplayBlendNormal,
+            kCGDisplayBlendSolidColor, .0, .0, .0, true);
+        didBlend = YES;
+    }
+
+    // NOTE: The window may have moved to another screen in between init.. and
+    // this call so set the frame again just in case.
+    [fullscreenWindow setFrame:[[decoratedWindow screen] frame] display:NO];
+
+    [decoratedWindow setDelegate:nil];
+    [self setWindow:fullscreenWindow];
+
+    // Move views from decorated to full-screen window
+    [tabBarControl removeFromSuperviewWithoutNeedingDisplay];
+    [splitView removeFromSuperviewWithoutNeedingDisplay];
+    NSView *view = [fullscreenWindow contentView];
+    [view addSubview:tabBarControl];
+    [view addSubview:splitView];
+
+    // Adjust view sizes
+    NSRect frame = [view frame];
+    NSRect tabFrame = { { 0, frame.size.height - 22 },
+                        { frame.size.width, 22 } };
+    [tabBarControl setFrame:tabFrame];
+
+    if (![tabBarControl isHidden])
+        frame.size.height -= 22;
+    [splitView setFrame:frame];
+
+    [fullscreenWindow setInitialFirstResponder:[vimView textView]];
+
+    // NOTE: Calling setTitle:nil causes an exception to be raised (and it is
+    // possible that the decorated window has no title when we get here).
+    if ([decoratedWindow title]) {
+        [self setTitle:[decoratedWindow title]];
+
+        // NOTE: Cocoa does not add borderless windows to the "Window" menu so
+        // we have to do it manually.
+        [NSApp changeWindowsItem:fullscreenWindow
+                           title:[decoratedWindow title]
+                        filename:NO];
+    }
+
+    [fullscreenWindow setOpaque:[decoratedWindow isOpaque]];
+
+    // Don't set this sooner, so we don't get an additional focus gained
+    // message.
+    [fullscreenWindow setDelegate:self];
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // HACK! Put window on all Spaces to avoid Spaces (available on OS X 10.5
+    // and later) from moving the full screen window to a separate Space from
+    // the one the decorated window is occupying.  The collection behavior is
+    // restored further down.
+    NSWindowCollectionBehavior wcb = [fullscreenWindow collectionBehavior];
+    [fullscreenWindow setCollectionBehavior:
+                                NSWindowCollectionBehaviorCanJoinAllSpaces];
+#endif
+
+    [decoratedWindow orderOut:self];
+    [fullscreenWindow makeKeyAndOrderFront:self];
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // Restore collection behavior (see hack above).
+    [fullscreenWindow setCollectionBehavior:wcb];
+#endif
+
+    // Fade back in
+    if (didBlend) {
+        CGDisplayFade(token, .25, kCGDisplayBlendSolidColor,
+            kCGDisplayBlendNormal, .0, .0, .0, false);
+        CGReleaseDisplayFadeReservation(token);
+    }
+
+    fullscreenEnabled = YES;
+}
+
+- (void)disableFullscreen
+{
+    fullscreenEnabled = NO;
+
+    // Fade to black
+    Boolean didBlend = NO;
+    CGDisplayFadeReservationToken token;
+    if (CGAcquireDisplayFadeReservation(.5, &token) == kCGErrorSuccess) {
+        CGDisplayFade(token, .25, kCGDisplayBlendNormal,
+            kCGDisplayBlendSolidColor, .0, .0, .0, true);
+        didBlend = YES;
+    }
+
+    // Enusre menu bar / Dock is visible
+    SetSystemUIMode(kUIModeNormal, 0);
+
+    [self setWindow:decoratedWindow];
+    [fullscreenWindow setDelegate:nil];
+
+    // Move views from full-screen to decorated window.
+    // Do this _after_ resetting delegate and window controller, so the window
+    // controller doesn't get a focus lost message from the fullscreen window.
+    NSView *view = [decoratedWindow contentView];
+    [tabBarControl removeFromSuperviewWithoutNeedingDisplay];
+    [splitView removeFromSuperviewWithoutNeedingDisplay];
+    [view addSubview:tabBarControl];
+    [view addSubview:splitView];
+
+    // Adjust view sizes
+    NSRect frame = [decoratedWindow contentRectForFrameRect:
+                                                    [decoratedWindow frame]];
+    NSRect tabFrame = { { 0, frame.size.height - 22 },
+                        { frame.size.width, 22 } };
+    [tabBarControl setFrame:tabFrame];
+
+    if (![tabBarControl isHidden])
+        frame.size.height -= 22;
+    frame.origin.x = frame.origin.y = 0;
+    [splitView setFrame:frame];
+
+    // Set the text view to initial first responder, otherwise the 'plus'
+    // button on the tabline steals the first responder status.
+    [decoratedWindow setInitialFirstResponder:[vimView textView]];
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // HACK! Put decorated window on all Spaces (available on OS X 10.5 and
+    // later) so that the decorated window stays on the same Space as the full
+    // screen window (they may occupy different Spaces e.g. if the full screen
+    // window was dragged to another Space).  The collection behavior is
+    // restored further down.
+    NSWindowCollectionBehavior wcb = [decoratedWindow collectionBehavior];
+    [decoratedWindow setCollectionBehavior:
+                                NSWindowCollectionBehaviorCanJoinAllSpaces];
+#endif
+
+    [fullscreenWindow close];
+    [decoratedWindow makeKeyAndOrderFront:self];
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // Restore collection behavior (see hack above).
+    [decoratedWindow setCollectionBehavior:wcb];
+#endif
+
+    // ...but we don't want a focus gained message either, so don't set this
+    // sooner
+    [decoratedWindow setDelegate:self];
+
+    // Fade back in  
+    if (didBlend) {
+        CGDisplayFade(token, .25, kCGDisplayBlendSolidColor,
+            kCGDisplayBlendNormal, .0, .0, .0, false);
+        CGReleaseDisplayFadeReservation(token);
+    }
+
+    ASLogDebug(@"Disabled full-screen");
+}
+
+- (void)applicationDidChangeScreenParameters:(NSNotification *)notification
+{
+    // This notification is sent when screen resolution may have changed (e.g.
+    // due to a monitor being unplugged or the resolution being changed
+    // manually) but it also seems to get called when the Dock is
+    // hidden/displayed.
+    ASLogDebug(@"Screen unplugged / resolution changed");
+
+    if (fullscreenEnabled) {
+        NSScreen *screen = [decoratedWindow screen];
+        if (!screen) {
+            // Paranoia: if window we originally used for full screen is gone,
+            // try screen window is on now, and failing that (not sure this can
+            // happen) use main screen.
+            screen = [fullscreenWindow screen];
+            if (!screen)
+                screen = [NSScreen mainScreen];
+        }
+
+        // Ensure the full screen window is still covering the entire screen
+        // and then resize view according to 'fuopt'.
+        [fullscreenWindow setFrame:[screen frame] display:NO];
+    }
 }
 
 @end // MMWindowController (Private)

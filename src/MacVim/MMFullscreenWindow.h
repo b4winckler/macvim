@@ -38,6 +38,7 @@
 - (void)enterFullscreen;
 - (void)leaveFullscreen;
 - (void)centerView;
+- (BOOL)isOnPrimaryScreen;
 
 - (BOOL)canBecomeKeyWindow;
 - (BOOL)canBecomeMainWindow;
