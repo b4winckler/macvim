@@ -351,8 +351,6 @@
 
 - (BOOL)presentWindow:(id)unused
 {
-    ASLogTmp(@"");
-
     // If openWindow hasn't already been called then the window will be
     // displayed later.
     if (!setupDone) return NO;
@@ -390,7 +388,7 @@
     int maxRows, maxCols;
     [[vimView textView] getMaxRows:&maxRows columns:&maxCols];
 
-    ASLogTmp(@"setTextDimensionsWithRows:%d columns:%d isLive:%d "
+    ASLogDebug(@"setTextDimensionsWithRows:%d columns:%d isLive:%d "
             "isReply:%d (rows=%d, cols=%d, setupDone=%d)",
             rows, cols, live, reply, maxRows, maxCols, setupDone);
 
@@ -1270,7 +1268,6 @@
         [vimView setFrameSize:vsize];
         [sideView setFrameSize:ssize];
     } else {
-        ASLogTmp(@"");
         [vimView setFrameSize:size];
     }
 }
@@ -1433,8 +1430,6 @@
 
 - (void)adjustWindowFrame
 {
-    ASLogTmp(@"");
-
     NSSize cs = [[vimView textView] cellSize];
     if (cs.width == 0 || cs.height == 0) return;
 
@@ -1491,8 +1486,6 @@
 {
     NSRect frame = [decoratedWindow frame];
     NSRect contentRect = [decoratedWindow contentRectForFrameRect:frame];
-    ASLogTmp(@"old=%@  new=%@", NSStringFromSize(contentRect.size),
-            NSStringFromSize(contentSize));
 
     // Keep top-left corner of the window fixed when resizing.
     contentRect.origin.y -= contentSize.height - contentRect.size.height;

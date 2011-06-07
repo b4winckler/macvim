@@ -409,7 +409,7 @@ enum {
         int msgid = [self inLiveResize] ? LiveResizeMsgID
                                         : SetTextDimensionsMsgID;
 
-        ASLogTmp(@"Notify Vim that text dimensions changed from %dx%d to "
+        ASLogDebug(@"Notify Vim that text dimensions changed from %dx%d to "
                    "%dx%d (%s)", cols, rows, constrained[1], constrained[0],
                    MessageStrings[msgid]);
 
@@ -422,7 +422,6 @@ enum {
                     constrained[1], constrained[0]]];
         }
     } else if ([self inLiveResize]) {
-        //ASLogTmp(@"Force a redraw");
         [vimController sendMessage:ForceRedrawMsgID data:nil];
     }
 

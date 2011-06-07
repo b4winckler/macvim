@@ -298,8 +298,6 @@ NSString *MMDrawerPreferredEdgeKey      = @"MMDrawerPreferredEdge";
         [inv setTarget:self];
         [inv invoke];
         [inv getReturnValue:&size];
-        ASLogTmp(@"size=%@  desired=%@", NSStringFromSize([self frame].size),
-                NSStringFromSize(size));
     }
 
     NSEnumerator *e = [[self subviews] objectEnumerator];

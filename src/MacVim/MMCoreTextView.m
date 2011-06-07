@@ -547,13 +547,11 @@ defaultAdvanceForFont(NSFont *font)
 
 - (void)setFrame:(NSRect)rect
 {
-    //ASLogTmp(@"");
     [super setFrame:rect];
 }
 
 - (void)setFrameSize:(NSSize)size
 {
-    //ASLogTmp(@"size=%@", NSStringFromSize(size));
     [super setFrameSize:size];
 }
 
