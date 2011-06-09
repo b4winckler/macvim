@@ -94,6 +94,8 @@
 - (void)updateTabsWithData:(NSData *)data;
 - (void)selectTabWithIndex:(int)idx;
 
+- (void)collapseSideView:(BOOL)on;
+- (BOOL)isSideViewCollapsed;
 - (void)setSideView:(NSView *)view leftEdge:(BOOL)left;
 
 - (IBAction)addNewTab:(id)sender;

@@ -5,7 +5,6 @@
 
 @interface MMFileDrawerController : NSViewController <NSOutlineViewDataSource, NSOutlineViewDelegate> {
   MMWindowController *windowController;
-  NSDrawer *drawer;
   NSPathControl *pathControl;
   FileSystemItem *rootItem;
   FSEventStreamRef fsEventsStream;

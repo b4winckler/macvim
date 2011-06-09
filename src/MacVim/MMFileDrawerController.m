@@ -459,12 +459,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)loadView {
   NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
-  NSRectEdge edge = [ud integerForKey:MMDrawerPreferredEdgeKey] <= 0
-                  ? NSMaxXEdge
-                  : NSMinXEdge;
-
-  //drawer = [[NSDrawer alloc] initWithContentSize:NSMakeSize(200, 0)
-                                   //preferredEdge:edge];
+  BOOL leftEdge = [ud integerForKey:MMDrawerPreferredEdgeKey] > 0;
 
   FlippedView *drawerView = [[[FlippedView alloc] initWithFrame:NSZeroRect] autorelease];
   [drawerView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
@@ -504,8 +499,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
   [drawerView addSubview:scrollView];
   [drawerView addSubview:pathControl];
-  //[drawer setContentView:drawerView];
-  [windowController setSideView:drawerView leftEdge:(edge == NSMinXEdge)];
+  [windowController setSideView:drawerView leftEdge:leftEdge];
 
   [self setView:filesView];
 
@@ -539,17 +533,17 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [self watchRoot];
 }
 
-- (void)open {
-  //if ([drawer state] != NSDrawerOpenState && [drawer state] != NSDrawerOpeningState) {
+- (void)open
+{
+  if ([windowController isSideViewCollapsed]) {
     if (!rootItem) {
       NSString *root = [[windowController vimController] objectForVimStateKey:@"pwd"];
       [self setRoot:(root ? root : @"~/")];
     }
-    //[drawer setParentWindow:[windowController window]];
-    //[drawer open];
+    [windowController collapseSideView:NO];
     // Typing Tab (or Esc) in browser view sets keyboard focus to text view
     [self.outlineView setNextKeyView:[[windowController vimView] textView]];
-  //}
+  }
   [self.outlineView makeFirstResponder];
   if ([self.outlineView numberOfSelectedRows] == 0) {
     [self selectInDrawer];
@@ -558,9 +552,9 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)close
 {
-  //if([drawer state] == NSDrawerClosedState || [drawer state] == NSDrawerClosingState)
+  if ([windowController isSideViewCollapsed])
     return;
-  //[drawer close];
+  [windowController collapseSideView:YES];
 }
 
 - (void)toggle
@@ -571,8 +565,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
     [self setRoot:(root ? root : @"~/")];
   }
 
-  //[drawer setParentWindow:[windowController window]];
-  //[drawer toggle:self];
+  [windowController collapseSideView:![windowController isSideViewCollapsed]];
 
   [self selectInDrawer];
 }
@@ -586,8 +579,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)selectInDrawerByExpandingItems:(BOOL)expand {
-  //if([drawer state] != NSDrawerOpeningState && [drawer state] != NSDrawerOpenState)
-    //return;
+  if ([windowController isSideViewCollapsed])
+    return;
   NSString *fn = [[windowController vimController]
                                                   evaluateVimExpression:@"expand('%:p')"];
   if([fn length] > 0) {
@@ -1091,7 +1084,6 @@ static void change_occured(ConstFSEventStreamRef stream,
   [[NSNotificationCenter defaultCenter] removeObserver:self];
 
   [self unwatchRoot];
-  //[drawer release]; drawer = nil;
   [pathControl release]; pathControl = nil;
   [rootItem release]; rootItem = nil;
 

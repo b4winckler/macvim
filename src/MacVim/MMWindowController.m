@@ -945,6 +945,22 @@
     }
 }
 
+- (void)collapseSideView:(BOOL)on
+{
+    if (!sideView)
+        return;
+
+    if (on != [sideView isHidden]) {
+        [sideView setHidden:on];
+        [splitView adjustSubviews];
+    }
+}
+
+- (BOOL)isSideViewCollapsed
+{
+    return !sideView || [sideView isHidden];
+}
+
 - (void)setSideView:(NSView *)view leftEdge:(BOOL)left
 {
     NSArray *subviews = left
@@ -954,7 +970,14 @@
     [sideView autorelease];
     sideView = [view retain];
 
+    NSRect frame = [splitView frame];
+    frame.size.width *= 0.2;
+    if (frame.size.width > 260)
+        frame.size.width = 260;
+    [view setFrame:frame];
+
     [splitView setSubviews:subviews];
+    [splitView adjustSubviews];
 }
 
 
