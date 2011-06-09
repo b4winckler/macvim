@@ -2640,30 +2640,73 @@ mch_isdir(char_u *name)
 }
 
 /*
+ * Create directory "name".
+ * Return 0 on success, -1 on error.
+ */
+    int
+mch_mkdir(char_u *name)
+{
+#ifdef FEAT_MBYTE
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+    {
+	WCHAR	*p;
+	int	retval;
+
+	p = enc_to_utf16(name, NULL);
+	if (p == NULL)
+	    return -1;
+	retval = _wmkdir(p);
+	vim_free(p);
+	return retval;
+    }
+#endif
+    return _mkdir(name);
+}
+
+/*
  * Return TRUE if file "fname" has more than one link.
  */
     int
 mch_is_linked(char_u *fname)
 {
+    BY_HANDLE_FILE_INFORMATION info;
+
+    return win32_fileinfo(fname, &info) == FILEINFO_OK
+						   && info.nNumberOfLinks > 1;
+}
+
+/*
+ * Get the by-handle-file-information for "fname".
+ * Returns FILEINFO_OK when OK.
+ * returns FILEINFO_ENC_FAIL when enc_to_utf16() failed.
+ * Returns FILEINFO_READ_FAIL when CreateFile() failed.
+ * Returns FILEINFO_INFO_FAIL when GetFileInformationByHandle() failed.
+ */
+    int
+win32_fileinfo(char_u *fname, BY_HANDLE_FILE_INFORMATION *info)
+{
     HANDLE	hFile;
-    int		res = 0;
-    BY_HANDLE_FILE_INFORMATION inf;
+    int		res = FILEINFO_READ_FAIL;
 #ifdef FEAT_MBYTE
     WCHAR	*wn = NULL;
 
     if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+    {
 	wn = enc_to_utf16(fname, NULL);
+	if (wn == NULL)
+	    res = FILEINFO_ENC_FAIL;
+    }
     if (wn != NULL)
     {
 	hFile = CreateFileW(wn,		/* file name */
 		    GENERIC_READ,	/* access mode */
-		    0,			/* share mode */
+		    FILE_SHARE_READ | FILE_SHARE_WRITE,	/* share mode */
 		    NULL,		/* security descriptor */
 		    OPEN_EXISTING,	/* creation disposition */
-		    0,			/* file attributes */
+		    FILE_FLAG_BACKUP_SEMANTICS,	/* file attributes */
 		    NULL);		/* handle to template file */
 	if (hFile == INVALID_HANDLE_VALUE
-		&& GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+			      && GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
 	{
 	    /* Retry with non-wide function (for Windows 98). */
 	    vim_free(wn);
@@ -2674,17 +2717,18 @@ mch_is_linked(char_u *fname)
 #endif
 	hFile = CreateFile(fname,	/* file name */
 		    GENERIC_READ,	/* access mode */
-		    0,			/* share mode */
+		    FILE_SHARE_READ | FILE_SHARE_WRITE,	/* share mode */
 		    NULL,		/* security descriptor */
 		    OPEN_EXISTING,	/* creation disposition */
-		    0,			/* file attributes */
+		    FILE_FLAG_BACKUP_SEMANTICS,	/* file attributes */
 		    NULL);		/* handle to template file */
 
     if (hFile != INVALID_HANDLE_VALUE)
     {
-	if (GetFileInformationByHandle(hFile, &inf) != 0
-		&& inf.nNumberOfLinks > 1)
-	    res = 1;
+	if (GetFileInformationByHandle(hFile, info) != 0)
+	    res = FILEINFO_OK;
+	else
+	    res = FILEINFO_INFO_FAIL;
 	CloseHandle(hFile);
     }
 
@@ -3357,6 +3401,7 @@ mch_call_shell(
 	    {
 		STARTUPINFO		si;
 		PROCESS_INFORMATION	pi;
+		DWORD			flags = CREATE_NEW_CONSOLE;
 
 		si.cb = sizeof(si);
 		si.lpReserved = NULL;
@@ -3373,6 +3418,22 @@ mch_call_shell(
 		    cmdbase = skipwhite(cmdbase + 4);
 		    si.dwFlags = STARTF_USESHOWWINDOW;
 		    si.wShowWindow = SW_SHOWMINNOACTIVE;
+		}
+		else if ((STRNICMP(cmdbase, "/b", 2) == 0)
+			&& vim_iswhite(cmdbase[2]))
+		{
+		    cmdbase = skipwhite(cmdbase + 2);
+		    flags = CREATE_NO_WINDOW;
+		    si.dwFlags = STARTF_USESTDHANDLES;
+		    si.hStdInput = CreateFile("\\\\.\\NUL",	// File name
+			GENERIC_READ,				// Access flags
+			0,					// Share flags
+			NULL,					// Security att.
+			OPEN_EXISTING,				// Open flags
+			FILE_ATTRIBUTE_NORMAL,			// File att.
+			NULL);					// Temp file
+		    si.hStdOutput = si.hStdInput;
+		    si.hStdError = si.hStdInput;
 		}
 
 		/* When the command is in double quotes, but 'shellxquote' is
@@ -3401,7 +3462,7 @@ mch_call_shell(
 			NULL,			// Process security attributes
 			NULL,			// Thread security attributes
 			FALSE,			// Inherit handles
-			CREATE_NEW_CONSOLE,	// Creation flags
+			flags,			// Creation flags
 			NULL,			// Environment
 			NULL,			// Current directory
 			&si,			// Startup information
@@ -3413,6 +3474,11 @@ mch_call_shell(
 #ifdef FEAT_GUI_W32
 		    EMSG(_("E371: Command not found"));
 #endif
+		}
+		if (si.hStdInput != NULL)
+		{
+		    /* Close the handle to \\.\NUL */
+		    CloseHandle(si.hStdInput);
 		}
 		/* Close the handles to the subprocess, so that it goes away */
 		CloseHandle(pi.hThread);

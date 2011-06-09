@@ -1164,7 +1164,7 @@ copy_loclist(from, to)
 
 	/* When no valid entries are present in the list, qf_ptr points to
 	 * the first item in the list */
-	if (to_qfl->qf_nonevalid == TRUE)
+	if (to_qfl->qf_nonevalid)
 	    to_qfl->qf_ptr = to_qfl->qf_start;
     }
 
@@ -1182,21 +1182,17 @@ qf_get_fnum(directory, fname)
     if (fname == NULL || *fname == NUL)		/* no file name */
 	return 0;
     {
-#ifdef RISCOS
-	/* Name is reported as `main.c', but file is `c.main' */
-	return ro_buflist_add(fname);
-#else
 	char_u	    *ptr;
 	int	    fnum;
 
-# ifdef VMS
+#ifdef VMS
 	vms_remove_version(fname);
-# endif
-# ifdef BACKSLASH_IN_FILENAME
+#endif
+#ifdef BACKSLASH_IN_FILENAME
 	if (directory != NULL)
 	    slash_adjust(directory);
 	slash_adjust(fname);
-# endif
+#endif
 	if (directory != NULL && !vim_isAbsName(fname)
 		&& (ptr = concat_fnames(directory, fname, TRUE)) != NULL)
 	{
@@ -1221,7 +1217,6 @@ qf_get_fnum(directory, fname)
 	    return fnum;
 	}
 	return buflist_add(fname, 0);
-#endif
     }
 }
 
@@ -2243,6 +2238,7 @@ ex_cwindow(eap)
      * it if we have errors; otherwise, leave it closed.
      */
     if (qi->qf_lists[qi->qf_curlist].qf_nonevalid
+	    || qi->qf_lists[qi->qf_curlist].qf_count == 0
 	    || qi->qf_curlist >= qi->qf_listcount)
     {
 	if (win != NULL)
@@ -2742,6 +2738,13 @@ ex_make(eap)
 #ifdef FEAT_AUTOCMD
     char_u	*au_name = NULL;
 
+    /* Redirect ":grep" to ":vimgrep" if 'grepprg' is "internal". */
+    if (grep_internal(eap->cmdidx))
+    {
+	ex_vimgrep(eap);
+	return;
+    }
+
     switch (eap->cmdidx)
     {
 	case CMD_make:	    au_name = (char_u *)"make"; break;
@@ -2762,13 +2765,6 @@ ex_make(eap)
 # endif
     }
 #endif
-
-    /* Redirect ":grep" to ":vimgrep" if 'grepprg' is "internal". */
-    if (grep_internal(eap->cmdidx))
-    {
-	ex_vimgrep(eap);
-	return;
-    }
 
     if (eap->cmdidx == CMD_lmake || eap->cmdidx == CMD_lgrep
 	|| eap->cmdidx == CMD_lgrepadd)
@@ -2817,17 +2813,21 @@ ex_make(eap)
 					   (eap->cmdidx != CMD_grepadd
 					    && eap->cmdidx != CMD_lgrepadd),
 					   *eap->cmdlinep);
+    if (wp != NULL)
+	qi = GET_LOC_LIST(wp);
 #ifdef FEAT_AUTOCMD
     if (au_name != NULL)
+    {
 	apply_autocmds(EVENT_QUICKFIXCMDPOST, au_name,
 					       curbuf->b_fname, TRUE, curbuf);
+	if (qi->qf_curlist < qi->qf_listcount)
+	    res = qi->qf_lists[qi->qf_curlist].qf_count;
+	else
+	    res = 0;
+    }
 #endif
     if (res > 0 && !eap->forceit)
-    {
-	if (wp != NULL)
-	    qi = GET_LOC_LIST(wp);
 	qf_jump(qi, 0, 0, FALSE);		/* display first error */
-    }
 
     mch_remove(fname);
     vim_free(fname);
@@ -3049,18 +3049,22 @@ ex_vimgrep(eap)
     int		flags = 0;
     colnr_T	col;
     long	tomatch;
-    char_u	dirname_start[MAXPATHL];
-    char_u	dirname_now[MAXPATHL];
+    char_u	*dirname_start = NULL;
+    char_u	*dirname_now = NULL;
     char_u	*target_dir = NULL;
 #ifdef FEAT_AUTOCMD
     char_u	*au_name =  NULL;
 
     switch (eap->cmdidx)
     {
-	case CMD_vimgrep: au_name = (char_u *)"vimgrep"; break;
-	case CMD_lvimgrep: au_name = (char_u *)"lvimgrep"; break;
-	case CMD_vimgrepadd: au_name = (char_u *)"vimgrepadd"; break;
+	case CMD_vimgrep:     au_name = (char_u *)"vimgrep"; break;
+	case CMD_lvimgrep:    au_name = (char_u *)"lvimgrep"; break;
+	case CMD_vimgrepadd:  au_name = (char_u *)"vimgrepadd"; break;
 	case CMD_lvimgrepadd: au_name = (char_u *)"lvimgrepadd"; break;
+	case CMD_grep:	      au_name = (char_u *)"grep"; break;
+	case CMD_lgrep:	      au_name = (char_u *)"lgrep"; break;
+	case CMD_grepadd:     au_name = (char_u *)"grepadd"; break;
+	case CMD_lgrepadd:    au_name = (char_u *)"lgrepadd"; break;
 	default: break;
     }
     if (au_name != NULL)
@@ -3127,6 +3131,11 @@ ex_vimgrep(eap)
 	EMSG(_(e_nomatch));
 	goto theend;
     }
+
+    dirname_start = alloc(MAXPATHL);
+    dirname_now = alloc(MAXPATHL);
+    if (dirname_start == NULL || dirname_now == NULL)
+	goto theend;
 
     /* Remember the current directory, because a BufRead autocommand that does
      * ":lcd %:p:h" changes the meaning of short path names. */
@@ -3364,6 +3373,8 @@ ex_vimgrep(eap)
     }
 
 theend:
+    vim_free(dirname_now);
+    vim_free(dirname_start);
     vim_free(target_dir);
     vim_free(regmatch.regprog);
 }
@@ -3700,7 +3711,7 @@ set_errorlist(wp, list, action, title)
     }
 
     if (qi->qf_lists[qi->qf_curlist].qf_index == 0)
-	/* empty list or no valid entry */
+	/* no valid entry */
 	qi->qf_lists[qi->qf_curlist].qf_nonevalid = TRUE;
     else
 	qi->qf_lists[qi->qf_curlist].qf_nonevalid = FALSE;

@@ -3365,11 +3365,6 @@ usage()
     main_msg(_("+reverse\t\tDon't use reverse video (also: +rv)"));
     main_msg(_("-xrm <resource>\tSet the specified resource"));
 #endif /* FEAT_GUI_X11 */
-#if defined(FEAT_GUI) && defined(RISCOS)
-    mch_msg(_("\nArguments recognised by gvim (RISC OS version):\n"));
-    main_msg(_("--columns <number>\tInitial width of window in columns"));
-    main_msg(_("--rows <number>\tInitial height of window in rows"));
-#endif
 #ifdef FEAT_GUI_GTK
     mch_msg(_("\nArguments recognised by gvim (GTK+ version):\n"));
     main_msg(_("-font <font>\t\tUse <font> for normal text (also: -fn)"));
@@ -3911,7 +3906,7 @@ build_drop_cmd(filec, filev, tabs, sendReply)
     int		i;
     char_u	*inicmd = NULL;
     char_u	*p;
-    char_u	cwd[MAXPATHL];
+    char_u	*cwd;
 
     if (filec > 0 && filev[0][0] == '+')
     {
@@ -3924,15 +3919,23 @@ build_drop_cmd(filec, filev, tabs, sendReply)
 	mainerr_arg_missing((char_u *)filev[-1]);
 
     /* Temporarily cd to the current directory to handle relative file names. */
-    if (mch_dirname(cwd, MAXPATHL) != OK)
+    cwd = alloc(MAXPATHL);
+    if (cwd == NULL)
 	return NULL;
-    if ((p = vim_strsave_escaped_ext(cwd,
+    if (mch_dirname(cwd, MAXPATHL) != OK)
+    {
+	vim_free(cwd);
+	return NULL;
+    }
+    p = vim_strsave_escaped_ext(cwd,
 #ifdef BACKSLASH_IN_FILENAME
 		    "",  /* rem_backslash() will tell what chars to escape */
 #else
 		    PATH_ESC_CHARS,
 #endif
-		    '\\', TRUE)) == NULL)
+		    '\\', TRUE);
+    vim_free(cwd);
+    if (p == NULL)
 	return NULL;
     ga_init2(&ga, 1, 100);
     ga_concat(&ga, (char_u *)"<C-\\><C-N>:cd ");

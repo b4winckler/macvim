@@ -1517,7 +1517,7 @@ EXTERN char_u e_readerrf[]	INIT(= N_("E47: Error while reading errorfile"));
 EXTERN char_u e_sandbox[]	INIT(= N_("E48: Not allowed in sandbox"));
 #endif
 EXTERN char_u e_secure[]	INIT(= N_("E523: Not allowed here"));
-#if defined(AMIGA) || defined(MACOS) || defined(MSWIN) || defined(RISCOS) \
+#if defined(AMIGA) || defined(MACOS) || defined(MSWIN)  \
 	|| defined(UNIX) || defined(VMS) || defined(OS2)
 EXTERN char_u e_screenmode[]	INIT(= N_("E359: Screen mode setting not supported"));
 #endif
@@ -1564,6 +1564,9 @@ EXTERN char_u e_bufloaded[]	INIT(= N_("E139: File is loaded in another buffer"))
 #if defined(FEAT_SYN_HL) || \
 	(defined(FEAT_INS_EXPAND) && defined(FEAT_COMPL_FUNC))
 EXTERN char_u e_notset[]	INIT(= N_("E764: Option '%s' is not set"));
+#endif
+#ifndef FEAT_CLIPBOARD
+EXTERN char_u e_invalidreg[]    INIT(= N_("E850: Invalid register name"));
 #endif
 
 #ifdef MACOS_X_UNIX

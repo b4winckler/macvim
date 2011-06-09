@@ -185,9 +185,6 @@
 #  define SIZEOF_INT 2
 # endif
 #endif
-#ifdef RISCOS
-# define SIZEOF_INT 4
-#endif
 
 
 #include "feature.h"	/* #defines for optionals and features */
@@ -339,10 +336,6 @@
 #  define HAVE_SETENV
 # endif
 # include "os_mac.h"
-#endif
-
-#ifdef RISCOS
-# include "os_riscos.h"
 #endif
 
 #ifdef __QNX__
@@ -788,7 +781,8 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define EXPAND_FILETYPE		37
 #define EXPAND_FILES_IN_PATH	38
 #define EXPAND_OWNSYNTAX	39
-#define EXPAND_MACACTION	40
+#define EXPAND_LOCALES		40
+#define EXPAND_MACACTION	41
 
 /* Values for exmode_active (0 is no exmode) */
 #define EXMODE_NORMAL		1
@@ -1284,6 +1278,7 @@ enum auto_event
     EVENT_WINENTER,		/* after entering a window */
     EVENT_WINLEAVE,		/* before leaving a window */
     EVENT_ENCODINGCHANGED,	/* after changing the 'encoding' option */
+    EVENT_INSERTCHARPRE,	/* before inserting a char */
     EVENT_CURSORHOLD,		/* cursor in same position for a while */
     EVENT_CURSORHOLDI,		/* idem, in Insert mode */
     EVENT_FUNCUNDEFINED,	/* if calling a function which doesn't exist */
@@ -1437,6 +1432,8 @@ typedef UINT32_TYPEDEF UINT32_T;
 #define LSIZE	    512		/* max. size of a line in the tags file */
 
 #define IOSIZE	   (1024+1)	/* file i/o and sprintf buffer size */
+
+#define DIALOG_MSG_SIZE 1000	/* buffer size for dialog_msg() */
 
 #ifdef FEAT_MBYTE
 # define MSG_BUF_LEN 480	/* length of buffer for small messages */
@@ -2217,5 +2214,11 @@ typedef int VimClipboard;	/* This is required for the prototypes. */
 #define KEYLEN_PART_KEY -1	/* keylen value for incomplete key-code */
 #define KEYLEN_PART_MAP -2	/* keylen value for incomplete mapping */
 #define KEYLEN_REMOVED  9999	/* keylen value for removed sequence */
+
+/* Return values from win32_fileinfo(). */
+#define FILEINFO_OK	     0
+#define FILEINFO_ENC_FAIL    1	/* enc_to_utf16() failed */
+#define FILEINFO_READ_FAIL   2	/* CreateFile() failed */
+#define FILEINFO_INFO_FAIL   3	/* GetFileInformationByHandle() failed */
 
 #endif /* VIM__H */
