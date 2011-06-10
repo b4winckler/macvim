@@ -1378,6 +1378,13 @@
 
 #endif
 
+- (BOOL)splitView:(NSSplitView *)splitView
+    shouldHideDividerAtIndex:(NSInteger)dividerIndex
+{
+    // This ensures that the divider hides when the side view is collapsed.
+    return [self isSideViewCollapsed];
+}
+
 - (BOOL)splitView:(NSSplitView *)sv canCollapseSubview:(NSView *)subview
 {
     // Only the side view can collapse
