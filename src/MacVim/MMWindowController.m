@@ -621,6 +621,20 @@
             // full-screen mode.
             [vimView adjustTextViewDimensions];
         } else {
+            // When the text view is rightmost in the window then we hide the
+            // resize indicator because otherwise it overlaps part of the text
+            // view.
+            BOOL on = YES;
+            if ([self isSideViewCollapsed]
+                    || [[splitView subviews] indexOfObject:sideView] != 1) {
+                // HACK: If there is no bottom or right scrollbar the resize
+                // indicator will cover the bottom-right corner of the text
+                // view so tell NSWindow not to draw it in this situation.
+                on = [vimView rightScrollbarVisible] ||
+                     [vimView bottomScrollbarVisible];
+            }
+            [decoratedWindow setShowsResizeIndicator:on];
+
             if (shouldResizeWindow) {
                 [self adjustWindowFrame];
                 shouldResizeWindow = NO;

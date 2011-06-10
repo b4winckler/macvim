@@ -65,9 +65,6 @@
 
     [self setPreservesContentDuringLiveResize:YES];
 
-    // Temporary hack
-    [self setShowsResizeIndicator:NO];
-
     return self;
 }
 

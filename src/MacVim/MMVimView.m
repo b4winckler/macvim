@@ -55,9 +55,6 @@ enum {
 
 
 @interface MMVimView (Private)
-- (BOOL)bottomScrollbarVisible;
-- (BOOL)leftScrollbarVisible;
-- (BOOL)rightScrollbarVisible;
 - (void)placeScrollbars;
 - (MMScroller *)scrollbarForIdentifier:(int32_t)ident index:(unsigned *)idx;
 - (NSSize)vimViewSizeForTextViewSize:(NSSize)textViewSize;
@@ -324,6 +321,42 @@ enum {
     }
 }
 
+- (BOOL)bottomScrollbarVisible
+{
+    unsigned i, count = [scrollbars count];
+    for (i = 0; i < count; ++i) {
+        MMScroller *scroller = [scrollbars objectAtIndex:i];
+        if ([scroller type] == MMScrollerTypeBottom && ![scroller isHidden])
+            return YES;
+    }
+
+    return NO;
+}
+
+- (BOOL)leftScrollbarVisible
+{
+    unsigned i, count = [scrollbars count];
+    for (i = 0; i < count; ++i) {
+        MMScroller *scroller = [scrollbars objectAtIndex:i];
+        if ([scroller type] == MMScrollerTypeLeft && ![scroller isHidden])
+            return YES;
+    }
+
+    return NO;
+}
+
+- (BOOL)rightScrollbarVisible
+{
+    unsigned i, count = [scrollbars count];
+    for (i = 0; i < count; ++i) {
+        MMScroller *scroller = [scrollbars objectAtIndex:i];
+        if ([scroller type] == MMScrollerTypeRight && ![scroller isHidden])
+            return YES;
+    }
+
+    return NO;
+}
+
 - (void)setDefaultColorsBackground:(NSColor *)back foreground:(NSColor *)fore
 {
     [textView setDefaultColorsBackground:back foreground:fore];
@@ -436,42 +469,6 @@ enum {
 
 
 @implementation MMVimView (Private)
-
-- (BOOL)bottomScrollbarVisible
-{
-    unsigned i, count = [scrollbars count];
-    for (i = 0; i < count; ++i) {
-        MMScroller *scroller = [scrollbars objectAtIndex:i];
-        if ([scroller type] == MMScrollerTypeBottom && ![scroller isHidden])
-            return YES;
-    }
-
-    return NO;
-}
-
-- (BOOL)leftScrollbarVisible
-{
-    unsigned i, count = [scrollbars count];
-    for (i = 0; i < count; ++i) {
-        MMScroller *scroller = [scrollbars objectAtIndex:i];
-        if ([scroller type] == MMScrollerTypeLeft && ![scroller isHidden])
-            return YES;
-    }
-
-    return NO;
-}
-
-- (BOOL)rightScrollbarVisible
-{
-    unsigned i, count = [scrollbars count];
-    for (i = 0; i < count; ++i) {
-        MMScroller *scroller = [scrollbars objectAtIndex:i];
-        if ([scroller type] == MMScrollerTypeRight && ![scroller isHidden])
-            return YES;
-    }
-
-    return NO;
-}
 
 - (void)placeScrollbars
 {
@@ -592,11 +589,6 @@ enum {
             [scroller setNeedsDisplay:YES];
         }
     }
-
-    // HACK: If there is no bottom or right scrollbar the resize indicator will
-    // cover the bottom-right corner of the text view so tell NSWindow not to
-    // draw it in this situation.
-    [[self window] setShowsResizeIndicator:(rightSbVisible||botSbVisible)];
 }
 
 - (MMScroller *)scrollbarForIdentifier:(int32_t)ident index:(unsigned *)idx
