@@ -456,7 +456,6 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   return self;
 }
 
-
 - (void)loadView {
   NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
   BOOL leftEdge = [ud integerForKey:MMDrawerPreferredEdgeKey] > 0;
@@ -507,6 +506,13 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
                                            selector:@selector(pwdChanged:)
                                                name:@"MMPwdChanged"
                                              object:[windowController vimController]];
+}
+
+- (void)cleanup
+{
+  [[self view] removeFromSuperviewWithoutNeedingDisplay];
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [self unwatchRoot];
 }
 
 - (void)setRoot:(NSString *)root

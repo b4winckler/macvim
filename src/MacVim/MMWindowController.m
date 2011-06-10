@@ -337,6 +337,7 @@
     //[tabBarControl removeFromSuperviewWithoutNeedingDisplay];
     //[vimView removeFromSuperviewWithoutNeedingDisplay];
     [vimView cleanup];
+    [fileDrawerController cleanup];
 
     // It is feasible (though unlikely) that the user quits before the window
     // controller is released, make sure the edit flag is cleared so no warning

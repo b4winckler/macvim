@@ -12,6 +12,7 @@
 }
 
 - (id)initWithWindowController:(MMWindowController *)controller;
+- (void)cleanup;
 - (void)setRoot:(NSString *)root;
 - (void)open;
 - (void)close;
