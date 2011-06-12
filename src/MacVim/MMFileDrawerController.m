@@ -452,6 +452,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
     rootItem = nil;
     fsEventsStream = NULL;
     userHasChangedSelection = NO;
+    viewLoaded = NO;
   }
   return self;
 }
@@ -501,6 +502,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [windowController setSidebarView:drawerView leftEdge:leftEdge];
 
   [self setView:filesView];
+  viewLoaded = YES;
 
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(pwdChanged:)
@@ -510,10 +512,12 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)cleanup
 {
-  [[self outlineView] setDelegate:nil];
-  [[self outlineView] setDataSource:nil];
-  [[NSNotificationCenter defaultCenter] removeObserver:self];
-  [self unwatchRoot];
+  if (viewLoaded) {
+    [[self outlineView] setDelegate:nil];
+    [[self outlineView] setDataSource:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [self unwatchRoot];
+  }
 }
 
 - (void)setRoot:(NSString *)root

@@ -9,6 +9,7 @@
   FileSystemItem *rootItem;
   FSEventStreamRef fsEventsStream;
   BOOL userHasChangedSelection;
+  BOOL viewLoaded;
 }
 
 - (id)initWithWindowController:(MMWindowController *)controller;
