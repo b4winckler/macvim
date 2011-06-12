@@ -214,10 +214,11 @@
     NSImageView *view = [[NSImageView alloc] initWithFrame:tempFrame];
     [view setImage:[NSImage imageNamed:@"Attention"]];
     [view setImageFrameStyle:NSImageFrameGroove];
-    [self setSideView:view leftEdge:NO];
-#endif
+    [self setSidebarView:view leftEdge:NO];
+#else
     [splitView addSubview:vimView];
     [splitView adjustSubviews];
+#endif
     [contentView addSubview:splitView];
 
     [win setDelegate:self];
@@ -268,7 +269,7 @@
     [decoratedWindow release];  decoratedWindow = nil;
     [windowAutosaveKey release];  windowAutosaveKey = nil;
     [vimView release];  vimView = nil;
-    [sideView release];  sideView = nil;
+    [sidebarView release];  sidebarView = nil;
     [splitView release];  splitView = nil;
     [tabBarControl release];  tabBarControl = nil;
     [tabView release];  tabView = nil;
@@ -627,8 +628,8 @@
             // resize indicator because otherwise it overlaps part of the text
             // view.
             BOOL on = YES;
-            if ([self isSideViewCollapsed]
-                    || [[splitView subviews] indexOfObject:sideView] != 1) {
+            if ([self isSidebarCollapsed]
+                    || [[splitView subviews] indexOfObject:sidebarView] != 1) {
                 // HACK: If there is no bottom or right scrollbar the resize
                 // indicator will cover the bottom-right corner of the text
                 // view so tell NSWindow not to draw it in this situation.
@@ -961,35 +962,39 @@
     }
 }
 
-- (void)collapseSideView:(BOOL)on
+- (void)collapseSidebar:(BOOL)on
 {
-    if (!sideView)
+    if (!sidebarView)
         return;
 
-    if (on != [sideView isHidden]) {
-        [sideView setHidden:on];
+    if (on != [sidebarView isHidden]) {
+        [sidebarView setHidden:on];
         [splitView adjustSubviews];
     }
 }
 
-- (BOOL)isSideViewCollapsed
+- (BOOL)isSidebarCollapsed
 {
-    return !sideView || [sideView isHidden];
+    return !sidebarView || [sidebarView isHidden];
 }
 
-- (void)setSideView:(NSView *)view leftEdge:(BOOL)left
+- (void)setSidebarView:(NSView *)view leftEdge:(BOOL)left
 {
     NSArray *subviews = left
                       ? [NSArray arrayWithObjects:view, vimView, nil]
                       : [NSArray arrayWithObjects:vimView, view, nil];
 
-    [sideView autorelease];
-    sideView = [view retain];
+    [sidebarView autorelease];
+    sidebarView = [view retain];
+
+    // Restore autosaved sidebar width
+    CGFloat w = (CGFloat)[[NSUserDefaults standardUserDefaults]
+                                            integerForKey:MMSidebarWidthKey];
+    if (w < MMSidebarMinWidth)
+        w = MMSidebarMinWidth;
 
     NSRect frame = [splitView frame];
-    frame.size.width *= 0.2;
-    if (frame.size.width > 260)
-        frame.size.width = 260;
+    frame.size.width = w;
     [view setFrame:frame];
 
     [splitView setSubviews:subviews];
@@ -1355,16 +1360,16 @@
 
     NSSize size = [splitView frame].size;
 
-    if (sideView && ![sideView isHidden]) {
+    if (sidebarView && ![sidebarView isHidden]) {
         CGFloat d = size.width - oldSize.width;
         NSSize vsize = [vimView frame].size;
-        NSSize ssize = [sideView frame].size;
+        NSSize ssize = [sidebarView frame].size;
 
         vsize.width += d;
         vsize.height = ssize.height = size.height;
 
         [vimView setFrameSize:vsize];
-        [sideView setFrameSize:ssize];
+        [sidebarView setFrameSize:ssize];
     } else {
         [vimView setFrameSize:size];
     }
@@ -1384,13 +1389,13 @@
     shouldHideDividerAtIndex:(NSInteger)dividerIndex
 {
     // This ensures that the divider hides when the side view is collapsed.
-    return [self isSideViewCollapsed];
+    return [self isSidebarCollapsed];
 }
 
 - (BOOL)splitView:(NSSplitView *)sv canCollapseSubview:(NSView *)subview
 {
     // Only the side view can collapse
-    return sideView && subview == sideView;
+    return sidebarView && subview == sidebarView;
 }
 
 - (BOOL)splitView:(NSSplitView *)sv
@@ -1398,7 +1403,7 @@
        forDoubleClickOnDividerAtIndex:(NSInteger)idx
 {
     // Only the side view can collapse
-    return sideView && subview == sideView;
+    return sidebarView && subview == sidebarView;
 }
 
 - (CGFloat)splitView:(NSSplitView *)sv
@@ -1431,6 +1436,18 @@
                     ? [splitView frame].size.width - [vimView minSize].width
                     : proposedMax;
 }
+
+- (void)splitViewDidResizeSubviews:(NSNotification *)notification
+{
+    if (windowAutosaveKey && ![self isSidebarCollapsed]) {
+        // Autosave the width of the sidebar
+        NSInteger w = (NSInteger)[sidebarView frame].size.width;
+        NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+        [ud setInteger:w forKey:MMSidebarWidthKey];
+        [ud synchronize];
+    }
+}
+
 
 // -- PSMTabBarControl delegate ----------------------------------------------
 

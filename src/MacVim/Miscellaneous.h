@@ -54,6 +54,8 @@ extern NSString *MMUseInlineImKey;
 #endif // INCLUDE_OLD_IM_CODE
 extern NSString *MMSuppressTerminationAlertKey;
 extern NSString *MMDrawerPreferredEdgeKey;
+extern NSString *MMSidebarWidthKey;
+extern NSString *MMSidebarVisibleKey;
 
 
 // Enum for MMUntitledWindowKey
@@ -87,6 +89,12 @@ enum {
     // still use e.g. ":set lines=2" to go below these values).
     MMMinRows = 4,
     MMMinColumns = 30
+};
+
+
+enum {
+    MMSidebarMinWidth     = 100,
+    MMSidebarDefaultWidth = 240
 };
 
 

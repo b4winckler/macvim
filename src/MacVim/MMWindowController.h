@@ -30,7 +30,7 @@
     MMVimController     *vimController;
     NSSplitView         *splitView;
     MMVimView           *vimView;
-    NSView              *sideView;
+    NSView              *sidebarView;
     BOOL                setupDone;
     BOOL                windowPresented;
     BOOL                shouldPlaceVimView;
@@ -94,9 +94,9 @@
 - (void)updateTabsWithData:(NSData *)data;
 - (void)selectTabWithIndex:(int)idx;
 
-- (void)collapseSideView:(BOOL)on;
-- (BOOL)isSideViewCollapsed;
-- (void)setSideView:(NSView *)view leftEdge:(BOOL)left;
+- (void)collapseSidebar:(BOOL)on;
+- (BOOL)isSidebarCollapsed;
+- (void)setSidebarView:(NSView *)view leftEdge:(BOOL)left;
 
 - (IBAction)addNewTab:(id)sender;
 - (IBAction)toggleToolbar:(id)sender;

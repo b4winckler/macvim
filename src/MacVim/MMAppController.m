@@ -224,6 +224,9 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 #endif // INCLUDE_OLD_IM_CODE
         [NSNumber numberWithBool:NO],   MMSuppressTerminationAlertKey,
         [NSNumber numberWithInt:0],     MMDrawerPreferredEdgeKey,
+        [NSNumber numberWithInt:MMSidebarDefaultWidth],
+                                        MMSidebarWidthKey,
+        [NSNumber numberWithBool:NO],   MMSidebarVisibleKey,
         nil];
 
     [[NSUserDefaults standardUserDefaults] registerDefaults:dict];
