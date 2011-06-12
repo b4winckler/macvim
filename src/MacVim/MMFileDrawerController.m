@@ -458,7 +458,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)loadView {
   NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
-  BOOL leftEdge = [ud integerForKey:MMDrawerPreferredEdgeKey] > 0;
+  BOOL leftEdge = [ud integerForKey:MMSidebarOnLeftEdgeKey];
 
   FlippedView *drawerView = [[[FlippedView alloc] initWithFrame:NSZeroRect] autorelease];
   [drawerView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
@@ -498,7 +498,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
   [drawerView addSubview:scrollView];
   [drawerView addSubview:pathControl];
-  [windowController setSideView:drawerView leftEdge:leftEdge];
+  [windowController setSidebarView:drawerView leftEdge:leftEdge];
 
   [self setView:filesView];
 
@@ -542,12 +542,12 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)open
 {
-  if ([windowController isSideViewCollapsed]) {
+  if ([windowController isSidebarCollapsed]) {
     if (!rootItem) {
       NSString *root = [[windowController vimController] objectForVimStateKey:@"pwd"];
       [self setRoot:(root ? root : @"~/")];
     }
-    [windowController collapseSideView:NO];
+    [windowController collapseSidebar:NO];
     // Typing Tab (or Esc) in browser view sets keyboard focus to text view
     [self.outlineView setNextKeyView:[[windowController vimView] textView]];
   }
@@ -559,9 +559,9 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)close
 {
-  if ([windowController isSideViewCollapsed])
+  if ([windowController isSidebarCollapsed])
     return;
-  [windowController collapseSideView:YES];
+  [windowController collapseSidebar:YES];
 }
 
 - (void)toggle
@@ -572,7 +572,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
     [self setRoot:(root ? root : @"~/")];
   }
 
-  [windowController collapseSideView:![windowController isSideViewCollapsed]];
+  [windowController collapseSidebar:![windowController isSidebarCollapsed]];
 
   [self selectInDrawer];
 }
@@ -586,7 +586,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)selectInDrawerByExpandingItems:(BOOL)expand {
-  if ([windowController isSideViewCollapsed])
+  if ([windowController isSidebarCollapsed])
     return;
   NSString *fn = [[windowController vimController]
                                                   evaluateVimExpression:@"expand('%:p')"];

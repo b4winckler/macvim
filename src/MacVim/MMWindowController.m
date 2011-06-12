@@ -122,7 +122,8 @@
 
     // Use textured background on Leopard or later (skip the 'if' on Tiger for
     // polished metal window).
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:MMTexturedWindowKey]
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    if ([ud boolForKey:MMTexturedWindowKey]
             || (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_4))
         styleMask |= NSTexturedBackgroundWindowMask;
 
@@ -170,7 +171,6 @@
     [tabBarControl setDelegate:self];
     [tabBarControl setHidden:YES];
 
-    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
     [tabBarControl setCellMinWidth:[ud integerForKey:MMTabMinWidthKey]];
     [tabBarControl setCellMaxWidth:[ud integerForKey:MMTabMaxWidthKey]];
     [tabBarControl setCellOptimumWidth:
@@ -250,7 +250,10 @@
     if ([win respondsToSelector:@selector(_setContentHasShadow:)])
         [win _setContentHasShadow:NO];
 
-    fileDrawerController = [[MMFileDrawerController alloc] initWithWindowController:self];
+    fileDrawerController = [[MMFileDrawerController alloc]
+                                                initWithWindowController:self];
+    if ([ud boolForKey:MMSidebarVisibleKey])
+        [fileDrawerController open];
 
     NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
     [nc addObserver:self

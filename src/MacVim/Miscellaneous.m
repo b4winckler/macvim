@@ -45,7 +45,7 @@ NSString *MMLastWindowClosedBehaviorKey = @"MMLastWindowClosedBehavior";
 NSString *MMUseInlineImKey              = @"MMUseInlineIm";
 #endif // INCLUDE_OLD_IM_CODE
 NSString *MMSuppressTerminationAlertKey = @"MMSuppressTerminationAlert";
-NSString *MMDrawerPreferredEdgeKey      = @"MMDrawerPreferredEdge";
+NSString *MMSidebarOnLeftEdgeKey        = @"MMSidebarOnLeftEdge";
 NSString *MMSidebarWidthKey             = @"MMSidebarWidth";
 NSString *MMSidebarVisibleKey           = @"MMSidebarVisible";
 

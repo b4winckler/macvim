@@ -53,7 +53,7 @@ extern NSString *MMLastWindowClosedBehaviorKey;
 extern NSString *MMUseInlineImKey;
 #endif // INCLUDE_OLD_IM_CODE
 extern NSString *MMSuppressTerminationAlertKey;
-extern NSString *MMDrawerPreferredEdgeKey;
+extern NSString *MMSidebarOnLeftEdgeKey;
 extern NSString *MMSidebarWidthKey;
 extern NSString *MMSidebarVisibleKey;
 
