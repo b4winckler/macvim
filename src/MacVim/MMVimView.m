@@ -206,16 +206,6 @@ enum {
     [[self window] setDelegate:nil];
 
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-
-#if 0
-    [textView removeFromSuperviewWithoutNeedingDisplay];
-
-    unsigned i, count = [scrollbars count];
-    for (i = 0; i < count; ++i) {
-        MMScroller *sb = [scrollbars objectAtIndex:i];
-        [sb removeFromSuperviewWithoutNeedingDisplay];
-    }
-#endif
 }
 
 - (NSSize)desiredSize

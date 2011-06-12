@@ -334,19 +334,20 @@
     // may lead to very strange bugs).
     [nc removeObserver:tabBarControl];
 
-    //[tabBarControl removeFromSuperviewWithoutNeedingDisplay];
-    //[vimView removeFromSuperviewWithoutNeedingDisplay];
     [vimView cleanup];
     [fileDrawerController cleanup];
 
-    // It is feasible (though unlikely) that the user quits before the window
+    // It is possible (though unlikely) that the user quits before the window
     // controller is released, make sure the edit flag is cleared so no warning
     // dialog is displayed.
     [decoratedWindow setDocumentEdited:NO];
 
-    [[self window] orderOut:self];
-
-    //[tabView removeAllTabViewItems];
+    // NOTE! Calling orderOut: here will cause the views to set the 'needs
+    // display' flag under certain conditions (such as clicking the close
+    // button on a window).  Obviously having the views display themselves just
+    // as the window is about to close is a bad idea, so we no longer call
+    // orderOut: here, but leave the call in as a reminder.
+    //[[self window] orderOut:self];
 }
 
 - (void)openWindow
