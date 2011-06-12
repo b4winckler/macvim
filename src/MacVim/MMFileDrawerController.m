@@ -510,7 +510,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)cleanup
 {
-  [[self view] removeFromSuperviewWithoutNeedingDisplay];
+  [[self outlineView] setDelegate:nil];
+  [[self outlineView] setDataSource:nil];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [self unwatchRoot];
 }
@@ -1086,10 +1087,8 @@ static void change_occured(ConstFSEventStreamRef stream,
   }
 }
 
-- (void)dealloc {
-  [[NSNotificationCenter defaultCenter] removeObserver:self];
-
-  [self unwatchRoot];
+- (void)dealloc
+{
   [pathControl release]; pathControl = nil;
   [rootItem release]; rootItem = nil;
 
