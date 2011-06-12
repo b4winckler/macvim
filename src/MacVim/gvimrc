@@ -104,7 +104,7 @@ endif " exists("macvim_hig_shift_movement")
 " File drawer related.
 
 " Select current file (buffer) in file drawer
-au WinEnter,BufEnter * macaction selectInDrawer:
+au WinEnter,BufEnter * macaction selectInFileBrowser:
 
 function MMDeleteBufferByPath(path)
   exe 'bwipeout! "' . bufname(a:path) . '"'

@@ -65,7 +65,7 @@
 #import "MMVimView.h"
 #import "MMWindow.h"
 #import "MMWindowController.h"
-#import "MMFileDrawerController.h"
+#import "MMFileBrowserController.h"
 #import "Miscellaneous.h"
 #import <PSMTabBarControl/PSMTabBarControl.h>
 #import <Carbon/Carbon.h>
@@ -250,10 +250,10 @@
     if ([win respondsToSelector:@selector(_setContentHasShadow:)])
         [win _setContentHasShadow:NO];
 
-    fileDrawerController = [[MMFileDrawerController alloc]
+    fileBrowserController = [[MMFileBrowserController alloc]
                                                 initWithWindowController:self];
     if ([ud boolForKey:MMSidebarVisibleKey])
-        [fileDrawerController open];
+        [fileBrowserController open];
 
     NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
     [nc addObserver:self
@@ -268,7 +268,7 @@
 {
     ASLogDebug(@"");
 
-    [fileDrawerController release];  fileDrawerController = nil;
+    [fileBrowserController release];  fileBrowserController = nil;
     [decoratedWindow release];  decoratedWindow = nil;
     [windowAutosaveKey release];  windowAutosaveKey = nil;
     [vimView release];  vimView = nil;
@@ -339,7 +339,7 @@
     [nc removeObserver:tabBarControl];
 
     [vimView cleanup];
-    [fileDrawerController cleanup];
+    [fileBrowserController cleanup];
 
     // It is possible (though unlikely) that the user quits before the window
     // controller is released, make sure the edit flag is cleared so no warning
@@ -1290,24 +1290,19 @@
     [vimController sendMessage:ZoomMsgID data:data];
 }
 
-- (IBAction)openDrawer:(id)sender
+- (IBAction)openFileBrowser:(id)sender
 {
-    [fileDrawerController open];
+    [fileBrowserController open];
 }
 
-- (IBAction)closeDrawer:(id)sender
+- (IBAction)closeFileBrowser:(id)sender
 {
-    [fileDrawerController close];
+    [fileBrowserController close];
 }
 
-- (IBAction)toggleDrawer:(id)sender
+- (IBAction)selectInFileBrowser:(id)sender
 {
-    [fileDrawerController toggle];
-}
-
-- (IBAction)selectInDrawer:(id)sender
-{
-    [fileDrawerController selectInDrawer];
+    [fileBrowserController selectInBrowser];
 }
 
 

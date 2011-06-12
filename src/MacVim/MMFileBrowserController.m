@@ -1,4 +1,4 @@
-#import "MMFileDrawerController.h"
+#import "MMFileBrowserController.h"
 #import "MMWindowController.h"
 #import "MMAppController.h"
 #import "ImageAndTextCell.h"
@@ -391,7 +391,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   if ([self numberOfSelectedRows] <= 1) {
     [self selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
   }
-  return [(MMFileDrawerController *)[self delegate] menuForRow:row];
+  return [(MMFileBrowserController *)[self delegate] menuForRow:row];
 }
 
 - (void)expandParentsOfItem:(id)item {
@@ -428,7 +428,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 // Controller
 // ****************************************************************************
 
-@interface MMFileDrawerController (Private)
+@interface MMFileBrowserController (Private)
 - (FilesOutlineView *)outlineView;
 - (void)pwdChanged:(NSNotification *)notification;
 - (void)changeWorkingDirectory:(NSString *)path;
@@ -440,11 +440,11 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)unwatchRoot;
 - (void)changeOccurredAtPath:(NSString *)path;
 - (void)deleteBufferByPath:(NSString *)path;
-- (void)selectInDrawerByExpandingItems:(BOOL)expand;
+- (void)selectInBrowserByExpandingItems:(BOOL)expand;
 @end
 
 
-@implementation MMFileDrawerController
+@implementation MMFileBrowserController
 
 - (id)initWithWindowController:(MMWindowController *)controller {
   if ((self = [super initWithNibName:nil bundle:nil])) {
@@ -460,9 +460,6 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)loadView {
   NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
   BOOL leftEdge = [ud integerForKey:MMSidebarOnLeftEdgeKey];
-
-  FlippedView *drawerView = [[[FlippedView alloc] initWithFrame:NSZeroRect] autorelease];
-  [drawerView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
 
   FilesOutlineView *filesView = [[[FilesOutlineView alloc] initWithFrame:NSZeroRect] autorelease];
   [filesView setFocusRingType:NSFocusRingTypeNone];
@@ -497,9 +494,11 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
   [scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable | NSViewMaxYMargin];
 
-  [drawerView addSubview:scrollView];
-  [drawerView addSubview:pathControl];
-  [windowController setSidebarView:drawerView leftEdge:leftEdge];
+  FlippedView *containerView = [[[FlippedView alloc] initWithFrame:NSZeroRect] autorelease];
+  [containerView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+  [containerView addSubview:scrollView];
+  [containerView addSubview:pathControl];
+  [windowController setSidebarView:containerView leftEdge:leftEdge];
 
   [self setView:filesView];
   viewLoaded = YES;
@@ -557,7 +556,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   }
   [self.outlineView makeFirstResponder];
   if ([self.outlineView numberOfSelectedRows] == 0) {
-    [self selectInDrawer];
+    [self selectInBrowser];
   }
 }
 
@@ -568,28 +567,15 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [windowController collapseSidebar:YES];
 }
 
-- (void)toggle
-{
-  if (!rootItem) {
-    NSString *root = [[windowController vimController]
-                                                  objectForVimStateKey:@"pwd"];
-    [self setRoot:(root ? root : @"~/")];
-  }
-
-  [windowController collapseSidebar:![windowController isSidebarCollapsed]];
-
-  [self selectInDrawer];
+- (void)selectInBrowser {
+  [self selectInBrowserByExpandingItems:NO];
 }
 
-- (void)selectInDrawer {
-  [self selectInDrawerByExpandingItems:NO];
+- (void)selectInBrowserByExpandingItems {
+  [self selectInBrowserByExpandingItems:YES];
 }
 
-- (void)selectInDrawerByExpandingItems {
-  [self selectInDrawerByExpandingItems:YES];
-}
-
-- (void)selectInDrawerByExpandingItems:(BOOL)expand {
+- (void)selectInBrowserByExpandingItems:(BOOL)expand {
   if ([windowController isSidebarCollapsed])
     return;
   NSString *fn = [[windowController vimController]
@@ -768,7 +754,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
   // Misc
   [menu addItem:[NSMenuItem separatorItem]];
-  [menu addItemWithTitle:@"Reveal Current File in File Browser" action:@selector(selectInDrawerByExpandingItems) keyEquivalent:@""];
+  [menu addItemWithTitle:@"Reveal Current File in File Browser" action:@selector(selectInBrowserByExpandingItems) keyEquivalent:@""];
   item = [menu addItemWithTitle:@"Show hidden Files" action:@selector(toggleShowHiddenFiles:) keyEquivalent:@""];
   [item setState:rootItem.includesHiddenFiles ? NSOnState : NSOffState];
 
@@ -1031,7 +1017,7 @@ static void change_occured(ConstFSEventStreamRef stream,
                            void *paths,
                            const FSEventStreamEventFlags flags[],
                            const FSEventStreamEventId ids[]) {
-  MMFileDrawerController *self = (MMFileDrawerController *)watcher;
+  MMFileBrowserController *self = (MMFileBrowserController *)watcher;
   for (NSString *path in (NSArray *)paths) {
     [self changeOccurredAtPath:path];
   }

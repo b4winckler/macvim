@@ -12,7 +12,7 @@
 	<string></string>
 	<key>clearRecentDocuments:</key>
 	<string></string>
-	<key>closeDrawer:</key>
+	<key>closeFileBrowser:</key>
 	<string></string>
 	<key>copy:</key>
 	<string></string>
@@ -36,7 +36,7 @@
 	<string></string>
 	<key>newWindow:</key>
 	<string></string>
-	<key>openDrawer:</key>
+	<key>openFileBrowser:</key>
 	<string></string>
 	<key>openWebsite:</key>
 	<string></string>
@@ -68,9 +68,7 @@
 	<string></string>
 	<key>terminate:</key>
 	<string></string>
-	<key>toggleDrawer:</key>
-	<string></string>
-	<key>selectInDrawer:</key>
+	<key>selectInFileBrowser:</key>
 	<string></string>
 	<key>undo:</key>
 	<string></string>

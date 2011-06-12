@@ -17,7 +17,7 @@
 @class MMFullscreenWindow;
 @class MMVimController;
 @class MMVimView;
-@class MMFileDrawerController;
+@class MMFileBrowserController;
 
 @interface MMWindowController : NSWindowController
 #if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
@@ -47,7 +47,7 @@
     NSPoint             userTopLeft;
     NSPoint             defaultTopLeft;
     BOOL                vimTaskSelectedTab;
-    MMFileDrawerController *fileDrawerController;
+    MMFileBrowserController *fileBrowserController;
 }
 
 - (id)initWithVimController:(MMVimController *)controller;
@@ -109,9 +109,8 @@
 - (IBAction)fontSizeDown:(id)sender;
 - (IBAction)findAndReplace:(id)sender;
 - (IBAction)zoom:(id)sender;
-- (IBAction)openDrawer:(id)sender;
-- (IBAction)closeDrawer:(id)sender;
-- (IBAction)toggleDrawer:(id)sender;
-- (IBAction)selectInDrawer:(id)sender;
+- (IBAction)openFileBrowser:(id)sender;
+- (IBAction)closeFileBrowser:(id)sender;
+- (IBAction)selectInFileBrowser:(id)sender;
 
 @end

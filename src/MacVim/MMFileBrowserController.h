@@ -3,7 +3,7 @@
 @class MMWindowController;
 @class FileSystemItem;
 
-@interface MMFileDrawerController : NSViewController <NSOutlineViewDataSource, NSOutlineViewDelegate> {
+@interface MMFileBrowserController : NSViewController <NSOutlineViewDataSource, NSOutlineViewDelegate> {
   MMWindowController *windowController;
   NSPathControl *pathControl;
   FileSystemItem *rootItem;
@@ -17,9 +17,8 @@
 - (void)setRoot:(NSString *)root;
 - (void)open;
 - (void)close;
-- (void)toggle;
-- (void)selectInDrawer;
-- (void)selectInDrawerByExpandingItems;
+- (void)selectInBrowser;
+- (void)selectInBrowserByExpandingItems;
 
 - (NSMenu *)menuForRow:(NSInteger)row;
 
