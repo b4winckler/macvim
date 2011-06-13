@@ -709,51 +709,59 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   NSMenu *menu = [[NSMenu new] autorelease];
   NSMenuItem *item;
   NSString *title;
+  SEL action;
   MMFileBrowserFSItem *fsItem = [self itemAtRow:row];
-  BOOL isLeaf = [fsItem isLeaf];
+  BOOL multipleSelection = [fileBrowser numberOfSelectedRows] > 1;
 
   // File operations
   [menu addItemWithTitle:@"New File" action:@selector(newFile:) keyEquivalent:@""];
   [menu addItemWithTitle:@"New Folder" action:@selector(newFolder:) keyEquivalent:@""];
   if (fsItem) {
-    [menu addItemWithTitle:@"Rename…" action:@selector(renameFile:) keyEquivalent:@""];
+    action = multipleSelection ? NULL : @selector(renameFile:);
+    [menu addItemWithTitle:@"Rename…" action:action keyEquivalent:@""];
     [menu addItemWithTitle:@"Delete selected Files" action:@selector(deleteSelectedFiles:) keyEquivalent:@""];
 
     // Vim open/cwd
     [menu addItem:[NSMenuItem separatorItem]];
-    if (isLeaf) {
-      [menu addItemWithTitle:@"Open selected Files in Tabs" action:@selector(openFilesInTabs:) keyEquivalent:@""];
-      [menu addItemWithTitle:@"Open selected Files in Horizontal Split Views" action:@selector(openFilesInHorizontalSplitViews:) keyEquivalent:@""];
-      [menu addItemWithTitle:@"Open selected Files in Vertical Split Views" action:@selector(openFilesInVerticalSplitViews:) keyEquivalent:@""];
-    }
+    action = multipleSelection ? @selector(openFilesInTabs:) : NULL;
+    [menu addItemWithTitle:@"Open selected Files in Tabs" action:action keyEquivalent:@""];
+    action = multipleSelection ? @selector(openFilesInHorizontalSplitViews:) : NULL;
+    [menu addItemWithTitle:@"Open selected Files in Horizontal Split Views" action:action keyEquivalent:@""];
+    action = multipleSelection ? @selector(openFilesInVerticalSplitViews:) : NULL;
+    [menu addItemWithTitle:@"Open selected Files in Vertical Split Views" action:action keyEquivalent:@""];
+    action = multipleSelection ? NULL : @selector(changeWorkingDirectoryToSelection:);
     title = [NSString stringWithFormat:@"Change working directory to “%@”", [[fsItem dirItem] relativePath]];
-    [menu addItemWithTitle:title action:@selector(changeWorkingDirectoryToSelection:) keyEquivalent:@""];
+    [menu addItemWithTitle:title action:action keyEquivalent:@""];
 
     // Open elsewhere
     NSString *filename = [fsItem relativePath];
     [menu addItem:[NSMenuItem separatorItem]];
+    action = multipleSelection ? NULL : @selector(revealInFinder:);
     title = [NSString stringWithFormat:@"Reveal “%@” in Finder", filename];
-    [menu addItemWithTitle:title action:@selector(revealInFinder:) keyEquivalent:@""];
+    [menu addItemWithTitle:title action:action keyEquivalent:@""];
+    action = multipleSelection ? NULL : @selector(openWithFinder:);
     title = [NSString stringWithFormat:@"Open “%@” with Finder", filename];
-    [menu addItemWithTitle:title action:@selector(openWithFinder:) keyEquivalent:@""];
+    [menu addItemWithTitle:title action:action keyEquivalent:@""];
     // open with app submenu
     title = [NSString stringWithFormat:@"Open “%@” with…", filename];
     NSMenuItem *openWithFinderItem = [menu addItemWithTitle:title action:NULL keyEquivalent:@""];
-    NSArray *appPaths = [self appsAssociatedWithItem:fsItem];
-    if (appPaths) {
-      NSMenu *submenu = [[NSMenu new] autorelease];
-      NSInteger i;
-      for (i = 0; i < [appPaths count]; i++) {
-        NSString *appPath = [appPaths objectAtIndex:i];
-        NSString *appName = [[NSFileManager defaultManager] displayNameAtPath:appPath];
-        NSImage *appIcon = [[NSWorkspace sharedWorkspace] iconForFile:appPath];
-        [appIcon setSize:NSMakeSize(16, 16)];
-        item = [submenu addItemWithTitle:appName action:@selector(openFileWithApp:) keyEquivalent:@""];
-        [item setTarget:self];
-        [item setRepresentedObject:appPath];
-        [item setImage:appIcon];
+    if (!multipleSelection) {
+      NSArray *appPaths = [self appsAssociatedWithItem:fsItem];
+      if (appPaths) {
+        NSMenu *submenu = [[NSMenu new] autorelease];
+        NSInteger i;
+        for (i = 0; i < [appPaths count]; i++) {
+          NSString *appPath = [appPaths objectAtIndex:i];
+          NSString *appName = [[NSFileManager defaultManager] displayNameAtPath:appPath];
+          NSImage *appIcon = [[NSWorkspace sharedWorkspace] iconForFile:appPath];
+          [appIcon setSize:NSMakeSize(16, 16)];
+          item = [submenu addItemWithTitle:appName action:@selector(openFileWithApp:) keyEquivalent:@""];
+          [item setTarget:self];
+          [item setRepresentedObject:appPath];
+          [item setImage:appIcon];
+        }
+        [openWithFinderItem setSubmenu:submenu];
       }
-      [openWithFinderItem setSubmenu:submenu];
     }
   } else {
     fsItem = rootItem;
