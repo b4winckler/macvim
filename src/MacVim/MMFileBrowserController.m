@@ -11,12 +11,12 @@
 // File system model
 // ****************************************************************************
 
-// The FileSystemItem class is an adaptation of Apple's example in the Outline
-// View Programming Topics document.
+// The MMFileBrowserFSItem class is an adaptation of Apple's example in the
+// Outline View Programming Topics document.
 
-@interface FileSystemItem : NSObject {
+@interface MMFileBrowserFSItem : NSObject {
   NSString *path;
-  FileSystemItem *parent;
+  MMFileBrowserFSItem *parent;
   NSMutableArray *children;
   MMVimController *vim;
   NSImage *icon;
@@ -25,40 +25,40 @@
 }
 
 @property (nonatomic, assign) BOOL includesHiddenFiles, ignoreNextReload;
-@property (readonly) FileSystemItem *parent;
+@property (readonly) MMFileBrowserFSItem *parent;
 
-- (id)initWithPath:(NSString *)path parent:(FileSystemItem *)parentItem vim:(MMVimController *)vim;
+- (id)initWithPath:(NSString *)path parent:(MMFileBrowserFSItem *)parentItem vim:(MMVimController *)vim;
 - (NSInteger)numberOfChildren; // Returns -1 for leaf nodes
-- (FileSystemItem *)childAtIndex:(NSUInteger)n; // Invalid to call on leaf nodes
+- (MMFileBrowserFSItem *)childAtIndex:(NSUInteger)n; // Invalid to call on leaf nodes
 - (NSString *)fullPath;
 - (NSString *)relativePath;
 - (BOOL)isLeaf;
 - (BOOL)reloadRecursive:(BOOL)recursive;
-- (FileSystemItem *)itemAtPath:(NSString *)itemPath;
-- (FileSystemItem *)itemWithName:(NSString *)name;
+- (MMFileBrowserFSItem *)itemAtPath:(NSString *)itemPath;
+- (MMFileBrowserFSItem *)itemWithName:(NSString *)name;
 - (NSArray *)parents;
 
 @end
 
-@interface FileSystemItem (Private)
-- (FileSystemItem *)_itemAtPath:(NSArray *)components;
+@interface MMFileBrowserFSItem (Private)
+- (MMFileBrowserFSItem *)_itemAtPath:(NSArray *)components;
 - (BOOL)_ignoreFile:(NSString *)filename;
 @end
 
 
-@implementation FileSystemItem
+@implementation MMFileBrowserFSItem
 
 static NSMutableArray *leafNode = nil;
 
 + (void)initialize {
-  if (self == [FileSystemItem class]) {
+  if (self == [MMFileBrowserFSItem class]) {
     leafNode = [[NSMutableArray alloc] init];
   }
 }
 
 @synthesize parent, includesHiddenFiles, ignoreNextReload;
 
-- (id)initWithPath:(NSString *)thePath parent:(FileSystemItem *)parentItem vim:(MMVimController *)vimInstance {
+- (id)initWithPath:(NSString *)thePath parent:(MMFileBrowserFSItem *)parentItem vim:(MMVimController *)vimInstance {
   if ((self = [super init])) {
     icon = nil;
     path = [thePath retain];
@@ -83,7 +83,7 @@ static NSMutableArray *leafNode = nil;
     BOOL isDir, valid;
     valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
     if (valid && isDir) {
-      // Create a dummy array, which is replaced by -[FileSystemItem reloadRecursive]
+      // Create a dummy array, which is replaced by -[MMFileBrowserFSItem reloadRecursive]
       children = [NSArray new];
       [self reloadRecursive:NO];
     } else {
@@ -115,9 +115,9 @@ static NSMutableArray *leafNode = nil;
         continue;
       }
 
-      FileSystemItem *child = nil;
+      MMFileBrowserFSItem *child = nil;
       // Check if we already have an item for the child path
-      for (FileSystemItem *item in children) {
+      for (MMFileBrowserFSItem *item in children) {
         if ([[item relativePath] isEqualToString:childName]) {
           child = item;
           break;
@@ -133,7 +133,7 @@ static NSMutableArray *leafNode = nil;
         [children removeObject:child];
       } else {
         // New child, so create a new item
-        child = [[FileSystemItem alloc] initWithPath:[path stringByAppendingPathComponent:childName]
+        child = [[MMFileBrowserFSItem alloc] initWithPath:[path stringByAppendingPathComponent:childName]
                                               parent:self
                                                  vim:vim];
         [reloaded addObject:child];
@@ -187,7 +187,7 @@ static NSMutableArray *leafNode = nil;
 }
 
 // Returns `self' if it's a directory item, otherwise it returns the parent item.
-- (FileSystemItem *)dirItem {
+- (MMFileBrowserFSItem *)dirItem {
   return [self isLeaf] ? parent : self;
 }
 
@@ -199,7 +199,7 @@ static NSMutableArray *leafNode = nil;
   return path;
 }
 
-- (FileSystemItem *)childAtIndex:(NSUInteger)n {
+- (MMFileBrowserFSItem *)childAtIndex:(NSUInteger)n {
   return [[self children] objectAtIndex:n];
 }
 
@@ -221,7 +221,7 @@ static NSMutableArray *leafNode = nil;
   return icon;
 }
 
-- (FileSystemItem *)itemAtPath:(NSString *)itemPath {
+- (MMFileBrowserFSItem *)itemAtPath:(NSString *)itemPath {
   if ([itemPath hasSuffix:@"/"])
     itemPath = [itemPath stringByStandardizingPath];
   NSArray *components = [itemPath pathComponents];
@@ -238,11 +238,11 @@ static NSMutableArray *leafNode = nil;
   return [self _itemAtPath:components];
 }
 
-- (FileSystemItem *)_itemAtPath:(NSArray *)components {
+- (MMFileBrowserFSItem *)_itemAtPath:(NSArray *)components {
   if ([components count] == 0) {
     return self;
   } else {
-    FileSystemItem *child = [self itemWithName:[components objectAtIndex:0]];
+    MMFileBrowserFSItem *child = [self itemWithName:[components objectAtIndex:0]];
     if (child) {
       return [child _itemAtPath:[components subarrayWithRange:NSMakeRange(1, [components count] - 1)]];
     }
@@ -250,8 +250,8 @@ static NSMutableArray *leafNode = nil;
   return nil;
 }
 
-- (FileSystemItem *)itemWithName:(NSString *)name {
-  for (FileSystemItem *child in [self children]) {
+- (MMFileBrowserFSItem *)itemWithName:(NSString *)name {
+  for (MMFileBrowserFSItem *child in [self children]) {
     if ([[child relativePath] isEqualToString:name]) {
       return child;
     }
@@ -282,8 +282,19 @@ static NSMutableArray *leafNode = nil;
 @end
 
 // ****************************************************************************
-// Outline view
+// Views
 // ****************************************************************************
+
+@interface MMFileBrowserContainerView : NSView
+@end
+
+@implementation MMFileBrowserContainerView
+
+- (BOOL) isFlipped {
+  return YES;
+}
+
+@end
 
 #define ENTER_KEY_CODE 36
 #define H_KEY_CODE 4
@@ -433,8 +444,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)changeWorkingDirectory:(NSString *)path;
 - (NSArray *)selectedItemPaths;
 - (void)openSelectedFilesInCurrentWindowWithLayout:(int)layout;
-- (NSArray *)appsAssociatedWithItem:(FileSystemItem *)item;
-- (FileSystemItem *)itemAtRow:(NSInteger)row;
+- (NSArray *)appsAssociatedWithItem:(MMFileBrowserFSItem *)item;
+- (MMFileBrowserFSItem *)itemAtRow:(NSInteger)row;
 - (void)watchRoot;
 - (void)unwatchRoot;
 - (void)changeOccurredAtPath:(NSString *)path;
@@ -487,7 +498,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
   [scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable | NSViewMaxYMargin];
 
-  FlippedView *containerView = [[[FlippedView alloc] initWithFrame:NSZeroRect] autorelease];
+  MMFileBrowserContainerView *containerView = [[[MMFileBrowserContainerView alloc]
+                                                initWithFrame:NSZeroRect] autorelease];
   [containerView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
   [containerView addSubview:scrollView];
   [containerView addSubview:pathControl];
@@ -538,7 +550,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
     rootItem = nil;
   }
 
-  rootItem = [[FileSystemItem alloc] initWithPath:root
+  rootItem = [[MMFileBrowserFSItem alloc] initWithPath:root
                                            parent:nil
                                               vim:[windowController vimController]];
   [fileBrowser reloadData];
@@ -574,7 +586,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   NSString *fn = [[windowController vimController]
                                                   evaluateVimExpression:@"expand('%:p')"];
   if([fn length] > 0) {
-    FileSystemItem *item = [rootItem itemAtPath:fn];
+    MMFileBrowserFSItem *item = [rootItem itemAtPath:fn];
     // always select file if `expand' is `YES', otherwise only if its parent is expanded
     if (expand || item.parent == rootItem || [fileBrowser isItemExpanded:item.parent]) {
       [fileBrowser selectItem:item];
@@ -584,7 +596,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   }
 }
 
-- (FileSystemItem *)itemAtRow:(NSInteger)row {
+- (MMFileBrowserFSItem *)itemAtRow:(NSInteger)row {
   return [fileBrowser itemAtRow:row];
 }
 
@@ -592,7 +604,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   NSMutableArray *paths = [NSMutableArray array];
   NSIndexSet *indexes = [fileBrowser selectedRowIndexes];
   [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
-    FileSystemItem *item = [self itemAtRow:index];
+    MMFileBrowserFSItem *item = [self itemAtRow:index];
     if ([item isLeaf]) {
       [paths addObject:[item fullPath]];
     }
@@ -632,8 +644,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   }
 }
 
-// TODO move into FileSystemItem
-- (NSArray *)appsAssociatedWithItem:(FileSystemItem *)item {
+// TODO move into MMFileBrowserFSItem
+- (NSArray *)appsAssociatedWithItem:(MMFileBrowserFSItem *)item {
   NSString *uti = [[NSWorkspace sharedWorkspace] typeOfFile:[item fullPath] error:NULL];
   if (uti) {
     NSArray *identifiers = (NSArray *)LSCopyAllRoleHandlersForContentType((CFStringRef)uti, kLSRolesAll);
@@ -679,7 +691,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   if (item == nil) {
     item = rootItem;
   }
-  return [(FileSystemItem *)item childAtIndex:index];
+  return [(MMFileBrowserFSItem *)item childAtIndex:index];
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item {
@@ -697,7 +709,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   NSMenu *menu = [[NSMenu new] autorelease];
   NSMenuItem *item;
   NSString *title;
-  FileSystemItem *fsItem = [self itemAtRow:row];
+  MMFileBrowserFSItem *fsItem = [self itemAtRow:row];
   BOOL isLeaf = [fsItem isLeaf];
 
   // File operations
@@ -768,7 +780,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
   MMFileBrowser *outlineView = fileBrowser;
   if (userHasChangedSelection && [outlineView numberOfSelectedRows] == 1) {
-    FileSystemItem *item = [self itemAtRow:[outlineView selectedRow]];
+    MMFileBrowserFSItem *item = [self itemAtRow:[outlineView selectedRow]];
     if ([item isLeaf]) {
       NSEvent *event = [NSApp currentEvent];
       int layout = [[NSUserDefaults standardUserDefaults] integerForKey:MMOpenLayoutKey];
@@ -808,12 +820,12 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   return NO;
 }
 
-- (void)outlineView:(NSOutlineView *)outlineView setObjectValue:(NSString *)name forTableColumn:(NSTableColumn *)tableColumn byItem:(FileSystemItem *)item {
+- (void)outlineView:(NSOutlineView *)outlineView setObjectValue:(NSString *)name forTableColumn:(NSTableColumn *)tableColumn byItem:(MMFileBrowserFSItem *)item {
   // save these here, cause by moving the file and reloading the view 'item' will be released
   BOOL isLeaf = [item isLeaf];
   NSString *fullPath = [item fullPath];
 
-  FileSystemItem *dirItem = item.parent;
+  MMFileBrowserFSItem *dirItem = item.parent;
   NSString *newPath = [[dirItem fullPath] stringByAppendingPathComponent:name];
   NSError *error = nil;
   dirItem.ignoreNextReload = YES;
@@ -854,7 +866,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)newFile:(NSMenuItem *)sender {
-  FileSystemItem *item = [self itemAtRow:[sender tag]];
+  MMFileBrowserFSItem *item = [self itemAtRow:[sender tag]];
   if(!item) item = rootItem;
   if([item isLeaf]) item = [item parent];
   NSString *path = [[item fullPath] stringByAppendingPathComponent:@"untitled file"];
@@ -876,7 +888,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
     else
       [fileBrowser reloadItem:item reloadChildren:YES];
     if(item != rootItem) [fileBrowser expandItem:item];
-    FileSystemItem *newItem = [item itemWithName:[result lastPathComponent]];
+    MMFileBrowserFSItem *newItem = [item itemWithName:[result lastPathComponent]];
     NSInteger row = [fileBrowser rowForItem:newItem];
     NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
     [fileBrowser selectRowIndexes:index byExtendingSelection:NO];
@@ -888,8 +900,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)newFolder:(NSMenuItem *)sender {
-  FileSystemItem *selItem = [self itemAtRow:[sender tag]];
-  FileSystemItem *dirItem = selItem ? [selItem dirItem] : rootItem;
+  MMFileBrowserFSItem *selItem = [self itemAtRow:[sender tag]];
+  MMFileBrowserFSItem *dirItem = selItem ? [selItem dirItem] : rootItem;
   NSString *path = [[dirItem fullPath] stringByAppendingPathComponent:@"untitled folder"];
 
   int i = 2;
@@ -917,7 +929,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
   // Show, select and edit the new folder
   if(selItem) [fileBrowser expandItem:dirItem];
-  FileSystemItem *newItem = [dirItem itemWithName:[result lastPathComponent]];
+  MMFileBrowserFSItem *newItem = [dirItem itemWithName:[result lastPathComponent]];
   NSInteger row = [fileBrowser rowForItem:newItem];
   NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
   [fileBrowser selectRowIndexes:index byExtendingSelection:NO];
@@ -949,10 +961,10 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 // TODO needs multiple selection support
 - (void)deleteSelectedFiles:(NSMenuItem *)sender {
-  FileSystemItem *item = [self itemAtRow:[sender tag]];
+  MMFileBrowserFSItem *item = [self itemAtRow:[sender tag]];
   NSString *fullPath = [item fullPath];
   BOOL isLeaf = [item isLeaf];
-  FileSystemItem *dirItem = item.parent;
+  MMFileBrowserFSItem *dirItem = item.parent;
 
   dirItem.ignoreNextReload = YES;
   [[NSFileManager defaultManager] removeItemAtPath:fullPath error:NULL];
@@ -991,7 +1003,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   NSMenu *menu = [sender menu];
   NSInteger index = [[menu supermenu] indexOfItemWithSubmenu:menu];
   NSMenuItem *parentMenuItem = [[menu supermenu] itemAtIndex:index];
-  FileSystemItem *item = [self itemAtRow:[parentMenuItem tag]];
+  MMFileBrowserFSItem *item = [self itemAtRow:[parentMenuItem tag]];
   NSArray *appPaths = [self appsAssociatedWithItem:item];
   if (appPaths) {
     // Actually this action should never be called if there are no associated apps, but let's keep it safe
@@ -1017,7 +1029,7 @@ static void change_occured(ConstFSEventStreamRef stream,
 }
 
 - (void)changeOccurredAtPath:(NSString *)path {
-  FileSystemItem *item = [rootItem itemAtPath:path];
+  MMFileBrowserFSItem *item = [rootItem itemAtPath:path];
   if (item) {
     if (item.ignoreNextReload) {
       item.ignoreNextReload = NO;
@@ -1078,15 +1090,6 @@ static void change_occured(ConstFSEventStreamRef stream,
     [fileBrowser reloadData];
     [fileBrowser expandItem:rootItem];
   }
-}
-
-@end
-
-
-@implementation FlippedView
-
-- (BOOL) isFlipped {
-  return YES;
 }
 
 @end

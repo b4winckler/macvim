@@ -1,14 +1,14 @@
 #import <Cocoa/Cocoa.h>
 
 @class MMWindowController;
-@class FileSystemItem;
+@class MMFileBrowserFSItem;
 @class MMFileBrowser;
 
 @interface MMFileBrowserController : NSViewController <NSOutlineViewDataSource, NSOutlineViewDelegate> {
   MMWindowController *windowController;
   MMFileBrowser *fileBrowser;
   NSPathControl *pathControl;
-  FileSystemItem *rootItem;
+  MMFileBrowserFSItem *rootItem;
   FSEventStreamRef fsEventsStream;
   BOOL userHasChangedSelection;
   BOOL viewLoaded;
@@ -24,9 +24,4 @@
 
 - (NSMenu *)menuForRow:(NSInteger)row;
 
-@end
-
-
-@interface FlippedView : NSView {
-}
 @end
