@@ -429,7 +429,6 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 // ****************************************************************************
 
 @interface MMFileBrowserController (Private)
-- (MMFileBrowser *)outlineView;
 - (void)pwdChanged:(NSNotification *)notification;
 - (void)changeWorkingDirectory:(NSString *)path;
 - (NSArray *)selectedItemPaths;
@@ -461,7 +460,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
   BOOL leftEdge = [ud integerForKey:MMSidebarOnLeftEdgeKey];
 
-  fileBrowser = [[[MMFileBrowser alloc] initWithFrame:NSZeroRect] autorelease];
+  fileBrowser = [[MMFileBrowser alloc] initWithFrame:NSZeroRect];
   [fileBrowser setFocusRingType:NSFocusRingTypeNone];
   [fileBrowser setDelegate:self];
   [fileBrowser setDataSource:self];
@@ -482,9 +481,6 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [pathControl setFont:[NSFont fontWithName:[[pathControl font] fontName] size:12]];
   [pathControl setTarget:self];
   [pathControl setAction:@selector(changeWorkingDirectoryFromPathControl:)];
-
-  // NOTE: does this belong here?
-  [pathControl setURL:[NSURL fileURLWithPath:[rootItem fullPath]]];
 
   NSScrollView *scrollView = [[[NSScrollView alloc] initWithFrame:NSMakeRect(0, pathControl.frame.size.height, 0, 0)] autorelease];
   [scrollView setHasHorizontalScroller:YES];
@@ -512,11 +508,20 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)cleanup
 {
   if (viewLoaded) {
-    [[self outlineView] setDelegate:nil];
-    [[self outlineView] setDataSource:nil];
+    [fileBrowser setDelegate:nil];
+    [fileBrowser setDataSource:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [self unwatchRoot];
   }
+}
+
+- (void)dealloc
+{
+  [pathControl release]; pathControl = nil;
+  [fileBrowser release]; fileBrowser = nil;
+  [rootItem release]; rootItem = nil;
+
+  [super dealloc];
 }
 
 - (void)setRoot:(NSString *)root
@@ -538,26 +543,31 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   rootItem = [[FileSystemItem alloc] initWithPath:root
                                            parent:nil
                                               vim:[windowController vimController]];
+  [fileBrowser reloadData];
+  [fileBrowser expandItem:rootItem];
   [pathControl setURL:[NSURL fileURLWithPath:root]];
-  [(NSOutlineView *)[self view] expandItem:rootItem];
+
   [self watchRoot];
 }
 
 - (void)open
 {
-  if ([windowController isSidebarCollapsed]) {
-    if (!rootItem) {
-      NSString *root = [[windowController vimController] objectForVimStateKey:@"pwd"];
-      [self setRoot:(root ? root : @"~/")];
-    }
-    [windowController collapseSidebar:NO];
-    // Typing Tab (or Esc) in browser view sets keyboard focus to text view
-    [self.outlineView setNextKeyView:[[windowController vimView] textView]];
+  [self view]; // Ensure the view is loaded!
+
+  if (!rootItem) {
+    NSString *root = [[windowController vimController] objectForVimStateKey:@"pwd"];
+    [self setRoot:(root ? root : @"~/")];
   }
-  [self.outlineView makeFirstResponder];
-  if ([self.outlineView numberOfSelectedRows] == 0) {
+
+  // Typing Tab (or Esc) in browser view sets keyboard focus to text view
+  [fileBrowser setNextKeyView:[[windowController vimView] textView]];
+
+  [fileBrowser makeFirstResponder];
+  if ([fileBrowser numberOfSelectedRows] == 0) {
     [self selectInBrowser];
   }
+
+  [windowController collapseSidebar:NO];
 }
 
 - (void)close
@@ -583,21 +593,21 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   if([fn length] > 0) {
     FileSystemItem *item = [rootItem itemAtPath:fn];
     // always select file if `expand' is `YES', otherwise only if its parent is expanded
-    if (expand || item.parent == rootItem || [self.outlineView isItemExpanded:item.parent]) {
-      [self.outlineView selectItem:item];
+    if (expand || item.parent == rootItem || [fileBrowser isItemExpanded:item.parent]) {
+      [fileBrowser selectItem:item];
     } else {
-      [self.outlineView selectRowIndexes:nil byExtendingSelection:NO];
+      [fileBrowser selectRowIndexes:nil byExtendingSelection:NO];
     }
   }
 }
 
 - (FileSystemItem *)itemAtRow:(NSInteger)row {
-  return [[self outlineView] itemAtRow:row];
+  return [fileBrowser itemAtRow:row];
 }
 
 - (NSArray *)selectedItemPaths {
   NSMutableArray *paths = [NSMutableArray array];
-  NSIndexSet *indexes = [[self outlineView] selectedRowIndexes];
+  NSIndexSet *indexes = [fileBrowser selectedRowIndexes];
   [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
     FileSystemItem *item = [self itemAtRow:index];
     if ([item isLeaf]) {
@@ -773,7 +783,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
-  MMFileBrowser *outlineView = [self outlineView];
+  MMFileBrowser *outlineView = fileBrowser;
   if (userHasChangedSelection && [outlineView numberOfSelectedRows] == 1) {
     FileSystemItem *item = [self itemAtRow:[outlineView selectedRow]];
     if ([item isLeaf]) {
@@ -811,7 +821,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
                          item:(id)item
 {
   // Called when an item was double-clicked, in which case we do make the browser the first responder.
-  [(MMFileBrowser *)outlineView makeFirstResponder];
+  [fileBrowser makeFirstResponder];
   return NO;
 }
 
@@ -830,13 +840,13 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   if (moved) {
     [dirItem reloadRecursive:NO];
     if (dirItem == rootItem)
-      [[self outlineView] reloadData];
+      [fileBrowser reloadData];
     else
-      [[self outlineView] reloadItem:dirItem reloadChildren:YES];
+      [fileBrowser reloadItem:dirItem reloadChildren:YES];
     // Select the renamed item
-    NSInteger row = [[self outlineView] rowForItem:[dirItem itemWithName:name]];
+    NSInteger row = [fileBrowser rowForItem:[dirItem itemWithName:name]];
     NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
-    [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
+    [fileBrowser selectRowIndexes:index byExtendingSelection:NO];
     if (isLeaf) {
       [self deleteBufferByPath:fullPath];
       newPath = [newPath stringByEscapingSpecialFilenameCharacters];
@@ -857,7 +867,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 // =======
 
 - (void)renameFile:(NSMenuItem *)sender {
-  [(MMFileBrowser *)[self view] editColumn:0 row:[sender tag] withEvent:nil select:YES];
+  [fileBrowser editColumn:0 row:[sender tag] withEvent:nil select:YES];
 }
 
 - (void)newFile:(NSMenuItem *)sender {
@@ -879,15 +889,15 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   if(isOK) {
     [item reloadRecursive: NO];
     if(item == rootItem)
-      [[self outlineView] reloadData];
+      [fileBrowser reloadData];
     else
-      [[self outlineView] reloadItem:item reloadChildren:YES];
-    if(item != rootItem) [[self outlineView] expandItem:item];
+      [fileBrowser reloadItem:item reloadChildren:YES];
+    if(item != rootItem) [fileBrowser expandItem:item];
     FileSystemItem *newItem = [item itemWithName:[result lastPathComponent]];
-    NSInteger row = [[self outlineView] rowForItem:newItem];
+    NSInteger row = [fileBrowser rowForItem:newItem];
     NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
-    [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
-    [[self outlineView] editColumn:0 row:row withEvent:nil select:YES];
+    [fileBrowser selectRowIndexes:index byExtendingSelection:NO];
+    [fileBrowser editColumn:0 row:row withEvent:nil select:YES];
   }
   else {
     NSLog(@"Failed to create file %@", path);
@@ -918,17 +928,17 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   // Add the new folder to the items
   [dirItem reloadRecursive:NO]; // for now let's not create the item ourselves
   if(dirItem == rootItem)
-    [[self outlineView] reloadData];
+    [fileBrowser reloadData];
   else
-    [[self outlineView] reloadItem:dirItem reloadChildren:YES];
+    [fileBrowser reloadItem:dirItem reloadChildren:YES];
 
   // Show, select and edit the new folder
-  if(selItem) [[self outlineView] expandItem:dirItem];
+  if(selItem) [fileBrowser expandItem:dirItem];
   FileSystemItem *newItem = [dirItem itemWithName:[result lastPathComponent]];
-  NSInteger row = [[self outlineView] rowForItem:newItem];
+  NSInteger row = [fileBrowser rowForItem:newItem];
   NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
-  [[self outlineView] selectRowIndexes:index byExtendingSelection:NO];
-  [[self outlineView] editColumn:0 row:row withEvent:nil select:YES];
+  [fileBrowser selectRowIndexes:index byExtendingSelection:NO];
+  [fileBrowser editColumn:0 row:row withEvent:nil select:YES];
 }
 
 // Vim open/cwd
@@ -965,9 +975,9 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [[NSFileManager defaultManager] removeItemAtPath:fullPath error:NULL];
   [dirItem reloadRecursive:NO];
   if(rootItem == dirItem)
-    [[self outlineView] reloadData];
+    [fileBrowser reloadData];
   else
-    [[self outlineView] reloadItem:dirItem reloadChildren:YES];
+    [fileBrowser reloadItem:dirItem reloadChildren:YES];
 
   if (isLeaf) {
     [self deleteBufferByPath:fullPath];
@@ -977,7 +987,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)toggleShowHiddenFiles:(NSMenuItem *)sender {
   rootItem.includesHiddenFiles = !rootItem.includesHiddenFiles;
   [rootItem reloadRecursive:YES];
-  [[self outlineView] reloadData];
+  [fileBrowser reloadData];
 }
 
 // Open elsewhere
@@ -1034,10 +1044,10 @@ static void change_occured(ConstFSEventStreamRef stream,
     // No need to reload recursive, the change occurred in *this* item only
     if ([item reloadRecursive:NO]) {
       if(rootItem == item) {
-        [[self outlineView] reloadData];
+        [fileBrowser reloadData];
       }
       else
-        [[self outlineView] reloadItem:item reloadChildren:YES];
+        [fileBrowser reloadItem:item reloadChildren:YES];
     }
   }
 }
@@ -1077,28 +1087,13 @@ static void change_occured(ConstFSEventStreamRef stream,
   }
 }
 
-- (void)dealloc
-{
-  [pathControl release]; pathControl = nil;
-  [fileBrowser release]; fileBrowser = nil;
-  [rootItem release]; rootItem = nil;
-
-  [super dealloc];
-}
-
-
-- (MMFileBrowser *)outlineView
-{
-  return (MMFileBrowser *)[self view];
-}
-
 - (void)pwdChanged:(NSNotification *)notification
 {
   NSString *pwd = [[notification userInfo] objectForKey:@"pwd"];
   if (pwd) {
     [self setRoot:pwd];
-    [[self outlineView] reloadData];
-    [[self outlineView] expandItem:rootItem];
+    [fileBrowser reloadData];
+    [fileBrowser expandItem:rootItem];
   }
 }
 
