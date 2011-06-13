@@ -250,10 +250,9 @@
     if ([win respondsToSelector:@selector(_setContentHasShadow:)])
         [win _setContentHasShadow:NO];
 
-    fileBrowserController = [[MMFileBrowserController alloc]
-                                                initWithWindowController:self];
+    fileBrowserController = nil;
     if ([ud boolForKey:MMSidebarVisibleKey]) {
-        [fileBrowserController open];
+        [self openFileBrowser:nil];
         [win makeFirstResponder:[vimView textView]];
     }
 
@@ -1296,12 +1295,21 @@
 
 - (IBAction)openFileBrowser:(id)sender
 {
-    [fileBrowserController open];
+    if (fileBrowserController == nil) {
+      fileBrowserController = [[MMFileBrowserController alloc]
+                                            initWithWindowController:self];
+      NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+      [self setSidebarView:fileBrowserController.view
+                  leftEdge:[ud boolForKey:MMSidebarOnLeftEdgeKey]];
+      [fileBrowserController setNextKeyView:[vimView textView]];
+    }
+    [fileBrowserController makeFirstResponder];
+    [self collapseSidebar:NO];
 }
 
 - (IBAction)closeFileBrowser:(id)sender
 {
-    [fileBrowserController close];
+    [self collapseSidebar:YES];
 }
 
 - (IBAction)selectInFileBrowser:(id)sender

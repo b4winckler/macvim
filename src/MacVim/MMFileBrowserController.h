@@ -17,8 +17,8 @@
 - (id)initWithWindowController:(MMWindowController *)controller;
 - (void)cleanup;
 - (void)setRoot:(NSString *)root;
-- (void)open;
-- (void)close;
+- (void)setNextKeyView:(NSView *)nextKeyView;
+- (void)makeFirstResponder;
 - (void)selectInBrowser;
 - (void)selectInBrowserByExpandingItems;
 

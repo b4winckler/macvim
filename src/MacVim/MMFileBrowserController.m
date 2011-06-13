@@ -457,9 +457,6 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)loadView {
-  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
-  BOOL leftEdge = [ud integerForKey:MMSidebarOnLeftEdgeKey];
-
   fileBrowser = [[MMFileBrowser alloc] initWithFrame:NSZeroRect];
   [fileBrowser setFocusRingType:NSFocusRingTypeNone];
   [fileBrowser setDelegate:self];
@@ -494,15 +491,16 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [containerView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
   [containerView addSubview:scrollView];
   [containerView addSubview:pathControl];
-  [windowController setSidebarView:containerView leftEdge:leftEdge];
 
-  [self setView:fileBrowser];
+  [self setView:containerView];
   viewLoaded = YES;
 
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(pwdChanged:)
                                                name:@"MMPwdChanged"
                                              object:[windowController vimController]];
+
+  [self setRoot:[[windowController vimController] objectForVimStateKey:@"pwd"]];
 }
 
 - (void)cleanup
@@ -526,7 +524,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)setRoot:(NSString *)root
 {
-  root = [root stringByStandardizingPath];
+  root = [(root ? root : @"~/") stringByStandardizingPath];
 
   BOOL isDir;
   BOOL valid = [[NSFileManager defaultManager] fileExistsAtPath:root
@@ -550,31 +548,16 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [self watchRoot];
 }
 
-- (void)open
-{
-  [self view]; // Ensure the view is loaded!
+// Typing Tab (or Esc) in browser view sets keyboard focus to next view
+- (void)setNextKeyView:(NSView *)nextKeyView {
+  [fileBrowser setNextKeyView:nextKeyView];
+}
 
-  if (!rootItem) {
-    NSString *root = [[windowController vimController] objectForVimStateKey:@"pwd"];
-    [self setRoot:(root ? root : @"~/")];
-  }
-
-  // Typing Tab (or Esc) in browser view sets keyboard focus to text view
-  [fileBrowser setNextKeyView:[[windowController vimView] textView]];
-
+- (void)makeFirstResponder {
   [fileBrowser makeFirstResponder];
   if ([fileBrowser numberOfSelectedRows] == 0) {
     [self selectInBrowser];
   }
-
-  [windowController collapseSidebar:NO];
-}
-
-- (void)close
-{
-  if ([windowController isSidebarCollapsed])
-    return;
-  [windowController collapseSidebar:YES];
 }
 
 - (void)selectInBrowser {
@@ -821,7 +804,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
                          item:(id)item
 {
   // Called when an item was double-clicked, in which case we do make the browser the first responder.
-  [fileBrowser makeFirstResponder];
+  [self makeFirstResponder];
   return NO;
 }
 
