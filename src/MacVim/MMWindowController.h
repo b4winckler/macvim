@@ -111,6 +111,7 @@
 - (IBAction)zoom:(id)sender;
 - (IBAction)openFileBrowser:(id)sender;
 - (IBAction)closeFileBrowser:(id)sender;
+- (IBAction)toggleFileBrowser:(id)sender;
 - (IBAction)selectInFileBrowser:(id)sender;
 - (IBAction)sidebarEdgePreferenceChanged:(id)sender;
 

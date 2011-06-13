@@ -68,6 +68,8 @@
 	<string></string>
 	<key>terminate:</key>
 	<string></string>
+	<key>toggleFileBrowser:</key>
+	<string></string>
 	<key>selectInFileBrowser:</key>
 	<string></string>
 	<key>undo:</key>
