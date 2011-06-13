@@ -112,5 +112,6 @@
 - (IBAction)openFileBrowser:(id)sender;
 - (IBAction)closeFileBrowser:(id)sender;
 - (IBAction)selectInFileBrowser:(id)sender;
+- (IBAction)sidebarEdgePreferenceChanged:(id)sender;
 
 @end

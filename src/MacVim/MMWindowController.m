@@ -1317,6 +1317,16 @@
     [fileBrowserController selectInBrowser];
 }
 
+- (IBAction)sidebarEdgePreferenceChanged:(id)sender
+{
+    if (!sidebarView || [[splitView subviews] count] != 2)
+        return;
+
+    BOOL leftEdge = [[NSUserDefaults standardUserDefaults]
+                                                boolForKey:MMSidebarOnLeftEdgeKey];
+    [self setSidebarView:sidebarView leftEdge:leftEdge];
+    [vimController sendMessage:ForceRedrawMsgID data:nil];
+}
 
 // -- Services menu delegate -------------------------------------------------
 

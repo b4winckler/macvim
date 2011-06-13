@@ -32,33 +32,62 @@
 				<string key="NSClassName">NSApplication</string>
 			</object>
 			<object class="NSUserDefaultsController" id="547503666">
-				<array class="NSMutableArray" key="NSDeclaredKeys">
-					<string>MMSidebarVisible</string>
-				</array>
 				<bool key="NSSharedInstance">YES</bool>
 			</object>
 			<object class="NSCustomView" id="225936320">
 				<reference key="NSNextResponder"/>
 				<int key="NSvFlags">268</int>
 				<array class="NSMutableArray" key="NSSubviews">
+					<object class="NSTextField" id="525002973">
+						<reference key="NSNextResponder" ref="225936320"/>
+						<int key="NSvFlags">256</int>
+						<string key="NSFrame">{{17, 208}, {187, 17}}</string>
+						<reference key="NSSuperview" ref="225936320"/>
+						<bool key="NSEnabled">YES</bool>
+						<object class="NSTextFieldCell" key="NSCell" id="958186224">
+							<int key="NSCellFlags">67239424</int>
+							<int key="NSCellFlags2">71303168</int>
+							<string key="NSContents">Place sidebar:</string>
+							<object class="NSFont" key="NSSupport" id="398275172">
+								<string key="NSName">LucidaGrande</string>
+								<double key="NSSize">13</double>
+								<int key="NSfFlags">1044</int>
+							</object>
+							<reference key="NSControlView" ref="525002973"/>
+							<object class="NSColor" key="NSBackgroundColor" id="821672772">
+								<int key="NSColorSpace">6</int>
+								<string key="NSCatalogName">System</string>
+								<string key="NSColorName">controlColor</string>
+								<object class="NSColor" key="NSColor">
+									<int key="NSColorSpace">3</int>
+									<bytes key="NSWhite">MC42NjY2NjY2NjY3AA</bytes>
+								</object>
+							</object>
+							<object class="NSColor" key="NSTextColor" id="481736603">
+								<int key="NSColorSpace">6</int>
+								<string key="NSCatalogName">System</string>
+								<string key="NSColorName">controlTextColor</string>
+								<object class="NSColor" key="NSColor">
+									<int key="NSColorSpace">3</int>
+									<bytes key="NSWhite">MAA</bytes>
+								</object>
+							</object>
+						</object>
+					</object>
 					<object class="NSMatrix" id="765239458">
 						<reference key="NSNextResponder" ref="225936320"/>
 						<int key="NSvFlags">268</int>
-						<string key="NSFrame">{{224, 187}, {239, 38}}</string>
+						<string key="NSFrame">{{209, 187}, {239, 38}}</string>
 						<reference key="NSSuperview" ref="225936320"/>
 						<bool key="NSEnabled">YES</bool>
 						<int key="NSNumRows">2</int>
 						<int key="NSNumCols">1</int>
 						<array class="NSMutableArray" key="NSCells">
 							<object class="NSButtonCell" id="717680990">
-								<int key="NSCellFlags">67239424</int>
+								<int key="NSCellFlags">-2080244224</int>
 								<int key="NSCellFlags2">0</int>
 								<string key="NSContents">on the left</string>
-								<object class="NSFont" key="NSSupport" id="398275172">
-									<string key="NSName">LucidaGrande</string>
-									<double key="NSSize">13</double>
-									<int key="NSfFlags">1044</int>
-								</object>
+								<reference key="NSSupport" ref="398275172"/>
 								<reference key="NSControlView" ref="765239458"/>
 								<int key="NSButtonFlags">1211912703</int>
 								<int key="NSButtonFlags2">0</int>
@@ -71,7 +100,7 @@
 								<int key="NSPeriodicInterval">25</int>
 							</object>
 							<object class="NSButtonCell" id="414267061">
-								<int key="NSCellFlags">-2080244224</int>
+								<int key="NSCellFlags">67239424</int>
 								<int key="NSCellFlags2">0</int>
 								<string key="NSContents">on the right</string>
 								<reference key="NSSupport" ref="398275172"/>
@@ -232,17 +261,8 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 							<int key="NSPeriodicDelay">400</int>
 							<int key="NSPeriodicInterval">75</int>
 						</object>
-						<int key="NSSelectedRow">1</int>
-						<reference key="NSSelectedCell" ref="414267061"/>
-						<object class="NSColor" key="NSBackgroundColor" id="821672772">
-							<int key="NSColorSpace">6</int>
-							<string key="NSCatalogName">System</string>
-							<string key="NSColorName">controlColor</string>
-							<object class="NSColor" key="NSColor">
-								<int key="NSColorSpace">3</int>
-								<bytes key="NSWhite">MC42NjY2NjY2NjY3AA</bytes>
-							</object>
-						</object>
+						<reference key="NSSelectedCell" ref="717680990"/>
+						<reference key="NSBackgroundColor" ref="821672772"/>
 						<object class="NSColor" key="NSCellBackgroundColor" id="208863654">
 							<int key="NSColorSpace">3</int>
 							<bytes key="NSWhite">MQA</bytes>
@@ -262,15 +282,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 							<reference key="NSSupport" ref="398275172"/>
 							<reference key="NSControlView" ref="779554168"/>
 							<reference key="NSBackgroundColor" ref="821672772"/>
-							<object class="NSColor" key="NSTextColor" id="481736603">
-								<int key="NSColorSpace">6</int>
-								<string key="NSCatalogName">System</string>
-								<string key="NSColorName">controlTextColor</string>
-								<object class="NSColor" key="NSColor">
-									<int key="NSColorSpace">3</int>
-									<bytes key="NSWhite">MAA</bytes>
-								</object>
-							</object>
+							<reference key="NSTextColor" ref="481736603"/>
 						</object>
 					</object>
 					<object class="NSButton" id="784930619">
@@ -1291,14 +1303,6 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					<int key="connectionID">1021</int>
 				</object>
 				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">openInCurrentWindowSelectionChanged:</string>
-						<reference key="source" ref="816709129"/>
-						<reference key="destination" ref="765239458"/>
-					</object>
-					<int key="connectionID">1038</int>
-				</object>
-				<object class="IBConnectionRecord">
 					<object class="IBBindingConnection" key="connection">
 						<string key="label">selectedIndex: values.MMSidebarOnLeftEdge</string>
 						<reference key="source" ref="765239458"/>
@@ -1319,20 +1323,12 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					<int key="connectionID">1041</int>
 				</object>
 				<object class="IBConnectionRecord">
-					<object class="IBBindingConnection" key="connection">
-						<string key="label">enabled: values.MMSidebarVisible</string>
-						<reference key="source" ref="765239458"/>
-						<reference key="destination" ref="547503666"/>
-						<object class="NSNibBindingConnector" key="connector">
-							<reference key="NSSource" ref="765239458"/>
-							<reference key="NSDestination" ref="547503666"/>
-							<string key="NSLabel">enabled: values.MMSidebarVisible</string>
-							<string key="NSBinding">enabled</string>
-							<string key="NSKeyPath">values.MMSidebarVisible</string>
-							<int key="NSNibBindingConnectorVersion">2</int>
-						</object>
+					<object class="IBActionConnection" key="connection">
+						<string key="label">sidebarEdgePreferenceChanged:</string>
+						<reference key="source" ref="809429266"/>
+						<reference key="destination" ref="765239458"/>
 					</object>
-					<int key="connectionID">1043</int>
+					<int key="connectionID">1047</int>
 				</object>
 			</array>
 			<object class="IBMutableOrderedSet" key="objectRecords">
@@ -1377,6 +1373,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 							<reference ref="663739951"/>
 							<reference ref="779554168"/>
 							<reference ref="784930619"/>
+							<reference ref="525002973"/>
 							<reference ref="765239458"/>
 							<reference ref="1066463960"/>
 							<reference ref="633385838"/>
@@ -1753,6 +1750,19 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 						<reference key="object" ref="414267061"/>
 						<reference key="parent" ref="765239458"/>
 					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">1044</int>
+						<reference key="object" ref="525002973"/>
+						<array class="NSMutableArray" key="children">
+							<reference ref="958186224"/>
+						</array>
+						<reference key="parent" ref="225936320"/>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">1045</int>
+						<reference key="object" ref="958186224"/>
+						<reference key="parent" ref="525002973"/>
+					</object>
 				</array>
 			</object>
 			<dictionary class="NSMutableDictionary" key="flattenedProperties">
@@ -1771,13 +1781,13 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 				<string key="1018.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="1022.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<object class="NSAffineTransform" key="1022.IBViewBoundsToFrameTransform">
-					<bytes key="NSTransformStruct">P4AAAL+AAABBiAAAw34AAA</bytes>
+					<bytes key="NSTransformStruct">P4AAAL+AAABBiAAAw3cAAA</bytes>
 				</object>
 				<boolean value="YES" key="1022.ImportedFromIB2"/>
 				<string key="1023.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="1033.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<object class="NSAffineTransform" key="1033.IBViewBoundsToFrameTransform">
-					<bytes key="NSTransformStruct">P4AAAL+AAABDUQAAw3wAAA</bytes>
+					<bytes key="NSTransformStruct">P4AAAL+AAABDUQAAw5EAAA</bytes>
 				</object>
 				<boolean value="YES" key="1033.ImportedFromIB2"/>
 				<string key="1034.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -1785,12 +1795,18 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 				<boolean value="YES" key="1035.ImportedFromIB2"/>
 				<string key="1036.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="1036.ImportedFromIB2"/>
-				<string key="115.IBEditorWindowLastContentRect">{{686, 556}, {483, 360}}</string>
+				<string key="1044.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
+				<object class="NSAffineTransform" key="1044.IBViewBoundsToFrameTransform">
+					<bytes key="NSTransformStruct">P4AAAL+AAABBiAAAw5EAAA</bytes>
+				</object>
+				<boolean value="YES" key="1044.ImportedFromIB2"/>
+				<string key="1045.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
+				<string key="115.IBEditorWindowLastContentRect">{{627, 560}, {483, 360}}</string>
 				<string key="115.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="115.ImportedFromIB2"/>
 				<string key="116.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<object class="NSAffineTransform" key="116.IBViewBoundsToFrameTransform">
-					<bytes key="NSTransformStruct">P4AAAL+AAABBiAAAwzEAAA</bytes>
+					<bytes key="NSTransformStruct">P4AAAL+AAABBiAAAw1oAAA</bytes>
 				</object>
 				<boolean value="YES" key="116.ImportedFromIB2"/>
 				<string key="117.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -1805,12 +1821,12 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 				<boolean value="YES" key="119.ImportedFromIB2"/>
 				<string key="120.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<object class="NSAffineTransform" key="120.IBViewBoundsToFrameTransform">
-					<bytes key="NSTransformStruct">P4AAAL+AAABDUQAAwzEAAA</bytes>
+					<bytes key="NSTransformStruct">P4AAAL+AAABDUQAAw1oAAA</bytes>
 				</object>
 				<boolean value="YES" key="120.ImportedFromIB2"/>
 				<string key="121.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<object class="NSAffineTransform" key="121.IBViewBoundsToFrameTransform">
-					<bytes key="NSTransformStruct">P4AAAL+AAABDUQAAws4AAA</bytes>
+					<bytes key="NSTransformStruct">P4AAAL+AAABDUQAAwxAAAA</bytes>
 				</object>
 				<boolean value="YES" key="121.ImportedFromIB2"/>
 				<string key="122.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -1825,7 +1841,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 				<boolean value="YES" key="124.ImportedFromIB2"/>
 				<string key="126.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<object class="NSAffineTransform" key="126.IBViewBoundsToFrameTransform">
-					<bytes key="NSTransformStruct">P4AAAL+AAABBiAAAwhQAAA</bytes>
+					<bytes key="NSTransformStruct">P4AAAL+AAABBiAAAwpwAAA</bytes>
 				</object>
 				<boolean value="YES" key="126.ImportedFromIB2"/>
 				<string key="134.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -1840,7 +1856,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 				<boolean value="YES" key="139.ImportedFromIB2"/>
 				<string key="427.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<object class="NSAffineTransform" key="427.IBViewBoundsToFrameTransform">
-					<bytes key="NSTransformStruct">P4AAAL+AAABDWgAAwwUAAA</bytes>
+					<bytes key="NSTransformStruct">P4AAAL+AAABDWgAAwy4AAA</bytes>
 				</object>
 				<boolean value="YES" key="427.ImportedFromIB2"/>
 				<string key="429.IBEditorWindowLastContentRect">{{893, 608}, {248, 83}}</string>
@@ -1869,7 +1885,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 				<boolean value="YES" key="826.ImportedFromIB2"/>
 				<string key="957.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<object class="NSAffineTransform" key="957.IBViewBoundsToFrameTransform">
-					<bytes key="NSTransformStruct">P4AAAL+AAABDTgAAwiAAAA</bytes>
+					<bytes key="NSTransformStruct">P4AAAL+AAABDTgAAwqIAAA</bytes>
 				</object>
 				<boolean value="YES" key="957.ImportedFromIB2"/>
 				<string key="959.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -1899,7 +1915,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">1043</int>
+			<int key="maxID">1047</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -2001,6 +2017,93 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					<object class="IBClassDescriptionSource" key="sourceIdentifier">
 						<string key="majorKey">IBUserSource</string>
 						<string key="minorKey"/>
+					</object>
+				</object>
+				<object class="IBPartialClassDescription">
+					<string key="className">MMWindowController</string>
+					<string key="superclassName">NSWindowController</string>
+					<dictionary class="NSMutableDictionary" key="actions">
+						<string key="addNewTab:">id</string>
+						<string key="closeFileBrowser:">id</string>
+						<string key="findAndReplace:">id</string>
+						<string key="findNext:">id</string>
+						<string key="findPrevious:">id</string>
+						<string key="fontSizeDown:">id</string>
+						<string key="fontSizeUp:">id</string>
+						<string key="openFileBrowser:">id</string>
+						<string key="performClose:">id</string>
+						<string key="selectInFileBrowser:">id</string>
+						<string key="sidebarEdgePreferenceChanged:">id</string>
+						<string key="toggleToolbar:">id</string>
+						<string key="vimMenuItemAction:">id</string>
+						<string key="vimToolbarItemAction:">id</string>
+						<string key="zoom:">id</string>
+					</dictionary>
+					<dictionary class="NSMutableDictionary" key="actionInfosByName">
+						<object class="IBActionInfo" key="addNewTab:">
+							<string key="name">addNewTab:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="closeFileBrowser:">
+							<string key="name">closeFileBrowser:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="findAndReplace:">
+							<string key="name">findAndReplace:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="findNext:">
+							<string key="name">findNext:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="findPrevious:">
+							<string key="name">findPrevious:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="fontSizeDown:">
+							<string key="name">fontSizeDown:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="fontSizeUp:">
+							<string key="name">fontSizeUp:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="openFileBrowser:">
+							<string key="name">openFileBrowser:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="performClose:">
+							<string key="name">performClose:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="selectInFileBrowser:">
+							<string key="name">selectInFileBrowser:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="sidebarEdgePreferenceChanged:">
+							<string key="name">sidebarEdgePreferenceChanged:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="toggleToolbar:">
+							<string key="name">toggleToolbar:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="vimMenuItemAction:">
+							<string key="name">vimMenuItemAction:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="vimToolbarItemAction:">
+							<string key="name">vimToolbarItemAction:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="zoom:">
+							<string key="name">zoom:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+					</dictionary>
+					<object class="IBClassDescriptionSource" key="sourceIdentifier">
+						<string key="majorKey">IBProjectSource</string>
+						<string key="minorKey">MMWindowController.h</string>
 					</object>
 				</object>
 				<object class="IBPartialClassDescription">
