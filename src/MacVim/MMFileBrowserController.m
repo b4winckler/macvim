@@ -755,6 +755,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
       }
       [openWithFinderItem setSubmenu:submenu];
     }
+  } else {
+    fsItem = rootItem;
   }
 
   // Misc
@@ -765,8 +767,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
   for (item in [menu itemArray]) {
     [item setTarget:self];
-    [item setTag:row];
-    [item setRepresentedObject:[fsItem fullPath]];
+    [item setRepresentedObject:fsItem];
   }
   return menu;
 }
@@ -862,12 +863,12 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 // =======
 
 - (void)renameFile:(NSMenuItem *)sender {
-  [fileBrowser editColumn:0 row:[sender tag] withEvent:nil select:YES];
+  NSInteger row = [fileBrowser rowForItem:[sender representedObject]];
+  [fileBrowser editColumn:0 row:row withEvent:nil select:YES];
 }
 
 - (void)newFile:(NSMenuItem *)sender {
-  MMFileBrowserFSItem *item = [self itemAtRow:[sender tag]];
-  if(!item) item = rootItem;
+  MMFileBrowserFSItem *item = [sender representedObject];
   if([item isLeaf]) item = [item parent];
   NSString *path = [[item fullPath] stringByAppendingPathComponent:@"untitled file"];
 
@@ -900,7 +901,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)newFolder:(NSMenuItem *)sender {
-  MMFileBrowserFSItem *selItem = [self itemAtRow:[sender tag]];
+  MMFileBrowserFSItem *selItem = [sender representedObject];
   MMFileBrowserFSItem *dirItem = selItem ? [selItem dirItem] : rootItem;
   NSString *path = [[dirItem fullPath] stringByAppendingPathComponent:@"untitled folder"];
 
@@ -951,7 +952,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)changeWorkingDirectoryToSelection:(NSMenuItem *)sender {
-  [self changeWorkingDirectory:[sender representedObject]];
+  [self changeWorkingDirectory:[[[sender representedObject] dirItem] fullPath]];
 }
 
 - (void)changeWorkingDirectoryFromPathControl:(NSPathControl *)sender {
@@ -961,7 +962,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 // TODO needs multiple selection support
 - (void)deleteSelectedFiles:(NSMenuItem *)sender {
-  MMFileBrowserFSItem *item = [self itemAtRow:[sender tag]];
+  MMFileBrowserFSItem *item = [sender representedObject];
   NSString *fullPath = [item fullPath];
   BOOL isLeaf = [item isLeaf];
   MMFileBrowserFSItem *dirItem = item.parent;
@@ -989,13 +990,13 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 // TODO add multiple selection support
 - (void)revealInFinder:(NSMenuItem *)sender {
-  NSString *path = [[self itemAtRow:[sender tag]] fullPath];
+  NSString *path = [[sender representedObject] fullPath];
   NSArray *urls = [NSArray arrayWithObject:[NSURL fileURLWithPath:path]];
   [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:urls];
 }
 
 - (void)openWithFinder:(NSMenuItem *)sender {
-  [[NSWorkspace sharedWorkspace] openFile:[[self itemAtRow:[sender tag]] fullPath]];
+  [[NSWorkspace sharedWorkspace] openFile:[[sender representedObject] fullPath]];
 }
 
 // TODO really need to use selected items instead of tags on the menu item!
@@ -1003,7 +1004,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   NSMenu *menu = [sender menu];
   NSInteger index = [[menu supermenu] indexOfItemWithSubmenu:menu];
   NSMenuItem *parentMenuItem = [[menu supermenu] itemAtIndex:index];
-  MMFileBrowserFSItem *item = [self itemAtRow:[parentMenuItem tag]];
+  MMFileBrowserFSItem *item = [parentMenuItem representedObject];
   NSArray *appPaths = [self appsAssociatedWithItem:item];
   if (appPaths) {
     // Actually this action should never be called if there are no associated apps, but let's keep it safe
