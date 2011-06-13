@@ -750,7 +750,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
         [appIcon setSize:NSMakeSize(16, 16)];
         item = [submenu addItemWithTitle:appName action:@selector(openFileWithApp:) keyEquivalent:@""];
         [item setTarget:self];
-        [item setTag:i];
+        [item setRepresentedObject:appPath];
         [item setImage:appIcon];
       }
       [openWithFinderItem setSubmenu:submenu];
@@ -1005,12 +1005,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   NSInteger index = [[menu supermenu] indexOfItemWithSubmenu:menu];
   NSMenuItem *parentMenuItem = [[menu supermenu] itemAtIndex:index];
   MMFileBrowserFSItem *item = [parentMenuItem representedObject];
-  NSArray *appPaths = [self appsAssociatedWithItem:item];
-  if (appPaths) {
-    // Actually this action should never be called if there are no associated apps, but let's keep it safe
-    NSString *selectedApp = [appPaths objectAtIndex:[sender tag]];
-    [[NSWorkspace sharedWorkspace] openFile:[item fullPath] withApplication:selectedApp];
-  }
+  NSString *selectedApp = [sender representedObject];
+  [[NSWorkspace sharedWorkspace] openFile:[item fullPath] withApplication:selectedApp];
 }
 
 
