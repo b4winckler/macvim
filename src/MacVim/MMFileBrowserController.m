@@ -727,7 +727,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   if (fsItem) {
     action = multipleSelection ? NULL : @selector(renameFile:);
     [menu addItemWithTitle:@"Rename…" action:action keyEquivalent:@""];
-    [menu addItemWithTitle:@"Delete selected Files" action:@selector(deleteSelectedFiles:) keyEquivalent:@""];
+    title = multipleSelection ? @"Delete selected Files" : @"Delete selected File";
+    [menu addItemWithTitle:title action:@selector(deleteSelectedFiles:) keyEquivalent:@""];
 
     // Vim open/cwd
     [menu addItem:[NSMenuItem separatorItem]];
