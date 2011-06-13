@@ -968,23 +968,33 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [self changeWorkingDirectory:[[clickedCell URL] path]];
 }
 
-// TODO needs multiple selection support
 - (void)deleteSelectedFiles:(NSMenuItem *)sender {
-  MMFileBrowserFSItem *item = [sender representedObject];
-  NSString *fullPath = [item fullPath];
-  BOOL isLeaf = [item isLeaf];
-  MMFileBrowserFSItem *dirItem = item.parent;
+  NSMutableArray *items;
+  if ([fileBrowser numberOfSelectedRows] > 1) {
+    items = [NSMutableArray array];
+    NSIndexSet *indexes = [fileBrowser selectedRowIndexes];
+    [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
+      [items addObject:[fileBrowser itemAtRow:index]];
+    }];
+  } else {
+    items = [NSMutableArray arrayWithObject:[sender representedObject]];
+  }
+  for (MMFileBrowserFSItem *item in items) {
+    NSString *fullPath = [item fullPath];
+    BOOL isLeaf = [item isLeaf];
+    MMFileBrowserFSItem *dirItem = item.parent;
 
-  dirItem.ignoreNextReload = YES;
-  [[NSFileManager defaultManager] removeItemAtPath:fullPath error:NULL];
-  [dirItem reloadRecursive:NO];
-  if(rootItem == dirItem)
-    [fileBrowser reloadData];
-  else
-    [fileBrowser reloadItem:dirItem reloadChildren:YES];
+    dirItem.ignoreNextReload = YES;
+    [[NSFileManager defaultManager] removeItemAtPath:fullPath error:NULL];
+    [dirItem reloadRecursive:NO];
+    if(rootItem == dirItem)
+      [fileBrowser reloadData];
+    else
+      [fileBrowser reloadItem:dirItem reloadChildren:YES];
 
-  if (isLeaf) {
-    [self deleteBufferByPath:fullPath];
+    if (isLeaf) {
+      [self deleteBufferByPath:fullPath];
+    }
   }
 }
 
@@ -996,7 +1006,6 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 // Open elsewhere
 
-// TODO add multiple selection support
 - (void)revealInFinder:(NSMenuItem *)sender {
   NSString *path = [[sender representedObject] fullPath];
   NSArray *urls = [NSArray arrayWithObject:[NSURL fileURLWithPath:path]];
@@ -1007,7 +1016,6 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [[NSWorkspace sharedWorkspace] openFile:[[sender representedObject] fullPath]];
 }
 
-// TODO really need to use selected items instead of tags on the menu item!
 - (void)openFileWithApp:(NSMenuItem *)sender {
   NSMenu *menu = [sender menu];
   NSInteger index = [[menu supermenu] indexOfItemWithSubmenu:menu];
