@@ -297,7 +297,7 @@ static NSMutableArray *leafNode = nil;
 
 static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
-@interface FilesOutlineView : NSOutlineView {
+@interface MMFileBrowser : NSOutlineView {
   BOOL canBecomeFirstResponder;
 }
 - (void)makeFirstResponder;
@@ -308,7 +308,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (NSEvent *)keyEventWithEvent:(NSEvent *)event character:(NSString *)character code:(unsigned short)code;
 @end
 
-@implementation FilesOutlineView
+@implementation MMFileBrowser
 
 - (id)initWithFrame:(NSRect)frame {
   if ((self = [super initWithFrame:frame])) {
@@ -429,7 +429,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 // ****************************************************************************
 
 @interface MMFileBrowserController (Private)
-- (FilesOutlineView *)outlineView;
+- (MMFileBrowser *)outlineView;
 - (void)pwdChanged:(NSNotification *)notification;
 - (void)changeWorkingDirectory:(NSString *)path;
 - (NSArray *)selectedItemPaths;
@@ -461,18 +461,18 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
   BOOL leftEdge = [ud integerForKey:MMSidebarOnLeftEdgeKey];
 
-  FilesOutlineView *filesView = [[[FilesOutlineView alloc] initWithFrame:NSZeroRect] autorelease];
-  [filesView setFocusRingType:NSFocusRingTypeNone];
-  [filesView setDelegate:self];
-  [filesView setDataSource:self];
-  [filesView setHeaderView:nil];
-  [filesView setAllowsMultipleSelection:YES];
+  fileBrowser = [[[MMFileBrowser alloc] initWithFrame:NSZeroRect] autorelease];
+  [fileBrowser setFocusRingType:NSFocusRingTypeNone];
+  [fileBrowser setDelegate:self];
+  [fileBrowser setDataSource:self];
+  [fileBrowser setHeaderView:nil];
+  [fileBrowser setAllowsMultipleSelection:YES];
   NSTableColumn *column = [[[NSTableColumn alloc] initWithIdentifier:nil] autorelease];
   ImageAndTextCell *cell = [[[ImageAndTextCell alloc] init] autorelease];
   [cell setEditable:YES];
   [column setDataCell:cell];
-  [filesView addTableColumn:column];
-  [filesView setOutlineTableColumn:column];
+  [fileBrowser addTableColumn:column];
+  [fileBrowser setOutlineTableColumn:column];
 
   pathControl = [[NSPathControl alloc] initWithFrame:NSMakeRect(0, 0, 0, 20)];
   [pathControl setRefusesFirstResponder:YES];
@@ -490,7 +490,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [scrollView setHasHorizontalScroller:YES];
   [scrollView setHasVerticalScroller:YES];
   [scrollView setAutohidesScrollers:YES];
-  [scrollView setDocumentView:filesView];
+  [scrollView setDocumentView:fileBrowser];
 
   [scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable | NSViewMaxYMargin];
 
@@ -500,7 +500,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [containerView addSubview:pathControl];
   [windowController setSidebarView:containerView leftEdge:leftEdge];
 
-  [self setView:filesView];
+  [self setView:fileBrowser];
   viewLoaded = YES;
 
   [[NSNotificationCenter defaultCenter] addObserver:self
@@ -773,7 +773,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
-  FilesOutlineView *outlineView = [self outlineView];
+  MMFileBrowser *outlineView = [self outlineView];
   if (userHasChangedSelection && [outlineView numberOfSelectedRows] == 1) {
     FileSystemItem *item = [self itemAtRow:[outlineView selectedRow]];
     if ([item isLeaf]) {
@@ -811,7 +811,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
                          item:(id)item
 {
   // Called when an item was double-clicked, in which case we do make the browser the first responder.
-  [(FilesOutlineView *)outlineView makeFirstResponder];
+  [(MMFileBrowser *)outlineView makeFirstResponder];
   return NO;
 }
 
@@ -857,7 +857,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 // =======
 
 - (void)renameFile:(NSMenuItem *)sender {
-  [(FilesOutlineView *)[self view] editColumn:0 row:[sender tag] withEvent:nil select:YES];
+  [(MMFileBrowser *)[self view] editColumn:0 row:[sender tag] withEvent:nil select:YES];
 }
 
 - (void)newFile:(NSMenuItem *)sender {
@@ -1080,15 +1080,16 @@ static void change_occured(ConstFSEventStreamRef stream,
 - (void)dealloc
 {
   [pathControl release]; pathControl = nil;
+  [fileBrowser release]; fileBrowser = nil;
   [rootItem release]; rootItem = nil;
 
   [super dealloc];
 }
 
 
-- (FilesOutlineView *)outlineView
+- (MMFileBrowser *)outlineView
 {
-  return (FilesOutlineView *)[self view];
+  return (MMFileBrowser *)[self view];
 }
 
 - (void)pwdChanged:(NSNotification *)notification

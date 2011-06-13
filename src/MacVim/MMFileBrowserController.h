@@ -2,9 +2,11 @@
 
 @class MMWindowController;
 @class FileSystemItem;
+@class MMFileBrowser;
 
 @interface MMFileBrowserController : NSViewController <NSOutlineViewDataSource, NSOutlineViewDelegate> {
   MMWindowController *windowController;
+  MMFileBrowser *fileBrowser;
   NSPathControl *pathControl;
   FileSystemItem *rootItem;
   FSEventStreamRef fsEventsStream;
