@@ -442,6 +442,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 @interface MMFileBrowserController (Private)
 - (void)pwdChanged:(NSNotification *)notification;
 - (void)changeWorkingDirectory:(NSString *)path;
+- (NSArray *)selectedItems;
 - (NSArray *)selectedItemPaths;
 - (void)openSelectedFilesInCurrentWindowWithLayout:(int)layout;
 - (NSArray *)appsAssociatedWithItem:(MMFileBrowserFSItem *)item;
@@ -600,15 +601,22 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   return [fileBrowser itemAtRow:row];
 }
 
+- (NSArray *)selectedItems {
+  NSMutableArray *items = [NSMutableArray array];
+  [[fileBrowser selectedRowIndexes] enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
+    [items addObject:[fileBrowser itemAtRow:index]];
+  }];
+  return items;
+}
+
 - (NSArray *)selectedItemPaths {
   NSMutableArray *paths = [NSMutableArray array];
-  NSIndexSet *indexes = [fileBrowser selectedRowIndexes];
-  [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
-    MMFileBrowserFSItem *item = [self itemAtRow:index];
+  NSArray *items = [self selectedItems];
+  for (MMFileBrowserFSItem *item in items) {
     if ([item isLeaf]) {
       [paths addObject:[item fullPath]];
     }
-  }];
+  }
   return paths;
 }
 
@@ -723,12 +731,12 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
     // Vim open/cwd
     [menu addItem:[NSMenuItem separatorItem]];
-    action = multipleSelection ? @selector(openFilesInTabs:) : NULL;
-    [menu addItemWithTitle:@"Open selected Files in Tabs" action:action keyEquivalent:@""];
-    action = multipleSelection ? @selector(openFilesInHorizontalSplitViews:) : NULL;
-    [menu addItemWithTitle:@"Open selected Files in Horizontal Split Views" action:action keyEquivalent:@""];
-    action = multipleSelection ? @selector(openFilesInVerticalSplitViews:) : NULL;
-    [menu addItemWithTitle:@"Open selected Files in Vertical Split Views" action:action keyEquivalent:@""];
+    title = multipleSelection ? @"Open selected Files in Tabs" : @"Open selected File in Tab";
+    [menu addItemWithTitle:title action:@selector(openFilesInTabs:) keyEquivalent:@""];
+    title = multipleSelection ? @"Open selected Files in Horizontal Split Views" : @"Open selected File in Horizontal Split View";
+    [menu addItemWithTitle:title action:@selector(openFilesInHorizontalSplitViews:) keyEquivalent:@""];
+    title = multipleSelection ? @"Open selected Files in Vertical Split Views" : @"Open selected File in Vertical Split View";
+    [menu addItemWithTitle:title action:@selector(openFilesInVerticalSplitViews:) keyEquivalent:@""];
     action = multipleSelection ? NULL : @selector(changeWorkingDirectoryToSelection:);
     title = [NSString stringWithFormat:@"Change working directory to “%@”", [[fsItem dirItem] relativePath]];
     [menu addItemWithTitle:title action:action keyEquivalent:@""];
@@ -969,16 +977,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)deleteSelectedFiles:(NSMenuItem *)sender {
-  NSMutableArray *items;
-  if ([fileBrowser numberOfSelectedRows] > 1) {
-    items = [NSMutableArray array];
-    NSIndexSet *indexes = [fileBrowser selectedRowIndexes];
-    [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
-      [items addObject:[fileBrowser itemAtRow:index]];
-    }];
-  } else {
-    items = [NSMutableArray arrayWithObject:[sender representedObject]];
-  }
+  NSArray *items = [self selectedItems];
   for (MMFileBrowserFSItem *item in items) {
     NSString *fullPath = [item fullPath];
     BOOL isLeaf = [item isLeaf];
