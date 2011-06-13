@@ -766,14 +766,21 @@ static BOOL isUnsafeMessage(int msgid);
         [self setServerName:name];
         [name release];
     } else if (EnterFullscreenMsgID == msgid) {
-        const void *bytes = [data bytes];
-        int fuoptions = *((int*)bytes); bytes += sizeof(int);
-        int bg = *((int*)bytes);
-        NSColor *back = [NSColor colorWithArgbInt:bg];
-
-        [windowController enterFullscreen:fuoptions backgroundColor:back];
+        if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6) {
+            [[windowController window] toggleFullScreen:self];
+        } else {
+            const void *bytes = [data bytes];
+            int fuoptions = *((int*)bytes); bytes += sizeof(int);
+            int bg = *((int*)bytes);
+            NSColor *back = [NSColor colorWithArgbInt:bg];
+            [windowController enterFullscreen:fuoptions backgroundColor:back];
+        }
     } else if (LeaveFullscreenMsgID == msgid) {
-        [windowController leaveFullscreen];
+        if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6) {
+            [[windowController window] toggleFullScreen:self];
+        } else {
+            [windowController leaveFullscreen];
+        }
     } else if (SetBuffersModifiedMsgID == msgid) {
         const void *bytes = [data bytes];
         // state < 0  <->  some buffer modified
