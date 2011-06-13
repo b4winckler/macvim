@@ -349,9 +349,11 @@
     // NOTE! Calling orderOut: here will cause the views to set the 'needs
     // display' flag under certain conditions (such as clicking the close
     // button on a window).  Obviously having the views display themselves just
-    // as the window is about to close is a bad idea, so we no longer call
-    // orderOut: here, but leave the call in as a reminder.
-    //[[self window] orderOut:self];
+    // as the window is about to close is a bad idea, so clear this flag
+    // immediately.  If we do not call orderOut: then the next window will not
+    // get focus when a window is closed.
+    [decoratedWindow orderOut:self];
+    [decoratedWindow setViewsNeedDisplay:NO];
 }
 
 - (void)openWindow
