@@ -129,6 +129,9 @@
                       styleMask:styleMask
                         backing:NSBackingStoreBuffered
                           defer:YES];
+    if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6)
+        [win setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
+    
     [win autorelease];
 
     self = [super initWithWindow:win];
