@@ -252,8 +252,10 @@
 
     fileBrowserController = [[MMFileBrowserController alloc]
                                                 initWithWindowController:self];
-    if ([ud boolForKey:MMSidebarVisibleKey])
+    if ([ud boolForKey:MMSidebarVisibleKey]) {
         [fileBrowserController open];
+        [win makeFirstResponder:[vimView textView]];
+    }
 
     NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
     [nc addObserver:self
