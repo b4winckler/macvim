@@ -144,6 +144,10 @@
     vimController = controller;
     decoratedWindow = [win retain];
 
+    // The resize indicator may need to stay hidden if the text view is
+    // rightmost and has no scrollbar.
+    [decoratedWindow setShowsResizeIndicator:NO];
+
     // Window cascading is handled by MMAppController.
     [self setShouldCascadeWindows:NO];
 
@@ -630,15 +634,12 @@
             // full-screen mode.
             [vimView adjustTextViewDimensions];
         } else {
-            // When the text view is rightmost in the window then we hide the
-            // resize indicator because otherwise it overlaps part of the text
-            // view.
+            // When the text view is rightmost in the window then the resize
+            // indicator is shown/hidden depending on whether the bottom/right
+            // scrollbars are visisble or not.
             BOOL on = YES;
             if ([self isSidebarCollapsed]
                     || [[splitView subviews] indexOfObject:sidebarView] != 1) {
-                // HACK: If there is no bottom or right scrollbar the resize
-                // indicator will cover the bottom-right corner of the text
-                // view so tell NSWindow not to draw it in this situation.
                 on = [vimView rightScrollbarVisible] ||
                      [vimView bottomScrollbarVisible];
             }
@@ -1005,6 +1006,11 @@
 
     [splitView setSubviews:subviews];
     [splitView adjustSubviews];
+
+    // The resize indicator should always be enabled if the sidebar view is
+    // rightmost.
+    if (!left)
+        [decoratedWindow setShowsResizeIndicator:YES];
 }
 
 
