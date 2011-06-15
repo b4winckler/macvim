@@ -104,6 +104,7 @@
 // MMCoreTextView methods
 //
 - (void)performBatchDrawWithData:(NSData *)data;
+- (void)batchDrawNow;
 - (NSSize)desiredSize;
 - (NSSize)minSize;
 - (NSSize)constrainRows:(int *)rows columns:(int *)cols toSize:(NSSize)size;

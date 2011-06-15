@@ -681,16 +681,11 @@ defaultAdvanceForFont(NSFont *font)
 - (void)performBatchDrawWithData:(NSData *)data
 {
     [drawData addObject:data];
+}
 
-#if 0
-    [self setNeedsDisplay:YES];
-
-    // NOTE: During resizing, Cocoa only sends draw messages before Vim's rows
-    // and columns are changed (due to ipc delays). Force a redraw here.
-    if ([self inLiveResize])
-        [self display];
-#else
-    // HACK! Draw immediately instead of setting the 'needs display' flag.  The
+- (void)batchDrawNow
+{
+    // HACK! Draw manually instead of setting the 'needs display' flag.  The
     // reason for this is that marking the entire view as needing display (via
     // setNeedsDisplay:) can cause problems for borderless windows (used for
     // full-screen).  Specifically, borderless windows have a tendency to clear
@@ -698,7 +693,6 @@ defaultAdvanceForFont(NSFont *font)
     // usually only draw parts of the view, causing text to disappear.  By
     // drawing immediately we circumvent this problem.
     [self displayRectIgnoringOpacity:[self frame]];
-#endif
 }
 
 - (NSSize)constrainRows:(int *)rows columns:(int *)cols toSize:(NSSize)size

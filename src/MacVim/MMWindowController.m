@@ -571,6 +571,9 @@
 
 - (void)processInputQueueDidFinish
 {
+    ASLogDebug(@"presented=%d  place view=%d  should resize=%d",
+            windowPresented, shouldPlaceVimView, shouldResizeWindow);
+
     // NOTE: Resizing is delayed until after all commands have been processed
     // since it often happens that more than one command will cause a resize.
     // If we were to immediately resize then the vim view size would jitter
@@ -654,6 +657,13 @@
         [vimView placeViews];
         shouldPlaceVimView = NO;
     }
+
+    // NOTE! Actual drawing must take place after window has been resized etc.,
+    // else parts of the view will not draw properly after a resize.  (This
+    // applies to the Core Text renderer only.)
+    // See -[MMCoreTextView batchDrawNow] as to why we don't rely on the 'needs
+    // resize' flag.
+    [[vimView textView] batchDrawNow];
 #endif
 }
 
