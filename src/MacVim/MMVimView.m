@@ -444,7 +444,7 @@ enum {
             [[self window] setTitle:[NSString stringWithFormat:@"%dx%d",
                     constrained[1], constrained[0]]];
         }
-    } else if ([self inLiveResize]) {
+    } else {
         [vimController sendMessage:ForceRedrawMsgID data:nil];
     }
 

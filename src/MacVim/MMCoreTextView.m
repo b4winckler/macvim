@@ -564,6 +564,7 @@ defaultAdvanceForFont(NSFont *font)
 
 - (void)drawRect:(NSRect)rect
 {
+    //ASLogTmp(@"count=%d  live=%d", [drawData count], [self inLiveResize]);
 #if 0
     if ([self inLiveResize] &&
             !NSIsEmptyRect([self rectPreservedDuringLiveResize])) {
