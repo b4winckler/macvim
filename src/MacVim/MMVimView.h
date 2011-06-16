@@ -39,9 +39,6 @@
 - (void)setScrollbarThumbValue:(float)val proportion:(float)prop
                     identifier:(int32_t)ident;
 - (void)setScrollbarPosition:(int)pos length:(int)len identifier:(int32_t)ident;
-- (BOOL)bottomScrollbarVisible;
-- (BOOL)leftScrollbarVisible;
-- (BOOL)rightScrollbarVisible;
 
 - (void)setDefaultColorsBackground:(NSColor *)back foreground:(NSColor *)fore;
 

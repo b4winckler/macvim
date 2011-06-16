@@ -56,6 +56,9 @@ enum {
 
 @interface MMVimView (Private)
 - (void)placeScrollbars;
+- (BOOL)bottomScrollbarVisible;
+- (BOOL)leftScrollbarVisible;
+- (BOOL)rightScrollbarVisible;
 - (MMScroller *)scrollbarForIdentifier:(int32_t)ident index:(unsigned *)idx;
 - (NSSize)vimViewSizeForTextViewSize:(NSSize)textViewSize;
 - (NSRect)textViewRectForVimViewSize:(NSSize)contentSize;
@@ -311,42 +314,6 @@ enum {
     }
 }
 
-- (BOOL)bottomScrollbarVisible
-{
-    unsigned i, count = [scrollbars count];
-    for (i = 0; i < count; ++i) {
-        MMScroller *scroller = [scrollbars objectAtIndex:i];
-        if ([scroller type] == MMScrollerTypeBottom && ![scroller isHidden])
-            return YES;
-    }
-
-    return NO;
-}
-
-- (BOOL)leftScrollbarVisible
-{
-    unsigned i, count = [scrollbars count];
-    for (i = 0; i < count; ++i) {
-        MMScroller *scroller = [scrollbars objectAtIndex:i];
-        if ([scroller type] == MMScrollerTypeLeft && ![scroller isHidden])
-            return YES;
-    }
-
-    return NO;
-}
-
-- (BOOL)rightScrollbarVisible
-{
-    unsigned i, count = [scrollbars count];
-    for (i = 0; i < count; ++i) {
-        MMScroller *scroller = [scrollbars objectAtIndex:i];
-        if ([scroller type] == MMScrollerTypeRight && ![scroller isHidden])
-            return YES;
-    }
-
-    return NO;
-}
-
 - (void)setDefaultColorsBackground:(NSColor *)back foreground:(NSColor *)fore
 {
     [textView setDefaultColorsBackground:back foreground:fore];
@@ -462,6 +429,7 @@ enum {
 
 - (void)placeScrollbars
 {
+    NSWindow *win = [self window];
     NSRect textViewFrame = [textView frame];
     BOOL leftSbVisible = NO;
     BOOL rightSbVisible = NO;
@@ -491,6 +459,17 @@ enum {
                 botSbVisible = YES;
             }
         }
+    }
+
+    // Show or hide resize indicator if view is rightmost in the window.
+    NSPoint pt = [textView convertPoint:textViewFrame.origin toView:nil];
+    CGFloat x0 = pt.x + textViewFrame.size.width;
+    CGFloat x1 = [win frame].size.width - [NSScroller scrollerWidth];
+    BOOL isRightmost = x0 >= x1;
+    BOOL showsResizeIndicator = [win showsResizeIndicator];
+    if (isRightmost) {
+        showsResizeIndicator = rightSbVisible || botSbVisible;
+        [win setShowsResizeIndicator:showsResizeIndicator];
     }
 
     // Place the scrollbars.
@@ -552,8 +531,8 @@ enum {
 
             // Vertical scrollers must not cover the resize box in the
             // bottom-right corner of the window.
-            if ([[self window] showsResizeIndicator]  // XXX: make this a flag
-                && rect.origin.y < [NSScroller scrollerWidth]) {
+            if (isRightmost && showsResizeIndicator
+                    && rect.origin.y < [NSScroller scrollerWidth]) {
                 rect.size.height -= [NSScroller scrollerWidth] - rect.origin.y;
                 rect.origin.y = [NSScroller scrollerWidth];
             }
@@ -575,10 +554,46 @@ enum {
             [scroller setFrame:rect];
             // Clear behind the old scroller frame, or parts of the old
             // scroller might still be visible after setFrame:.
-            [[[self window] contentView] setNeedsDisplayInRect:oldRect];
+            [[win contentView] setNeedsDisplayInRect:oldRect];
             [scroller setNeedsDisplay:YES];
         }
     }
+}
+
+- (BOOL)bottomScrollbarVisible
+{
+    unsigned i, count = [scrollbars count];
+    for (i = 0; i < count; ++i) {
+        MMScroller *scroller = [scrollbars objectAtIndex:i];
+        if ([scroller type] == MMScrollerTypeBottom && ![scroller isHidden])
+            return YES;
+    }
+
+    return NO;
+}
+
+- (BOOL)leftScrollbarVisible
+{
+    unsigned i, count = [scrollbars count];
+    for (i = 0; i < count; ++i) {
+        MMScroller *scroller = [scrollbars objectAtIndex:i];
+        if ([scroller type] == MMScrollerTypeLeft && ![scroller isHidden])
+            return YES;
+    }
+
+    return NO;
+}
+
+- (BOOL)rightScrollbarVisible
+{
+    unsigned i, count = [scrollbars count];
+    for (i = 0; i < count; ++i) {
+        MMScroller *scroller = [scrollbars objectAtIndex:i];
+        if ([scroller type] == MMScrollerTypeRight && ![scroller isHidden])
+            return YES;
+    }
+
+    return NO;
 }
 
 - (MMScroller *)scrollbarForIdentifier:(int32_t)ident index:(unsigned *)idx

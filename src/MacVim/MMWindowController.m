@@ -144,10 +144,6 @@
     vimController = controller;
     decoratedWindow = [win retain];
 
-    // The resize indicator may need to stay hidden if the text view is
-    // rightmost and has no scrollbar.
-    [decoratedWindow setShowsResizeIndicator:NO];
-
     // Window cascading is handled by MMAppController.
     [self setShouldCascadeWindows:NO];
 
@@ -637,17 +633,6 @@
             // full-screen mode.
             [vimView adjustTextViewDimensions];
         } else {
-            // When the text view is rightmost in the window then the resize
-            // indicator is shown/hidden depending on whether the bottom/right
-            // scrollbars are visisble or not.
-            BOOL on = YES;
-            if ([self isSidebarCollapsed]
-                    || [[splitView subviews] indexOfObject:sidebarView] != 1) {
-                on = [vimView rightScrollbarVisible] ||
-                     [vimView bottomScrollbarVisible];
-            }
-            [decoratedWindow setShowsResizeIndicator:on];
-
             if (shouldResizeWindow) {
                 [self adjustWindowFrame];
                 shouldResizeWindow = NO;
@@ -1021,6 +1006,10 @@
     // rightmost.
     if (!left)
         [decoratedWindow setShowsResizeIndicator:YES];
+
+    // Need to place views to make sure scrollbars are positioned properly now
+    // that the view layout may have changed.
+    shouldPlaceVimView = YES;
 }
 
 
@@ -1349,8 +1338,9 @@
         return;
 
     BOOL leftEdge = [[NSUserDefaults standardUserDefaults]
-                                                boolForKey:MMSidebarOnLeftEdgeKey];
+                                            boolForKey:MMSidebarOnLeftEdgeKey];
     [self setSidebarView:sidebarView leftEdge:leftEdge];
+    //[vimView placeViews];
     [vimController sendMessage:ForceRedrawMsgID data:nil];
 }
 
