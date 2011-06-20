@@ -163,8 +163,8 @@ static NSMutableArray *leafNode = nil;
     // Vim swap files have names of type
     //   .original-file-name.sXY
     // where XY can be anything from "aa" to "wp".
-    NSString *last3 = [filename substringFromIndex:[filename length]-3];
-    if ([last3 compare:@"saa"] >= 0 && [last3 compare:@"swp"] <= 0) {
+    NSString *last4 = [filename substringFromIndex:[filename length]-4];
+    if ([last4 compare:@".saa"] >= 0 && [last4 compare:@".swp"] <= 0) {
       // It's a swap file, ignore it.
       return YES;
     }
