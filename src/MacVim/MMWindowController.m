@@ -1319,12 +1319,10 @@
 
 - (IBAction)toggleFileBrowser:(id)sender
 {
-    if (!sidebarView) {
+    if ([self isSidebarCollapsed])
         [self openFileBrowser:sender];
-    } else {
-        [self collapseSidebar:![self isSidebarCollapsed]];
-        [fileBrowserController makeFirstResponder];
-    }
+    else
+        [self closeFileBrowser:sender];
 }
 
 - (IBAction)selectInFileBrowser:(id)sender
