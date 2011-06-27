@@ -297,13 +297,9 @@ static NSMutableArray *leafNode = nil;
 @end
 
 #define ENTER_KEY_CODE 36
-#define H_KEY_CODE 4
 #define LEFT_KEY_CODE 123
-#define L_KEY_CODE 37
 #define RIGHT_KEY_CODE 124
-#define J_KEY_CODE 38
 #define DOWN_KEY_CODE 125
-#define K_KEY_CODE 40
 #define UP_KEY_CODE 126
 
 static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
@@ -369,30 +365,31 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)keyDown:(NSEvent *)event {
-  switch (event.keyCode) {
-  case ENTER_KEY_CODE:
+  if (event.keyCode == ENTER_KEY_CODE) {
     // These methods aren't really included in the NSOutlineViewDelegate protocol (the docs say
     // it's because of some error), so use performSelector to get rid of warnings.
     [self.delegate performSelector:@selector(outlineViewSelectionIsChanging:) withObject:self];
     [self.delegate performSelector:@selector(outlineViewSelectionDidChange:) withObject:self];
     return;
-
-  case H_KEY_CODE:
-    LEFT_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf702];
-    event = [self keyEventWithEvent:event character:LEFT_KEY_CHAR code:LEFT_KEY_CODE];
-    break;
-  case L_KEY_CODE:
-    RIGHT_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf703];
-    event = [self keyEventWithEvent:event character:RIGHT_KEY_CHAR code:RIGHT_KEY_CODE];
-    break;
-  case J_KEY_CODE:
-    DOWN_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf701];
-    event = [self keyEventWithEvent:event character:DOWN_KEY_CHAR code:DOWN_KEY_CODE];
-    break;
-  case K_KEY_CODE:
-    UP_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf700];
-    event = [self keyEventWithEvent:event character:UP_KEY_CHAR code:UP_KEY_CODE];
-    break;
+  } else {
+    switch ([[event.characters uppercaseString] characterAtIndex:0]) {
+    case 'H':
+      LEFT_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf702];
+      event = [self keyEventWithEvent:event character:LEFT_KEY_CHAR code:LEFT_KEY_CODE];
+      break;
+    case 'L':
+      RIGHT_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf703];
+      event = [self keyEventWithEvent:event character:RIGHT_KEY_CHAR code:RIGHT_KEY_CODE];
+      break;
+    case 'J':
+      DOWN_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf701];
+      event = [self keyEventWithEvent:event character:DOWN_KEY_CHAR code:DOWN_KEY_CODE];
+      break;
+    case 'K':
+      UP_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf700];
+      event = [self keyEventWithEvent:event character:UP_KEY_CHAR code:UP_KEY_CODE];
+      break;
+    }
   }
   [super keyDown:event];
 }
