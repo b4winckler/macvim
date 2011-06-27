@@ -61,6 +61,10 @@ gui_start()
     char_u	*old_term;
 #if defined(UNIX) && !defined(__BEOS__) && !defined(MACOS_X) \
 	&& !defined(__APPLE__)
+    /* By the time we get here Mac OS X will already have forked (it does so
+     * right after scanning the command line) so don't do anything here.  This
+     * means that "f" in 'guioptions' cannot be supported.
+     */
 # define MAY_FORK
     int		dofork = TRUE;
 #endif

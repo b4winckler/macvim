@@ -5581,7 +5581,7 @@ $as_echo "$vi_cv_var_python3_version" >&6; }
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python's abiflags" >&5
 $as_echo_n "checking Python's abiflags... " >&6; }
-if test "${vi_cv_var_python3_abiflags+set}" = set; then :
+if ${vi_cv_var_python3_abiflags+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
