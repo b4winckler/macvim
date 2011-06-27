@@ -169,10 +169,12 @@
 #define CPO_SUBPERCENT	'/'	/* % in :s string uses previous one */
 #define CPO_BACKSL	'\\'	/* \ is not special in [] */
 #define CPO_CHDIR	'.'	/* don't chdir if buffer is modified */
+#define CPO_SCOLON	';'	/* using "," and ";" will skip over char if
+				 * cursor would not move */
 /* default values for Vim, Vi and POSIX */
 #define CPO_VIM		"aABceFs"
-#define CPO_VI		"aAbBcCdDeEfFgHiIjJkKlLmMnoOpPqrRsStuvwWxXyZ$!%*-+<>"
-#define CPO_ALL		"aAbBcCdDeEfFgHiIjJkKlLmMnoOpPqrRsStuvwWxXyZ$!%*-+<>#{|&/\\."
+#define CPO_VI		"aAbBcCdDeEfFgHiIjJkKlLmMnoOpPqrRsStuvwWxXyZ$!%*-+<>;"
+#define CPO_ALL		"aAbBcCdDeEfFgHiIjJkKlLmMnoOpPqrRsStuvwWxXyZ$!%*-+<>#{|&/\\.;"
 
 /* characters for p_ww option: */
 #define WW_ALL		"bshl<>[],~"
@@ -395,6 +397,7 @@ EXTERN long	p_ph;		/* 'pumheight' */
 EXTERN char_u	*p_cpo;		/* 'cpoptions' */
 #ifdef FEAT_CSCOPE
 EXTERN char_u	*p_csprg;	/* 'cscopeprg' */
+EXTERN int	p_csre;		/* 'cscoperelative' */
 # ifdef FEAT_QUICKFIX
 EXTERN char_u	*p_csqf;	/* 'cscopequickfix' */
 #  define	CSQF_CMDS   "sgdctefi"

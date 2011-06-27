@@ -59,11 +59,8 @@ static int can_update_cursor = TRUE; /* can display the cursor */
 gui_start()
 {
     char_u	*old_term;
-#if defined(UNIX) && !defined(__BEOS__) && !defined(MACOS_X)
-    /* By the time we get here Mac OS X will already have forked (it does so
-     * right after scanning the command line) so don't do anything here.  This
-     * means that "f" in 'guioptions' cannot be supported.
-     */
+#if defined(UNIX) && !defined(__BEOS__) && !defined(MACOS_X) \
+	&& !defined(__APPLE__)
 # define MAY_FORK
     int		dofork = TRUE;
 #endif
@@ -86,6 +83,10 @@ gui_start()
 	cursor_on();			/* needed for ":gui" in .vimrc */
     gui.starting = TRUE;
     full_screen = FALSE;
+
+#ifdef FEAT_GUI_GTK
+    gui.event_time = GDK_CURRENT_TIME;
+#endif
 
 #ifdef MAY_FORK
     if (!gui.dofork || vim_strchr(p_go, GO_FORG) || recursive)
