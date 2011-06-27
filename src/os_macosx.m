@@ -18,6 +18,7 @@
 /* Avoid a conflict for the definition of Boolean between Mac header files and
  * X11 header files. */
 #define NO_X11_INCLUDES
+#define BalloonEval int   /* used in header files */
 
 #include "vim.h"
 #import <Cocoa/Cocoa.h>
@@ -27,9 +28,9 @@
  * Clipboard support for the console.
  * Don't include this when building the GUI version, the functions in
  * gui_mac.c are used then.  TODO: remove those instead?
- * But for MacVim we need these ones.
+ * But for MacVim we do need these ones.
  */
-#if defined(FEAT_CLIPBOARD) && (!defined(FEAT_GUI) || defined(FEAT_GUI_MACVIM))
+#if defined(FEAT_CLIPBOARD) && (!defined(FEAT_GUI_ENABLED) || defined(FEAT_GUI_MACVIM))
 
 /* Used to identify clipboard data copied from Vim. */
 
@@ -64,7 +65,7 @@ clip_mch_request_selection(VimClipboard *cbd)
     NSString *bestType = [pb availableTypeFromArray:supportedTypes];
     if (!bestType) goto releasepool;
 
-    int motion_type = MCHAR;
+    int motion_type = MAUTO;
     NSString *string = nil;
 
     if ([bestType isEqual:VimPboardType])
@@ -88,9 +89,7 @@ clip_mch_request_selection(VimClipboard *cbd)
 
     if (!string)
     {
-	/* Use NSStringPboardType.  The motion type is set to line-wise if the
-	 * string contains at least one EOL character, otherwise it is set to
-	 * character-wise (block-wise is never used).
+	/* Use NSStringPboardType.  The motion type is detected automatically.
 	 */
 	NSMutableString *mstring =
 		[[pb stringForType:NSStringPboardType] mutableCopy];
@@ -107,19 +106,13 @@ clip_mch_request_selection(VimClipboard *cbd)
 					   options:0 range:range];
 	}
 
-	/* Scan for newline character to decide whether the string should be
-	 * pasted line-wise or character-wise.
-	 */
-	motion_type = MCHAR;
-	if (0 < n || NSNotFound != [mstring rangeOfString:@"\n"].location)
-	    motion_type = MLINE;
-
 	string = mstring;
     }
 
+    /* Default to MAUTO, uses MCHAR or MLINE depending on trailing NL. */
     if (!(MCHAR == motion_type || MLINE == motion_type || MBLOCK == motion_type
 	    || MAUTO == motion_type))
-	motion_type = MCHAR;
+	motion_type = MAUTO;
 
     char_u *str = (char_u*)[string UTF8String];
     int len = [string lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
