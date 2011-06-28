@@ -448,6 +448,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)unwatchRoot;
 - (void)changeOccurredAtPath:(NSString *)path;
 - (void)deleteBufferByPath:(NSString *)path;
+- (void)deleteBufferByPath:(NSString *)path reopenPath:(NSString *)newPath;
 - (void)selectInBrowserByExpandingItems:(BOOL)expand;
 @end
 
@@ -670,9 +671,13 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 // Vim related methods
 // ===================
 
-- (void)deleteBufferByPath:(NSString *)path {
-  NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>:call MMDeleteBufferByPath('%@')<CR>", path];
+- (void)deleteBufferByPath:(NSString *)path reopenPath:(NSString *)newPath {
+  NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>:call MMDeleteBufferByPath('%@', '%@')<CR>", path, newPath];
   [[windowController vimController] addVimInput:input];
+}
+
+- (void)deleteBufferByPath:(NSString *)path {
+  [self deleteBufferByPath:path reopenPath:@""];
 }
 
 // Data Source methods
@@ -858,10 +863,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
     NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
     [fileBrowser selectRowIndexes:index byExtendingSelection:NO];
     if (isLeaf) {
-      [self deleteBufferByPath:fullPath];
       newPath = [newPath stringByEscapingSpecialFilenameCharacters];
-      NSString *input = [NSString stringWithFormat:@"<C-\\><C-N>:edit %@<CR>", newPath];
-      [[windowController vimController] addVimInput:input];
+      [self deleteBufferByPath:fullPath reopenPath:newPath];
     }
     else {
       // TODO: should reopen all open buffers with files inside of this directory
