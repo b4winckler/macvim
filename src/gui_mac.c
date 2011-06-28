@@ -1840,7 +1840,7 @@ gui_mac_doInZoomClick(EventRecord *theEvent, WindowPtr whichWindow)
 	p.v -= gui.scrollbar_height;
     p.v -= p.v % gui.char_height;
     p.v += 2 * gui.border_width;
-    if (gui.which_scrollbars[SBAR_BOTTOM]);
+    if (gui.which_scrollbars[SBAR_BOTTOM])
 	p.v += gui.scrollbar_height;
 
     ZoomWindowIdeal(whichWindow, thePart, &p);
@@ -4671,7 +4671,7 @@ clip_mch_request_selection(VimClipboard *cbd)
     if (flavor)
 	type = **textOfClip;
     else
-	type = (strchr(*textOfClip, '\r') != NULL) ? MLINE : MCHAR;
+	type = MAUTO;
 
     tempclip = lalloc(scrapSize + 1, TRUE);
     mch_memmove(tempclip, *textOfClip + flavor, scrapSize);

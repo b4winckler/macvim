@@ -14,17 +14,13 @@
  */
 
 #define NO_X11_INCLUDES
+#define BalloonEval int   /* used in header files */
+
 #include "vim.h"
 #ifndef FEAT_GUI_MAC
 # include <CoreServices/CoreServices.h>
 #endif
 
-
-#ifdef FEAT_GUI_MACVIM
-/* Include Carbon here instead of in one of the header files to avoid polluting
- * the global namespace. */
-# include <Carbon/Carbon.h>
-#endif
 
 #if defined(MACOS_CONVERT) || defined(PROTO)
 
