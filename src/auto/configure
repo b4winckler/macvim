@@ -5371,7 +5371,7 @@ __:
 	@echo "python_LIBS='$(LIBS)'"
 	@echo "python_SYSLIBS='$(SYSLIBS)'"
 	@echo "python_LINKFORSHARED='$(LINKFORSHARED)'"
-	@echo "python_INSTSONAME='$(INSTSONAME)'"
+	@echo "python_INSTSONAME='$(PYTHONFRAMEWORKPREFIX)/$(INSTSONAME)'"
 eof
 	    	    eval "`cd ${PYTHON_CONFDIR} && make -f "${tmp_mkf}" __ | sed '/ directory /d'`"
 	    rm -f -- "${tmp_mkf}"
