@@ -12,6 +12,7 @@
   FSEventStreamRef fsEventsStream;
   BOOL userHasChangedSelection;
   BOOL viewLoaded;
+  NSArray *dragItems;
 }
 
 - (id)initWithWindowController:(MMWindowController *)controller;

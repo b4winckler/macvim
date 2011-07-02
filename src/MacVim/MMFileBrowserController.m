@@ -7,6 +7,8 @@
 
 #import <CoreServices/CoreServices.h>
 
+#define DRAG_MOVE_FILES @"MoveFiles"
+
 // ****************************************************************************
 // File system model
 // ****************************************************************************
@@ -480,6 +482,9 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [fileBrowser addTableColumn:column];
   [fileBrowser setOutlineTableColumn:column];
 
+  [fileBrowser setDraggingSourceOperationMask:NSDragOperationEvery forLocal:YES];
+  [fileBrowser registerForDraggedTypes:[NSArray arrayWithObject:DRAG_MOVE_FILES]];
+
   pathControl = [[NSPathControl alloc] initWithFrame:NSMakeRect(0, 0, 0, 20)];
   [pathControl setRefusesFirstResponder:YES];
   [pathControl setAutoresizingMask:NSViewWidthSizable];
@@ -526,6 +531,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)dealloc
 {
+  [dragItems release]; dragItems = nil;
   [pathControl release]; pathControl = nil;
   [fileBrowser release]; fileBrowser = nil;
   [rootItem release]; rootItem = nil;
@@ -873,6 +879,45 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
     dirItem.ignoreNextReload = NO;
     NSLog(@"[!] Unable to rename `%@' to `%@'. Error: %@", [item fullPath], newPath, [error localizedDescription]);
   }
+}
+
+// Initiate the drag operation
+- (BOOL)outlineView:(NSOutlineView *)outlineView
+         writeItems:(NSArray *)items
+       toPasteboard:(NSPasteboard *)pasteboard
+{
+  dragItems = [items retain];
+  [pasteboard declareTypes:[NSArray arrayWithObject:DRAG_MOVE_FILES] owner:self];
+  [pasteboard setData:[NSData data] forType:DRAG_MOVE_FILES];
+  // TODO add string version so one can drag to get the path
+  return YES;
+}
+
+// Always display the drop insertion marker underneath the folder that the files
+// would be dropped on if the mouse button were to be released right now.
+- (NSDragOperation)outlineView:(NSOutlineView *)outlineView
+                  validateDrop:(id < NSDraggingInfo >)info
+                  proposedItem:(id)item
+            proposedChildIndex:(NSInteger)index
+{
+  [outlineView setDropItem:[item dirItem] dropChildIndex:0];
+  return NSDragOperationEvery;
+}
+
+// Handle drop
+- (BOOL)outlineView:(NSOutlineView *)outlineView
+         acceptDrop:(id < NSDraggingInfo >)info
+               item:(id)item
+         childIndex:(NSInteger)index
+{
+  if (item == nil) item = rootItem;
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  for (MMFileBrowserFSItem *dragItem in dragItems) {
+    NSString *to = [[item fullPath] stringByAppendingPathComponent:[dragItem relativePath]];
+    [fileManager moveItemAtPath:[dragItem fullPath] toPath:to error:NULL];
+  }
+  [dragItems release]; dragItems = nil;
+  return YES;
 }
 
 
