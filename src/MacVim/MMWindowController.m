@@ -1330,6 +1330,11 @@
     [fileBrowserController selectInBrowser];
 }
 
+- (IBAction)revealInFileBrowser:(id)sender
+{
+    [fileBrowserController selectInBrowserByExpandingItems];
+}
+
 - (IBAction)sidebarEdgePreferenceChanged:(id)sender
 {
     if (!sidebarView || [[splitView subviews] count] != 2)

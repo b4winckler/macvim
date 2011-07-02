@@ -58,6 +58,8 @@
 	<string></string>
 	<key>redo:</key>
 	<string></string>
+	<key>revealInFileBrowser:</key>
+	<string></string>
 	<key>selectAll:</key>
 	<string></string>
 	<key>selectNextWindow:</key>

@@ -936,6 +936,9 @@ noremenu  <script> <silent> 1.100 PopUp.Select\ &All	:<C-U>call <SID>SelectAll()
 inoremenu <script> <silent> 1.100 PopUp.Select\ &All	<C-O>:call <SID>SelectAll()<CR>
 cnoremenu <script> <silent> 1.100 PopUp.Select\ &All	<C-U>call <SID>SelectAll()<CR>
 
+an 1.100 PopUp.-SEP3-			<Nop>
+nnoremenu 1.110 PopUp.Reveal\ in\ File\ Browser	:<C-U>macaction revealInFileBrowser:<CR>
+
 if has("spell")
   " Spell suggestions in the popup menu.  Note that this will slow down the
   " appearance of the menu!
