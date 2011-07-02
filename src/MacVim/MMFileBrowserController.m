@@ -452,6 +452,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)deleteBufferByPath:(NSString *)path;
 - (void)deleteBufferByPath:(NSString *)path reopenPath:(NSString *)newPath;
 - (void)selectInBrowserByExpandingItems:(BOOL)expand;
+- (void)reloadOnlyDirectChildrenOfItem:(MMFileBrowserFSItem *)item;
 @end
 
 
@@ -674,6 +675,16 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   return nil;
 }
 
+- (void)reloadOnlyDirectChildrenOfItem:(MMFileBrowserFSItem *)item {
+  if ([item reloadRecursive:NO]) {
+    if (item == rootItem) {
+      [fileBrowser reloadData];
+    } else {
+      [fileBrowser reloadItem:item reloadChildren:YES];
+    }
+  }
+}
+
 // Vim related methods
 // ===================
 
@@ -846,7 +857,11 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   return NO;
 }
 
-- (void)outlineView:(NSOutlineView *)outlineView setObjectValue:(NSString *)name forTableColumn:(NSTableColumn *)tableColumn byItem:(MMFileBrowserFSItem *)item {
+- (void)outlineView:(NSOutlineView *)outlineView
+     setObjectValue:(NSString *)name
+     forTableColumn:(NSTableColumn *)tableColumn
+             byItem:(MMFileBrowserFSItem *)item
+{
   // save these here, cause by moving the file and reloading the view 'item' will be released
   BOOL isLeaf = [item isLeaf];
   NSString *fullPath = [item fullPath];
@@ -859,11 +874,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
                                                        toPath:newPath
                                                         error:&error];
   if (moved) {
-    [dirItem reloadRecursive:NO];
-    if (dirItem == rootItem)
-      [fileBrowser reloadData];
-    else
-      [fileBrowser reloadItem:dirItem reloadChildren:YES];
+    [self reloadOnlyDirectChildrenOfItem:dirItem];
     // Select the renamed item
     NSInteger row = [fileBrowser rowForItem:[dirItem itemWithName:name]];
     NSIndexSet *index = [NSIndexSet indexSetWithIndex:row];
@@ -907,15 +918,25 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 // Handle drop
 - (BOOL)outlineView:(NSOutlineView *)outlineView
          acceptDrop:(id < NSDraggingInfo >)info
-               item:(id)item
+               item:(MMFileBrowserFSItem *)toItem
          childIndex:(NSInteger)index
 {
-  if (item == nil) item = rootItem;
+  if (toItem == nil) toItem = rootItem;
+
+  MMFileBrowserFSItem *fromItem = [(MMFileBrowserFSItem *)[dragItems objectAtIndex:0] dirItem];
+  fromItem.ignoreNextReload = YES;
+  toItem.ignoreNextReload = YES;
+
   NSFileManager *fileManager = [NSFileManager defaultManager];
   for (MMFileBrowserFSItem *dragItem in dragItems) {
-    NSString *to = [[item fullPath] stringByAppendingPathComponent:[dragItem relativePath]];
+    NSString *to = [[toItem fullPath] stringByAppendingPathComponent:[dragItem relativePath]];
     [fileManager moveItemAtPath:[dragItem fullPath] toPath:to error:NULL];
+    [self deleteBufferByPath:[dragItem fullPath] reopenPath:to];
   }
+
+  [self reloadOnlyDirectChildrenOfItem:fromItem];
+  [self reloadOnlyDirectChildrenOfItem:toItem];
+
   [dragItems release]; dragItems = nil;
   return YES;
 }
@@ -943,13 +964,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   }
 
   item.ignoreNextReload = YES;
-  BOOL isOK = [fileManager createFileAtPath:result contents:[NSData data] attributes:nil];
-  if(isOK) {
-    [item reloadRecursive: NO];
-    if(item == rootItem)
-      [fileBrowser reloadData];
-    else
-      [fileBrowser reloadItem:item reloadChildren:YES];
+  if ([fileManager createFileAtPath:result contents:[NSData data] attributes:nil]) {
+    [self reloadOnlyDirectChildrenOfItem:item];
     if(item != rootItem) [fileBrowser expandItem:item];
     MMFileBrowserFSItem *newItem = [item itemWithName:[result lastPathComponent]];
     NSInteger row = [fileBrowser rowForItem:newItem];
@@ -983,12 +999,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
                           attributes:nil
                                error:NULL];
 
-  // Add the new folder to the items
-  [dirItem reloadRecursive:NO]; // for now let's not create the item ourselves
-  if(dirItem == rootItem)
-    [fileBrowser reloadData];
-  else
-    [fileBrowser reloadItem:dirItem reloadChildren:YES];
+  [self reloadOnlyDirectChildrenOfItem:dirItem];
 
   // Show, select and edit the new folder
   if(selItem) [fileBrowser expandItem:dirItem];
@@ -1031,11 +1042,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
     dirItem.ignoreNextReload = YES;
     [[NSFileManager defaultManager] removeItemAtPath:fullPath error:NULL];
-    [dirItem reloadRecursive:NO];
-    if(rootItem == dirItem)
-      [fileBrowser reloadData];
-    else
-      [fileBrowser reloadItem:dirItem reloadChildren:YES];
+    [self reloadOnlyDirectChildrenOfItem:dirItem];
 
     if (isLeaf) {
       [self deleteBufferByPath:fullPath];
@@ -1093,15 +1100,8 @@ static void change_occured(ConstFSEventStreamRef stream,
       item.ignoreNextReload = NO;
       return;
     }
-    // NSLog(@"Change occurred in path: %@", [item fullPath]);
-    // No need to reload recursive, the change occurred in *this* item only
-    if ([item reloadRecursive:NO]) {
-      if(rootItem == item) {
-        [fileBrowser reloadData];
-      }
-      else
-        [fileBrowser reloadItem:item reloadChildren:YES];
-    }
+    // NSLog(@"Change at: %@", [item fullPath]);
+    [self reloadOnlyDirectChildrenOfItem:item];
   }
 }
 
