@@ -907,13 +907,14 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 // would be dropped on if the mouse button were to be released right now.
 - (NSDragOperation)outlineView:(NSOutlineView *)outlineView
                   validateDrop:(id <NSDraggingInfo>)info
-                  proposedItem:(id)item
+                  proposedItem:(MMFileBrowserFSItem *)item
             proposedChildIndex:(NSInteger)index
 {
   if (dragItems == nil) {
     return NSDragOperationNone;
   } else {
-    [outlineView setDropItem:[item dirItem] dropChildIndex:0];
+    item = [item dirItem] == rootItem ? nil : [item dirItem];
+    [outlineView setDropItem:item dropChildIndex:0];
     return NSDragOperationEvery;
   }
 }
