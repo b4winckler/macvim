@@ -483,8 +483,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [fileBrowser addTableColumn:column];
   [fileBrowser setOutlineTableColumn:column];
 
-  [fileBrowser setDraggingSourceOperationMask:NSDragOperationEvery forLocal:YES];
-  [fileBrowser registerForDraggedTypes:[NSArray arrayWithObject:DRAG_MOVE_FILES]];
+  [fileBrowser setDraggingSourceOperationMask:NSDragOperationCopy|NSDragOperationLink forLocal:NO];
+  [fileBrowser registerForDraggedTypes:[NSArray arrayWithObjects:DRAG_MOVE_FILES, NSFilenamesPboardType, nil]];
 
   pathControl = [[NSPathControl alloc] initWithFrame:NSMakeRect(0, 0, 0, 20)];
   [pathControl setRefusesFirstResponder:YES];
@@ -532,7 +532,6 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)dealloc
 {
-  [dragItems release]; dragItems = nil;
   [pathControl release]; pathControl = nil;
   [fileBrowser release]; fileBrowser = nil;
   [rootItem release]; rootItem = nil;
@@ -897,17 +896,17 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
          writeItems:(NSArray *)items
        toPasteboard:(NSPasteboard *)pasteboard
 {
-  dragItems = [items retain];
-  [pasteboard declareTypes:[NSArray arrayWithObject:DRAG_MOVE_FILES] owner:self];
+  dragItems = items;
+  [pasteboard declareTypes:[NSArray arrayWithObjects:DRAG_MOVE_FILES, NSFilenamesPboardType, nil] owner:self];
   [pasteboard setData:[NSData data] forType:DRAG_MOVE_FILES];
-  // TODO add string version so one can drag to get the path
+  [pasteboard setPropertyList:[items valueForKey:@"fullPath"] forType:NSFilenamesPboardType];
   return YES;
 }
 
 // Always display the drop insertion marker underneath the folder that the files
 // would be dropped on if the mouse button were to be released right now.
 - (NSDragOperation)outlineView:(NSOutlineView *)outlineView
-                  validateDrop:(id < NSDraggingInfo >)info
+                  validateDrop:(id <NSDraggingInfo>)info
                   proposedItem:(id)item
             proposedChildIndex:(NSInteger)index
 {
@@ -937,7 +936,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [self reloadOnlyDirectChildrenOfItem:fromItem];
   [self reloadOnlyDirectChildrenOfItem:toItem];
 
-  [dragItems release]; dragItems = nil;
+  dragItems = nil;
   return YES;
 }
 
