@@ -913,8 +913,11 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   if (dragItems == nil) {
     return NSDragOperationNone;
   } else {
-    item = [item dirItem] == rootItem ? nil : [item dirItem];
-    [outlineView setDropItem:item dropChildIndex:0];
+    if ([item isLeaf]) {
+      MMFileBrowserFSItem *dirItem = [item dirItem];
+      [outlineView setDropItem:dirItem == rootItem ? nil : dirItem
+                dropChildIndex:[[dirItem children] indexOfObject:item]];
+    }
     return NSDragOperationEvery;
   }
 }
