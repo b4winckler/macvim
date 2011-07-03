@@ -910,8 +910,12 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
                   proposedItem:(id)item
             proposedChildIndex:(NSInteger)index
 {
-  [outlineView setDropItem:[item dirItem] dropChildIndex:0];
-  return NSDragOperationEvery;
+  if (dragItems == nil) {
+    return NSDragOperationNone;
+  } else {
+    [outlineView setDropItem:[item dirItem] dropChildIndex:0];
+    return NSDragOperationEvery;
+  }
 }
 
 // Handle drop
@@ -920,24 +924,28 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
                item:(MMFileBrowserFSItem *)toItem
          childIndex:(NSInteger)index
 {
-  if (toItem == nil) toItem = rootItem;
+  if (dragItems == nil) {
+    return NO;
+  } else {
+    if (toItem == nil) toItem = rootItem;
 
-  MMFileBrowserFSItem *fromItem = [(MMFileBrowserFSItem *)[dragItems objectAtIndex:0] dirItem];
-  fromItem.ignoreNextReload = YES;
-  toItem.ignoreNextReload = YES;
+    MMFileBrowserFSItem *fromItem = [(MMFileBrowserFSItem *)[dragItems objectAtIndex:0] dirItem];
+    fromItem.ignoreNextReload = YES;
+    toItem.ignoreNextReload = YES;
 
-  NSFileManager *fileManager = [NSFileManager defaultManager];
-  for (MMFileBrowserFSItem *dragItem in dragItems) {
-    NSString *to = [[toItem fullPath] stringByAppendingPathComponent:[dragItem relativePath]];
-    [fileManager moveItemAtPath:[dragItem fullPath] toPath:to error:NULL];
-    [self deleteBufferByPath:[dragItem fullPath] reopenPath:to];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    for (MMFileBrowserFSItem *dragItem in dragItems) {
+      NSString *to = [[toItem fullPath] stringByAppendingPathComponent:[dragItem relativePath]];
+      [fileManager moveItemAtPath:[dragItem fullPath] toPath:to error:NULL];
+      [self deleteBufferByPath:[dragItem fullPath] reopenPath:to];
+    }
+
+    [self reloadOnlyDirectChildrenOfItem:fromItem];
+    [self reloadOnlyDirectChildrenOfItem:toItem];
+
+    dragItems = nil;
+    return YES;
   }
-
-  [self reloadOnlyDirectChildrenOfItem:fromItem];
-  [self reloadOnlyDirectChildrenOfItem:toItem];
-
-  dragItems = nil;
-  return YES;
 }
 
 
