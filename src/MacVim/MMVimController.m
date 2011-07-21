@@ -766,21 +766,30 @@ static BOOL isUnsafeMessage(int msgid);
         [self setServerName:name];
         [name release];
     } else if (EnterFullscreenMsgID == msgid) {
-#if (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_7)
-        const void *bytes = [data bytes];
-        int fuoptions = *((int*)bytes); bytes += sizeof(int);
-        int bg = *((int*)bytes);
-        NSColor *back = [NSColor colorWithArgbInt:bg];
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
+        if ([[windowController window]
+                respondsToSelector:@selector(toggleFullScreen:)]) {
+            [[windowController window] toggleFullScreen:self];
+        } else {
+#endif
+            const void *bytes = [data bytes];
+            int fuoptions = *((int*)bytes); bytes += sizeof(int);
+            int bg = *((int*)bytes);
+            NSColor *back = [NSColor colorWithArgbInt:bg];
 
-        [windowController enterFullscreen:fuoptions backgroundColor:back];
-#else
-        [[windowController window] toggleFullScreen:self];
+            [windowController enterFullscreen:fuoptions backgroundColor:back];
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
+        }
 #endif
     } else if (LeaveFullscreenMsgID == msgid) {
-#if (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_7)
-        [windowController leaveFullscreen];
-#else
-        [[windowController window] toggleFullScreen:self];
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
+        if ([windowController respondsToSelector:@selector(leaveFullscreen)]) {
+            [windowController leaveFullscreen];
+        } else {
+#endif
+            [[windowController window] toggleFullScreen:self];
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
+        }
 #endif
     } else if (SetBuffersModifiedMsgID == msgid) {
         const void *bytes = [data bytes];
