@@ -141,12 +141,12 @@ if test "`(uname) 2>/dev/null`" = Darwin; then
     if test "x$MACSDK" = "x10.4"; then
       sdkflags="$sdkflags""u"
     fi
-    sdkflags="$sdkflags.sdk -mmacosx-version-min=$MACSDK"
+    sdkflags="$sdkflags.sdk"
     CFLAGS="$CFLAGS -isysroot $sdkflags"
     LDFLAGS="$LDFLAGS -Wl,-syslibroot,$sdkflags"
     AC_TRY_LINK([ ], [ ],
       [ AC_MSG_RESULT([yes])
-        XCODEFLAGS="$XCODEFLAGS -sdk macosx$MACSDK MACOSX_DEPLOYMENT_TARGET=$MACSDK" ],
+        XCODEFLAGS="$XCODEFLAGS -sdk macosx$MACSDK" ],
       [ AC_MSG_RESULT([no])
         dnl Important to clear MACSDK so later on in the script we can assume
         dnl that no SDK was chosen if it is empty.

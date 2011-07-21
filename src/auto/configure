@@ -4155,7 +4155,7 @@ $as_echo_n "checking if SDK is supported... " >&6; }
     if test "x$MACSDK" = "x10.4"; then
       sdkflags="$sdkflags""u"
     fi
-    sdkflags="$sdkflags.sdk -mmacosx-version-min=$MACSDK"
+    sdkflags="$sdkflags.sdk"
     CFLAGS="$CFLAGS -isysroot $sdkflags"
     LDFLAGS="$LDFLAGS -Wl,-syslibroot,$sdkflags"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -4172,7 +4172,7 @@ _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        XCODEFLAGS="$XCODEFLAGS -sdk macosx$MACSDK MACOSX_DEPLOYMENT_TARGET=$MACSDK"
+        XCODEFLAGS="$XCODEFLAGS -sdk macosx$MACSDK"
 else
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
