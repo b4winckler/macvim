@@ -243,7 +243,8 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
 #if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
     // Disable automatic relaunching
-    [NSApp disableRelaunchOnLogin];
+    if ([NSApp respondsToSelector:@selector(disableRelaunchOnLogin)])
+        [NSApp disableRelaunchOnLogin];
 #endif
 
     vimControllers = [NSMutableArray new];
