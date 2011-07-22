@@ -262,6 +262,10 @@
                name:NSApplicationDidChangeScreenParametersNotification
              object:NSApp];
 
+#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7)
+    [win setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
+#endif
+
     return self;
 }
 
@@ -1311,6 +1315,14 @@
     [fileBrowserController makeFirstResponder];
     [self collapseSidebar:NO];
 }
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
+- (NSApplicationPresentationOptions)window:(NSWindow *)window
+    willUseFullScreenPresentationOptions:(NSApplicationPresentationOptions)opt
+{
+    return opt | NSApplicationPresentationAutoHideToolbar;
+}
+#endif
 
 - (IBAction)closeFileBrowser:(id)sender
 {
