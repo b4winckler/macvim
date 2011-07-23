@@ -1095,7 +1095,7 @@ __:
 	@echo "python3_BASEMODLIBS='$(BASEMODLIBS)'"
 	@echo "python3_LIBS='$(LIBS)'"
 	@echo "python3_SYSLIBS='$(SYSLIBS)'"
-	@echo "python3_INSTSONAME='$(INSTSONAME)'"
+	@echo "python3_INSTSONAME='$(PYTHONFRAMEWORKPREFIX)/$(INSTSONAME)'"
 eof
           dnl -- delete the lines from make about Entering/Leaving directory
           eval "`cd ${PYTHON3_CONFDIR} && make -f "${tmp_mkf}" __ | sed '/ directory /d'`"
