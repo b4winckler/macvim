@@ -1,4 +1,4 @@
-*quickfix.txt*  For Vim バージョン 7.3.  Last change: 2010 Oct 20
+*quickfix.txt*  For Vim バージョン 7.3.  Last change: 2011 Feb 01
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -518,7 +518,7 @@ Vimにはパターンを検索する方法が2つある: 内部grepと外部grep
 
 Note: 検索結果へのリンク一覧を開くには |:copen| (|:lgrep| なら |:lopen|) が使
 われる。|:silent| コマンドを使うことで grep の出力が画面いっぱいに表示されるの
-を防ぐことができる。|:grep| コマンドを |:grep!| 形式で使うと最初のマッチに自動
+を防ぐことができる。|:grep| コマンドを ":grep!" 形式で使うと最初のマッチに自動
 的にジャンプしなくなる。これらのコマンドを組み合わせて NewGrep コマンドを作る
 と次のようになる: >
 
