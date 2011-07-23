@@ -1,4 +1,4 @@
-*editing.txt*   For Vim バージョン 7.3.  Last change: 2010 Dec 08
+*editing.txt*   For Vim バージョン 7.3.  Last change: 2011 Jan 27
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -985,6 +985,11 @@ Vimは別の場所で変更を受けたファイルを上書きしようとし�
 
 バックアップファイルの生成に失敗すると、書き込みは行われない。それでも書き込み
 たいときにはコマンドに '!' を追加すること。
+
+							*write-permissions*
+新しいファイルを書き込むときは読み書きの権限が付きます。unix ではマスクの値は
+0666 に umask を適用させたものになります。Vim で開いたファイルに書き込むときは
+権限は維持されますが、s ビットはクリアされます。
 
 							*write-readonly*
 オプション 'cpoptions' の値にフラグ 'W' が含まれるときは、Vimは読み込み専用フ

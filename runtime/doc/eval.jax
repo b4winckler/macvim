@@ -1,4 +1,4 @@
-*eval.txt*	For Vim バージョン 7.3.  Last change: 2010 Dec 01
+*eval.txt*	For Vim バージョン 7.3.  Last change: 2011 Feb 11
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -940,7 +940,6 @@ number			数定数			*expr-number*
 
 							*float-pi* *float-e*
 コピー＆ペーストしておくのに便利な値: >
-A few useful values to copy&paste: >
 	:let pi = 3.14159265359
 	:let e  = 2.71828182846
 
@@ -1241,7 +1240,8 @@ v:beval_text	マウスポインタの下もしくは後ろにあるテキスト�
 
 					*v:beval_winnr* *beval_winnr-variable*
 v:beval_winnr	マウスポインタがあるウィンドウの番号。オプション'balloonexpr'
-		を評価している最中のみ有効。
+		を評価している最中のみ有効。一番目のウィンドウの番号はゼロです
+		(他の場所でのウィンドウ番号と異なっています)。
 
 					*v:char* *char-variable*
 v:char		'formatexpr'を評価しているときの引数。また、短縮入力
@@ -1494,8 +1494,9 @@ v:progname	Vimを起動したときのプログラム名(パスは除かれる)�
 		読出し専用。
 
 					*v:register* *register-variable*
-v:register	最後のノーマルモードコマンドに指定されたレジスタの名前。レジス
-		タが指定されなかったときは空。|getreg()| |setreg()|
+v:register	現在のノーマルモードコマンドに適用されるレジスタの名前。レジス
+		タが指定されなかったときはデフォルトレジスタになる。
+		|getreg()| と |setreg()| も参照。
 
 					*v:scrollstart* *scrollstart-variable*
 v:scrollstart	画面のスクロールの原因となったスクリプトや関数を説明する
@@ -1878,7 +1879,7 @@ spellsuggest( {word} [, {max} [, {capital}]])
 				リスト	スペリング補完
 split( {expr} [, {pat} [, {keepempty}]])
 				リスト	{expr}を{pat}で区切ってリストを作る
-sqrt( {expr}			浮動小数点数	{expr} の平方根
+sqrt( {expr})			浮動小数点数	{expr} の平方根
 str2float( {expr})		浮動小数点数	文字列を浮動小数点数に変換する
 str2nr( {expr} [, {base}])	数値	文字列を数値に変換する
 strchars( {expr})		数値	文字列{expr}の文字の数
@@ -1920,7 +1921,7 @@ tolower( {expr})		文字列	文字列{expr}を小文字にする
 toupper( {expr})		文字列	文字列{expr}を大文字にする
 tr( {src}, {fromstr}, {tostr})	文字列	{src}中に現れる文字{fromstr}を{tostr}
 					に変換する。
-trunc( {expr}			浮動小数点数	浮動小数点数{expr}を切り詰める
+trunc( {expr})			浮動小数点数	浮動小数点数{expr}を切り詰める
 type( {name})			数値	変数{name}の型
 undofile( {name})		文字列	{name}に対するアンドゥファイルの名前
 undotree()			リスト	アンドゥファイルツリー
@@ -6025,10 +6026,10 @@ vms			VMSバージョン
 vreplace		コマンド|gR|と|gr|をサポート
 wildignore		オプション'wildignore'をサポート
 wildmenu		オプション'wildmenu'を指定してコンパイル
-win16			Win16バージョン(Windows 3.1)
-win32			Win32バージョン(Windows 95/98/ME/NT/2000/XP)
+win16			Win16バージョン(MS-Windows 3.1)
+win32			Win32バージョン(MS-Windows 95 以上の 32 or 64 ビット)
 win32unix		Win32バージョン。Unixファイルを使用 (Cygwin)
-win64			Win64バージョン(Windows 64 bit)
+win64			Win64バージョン(MS-Windows 64 bit)
 win95			Win32バージョン。MS-Windows 95/98/ME用。
 winaltkeys		オプション'winaltkeys'を指定してコンパイル
 windows			複数ウィンドウをサポート

@@ -1,4 +1,4 @@
-*term.txt*      For Vim バージョン 7.3.  Last change: 2009 Nov 05
+*term.txt*      For Vim バージョン 7.3.  Last change: 2011 Feb 16
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -663,6 +663,7 @@ X サーバのクリップボードを利用できるときは、コマンドラ
 NOTE: 古い xterm では95桁目を越えてカーソルを移動できない場合があります。これ
 は xterm の問題であり、Vim の問題ではありません。新しい xterm を入手してくださ
 い |color-xterm|。
+現在、制限は 223 桁です。
 
 xterm でコピー＆ペーストする方法('mouse' に現在のモードが含まれていないとき):
 1. テキストの最初の文字の上で左ボタンを押し、最後の文字までマウスポインタを動
