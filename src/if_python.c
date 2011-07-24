@@ -37,11 +37,6 @@ typedef void *FARPROC;
 # define LoadLibrary(a) dlopen(a,RTLD_NOW|RTLD_GLOBAL)
 # define FreeLibrary(a) dlclose(a)
 # define GetProcAddress dlsym
-# if defined(MACOS_X_UNIX)
-#  define DYNAMIC_PYTHON_DLL "/System/Library/Frameworks/Python.framework/Versions/Current/Python"
-# else
-#  define DYNAMIC_PYTHON_DLL "libpython.so"
-# endif
 #endif
 
 #ifdef _DEBUG
