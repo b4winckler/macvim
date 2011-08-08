@@ -368,11 +368,8 @@ menut Minimize\ All		すべてをしまう
 menut Zoom			拡大／縮小
 menut Zoom\ All			すべてを拡大
 menut Toggle\ Full\ Screen\ Mode	フルスクリーンモード切り替え
-an <silent> 9998.331 &Window.次のウインドウ	<Nop>
-macm ウインドウ.次のウインドウ  key=<D-]>	action=selectNextWindow:
-an <silent> 9998.332 &Window.前のウインドウ	<Nop>
-macm ウインドウ.前のウインドウ  key=<D-[>	action=selectPreviousWindow:
-an 9998.333 &Window.-SEP2-			<Nop>
+menut Select\ Next\ Window		次のウインドウ
+menut Select\ Previous\ Window	前のウインドウ
 menut Select\ Next\ Tab		次のタブを選択
 menut Select\ Previous\ Tab	前のタブを選択
 menut Bring\ All\ To\ Front	すべてを手前に移動
