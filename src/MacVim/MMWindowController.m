@@ -2335,6 +2335,7 @@
 
 - (BOOL)maximizeWindow:(int)options
 {
+#if 0
     int currRows, currColumns;
     [[vimView textView] getMaxRows:&currRows columns:&currColumns];
 
@@ -2386,6 +2387,10 @@
 
     // Indicate that window was not resized
     return NO;
+#else
+    [decoratedWindow setFrame:[[decoratedWindow screen] frame] display:NO];
+    return NO;
+#endif
 }
 
 - (void)applicationDidChangeScreenParameters:(NSNotification *)notification
