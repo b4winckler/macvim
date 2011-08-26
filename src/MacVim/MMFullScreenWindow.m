@@ -8,7 +8,7 @@
  * See README.txt for an overview of the Vim source code.
  */
 /*
- * MMFullscreenWindow
+ * MMFullScreenWindow
  *
  * A window without any decorations which covers an entire screen.
  *
@@ -23,7 +23,7 @@
  * Author: Nico Weber
  */
 
-#import "MMFullscreenWindow.h"
+#import "MMFullScreenWindow.h"
 #import "MMTextView.h"
 #import "MMVimController.h"
 #import "MMVimView.h"
@@ -45,13 +45,13 @@ enum {
 };
 
 
-@interface MMFullscreenWindow (Private)
+@interface MMFullScreenWindow (Private)
 - (void)resizeVimView;
 @end
 
-@implementation MMFullscreenWindow
+@implementation MMFullScreenWindow
 
-- (MMFullscreenWindow *)initWithWindow:(NSWindow *)t view:(MMVimView *)v 
+- (MMFullScreenWindow *)initWithWindow:(NSWindow *)t view:(MMVimView *)v 
                                backgroundColor:(NSColor *)back
 {
     NSScreen* screen = [t screen];
@@ -94,8 +94,6 @@ enum {
 {
     ASLogDebug(@"");
 
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-
     [target release];  target = nil;
     [view release];  view = nil;
 
@@ -107,9 +105,9 @@ enum {
     options = opt;
 }
 
-- (void)enterFullscreen
+- (void)enterFullScreen
 {
-    ASLogDebug(@"Enter full screen now");
+    ASLogDebug(@"Enter full-screen now");
 
     // Hide Dock and menu bar now to avoid the hide animation from playing
     // after the fade to black (see also windowDidBecomeMain:).
@@ -162,18 +160,18 @@ enum {
     // focus gained message  
     [self setDelegate:delegate];
 
-    // Store view dimension used before entering full screen, then resize the
+    // Store view dimension used before entering full-screen, then resize the
     // view to match 'fuopt'.
     [[view textView] getMaxRows:&nonFuRows columns:&nonFuColumns];
     [self resizeVimView];
 
-    // Store options used when entering full screen so that we can restore
-    // dimensions when exiting full screen.
+    // Store options used when entering full-screen so that we can restore
+    // dimensions when exiting full-screen.
     startFuFlags = options;
 
 #if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
     // HACK! Put window on all Spaces to avoid Spaces (available on OS X 10.5
-    // and later) from moving the full screen window to a separate Space from
+    // and later) from moving the full-screen window to a separate Space from
     // the one the decorated window is occupying.  The collection behavior is
     // restored further down.
     NSWindowCollectionBehavior wcb = [self collectionBehavior];
@@ -199,7 +197,7 @@ enum {
     state = InFullScreen;
 }
 
-- (void)leaveFullscreen
+- (void)leaveFullScreen
 {
     // fade to black
     Boolean didBlend = NO;
@@ -248,10 +246,10 @@ enum {
     id delegate = [self delegate];
     [self setDelegate:nil];
     
-    // move text view back to original window, hide fullscreen window,
+    // move text view back to original window, hide fullScreen window,
     // show original window
     // do this _after_ resetting delegate and window controller, so the
-    // window controller doesn't get a focus lost message from the fullscreen
+    // window controller doesn't get a focus lost message from the fullScreen
     // window.
     [view removeFromSuperviewWithoutNeedingDisplay];
     [[target contentView] addSubview:view];
@@ -266,15 +264,30 @@ enum {
 #if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
     // HACK! Put decorated window on all Spaces (available on OS X 10.5 and
     // later) so that the decorated window stays on the same Space as the full
-    // screen window (they may occupy different Spaces e.g. if the full screen
+    // screen window (they may occupy different Spaces e.g. if the full-screen
     // window was dragged to another Space).  The collection behavior is
     // restored further down.
     NSWindowCollectionBehavior wcb = [target collectionBehavior];
     [target setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
 #endif
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
+    // HACK! On Mac OS X 10.7 windows animate when makeKeyAndOrderFront: is
+    // called.  This is distracting here, so disable the animation and restore
+    // animation behavior after calling makeKeyAndOrderFront:.
+    NSWindowAnimationBehavior a = NSWindowAnimationBehaviorNone;
+    if ([target respondsToSelector:@selector(animationBehavior)]) {
+        a = [target animationBehavior];
+        [target setAnimationBehavior:NSWindowAnimationBehaviorNone];
+    }
+#endif
 
     [target makeKeyAndOrderFront:self];
 
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
+    // HACK! Restore animation behavior.
+    if (NSWindowAnimationBehaviorNone != a)
+        [target setAnimationBehavior:a];
+#endif
 #if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
     // Restore collection behavior (see hack above).
     [target setCollectionBehavior:wcb];
@@ -294,7 +307,7 @@ enum {
     [self autorelease]; // Balance the above retain
 
     state = LeftFullScreen;
-    ASLogDebug(@"Left full screen");
+    ASLogDebug(@"Left full-screen");
 }
 
 // Title-less windows normally don't receive key presses, override this
@@ -304,7 +317,8 @@ enum {
 }
 
 // Title-less windows normally can't become main which means that another
-// non-fullscreen window will have the "active" titlebar in expose. Bad, fix it.
+// non-full-screen window will have the "active" titlebar in expose. Bad, fix
+// it.
 - (BOOL)canBecomeMainWindow
 {
     return YES;
@@ -358,12 +372,12 @@ enum {
     return YES;
 }
 
-@end // MMFullscreenWindow
+@end // MMFullScreenWindow
 
 
 
 
-@implementation MMFullscreenWindow (Private)
+@implementation MMFullScreenWindow (Private)
 
 - (void)resizeVimView
 {
@@ -412,9 +426,9 @@ enum {
     }
 
     // The new view dimensions are stored and then consulted when attempting to
-    // restore the windowed view dimensions when leaving full screen.
-    // NOTE: Store them here and not only in enterFullscreen, otherwise the
-    // windowed view dimensions will not be restored if the full screen was on
+    // restore the windowed view dimensions when leaving full-screen.
+    // NOTE: Store them here and not only in enterFullScreen, otherwise the
+    // windowed view dimensions will not be restored if the full-screen was on
     // a screen that later was unplugged.
     startFuRows = fuRows;
     startFuColumns = fuColumns;
@@ -422,4 +436,4 @@ enum {
     [self centerView];
 }
 
-@end // MMFullscreenWindow (Private)
+@end // MMFullScreenWindow (Private)

@@ -48,6 +48,7 @@ NSString *MMSuppressTerminationAlertKey = @"MMSuppressTerminationAlert";
 NSString *MMSidebarOnLeftEdgeKey        = @"MMSidebarOnLeftEdge";
 NSString *MMSidebarWidthKey             = @"MMSidebarWidth";
 NSString *MMSidebarVisibleKey           = @"MMSidebarVisible";
+NSString *MMNativeFullScreenKey         = @"MMNativeFullScreen";
 
 
 

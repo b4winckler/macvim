@@ -56,6 +56,7 @@ extern NSString *MMSuppressTerminationAlertKey;
 extern NSString *MMSidebarOnLeftEdgeKey;
 extern NSString *MMSidebarWidthKey;
 extern NSString *MMSidebarVisibleKey;
+extern NSString *MMNativeFullScreenKey;
 
 
 // Enum for MMUntitledWindowKey

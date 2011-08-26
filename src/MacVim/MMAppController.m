@@ -228,6 +228,7 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         [NSNumber numberWithInt:MMSidebarDefaultWidth],
                                         MMSidebarWidthKey,
         [NSNumber numberWithBool:NO],   MMSidebarVisibleKey,
+        [NSNumber numberWithBool:YES],  MMNativeFullScreenKey,
         nil];
 
     [[NSUserDefaults standardUserDefaults] registerDefaults:dict];
@@ -246,9 +247,10 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 {
     if (!(self = [super init])) return nil;
 
-#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7)
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
     // Disable automatic relaunching
-    [NSApp disableRelaunchOnLogin];
+    if ([NSApp respondsToSelector:@selector(disableRelaunchOnLogin)])
+        [NSApp disableRelaunchOnLogin];
 #endif
 
     vimControllers = [NSMutableArray new];
@@ -1457,7 +1459,7 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     // as follows:
     //
     // 1. Search through ordered windows as determined by NSApp.  Unfortunately
-    //    this method can fail, e.g. if a full screen window is on another
+    //    this method can fail, e.g. if a full-screen window is on another
     //    "Space" (in this case NSApp returns no windows at all), so we have to
     //    fall back on ...
     // 2. Search through all Vim controllers and return the first visible
