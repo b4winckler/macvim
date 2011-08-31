@@ -2066,10 +2066,10 @@
     if (fullScreenEnabled || tabBarVisible) {
         return NO;
     } else {
-        BOOL toolbarHidden  = [decoratedWindow toolbar] == nil;
+        BOOL toolbarVisible = [decoratedWindow toolbar] != nil;
         BOOL windowTextured = ([decoratedWindow styleMask] &
                                 NSTexturedBackgroundWindowMask) != 0;
-        return !toolbarHidden && windowTextured;
+        return toolbarVisible || windowTextured;
     }
     return NO;
 }
