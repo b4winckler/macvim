@@ -2089,7 +2089,7 @@
         [self updateResizeConstraints];
         shouldPlaceVimView = YES;
 
-#if 0
+#if 1
         NSSize size = [[decoratedWindow contentView] frame].size;
         if (hide) ++size.height;
         else      --size.height;
