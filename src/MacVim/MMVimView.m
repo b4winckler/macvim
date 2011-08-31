@@ -470,6 +470,9 @@ enum {
     if (isRightmost) {
         showsResizeIndicator = rightSbVisible || botSbVisible;
         [win setShowsResizeIndicator:showsResizeIndicator];
+        // NOTE: On Lion the resize indicator is never shown, so the above call
+        // to show the resize indicator may do nothing.  Detect that here.
+        showsResizeIndicator = [win showsResizeIndicator];
     }
 
     // Place the scrollbars.
