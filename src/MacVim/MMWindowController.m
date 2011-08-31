@@ -93,6 +93,8 @@
 - (void)updateResizeConstraints;
 - (NSTabViewItem *)addNewTabViewItem;
 - (BOOL)askBackendForStarRegister:(NSPasteboard *)pb;
+- (BOOL)hasTablineSeparator;
+- (void)updateTablineSeparator;
 - (void)hideTablineSeparator:(BOOL)hide;
 - (void)doFindNext:(BOOL)next;
 - (void)updateToolbar;
@@ -497,6 +499,29 @@
         [ud setInteger:cols forKey:MMAutosaveColumnsKey];
         [ud synchronize];
     }
+
+    // Autosave rows and columns.
+    if (windowAutosaveKey && !fullScreenEnabled
+            && rows > MMMinRows && cols > MMMinColumns) {
+        // HACK! If tabline is visible then window will look about one line
+        // higher than it actually is so increment rows by one before
+        // autosaving dimension so that the approximate total window height is
+        // autosaved.  This is particularly important when window is maximized
+        // vertically; if we don't add a row here a new window will appear to
+        // not be tall enough when the first window is showing the tabline.
+        // A negative side-effect of this is that the window will redraw on
+        // startup if the window is too tall to fit on screen (which happens
+        // for example if 'showtabline=2').
+        // TODO: Store window pixel dimensions instead of rows/columns?
+        int autosaveRows = rows;
+        if (![[vimView tabBarControl] isHidden])
+            ++autosaveRows;
+
+        NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+        [ud setInteger:autosaveRows forKey:MMAutosaveRowsKey];
+        [ud setInteger:cols forKey:MMAutosaveColumnsKey];
+        [ud synchronize];
+    }
 }
 
 - (void)zoomWithRows:(int)rows columns:(int)cols state:(int)state
@@ -575,6 +600,7 @@
 {
     BOOL scrollbarHidden = [vimView destroyScrollbarWithIdentifier:ident];   
     shouldPlaceVimView = shouldPlaceVimView || scrollbarHidden;
+    shouldMaximizeWindow = shouldMaximizeWindow || scrollbarHidden;
 
     return scrollbarHidden;
 }
@@ -584,6 +610,7 @@
     BOOL scrollbarToggled = [vimView showScrollbarWithIdentifier:ident
                                                            state:visible];
     shouldPlaceVimView = shouldPlaceVimView || scrollbarToggled;
+    shouldMaximizeWindow = shouldMaximizeWindow || scrollbarToggled;
 
     return scrollbarToggled;
 }
@@ -616,6 +643,7 @@
     [[NSFontManager sharedFontManager] setSelectedFont:font isMultiple:NO];
     [[vimView textView] setFont:font];
     [self updateResizeConstraints];
+    shouldMaximizeWindow = YES;
 }
 
 - (void)setWideFont:(NSFont *)font
@@ -651,10 +679,13 @@
 
         // Make sure full-screen window stays maximized (e.g. when scrollbar or
         // tabline is hidden) according to 'fuopt'.
+
         BOOL didMaximize = NO;
-        if (fullScreenEnabled &&
+        if (shouldMaximizeWindow && fullScreenEnabled &&
                 (fullScreenOptions & (FUOPT_MAXVERT|FUOPT_MAXHORZ)) != 0)
             didMaximize = [self maximizeWindow:fullScreenOptions];
+
+        shouldMaximizeWindow = NO;
 
         // Resize Vim view and window, but don't do this now if the window was
         // just reszied because this would make the window "jump" unpleasantly.
@@ -683,19 +714,6 @@
             } else {
                 [self resizeWindowToFitContentSize:contentSize
                                       keepOnScreen:keepOnScreen];
-
-                if (!fullScreenEnabled && windowAutosaveKey && rows > 0 &&
-                        cols > 0) {
-                    // Autosave rows and columns now that they should have been
-                    // constrained to fit on screen.  We only do this for the
-                    // window which also autosaves window position and we avoid
-                    // autosaving when in full-screen since the rows usually
-                    // won't fit when in windowed mode.
-                    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
-                    [ud setInteger:rows forKey:MMAutosaveRowsKey];
-                    [ud setInteger:cols forKey:MMAutosaveColumnsKey];
-                    [ud synchronize];
-                }
             }
         }
     }
@@ -727,30 +745,9 @@
 
 - (void)showTabBar:(BOOL)on
 {
-    BOOL separator = NO;
-
-    [tabBarControl setHidden:!on];
-
-    // Showing the tabline may result in the tabline separator being hidden or
-    // shown; this does not apply to full-screen mode.
-    if (!on) {
-        if (([decoratedWindow styleMask] & NSTexturedBackgroundWindowMask)
-                == 0) {
-            separator = [toolbar isVisible];
-        } else {
-            separator = YES;
-        }
-    } else {
-        if (([decoratedWindow styleMask] & NSTexturedBackgroundWindowMask)
-                == 0) {
-            separator = !on;
-        } else {
-            separator = NO;
-        }
-    }
-
-    [self hideTablineSeparator:!separator];
-
+    [[vimView tabBarControl] setHidden:!on];
+    [self updateTablineSeparator];
+    shouldMaximizeWindow = YES;
     shouldPlaceVimView = YES;
 
 #if 1
@@ -759,7 +756,7 @@
         size = [[fullScreenWindow contentView] frame].size;
     } else {
         size = [[decoratedWindow contentView] frame].size;
-        if (separator)
+        if ([self hasTablineSeparator])
             size.height -= 1;
     }
 
@@ -800,7 +797,7 @@
 {
     if (vimView && [vimView textView]) {
         [[vimView textView] setLinespace:(float)linespace];
-        shouldPlaceVimView = YES;
+        shouldMaximizeWindow = shouldPlaceVimView = YES;
     }
 }
 
@@ -1715,7 +1712,8 @@
         [[window animator] setAlphaValue:0];
     } completionHandler:^{
         [window setStyleMask:([window styleMask] | NSFullScreenWindowMask)];
-        [tabBarControl setStyleNamed:@"Unified"];
+        [[vimView tabBarControl] setStyleNamed:@"Unified"];
+        [self updateTablineSeparator];
         [self maximizeWindow:fullScreenOptions];
 
         [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
@@ -1758,7 +1756,8 @@
     fullScreenEnabled = NO;
     [window setAlphaValue:1];
     [window setStyleMask:([window styleMask] & ~NSFullScreenWindowMask)];
-    [tabBarControl setStyleNamed:@"Metal"];
+    [[vimView tabBarControl] setStyleNamed:@"Metal"];
+    [self updateTablineSeparator];
     [window setFrame:preFullScreenFrame display:YES];
 }
 
@@ -1787,7 +1786,8 @@
         [[window animator] setAlphaValue:0];
     } completionHandler:^{
         [window setStyleMask:([window styleMask] & ~NSFullScreenWindowMask)];
-        [tabBarControl setStyleNamed:@"Metal"];
+        [[vimView tabBarControl] setStyleNamed:@"Metal"];
+        [self updateTablineSeparator];
         [window setFrame:preFullScreenFrame display:YES];
 
         [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
@@ -1822,7 +1822,8 @@
     fullScreenEnabled = YES;
     [window setAlphaValue:1];
     [window setStyleMask:([window styleMask] | NSFullScreenWindowMask)];
-    [tabBarControl setStyleNamed:@"Unified"];
+    [[vimView tabBarControl] setStyleNamed:@"Unified"];
+    [self updateTablineSeparator];
     [self maximizeWindow:fullScreenOptions];
 }
 
@@ -2059,6 +2060,25 @@
     return reply;
 }
 
+- (BOOL)hasTablineSeparator
+{
+    BOOL tabBarVisible = ![[vimView tabBarControl] isHidden];
+    if (fullScreenEnabled || tabBarVisible) {
+        return NO;
+    } else {
+        BOOL toolbarHidden  = [decoratedWindow toolbar] == nil;
+        BOOL windowTextured = ([decoratedWindow styleMask] &
+                                NSTexturedBackgroundWindowMask) != 0;
+        return !toolbarHidden && windowTextured;
+    }
+    return NO;
+}
+
+- (void)updateTablineSeparator
+{
+    [self hideTablineSeparator:![self hasTablineSeparator]];
+}
+
 - (void)hideTablineSeparator:(BOOL)hide
 {
     // The full-screen window has no tabline separator so we operate on
@@ -2128,20 +2148,7 @@
     // Positive flag shows toolbar, negative hides it.
     BOOL on = updateToolbarFlag > 0 ? YES : NO;
     [decoratedWindow setToolbar:(on ? toolbar : nil)];
-
-    if (([decoratedWindow styleMask] & NSTexturedBackgroundWindowMask) == 0) {
-        if (!on) {
-            [self hideTablineSeparator:YES];
-        } else {
-            [self hideTablineSeparator:![tabBarControl isHidden]];
-        }
-    } else {
-        // Textured windows don't have a line below there title bar, so we
-        // need the separator in this case as well. In fact, the only case
-        // where we don't need the separator is when the tab bar control
-        // is visible (because it brings its own separator).
-        [self hideTablineSeparator:![tabBarControl isHidden]];
-    }
+    [self updateTablineSeparator];
 
     updateToolbarFlag = 0;
 }

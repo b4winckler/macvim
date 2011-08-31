@@ -36,6 +36,7 @@
     BOOL                shouldPlaceVimView;
     BOOL                shouldResizeWindow;
     BOOL                shouldRestoreUserTopLeft;
+    BOOL                shouldMaximizeWindow;
     int                 updateToolbarFlag;
     NSString            *windowAutosaveKey;
     BOOL                fullScreenEnabled;

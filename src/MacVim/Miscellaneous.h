@@ -100,7 +100,6 @@ enum {
 
 
 
-
 @interface NSIndexSet (MMExtras)
 + (id)indexSetWithVimList:(NSString *)list;
 @end
