@@ -189,4 +189,11 @@
 #endif
 }
 
+- (NSTimeInterval)animationResizeTime:(NSRect)newWindowFrame
+{
+    // HACK! By overriding this method Cocoa won't try to animate the window
+    // during a zoom.
+    return 0;
+}
+
 @end // MMWindow
