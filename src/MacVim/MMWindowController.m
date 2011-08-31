@@ -216,6 +216,9 @@
                                  vimController:vimController];
     [vimView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
 
+    // Avoid Vim view sending dimension change messages during startup.
+    [vimView disableTextViewDimensionMessages:YES];
+
     splitView = [[NSSplitView alloc] initWithFrame:frame];
     [splitView setVertical:YES];
     [splitView setDividerStyle:NSSplitViewDividerStyleThin];
@@ -422,6 +425,7 @@
     // code that is executed before this point must not depend on the screen!
 
     [self adjustWindowFrame];
+    [vimView disableTextViewDimensionMessages:NO];
     [[MMAppController sharedInstance] windowControllerWillOpen:self];
     [self updateResizeConstraints];
     //[self resizeWindowToFitContentSize:[vimView desiredSize]

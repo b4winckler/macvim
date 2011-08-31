@@ -370,6 +370,9 @@ enum {
 
 - (void)adjustTextViewDimensions
 {
+    if (textViewDimensionMessagesDisabled)
+        return;
+
     // It is possible that the current number of (rows,columns) is too big or
     // too small to fit the new frame.  If so, notify Vim that the text
     // dimensions should change, but don't actually change the number of
@@ -418,6 +421,11 @@ enum {
     // Must make sure scrollbars are in place or they might not cover the
     // correct part of the text view during live resize.
     [self placeScrollbars];
+}
+
+- (void)disableTextViewDimensionMessages:(BOOL)disable
+{
+    textViewDimensionMessagesDisabled = disable;
 }
 
 @end // MMVimView

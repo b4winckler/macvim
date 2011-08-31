@@ -21,6 +21,7 @@
     MMVimController     *vimController;
     MMTextView          *textView;
     NSMutableArray      *scrollbars;
+    BOOL                textViewDimensionMessagesDisabled;
 }
 
 - (MMVimView *)initWithFrame:(NSRect)frame vimController:(MMVimController *)c;
@@ -50,5 +51,6 @@
 #endif
 - (void)placeViews;
 - (void)adjustTextViewDimensions;
+- (void)disableTextViewDimensionMessages:(BOOL)disable;
 
 @end
