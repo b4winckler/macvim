@@ -514,7 +514,7 @@
         // for example if 'showtabline=2').
         // TODO: Store window pixel dimensions instead of rows/columns?
         int autosaveRows = rows;
-        if (![[vimView tabBarControl] isHidden])
+        if (![tabBarControl isHidden])
             ++autosaveRows;
 
         NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
@@ -745,7 +745,7 @@
 
 - (void)showTabBar:(BOOL)on
 {
-    [[vimView tabBarControl] setHidden:!on];
+    [tabBarControl setHidden:!on];
     [self updateTablineSeparator];
     shouldMaximizeWindow = YES;
     shouldPlaceVimView = YES;
@@ -1712,7 +1712,7 @@
         [[window animator] setAlphaValue:0];
     } completionHandler:^{
         [window setStyleMask:([window styleMask] | NSFullScreenWindowMask)];
-        [[vimView tabBarControl] setStyleNamed:@"Unified"];
+        [tabBarControl setStyleNamed:@"Unified"];
         [self updateTablineSeparator];
         [self maximizeWindow:fullScreenOptions];
 
@@ -1756,7 +1756,7 @@
     fullScreenEnabled = NO;
     [window setAlphaValue:1];
     [window setStyleMask:([window styleMask] & ~NSFullScreenWindowMask)];
-    [[vimView tabBarControl] setStyleNamed:@"Metal"];
+    [tabBarControl setStyleNamed:@"Metal"];
     [self updateTablineSeparator];
     [window setFrame:preFullScreenFrame display:YES];
 }
@@ -1786,7 +1786,7 @@
         [[window animator] setAlphaValue:0];
     } completionHandler:^{
         [window setStyleMask:([window styleMask] & ~NSFullScreenWindowMask)];
-        [[vimView tabBarControl] setStyleNamed:@"Metal"];
+        [tabBarControl setStyleNamed:@"Metal"];
         [self updateTablineSeparator];
         [window setFrame:preFullScreenFrame display:YES];
 
@@ -1822,7 +1822,7 @@
     fullScreenEnabled = YES;
     [window setAlphaValue:1];
     [window setStyleMask:([window styleMask] | NSFullScreenWindowMask)];
-    [[vimView tabBarControl] setStyleNamed:@"Unified"];
+    [tabBarControl setStyleNamed:@"Unified"];
     [self updateTablineSeparator];
     [self maximizeWindow:fullScreenOptions];
 }
@@ -2062,7 +2062,7 @@
 
 - (BOOL)hasTablineSeparator
 {
-    BOOL tabBarVisible = ![[vimView tabBarControl] isHidden];
+    BOOL tabBarVisible = ![tabBarControl isHidden];
     if (fullScreenEnabled || tabBarVisible) {
         return NO;
     } else {
