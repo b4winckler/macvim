@@ -109,7 +109,8 @@ static NSMutableArray *leafNode = nil;
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSMutableArray *reloaded;
 
-    NSArray *entries = [fileManager contentsOfDirectoryAtPath:path error:NULL];
+    NSArray *entries = [[fileManager contentsOfDirectoryAtPath:path error:NULL]
+                         sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
     reloaded = [[NSMutableArray alloc] initWithCapacity:[entries count]];
 
     for (NSString *childName in entries) {
