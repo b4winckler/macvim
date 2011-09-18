@@ -380,6 +380,29 @@
         shouldResizeVimView = YES;
         keepOnScreen = onScreen;
     }
+
+    // Autosave rows and columns.
+    if (windowAutosaveKey && !fullScreenEnabled
+            && rows > MMMinRows && cols > MMMinColumns) {
+        // HACK! If tabline is visible then window will look about one line
+        // higher than it actually is so increment rows by one before
+        // autosaving dimension so that the approximate total window height is
+        // autosaved.  This is particularly important when window is maximized
+        // vertically; if we don't add a row here a new window will appear to
+        // not be tall enough when the first window is showing the tabline.
+        // A negative side-effect of this is that the window will redraw on
+        // startup if the window is too tall to fit on screen (which happens
+        // for example if 'showtabline=2').
+        // TODO: Store window pixel dimensions instead of rows/columns?
+        int autosaveRows = rows;
+        if (![[vimView tabBarControl] isHidden])
+            ++autosaveRows;
+
+        NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+        [ud setInteger:autosaveRows forKey:MMAutosaveRowsKey];
+        [ud setInteger:cols forKey:MMAutosaveColumnsKey];
+        [ud synchronize];
+    }
 }
 
 - (void)zoomWithRows:(int)rows columns:(int)cols state:(int)state
@@ -458,6 +481,7 @@
 {
     BOOL scrollbarHidden = [vimView destroyScrollbarWithIdentifier:ident];   
     shouldResizeVimView = shouldResizeVimView || scrollbarHidden;
+    shouldMaximizeWindow = shouldMaximizeWindow || scrollbarHidden;
 
     return scrollbarHidden;
 }
@@ -467,6 +491,7 @@
     BOOL scrollbarToggled = [vimView showScrollbarWithIdentifier:ident
                                                            state:visible];
     shouldResizeVimView = shouldResizeVimView || scrollbarToggled;
+    shouldMaximizeWindow = shouldMaximizeWindow || scrollbarToggled;
 
     return scrollbarToggled;
 }
@@ -499,6 +524,7 @@
     [[NSFontManager sharedFontManager] setSelectedFont:font isMultiple:NO];
     [[vimView textView] setFont:font];
     [self updateResizeConstraints];
+    shouldMaximizeWindow = YES;
 }
 
 - (void)setWideFont:(NSFont *)font
@@ -530,10 +556,13 @@
 
         // Make sure full-screen window stays maximized (e.g. when scrollbar or
         // tabline is hidden) according to 'fuopt'.
+
         BOOL didMaximize = NO;
-        if (fullScreenEnabled &&
+        if (shouldMaximizeWindow && fullScreenEnabled &&
                 (fullScreenOptions & (FUOPT_MAXVERT|FUOPT_MAXHORZ)) != 0)
             didMaximize = [self maximizeWindow:fullScreenOptions];
+
+        shouldMaximizeWindow = NO;
 
         // Resize Vim view and window, but don't do this now if the window was
         // just reszied because this would make the window "jump" unpleasantly.
@@ -562,19 +591,6 @@
             } else {
                 [self resizeWindowToFitContentSize:contentSize
                                       keepOnScreen:keepOnScreen];
-
-                if (!fullScreenEnabled && windowAutosaveKey && rows > 0 &&
-                        cols > 0) {
-                    // Autosave rows and columns now that they should have been
-                    // constrained to fit on screen.  We only do this for the
-                    // window which also autosaves window position and we avoid
-                    // autosaving when in full-screen since the rows usually
-                    // won't fit when in windowed mode.
-                    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
-                    [ud setInteger:rows forKey:MMAutosaveRowsKey];
-                    [ud setInteger:cols forKey:MMAutosaveColumnsKey];
-                    [ud synchronize];
-                }
             }
         }
 
@@ -586,6 +602,7 @@
 {
     [[vimView tabBarControl] setHidden:!on];
     [self updateTablineSeparator];
+    shouldMaximizeWindow = YES;
 }
 
 - (void)showToolbar:(BOOL)on size:(int)size mode:(int)mode
@@ -616,7 +633,7 @@
 {
     if (vimView && [vimView textView]) {
         [[vimView textView] setLinespace:(float)linespace];
-        shouldResizeVimView = YES;
+        shouldMaximizeWindow = shouldResizeVimView = YES;
     }
 }
 
