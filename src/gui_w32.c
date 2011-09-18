@@ -1325,6 +1325,25 @@ gui_mch_prepare(int *argc, char **argv)
 	pGetMonitorInfo = (TGetMonitorInfo)GetProcAddress(user32_lib,
 							  "GetMonitorInfoA");
     }
+
+#ifdef FEAT_MBYTE
+    /* If the OS is Windows NT, use wide functions;
+     * this enables common dialogs input unicode from IME. */
+    if (os_version.dwPlatformId == VER_PLATFORM_WIN32_NT)
+    {
+	pDispatchMessage = DispatchMessageW;
+	pGetMessage = GetMessageW;
+	pIsDialogMessage = IsDialogMessageW;
+	pPeekMessage = PeekMessageW;
+    }
+    else
+    {
+	pDispatchMessage = DispatchMessageA;
+	pGetMessage = GetMessageA;
+	pIsDialogMessage = IsDialogMessageA;
+	pPeekMessage = PeekMessageA;
+    }
+#endif
 }
 
 /*
@@ -1434,7 +1453,8 @@ gui_mch_init(void)
 	    s_hwnd = CreateWindowEx(
 		WS_EX_MDICHILD,
 		szVimWndClass, "Vim MSWindows GUI",
-		WS_OVERLAPPEDWINDOW | WS_CHILD | WS_CLIPSIBLINGS | 0xC000,
+		WS_OVERLAPPEDWINDOW | WS_CHILD
+				 | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | 0xC000,
 		gui_win_x == -1 ? CW_USEDEFAULT : gui_win_x,
 		gui_win_y == -1 ? CW_USEDEFAULT : gui_win_y,
 		100,				/* Any value will do */
@@ -1465,7 +1485,8 @@ gui_mch_init(void)
 	 * titlebar, it will be reparented below. */
 	s_hwnd = CreateWindow(
 		szVimWndClass, "Vim MSWindows GUI",
-		win_socket_id == 0 ? WS_OVERLAPPEDWINDOW : WS_POPUP,
+		(win_socket_id == 0 ? WS_OVERLAPPEDWINDOW : WS_POPUP)
+					  | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
 		gui_win_x == -1 ? CW_USEDEFAULT : gui_win_x,
 		gui_win_y == -1 ? CW_USEDEFAULT : gui_win_y,
 		100,				/* Any value will do */
