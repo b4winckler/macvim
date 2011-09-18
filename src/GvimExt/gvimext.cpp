@@ -166,6 +166,7 @@ static char *null_libintl_bindtextdomain(const char *, const char *);
 static int dyn_libintl_init(char *dir);
 static void dyn_libintl_end(void);
 
+static wchar_t *oldenv = NULL;
 static HINSTANCE hLibintlDLL = 0;
 static char *(*dyn_libintl_gettext)(const char *) = null_libintl_gettext;
 static char *(*dyn_libintl_textdomain)(const char *) = null_libintl_textdomain;
@@ -363,8 +364,10 @@ DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID  /* lpReserved */)
 inc_cRefThisDLL()
 {
 #ifdef FEAT_GETTEXT
-    if (g_cRefThisDll == 0)
+    if (g_cRefThisDll == 0) {
 	dyn_gettext_load();
+	oldenv = GetEnvironmentStringsW();
+    }
 #endif
     InterlockedIncrement((LPLONG)&g_cRefThisDll);
 }
@@ -373,8 +376,13 @@ inc_cRefThisDLL()
 dec_cRefThisDLL()
 {
 #ifdef FEAT_GETTEXT
-    if (InterlockedDecrement((LPLONG)&g_cRefThisDll) == 0)
+    if (InterlockedDecrement((LPLONG)&g_cRefThisDll) == 0) {
 	dyn_gettext_free();
+	if (oldenv != NULL) {
+	    FreeEnvironmentStringsW(oldenv);
+	    oldenv = NULL;
+	}
+    }
 #else
     InterlockedDecrement((LPLONG)&g_cRefThisDll);
 #endif
@@ -929,8 +937,8 @@ STDMETHODIMP CShellExt::InvokeGvim(HWND hParent,
 			NULL,		// Process handle not inheritable.
 			NULL,		// Thread handle not inheritable.
 			FALSE,		// Set handle inheritance to FALSE.
-			0,		// No creation flags.
-			NULL,		// Use parent's environment block.
+			oldenv == NULL ? 0 : CREATE_UNICODE_ENVIRONMENT,
+			oldenv,		// Use unmodified environment block.
 			NULL,		// Use parent's starting directory.
 			&si,		// Pointer to STARTUPINFO structure.
 			&pi)		// Pointer to PROCESS_INFORMATION structure.
@@ -1011,8 +1019,8 @@ STDMETHODIMP CShellExt::InvokeSingleGvim(HWND hParent,
 		NULL,		// Process handle not inheritable.
 		NULL,		// Thread handle not inheritable.
 		FALSE,		// Set handle inheritance to FALSE.
-		0,		// No creation flags.
-		NULL,		// Use parent's environment block.
+		oldenv == NULL ? 0 : CREATE_UNICODE_ENVIRONMENT,
+		oldenv,		// Use unmodified environment block.
 		NULL,		// Use parent's starting directory.
 		&si,		// Pointer to STARTUPINFO structure.
 		&pi)		// Pointer to PROCESS_INFORMATION structure.
