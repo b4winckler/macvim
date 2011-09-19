@@ -57,11 +57,6 @@ if exists("&ofu") && has("ruby")
   setlocal omnifunc=rubycomplete#Complete
 endif
 
-" To activate, :set ballooneval
-if has('balloon_eval') && exists('+balloonexpr')
-  setlocal balloonexpr=RubyBalloonexpr()
-endif
-
 
 " TODO:
 "setlocal define=^\\s*def
@@ -151,55 +146,6 @@ if exists("g:did_ruby_ftplugin_functions")
   finish
 endif
 let g:did_ruby_ftplugin_functions = 1
-
-function! RubyBalloonexpr()
-  if !exists('s:ri_found')
-    let s:ri_found = executable('ri')
-  endif
-  if s:ri_found
-    let line = getline(v:beval_lnum)
-    let b = matchstr(strpart(line,0,v:beval_col),'\%(\w\|[:.]\)*$')
-    let a = substitute(matchstr(strpart(line,v:beval_col),'^\w*\%([?!]\|\s*=\)\?'),'\s\+','','g')
-    let str = b.a
-    let before = strpart(line,0,v:beval_col-strlen(b))
-    let after  = strpart(line,v:beval_col+strlen(a))
-    if str =~ '^\.'
-      let str = substitute(str,'^\.','#','g')
-      if before =~ '\]\s*$'
-        let str = 'Array'.str
-      elseif before =~ '}\s*$'
-        " False positives from blocks here
-        let str = 'Hash'.str
-      elseif before =~ "[\"'`]\\s*$" || before =~ '\$\d\+\s*$'
-        let str = 'String'.str
-      elseif before =~ '\$\d\+\.\d\+\s*$'
-        let str = 'Float'.str
-      elseif before =~ '\$\d\+\s*$'
-        let str = 'Integer'.str
-      elseif before =~ '/\s*$'
-        let str = 'Regexp'.str
-      else
-        let str = substitute(str,'^#','.','')
-      endif
-    endif
-    let str = substitute(str,'.*\.\s*to_f\s*\.\s*','Float#','')
-    let str = substitute(str,'.*\.\s*to_i\%(nt\)\=\s*\.\s*','Integer#','')
-    let str = substitute(str,'.*\.\s*to_s\%(tr\)\=\s*\.\s*','String#','')
-    let str = substitute(str,'.*\.\s*to_sym\s*\.\s*','Symbol#','')
-    let str = substitute(str,'.*\.\s*to_a\%(ry\)\=\s*\.\s*','Array#','')
-    let str = substitute(str,'.*\.\s*to_proc\s*\.\s*','Proc#','')
-    if str !~ '^\w'
-      return ''
-    endif
-    silent! let res = substitute(system("ri -f simple -T \"".str.'"'),'\n$','','')
-    if res =~ '^Nothing known about' || res =~ '^Bad argument:' || res =~ '^More than one method'
-      return ''
-    endif
-    return res
-  else
-    return ""
-  endif
-endfunction
 
 function! s:searchsyn(pattern,syn,flags,mode)
     norm! m'
