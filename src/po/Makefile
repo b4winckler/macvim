@@ -17,6 +17,7 @@ LANGUAGES = \
 		ga \
 		it \
 		ja \
+		ja_JP.UTF-8 \
 		ko \
 		ko.UTF-8 \
 		nb \
@@ -46,6 +47,7 @@ MOFILES = \
 		ga.mo \
 		it.mo \
 		ja.mo \
+		ja_JP.UTF-8.mo \
 		ko.mo \
 		ko.UTF-8.mo \
 		nb.mo \
