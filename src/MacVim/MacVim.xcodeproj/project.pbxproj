@@ -71,6 +71,7 @@
 		5260A95811BD1E3300EE97ED /* Preferences.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5260A95611BD1E3300EE97ED /* Preferences.strings */; };
 		528DA6631426CB2A003380F1 /* plugins in Copy KaoriYa Runtime Files */ = {isa = PBXBuildFile; fileRef = 528DA6571426C607003380F1 /* plugins */; };
 		528DA6641426CB2F003380F1 /* switches in Copy KaoriYa Runtime Files */ = {isa = PBXBuildFile; fileRef = 528DA6581426C607003380F1 /* switches */; };
+		528DA66A1426D4F9003380F1 /* macvim-askpass in Copy Scripts */ = {isa = PBXBuildFile; fileRef = 528DA6691426D4EB003380F1 /* macvim-askpass */; };
 		52AA566D11C5C50500D57D62 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52AA566C11C5C50500D57D62 /* Sparkle.framework */; };
 		52AA577311C5C88800D57D62 /* Sparkle.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 52AA566C11C5C50500D57D62 /* Sparkle.framework */; };
 		52AA577811C5D8E600D57D62 /* dsa_pub.pem in Resources */ = {isa = PBXBuildFile; fileRef = 52AA577711C5D8E600D57D62 /* dsa_pub.pem */; };
@@ -144,6 +145,17 @@
 				528DA6641426CB2F003380F1 /* switches in Copy KaoriYa Runtime Files */,
 			);
 			name = "Copy KaoriYa Runtime Files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		528DA6671426D456003380F1 /* Copy Scripts */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				528DA66A1426D4F9003380F1 /* macvim-askpass in Copy Scripts */,
+			);
+			name = "Copy Scripts";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -244,6 +256,7 @@
 		5260A95A11BD1E4A00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = Japanese; path = Japanese.lproj/Preferences.nib; sourceTree = "<group>"; };
 		528DA6571426C607003380F1 /* plugins */ = {isa = PBXFileReference; lastKnownFileType = folder; name = plugins; path = ../../plugins; sourceTree = "<group>"; };
 		528DA6581426C607003380F1 /* switches */ = {isa = PBXFileReference; lastKnownFileType = folder; name = switches; path = ../../switches; sourceTree = "<group>"; };
+		528DA6691426D4EB003380F1 /* macvim-askpass */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "macvim-askpass"; sourceTree = "<group>"; };
 		52AA566C11C5C50500D57D62 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
 		52AA577711C5D8E600D57D62 /* dsa_pub.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = dsa_pub.pem; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -412,8 +425,9 @@
 				080E96DDFE201D6D7F000001 /* MacVim Source */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
 				1DE602460C587F760055263D /* Vim Resources */,
-				528DA28B1426C4DA003380F1 /* KaoriYa Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
+				528DA28B1426C4DA003380F1 /* KaoriYa Resources */,
+				528DA6681426D477003380F1 /* Scripts */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
 			);
 			name = MacVim;
@@ -468,6 +482,14 @@
 			name = "KaoriYa Resources";
 			sourceTree = "<group>";
 		};
+		528DA6681426D477003380F1 /* Scripts */ = {
+			isa = PBXGroup;
+			children = (
+				528DA6691426D4EB003380F1 /* macvim-askpass */,
+			);
+			name = Scripts;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -482,6 +504,7 @@
 				1D9EB2840C366D7B0074B739 /* Copy Frameworks */,
 				1DE608B80C58807F0055263D /* Copy Vim Runtime Files */,
 				1D1C31F00EFFBFD6003FE9A5 /* Make Document Icons */,
+				528DA6671426D456003380F1 /* Copy Scripts */,
 				528DA28A1426C479003380F1 /* Copy KaoriYa Runtime Files */,
 				528DA6661426D01E003380F1 /* Copy LC_MESSAGES */,
 			);
@@ -615,6 +638,7 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "DSTDIR=$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/vim/runtime/lang/ja_JP.UTF-8/LC_MESSAGES\nmkdir -p $DSTDIR\ncp $SRCROOT/../po/ja_JP.UTF-8.mo $DSTDIR/vim.mo\nchmod 644 $DSTDIR/vim.mo";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
