@@ -19,7 +19,7 @@
 - (void)cleanup;
 - (void)setRoot:(NSString *)root;
 - (void)setNextKeyView:(NSView *)nextKeyView;
-- (void)makeFirstResponder;
+- (void)makeFirstResponder:(id)sender;
 - (void)selectInBrowser;
 - (void)selectInBrowserByExpandingItems;
 

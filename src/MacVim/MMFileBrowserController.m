@@ -491,6 +491,9 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [fileBrowser addTableColumn:column];
   [fileBrowser setOutlineTableColumn:column];
 
+  [fileBrowser setTarget:self];
+  [fileBrowser setDoubleAction:@selector(makeFirstResponder:)];
+
   [fileBrowser setDraggingSourceOperationMask:NSDragOperationCopy|NSDragOperationLink forLocal:NO];
   [fileBrowser registerForDraggedTypes:[NSArray arrayWithObjects:DRAG_MOVE_FILES, NSFilenamesPboardType, nil]];
 
@@ -578,7 +581,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [fileBrowser setNextKeyView:nextKeyView];
 }
 
-- (void)makeFirstResponder {
+- (void)makeFirstResponder:(id)sender {
   [fileBrowser makeFirstResponder];
   if ([fileBrowser numberOfSelectedRows] == 0) {
     [self selectInBrowser];
@@ -861,8 +864,6 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
         shouldEditTableColumn:(NSTableColumn *)tableColumn
                          item:(id)item
 {
-  // Called when an item was double-clicked, in which case we do make the browser the first responder.
-  [self makeFirstResponder];
   return NO;
 }
 

@@ -1423,7 +1423,6 @@
                   leftEdge:[ud boolForKey:MMSidebarOnLeftEdgeKey]];
       [fileBrowserController setNextKeyView:[vimView textView]];
     }
-    [fileBrowserController makeFirstResponder];
     [self collapseSidebar:NO];
 }
 
