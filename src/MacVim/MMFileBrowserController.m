@@ -665,6 +665,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
     [ud setBool:openInCurrentWindow forKey:MMOpenInCurrentWindowKey];
     [ud setInteger:layoutBefore forKey:MMOpenLayoutKey];
+
+    [fileBrowser cancelOperation:self];
   }
 }
 
@@ -822,12 +824,10 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 // TODO is this the proper way to differentiate between selection changes because the user selected a file
 // and a programmatic selection change?
 - (void)outlineViewSelectionIsChanging:(NSNotification *)aNotification {
-  NSLog(@"outlineViewSelectionIsChanging");
   userHasChangedSelection = YES;
 }
 
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
-  NSLog(@"outlineViewSelectionDidChange");
   MMFileBrowser *outlineView = fileBrowser;
   if (userHasChangedSelection && [outlineView numberOfSelectedRows] == 1) {
     MMFileBrowserFSItem *item = [self itemAtRow:[outlineView selectedRow]];
