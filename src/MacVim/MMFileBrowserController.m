@@ -316,6 +316,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)expandParentsOfItem:(id)item;
 - (void)selectItem:(id)item;
 - (NSEvent *)keyEventWithEvent:(NSEvent *)event character:(NSString *)character code:(unsigned short)code;
+- (void)sendSelectionChangedNotification;
 @end
 
 @implementation MMFileBrowser
@@ -354,6 +355,14 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   [[self window] selectNextKeyView:nil];
 }
 
+- (void)mouseDown:(NSEvent *)event {
+  NSInteger before = self.selectedRow;
+  [super mouseDown:event];
+  if (self.selectedRow == before) {
+    [self sendSelectionChangedNotification];
+  }
+}
+
 - (NSEvent *)keyEventWithEvent:(NSEvent *)event character:(NSString *)character code:(unsigned short)code {
   return [NSEvent keyEventWithType:event.type
                           location:event.locationInWindow
@@ -367,12 +376,16 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
                            keyCode:code];
 }
 
+- (void)sendSelectionChangedNotification {
+  // These methods aren't really included in the NSOutlineViewDelegate protocol (the docs say
+  // it's because of some error), so use performSelector to get rid of warnings.
+  [self.delegate performSelector:@selector(outlineViewSelectionIsChanging:) withObject:self];
+  [self.delegate performSelector:@selector(outlineViewSelectionDidChange:) withObject:self];
+}
+
 - (void)keyDown:(NSEvent *)event {
   if (event.keyCode == ENTER_KEY_CODE) {
-    // These methods aren't really included in the NSOutlineViewDelegate protocol (the docs say
-    // it's because of some error), so use performSelector to get rid of warnings.
-    [self.delegate performSelector:@selector(outlineViewSelectionIsChanging:) withObject:self];
-    [self.delegate performSelector:@selector(outlineViewSelectionDidChange:) withObject:self];
+    [self sendSelectionChangedNotification];
     return;
   } else {
     switch ([[event.characters uppercaseString] characterAtIndex:0]) {
@@ -811,10 +824,12 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 // TODO is this the proper way to differentiate between selection changes because the user selected a file
 // and a programmatic selection change?
 - (void)outlineViewSelectionIsChanging:(NSNotification *)aNotification {
+  NSLog(@"outlineViewSelectionIsChanging");
   userHasChangedSelection = YES;
 }
 
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
+  NSLog(@"outlineViewSelectionDidChange");
   MMFileBrowser *outlineView = fileBrowser;
   if (userHasChangedSelection && [outlineView numberOfSelectedRows] == 1) {
     MMFileBrowserFSItem *item = [self itemAtRow:[outlineView selectedRow]];
