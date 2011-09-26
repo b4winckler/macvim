@@ -307,9 +307,7 @@ static NSMutableArray *leafNode = nil;
 
 static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
-@interface MMFileBrowser : NSOutlineView {
-  BOOL canBecomeFirstResponder;
-}
+@interface MMFileBrowser : NSOutlineView
 - (void)makeFirstResponder;
 - (NSMenu *)menuForEvent:(NSEvent *)event;
 - (void)cancelOperation:(id)sender;
@@ -323,30 +321,26 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (id)initWithFrame:(NSRect)frame {
   if ((self = [super initWithFrame:frame])) {
-    canBecomeFirstResponder = NO;
+    self.refusesFirstResponder = YES;
   }
   return self;
 }
 
-- (BOOL)acceptsFirstResponder {
-  return YES;
-}
-
 - (BOOL)becomeFirstResponder {
-  if (canBecomeFirstResponder) {
+  if (!self.refusesFirstResponder) {
     [self setNeedsDisplay];
   }
-  return canBecomeFirstResponder;
+  return [super becomeFirstResponder];
 }
 
 - (BOOL)resignFirstResponder {
-  canBecomeFirstResponder = NO;
+  self.refusesFirstResponder = YES;
   [self setNeedsDisplay];
   return YES;
 }
 
 - (void)makeFirstResponder {
-  canBecomeFirstResponder = YES;
+  self.refusesFirstResponder = NO;
   [[self window] makeFirstResponder:self];
 }
 
