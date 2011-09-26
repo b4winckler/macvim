@@ -380,7 +380,16 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)keyDown:(NSEvent *)event {
   if (event.keyCode == ENTER_KEY_CODE) {
-    [self sendSelectionChangedNotification];
+    if (event.modifierFlags & NSControlKeyMask) {
+      NSMenu *menu = [(MMFileBrowserController *)[self delegate] menuForRow:self.selectedRow];
+      NSPoint location = [self rectOfRow:self.selectedRow].origin;
+      location.x -= menu.size.width;
+      [menu popUpMenuPositioningItem:[menu itemAtIndex:0]
+                          atLocation:location
+                              inView:self];
+    } else {
+      [self sendSelectionChangedNotification];
+    }
     return;
   } else {
     switch ([[event.characters uppercaseString] characterAtIndex:0]) {
