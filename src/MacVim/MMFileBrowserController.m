@@ -352,7 +352,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)mouseDown:(NSEvent *)event {
   NSInteger before = self.selectedRow;
   [super mouseDown:event];
-  if (self.selectedRow == before) {
+  BOOL isUnexapandable = ![self isExpandable:[self itemAtRow:self.selectedRow]];
+  if (isUnexapandable && self.selectedRow == before) {
     [self sendSelectionChangedNotification];
   }
 }
