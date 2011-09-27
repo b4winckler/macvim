@@ -352,8 +352,11 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 - (void)mouseDown:(NSEvent *)event {
   NSInteger before = self.selectedRow;
   [super mouseDown:event];
-  BOOL isUnexapandable = ![self isExpandable:[self itemAtRow:self.selectedRow]];
-  if (isUnexapandable && self.selectedRow == before) {
+  // In case the item is not a directory and was already selected, then force
+  // send the selection did change delegate messagges.
+  if (event.clickCount == 1 &&
+        self.selectedRow == before &&
+          ![self isExpandable:[self itemAtRow:self.selectedRow]]) {
     [self sendSelectionChangedNotification];
   }
 }
