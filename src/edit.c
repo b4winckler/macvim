@@ -135,6 +135,8 @@ static char_u	  *compl_orig_text = NULL;  /* text as it was before
 static int	  compl_cont_mode = 0;
 static expand_T	  compl_xp;
 
+static int	  compl_opt_refresh_always = FALSE;
+
 static void ins_ctrl_x __ARGS((void));
 static int  has_compl_option __ARGS((int dict_opt));
 static int  ins_compl_accept_char __ARGS((int c));
@@ -153,16 +155,19 @@ static char_u *find_line_end __ARGS((char_u *ptr));
 static void ins_compl_free __ARGS((void));
 static void ins_compl_clear __ARGS((void));
 static int  ins_compl_bs __ARGS((void));
+static int  ins_compl_need_restart __ARGS((void));
 static void ins_compl_new_leader __ARGS((void));
 static void ins_compl_addleader __ARGS((int c));
-static int ins_compl_len __ARGS((void));
+static int  ins_compl_len __ARGS((void));
 static void ins_compl_restart __ARGS((void));
 static void ins_compl_set_original_text __ARGS((char_u *str));
 static void ins_compl_addfrommatch __ARGS((void));
 static int  ins_compl_prep __ARGS((int c));
+static void ins_compl_fixRedoBufForLeader __ARGS((char_u *ptr_arg));
 static buf_T *ins_compl_next_buf __ARGS((buf_T *buf, int flag));
 #if defined(FEAT_COMPL_FUNC) || defined(FEAT_EVAL)
 static void ins_compl_add_list __ARGS((list_T *list));
+static void ins_compl_add_dict __ARGS((dict_T *dict));
 #endif
 static int  ins_compl_get_exp __ARGS((pos_T *ini));
 static void ins_compl_delete __ARGS((void));
@@ -3351,7 +3356,7 @@ ins_compl_bs()
     /* Deleted more than what was used to find matches or didn't finish
      * finding all matches: need to look for matches all over again. */
     if (curwin->w_cursor.col <= compl_col + compl_length
-						     || compl_was_interrupted)
+						  || ins_compl_need_restart())
 	ins_compl_restart();
 
     vim_free(compl_leader);
@@ -3362,6 +3367,20 @@ ins_compl_bs()
 	return NUL;
     }
     return K_BS;
+}
+
+/*
+ * Return TRUE when we need to find matches again, ins_compl_restart() is to
+ * be called.
+ */
+    static int
+ins_compl_need_restart()
+{
+    /* Return TRUE if we didn't complete finding matches or when the
+     * 'completefunc' returned "always" in the "refresh" dictionary item. */
+    return compl_was_interrupted
+	|| ((ctrl_x_mode == CTRL_X_FUNCTION || ctrl_x_mode == CTRL_X_OMNI)
+						  && compl_opt_refresh_always);
 }
 
 /*
@@ -3453,7 +3472,7 @@ ins_compl_addleader(c)
 	ins_char(c);
 
     /* If we didn't complete finding matches we must search again. */
-    if (compl_was_interrupted)
+    if (ins_compl_need_restart())
 	ins_compl_restart();
 
     vim_free(compl_leader);
@@ -3710,9 +3729,6 @@ ins_compl_prep(c)
 	     * memory that was used, and make sure we can redo the insert. */
 	    if (compl_curr_match != NULL || compl_leader != NULL || c == Ctrl_E)
 	    {
-		char_u	*p;
-		int	temp = 0;
-
 		/*
 		 * If any of the original typed text has been changed, eg when
 		 * ignorecase is set, we must add back-spaces to the redo
@@ -3723,25 +3739,9 @@ ins_compl_prep(c)
 		 */
 		if (compl_curr_match != NULL && compl_used_match && c != Ctrl_E)
 		    ptr = compl_curr_match->cp_str;
-		else if (compl_leader != NULL)
-		    ptr = compl_leader;
 		else
-		    ptr = compl_orig_text;
-		if (compl_orig_text != NULL)
-		{
-		    p = compl_orig_text;
-		    for (temp = 0; p[temp] != NUL && p[temp] == ptr[temp];
-								       ++temp)
-			;
-#ifdef FEAT_MBYTE
-		    if (temp > 0)
-			temp -= (*mb_head_off)(compl_orig_text, p + temp);
-#endif
-		    for (p += temp; *p != NUL; mb_ptr_adv(p))
-			AppendCharToRedobuff(K_BS);
-		}
-		if (ptr != NULL)
-		    AppendToRedobuffLit(ptr + temp, -1);
+		    ptr = NULL;
+		ins_compl_fixRedoBufForLeader(ptr);
 	    }
 
 #ifdef FEAT_CINDENT
@@ -3831,6 +3831,44 @@ ins_compl_prep(c)
 }
 
 /*
+ * Fix the redo buffer for the completion leader replacing some of the typed
+ * text.  This inserts backspaces and appends the changed text.
+ * "ptr" is the known leader text or NUL.
+ */
+    static void
+ins_compl_fixRedoBufForLeader(ptr_arg)
+    char_u *ptr_arg;
+{
+    int	    len;
+    char_u  *p;
+    char_u  *ptr = ptr_arg;
+
+    if (ptr == NULL)
+    {
+	if (compl_leader != NULL)
+	    ptr = compl_leader;
+	else
+	    return;  /* nothing to do */
+    }
+    if (compl_orig_text != NULL)
+    {
+	p = compl_orig_text;
+	for (len = 0; p[len] != NUL && p[len] == ptr[len]; ++len)
+	    ;
+#ifdef FEAT_MBYTE
+	if (len > 0)
+	    len -= (*mb_head_off)(p, p + len);
+#endif
+	for (p += len; *p != NUL; mb_ptr_adv(p))
+	    AppendCharToRedobuff(K_BS);
+    }
+    else
+	len = 0;
+    if (ptr != NULL)
+	AppendToRedobuffLit(ptr + len, -1);
+}
+
+/*
  * Loops through the list of windows, loaded-buffers or non-loaded-buffers
  * (depending on flag) starting from buf and looking for a non-scanned
  * buffer (other than curbuf).	curbuf is special, if it is called with
@@ -3886,12 +3924,14 @@ expand_by_function(type, base)
     int		type;	    /* CTRL_X_OMNI or CTRL_X_FUNCTION */
     char_u	*base;
 {
-    list_T      *matchlist;
+    list_T      *matchlist = NULL;
+    dict_T	*matchdict = NULL;
     char_u	*args[2];
     char_u	*funcname;
     pos_T	pos;
     win_T	*curwin_save;
     buf_T	*curbuf_save;
+    typval_T	rettv;
 
     funcname = (type == CTRL_X_FUNCTION) ? curbuf->b_p_cfu : curbuf->b_p_ofu;
     if (*funcname == NUL)
@@ -3904,7 +3944,25 @@ expand_by_function(type, base)
     pos = curwin->w_cursor;
     curwin_save = curwin;
     curbuf_save = curbuf;
-    matchlist = call_func_retlist(funcname, 2, args, FALSE);
+
+    /* Call a function, which returns a list or dict. */
+    if (call_vim_function(funcname, 2, args, FALSE, &rettv) == OK)
+    {
+	switch (rettv.v_type)
+	{
+	    case VAR_LIST:
+		matchlist = rettv.vval.v_list;
+		break;
+	    case VAR_DICT:
+		matchdict = rettv.vval.v_dict;
+		break;
+	    default:
+		/* TODO: Give error message? */
+		clear_tv(&rettv);
+		break;
+	}
+    }
+
     if (curwin_save != curwin || curbuf_save != curbuf)
     {
 	EMSG(_(e_complwin));
@@ -3917,10 +3975,15 @@ expand_by_function(type, base)
 	EMSG(_(e_compldel));
 	goto theend;
     }
+
     if (matchlist != NULL)
 	ins_compl_add_list(matchlist);
+    else if (matchdict != NULL)
+	ins_compl_add_dict(matchdict);
 
 theend:
+    if (matchdict != NULL)
+	dict_unref(matchdict);
     if (matchlist != NULL)
 	list_unref(matchlist);
 }
@@ -3946,6 +4009,33 @@ ins_compl_add_list(list)
 	else if (did_emsg)
 	    break;
     }
+}
+
+/*
+ * Add completions from a dict.
+ */
+    static void
+ins_compl_add_dict(dict)
+    dict_T	*dict;
+{
+    dictitem_T	*refresh;
+    dictitem_T	*words;
+
+    /* Check for optional "refresh" item. */
+    compl_opt_refresh_always = FALSE;
+    refresh = dict_find(dict, (char_u *)"refresh", 7);
+    if (refresh != NULL && refresh->di_tv.v_type == VAR_STRING)
+    {
+	char_u	*v = refresh->di_tv.vval.v_string;
+
+	if (v != NULL && STRCMP(v, (char_u *)"always") == 0)
+	    compl_opt_refresh_always = TRUE;
+    }
+
+    /* Add completions from a "words" list. */
+    words = dict_find(dict, (char_u *)"words", 5);
+    if (words != NULL && words->di_tv.v_type == VAR_LIST)
+	ins_compl_add_list(words->di_tv.vval.v_list);
 }
 
 /*
@@ -5103,6 +5193,12 @@ ins_complete(c)
 		return FAIL;
 	    }
 
+	    /*
+	     * Reset extended parameters of completion, when start new
+	     * completion.
+	     */
+	    compl_opt_refresh_always = FALSE;
+
 	    if (col < 0)
 		col = curs_col;
 	    compl_col = col;
@@ -5179,6 +5275,10 @@ ins_complete(c)
 	    edit_submode = (char_u *)_(ctrl_x_msgs[CTRL_X_LOCAL_MSG]);
 	else
 	    edit_submode = (char_u *)_(CTRL_X_MSG(ctrl_x_mode));
+
+	/* If any of the original typed text has been changed we need to fix
+	 * the redo buffer. */
+	ins_compl_fixRedoBufForLeader(NULL);
 
 	/* Always add completion for the original text. */
 	vim_free(compl_orig_text);

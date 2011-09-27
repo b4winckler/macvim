@@ -715,7 +715,9 @@ if test "$enable_perlinterp" = "yes" -o "$enable_perlinterp" = "dynamic"; then
 	shrpenv=""
       fi
       vi_cv_perllib=`$vi_cv_path_perl -MConfig -e 'print $Config{privlibexp}'`
+      vi_cv_perlsitelib=`$vi_cv_path_perl -MConfig -e 'print $Config{sitelibexp}'`
       AC_SUBST(vi_cv_perllib)
+      AC_SUBST(vi_cv_perlsitelib)
       dnl Remove "-fno-something", it breaks using cproto.
       perlcppflags=`$vi_cv_path_perl -Mlib=$srcdir -MExtUtils::Embed \
 	      -e 'ccflags;perl_inc;print"\n"' | sed -e 's/-fno[[^ ]]*//'`
@@ -1193,7 +1195,8 @@ if test "$python_ok" = yes && test "$python3_ok" = yes; then
   cflags_save=$CFLAGS
   CFLAGS="$CFLAGS $PYTHON_CFLAGS"
   ldflags_save=$LDFLAGS
-  LDFLAGS="$LDFLAGS -ldl"
+  dnl -ldl must go first to make this work on Archlinux (Roland Puntaier)
+  LDFLAGS="-ldl $LDFLAGS"
   AC_RUN_IFELSE([
     #include <dlfcn.h>
     /* If this program fails, then RTLD_GLOBAL is needed.
@@ -1237,7 +1240,8 @@ if test "$python_ok" = yes && test "$python3_ok" = yes; then
   cflags_save=$CFLAGS
   CFLAGS="$CFLAGS $PYTHON3_CFLAGS"
   ldflags_save=$LDFLAGS
-  LDFLAGS="$LDFLAGS -ldl"
+  dnl -ldl must go first to make this work on Archlinux (Roland Puntaier)
+  LDFLAGS="-ldl $LDFLAGS"
   AC_RUN_IFELSE([
     #include <dlfcn.h>
     #include <wchar.h>

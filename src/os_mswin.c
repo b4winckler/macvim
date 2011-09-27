@@ -1781,7 +1781,7 @@ swap_me(COLORREF colorref)
 }
 
 /* Attempt to make this work for old and new compilers */
-#if !defined(_MSC_VER) || (_MSC_VER < 1300) || !defined(INT_PTR)
+#if !defined(_WIN64) && (!defined(_MSC_VER) || _MSC_VER < 1300)
 # define PDP_RETVAL BOOL
 #else
 # define PDP_RETVAL INT_PTR
@@ -1856,12 +1856,12 @@ AbortProc(HDC hdcPrn, int iCode)
 {
     MSG msg;
 
-    while (!*bUserAbort && PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+    while (!*bUserAbort && pPeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
     {
-	if (!hDlgPrint || !IsDialogMessage(hDlgPrint, &msg))
+	if (!hDlgPrint || !pIsDialogMessage(hDlgPrint, &msg))
 	{
 	    TranslateMessage(&msg);
-	    DispatchMessage(&msg);
+	    pDispatchMessage(&msg);
 	}
     }
     return !*bUserAbort;
@@ -3132,10 +3132,10 @@ serverProcessPendingMessages(void)
 {
     MSG msg;
 
-    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+    while (pPeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
     {
 	TranslateMessage(&msg);
-	DispatchMessage(&msg);
+	pDispatchMessage(&msg);
     }
 }
 

@@ -380,9 +380,6 @@ static dictitem_T	vimvars_var;
 
 static void prepare_vimvar __ARGS((int idx, typval_T *save_tv));
 static void restore_vimvar __ARGS((int idx, typval_T *save_tv));
-#if defined(FEAT_USR_CMDS) && defined(FEAT_CMDL_COMPL)
-static int call_vim_function __ARGS((char_u *func, int argc, char_u **argv, int safe, typval_T *rettv));
-#endif
 static int ex_let_vars __ARGS((char_u *arg, typval_T *tv, int copy, int semicolon, int var_count, char_u *nextchars));
 static char_u *skip_var_list __ARGS((char_u *arg, int *var_count, int *semicolon));
 static char_u *skip_var_one __ARGS((char_u *arg));
@@ -451,7 +448,6 @@ static void set_ref_in_ht __ARGS((hashtab_T *ht, int copyID));
 static void set_ref_in_list __ARGS((list_T *l, int copyID));
 static void set_ref_in_item __ARGS((typval_T *tv, int copyID));
 static int rettv_dict_alloc __ARGS((typval_T *rettv));
-static void dict_unref __ARGS((dict_T *d));
 static void dict_free __ARGS((dict_T *d, int recurse));
 static dictitem_T *dictitem_copy __ARGS((dictitem_T *org));
 static void dictitem_remove __ARGS((dict_T *dict, dictitem_T *item));
@@ -1357,7 +1353,11 @@ eval_to_string(arg, nextcmd, convert)
 	{
 	    ga_init2(&ga, (int)sizeof(char), 80);
 	    if (tv.vval.v_list != NULL)
+	    {
 		list_join(&ga, tv.vval.v_list, (char_u *)"\n", TRUE, 0);
+		if (tv.vval.v_list->lv_len > 0)
+		    ga_append(&ga, NL);
+	    }
 	    ga_append(&ga, NUL);
 	    retval = (char_u *)ga.ga_data;
 	}
@@ -1559,7 +1559,7 @@ eval_expr(arg, nextcmd)
  * arguments are currently supported.
  * Returns OK or FAIL.
  */
-    static int
+    int
 call_vim_function(func, argc, argv, safe, rettv)
     char_u      *func;
     int		argc;
@@ -6900,7 +6900,7 @@ rettv_dict_alloc(rettv)
  * Unreference a Dictionary: decrement the reference count and free it when it
  * becomes zero.
  */
-    static void
+    void
 dict_unref(d)
     dict_T *d;
 {
@@ -20810,7 +20810,8 @@ ex_function(eap)
     nesting = 0;
     for (;;)
     {
-	msg_scroll = TRUE;
+	if (KeyTyped)
+	    msg_scroll = TRUE;
 	need_wait_return = FALSE;
 	sourcing_lnum_off = sourcing_lnum;
 
@@ -23229,6 +23230,7 @@ modify_fname(src, usedlen, fnamep, bufp, fnamelen)
     int		c;
     int		has_fullname = 0;
 #ifdef WIN3264
+    char_u	*fname_start = *fnamep;
     int		has_shortname = 0;
 #endif
 
@@ -23403,24 +23405,25 @@ repeat:
     }
 
 #ifdef WIN3264
-    /* Check shortname after we have done 'heads' and before we do 'tails'
+    /*
+     * Handle ":8" after we have done 'heads' and before we do 'tails'.
      */
     if (has_shortname)
     {
-	pbuf = NULL;
-	/* Copy the string if it is shortened by :h */
-	if (*fnamelen < (int)STRLEN(*fnamep))
+	/* Copy the string if it is shortened by :h and when it wasn't copied
+	 * yet, because we are going to change it in place.  Avoids changing
+	 * the buffer name for "%:8". */
+	if (*fnamelen < (int)STRLEN(*fnamep) || *fnamep == fname_start)
 	{
 	    p = vim_strnsave(*fnamep, *fnamelen);
-	    if (p == 0)
+	    if (p == NULL)
 		return -1;
 	    vim_free(*bufp);
 	    *bufp = *fnamep = p;
 	}
 
 	/* Split into two implementations - makes it easier.  First is where
-	 * there isn't a full name already, second is where there is.
-	 */
+	 * there isn't a full name already, second is where there is. */
 	if (!has_fullname && !vim_isAbsName(*fnamep))
 	{
 	    if (shortpath_for_partial(fnamep, bufp, fnamelen) == FAIL)
@@ -23428,18 +23431,16 @@ repeat:
 	}
 	else
 	{
-	    int		l;
+	    int		l = *fnamelen;
 
-	    /* Simple case, already have the full-name
+	    /* Simple case, already have the full-name.
 	     * Nearly always shorter, so try first time. */
-	    l = *fnamelen;
 	    if (get_short_pathname(fnamep, bufp, &l) == FAIL)
 		return -1;
 
 	    if (l == 0)
 	    {
-		/* Couldn't find the filename.. search the paths.
-		 */
+		/* Couldn't find the filename, search the paths. */
 		l = *fnamelen;
 		if (shortpath_for_invalid_fname(fnamep, bufp, &l) == FAIL)
 		    return -1;
