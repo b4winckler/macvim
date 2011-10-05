@@ -674,6 +674,7 @@ PERL_PRO
 PERL_OBJ
 PERL_SRC
 shrpenv
+vi_cv_perlsitelib
 vi_cv_perllib
 vi_cv_path_perl
 MZSCHEME_MZC
@@ -5112,6 +5113,8 @@ $as_echo "OK" >&6; }
 	shrpenv=""
       fi
       vi_cv_perllib=`$vi_cv_path_perl -MConfig -e 'print $Config{privlibexp}'`
+      vi_cv_perlsitelib=`$vi_cv_path_perl -MConfig -e 'print $Config{sitelibexp}'`
+
 
             perlcppflags=`$vi_cv_path_perl -Mlib=$srcdir -MExtUtils::Embed \
 	      -e 'ccflags;perl_inc;print"\n"' | sed -e 's/-fno[^ ]*//'`
