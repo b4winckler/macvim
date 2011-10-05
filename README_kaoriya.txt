@@ -1,9 +1,9 @@
                    Vim version 7.3 香り屋版 導入マニュアル
 
-                                                         Version: 1.6.4
+                                                         Version: 1.6.5
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 29-Apr-2011.
+                                                     Last Change: 22-Sep-2011.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -40,7 +40,9 @@
   まずはVimの操作に慣れるためトレーニングすることをオススメします。1回のトレー
   ニングにかかる時間には個人差がありますが30分から1時間くらいです。トレーニン
   グを開始するにはVimを起動した後
+
     :Tutorial
+
   と入力してリターンキーを押します。あとは画面に表示された文章にしたがって操作
   することで、Vimの基本的な操作を練習することができます。慣れるまで何度か繰り
   返し練習するとより効果的です。
@@ -188,13 +190,14 @@ Vimの拡張機能について
 
   - Vim本家
       http://www.vim.org/
-  - Vim日本語版情報
-      http://www.kaoriya.net/#VIM
+  - Vimの日本コミュニティvim-jp
+      http://vim-jp.org/
   - vim_jp Google グループ
       http://groups.google.com/group/vim_jp/?hl=ja
   - Vimドキュメント翻訳(vimdoc-ja)
       http://code.google.com/p/vimdoc-ja/?hl=ja
   - 香り屋版メンテナ
+      http://www.kaoriya.net/software/vim
       MURAOKA Taro <koron.kaoriya@gmail.com>
       Twitter @kaoriya
 

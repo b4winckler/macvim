@@ -1731,7 +1731,6 @@ $VIMRUNTIME	starting.jax	/*$VIMRUNTIME*
 45.3	usr_45.jax	/*45.3*
 45.4	usr_45.jax	/*45.4*
 45.5	usr_45.jax	/*45.5*
-672	starting.jax	/*672*
 8g8	various.jax	/*8g8*
 90.1	usr_90.jax	/*90.1*
 90.2	usr_90.jax	/*90.2*
@@ -3993,6 +3992,7 @@ E669	syntax.jax	/*E669*
 E67	syntax.jax	/*E67*
 E670	helphelp.jax	/*E670*
 E671	starting.jax	/*E671*
+E672	starting.jax	/*E672*
 E673	print.jax	/*E673*
 E674	print.jax	/*E674*
 E675	print.jax	/*E675*
@@ -5561,6 +5561,7 @@ ft-sql-syntax	syntax.jax	/*ft-sql-syntax*
 ft-sqlanywhere-syntax	syntax.jax	/*ft-sqlanywhere-syntax*
 ft-sqlinformix-syntax	syntax.jax	/*ft-sqlinformix-syntax*
 ft-syntax-omni	insert.jax	/*ft-syntax-omni*
+ft-tcsh-syntax	syntax.jax	/*ft-tcsh-syntax*
 ft-termcap-syntax	syntax.jax	/*ft-termcap-syntax*
 ft-tex-plugin	filetype.jax	/*ft-tex-plugin*
 ft-tex-syntax	syntax.jax	/*ft-tex-syntax*
@@ -6403,7 +6404,7 @@ map-self-destroy	tips.jax	/*map-self-destroy*
 map-typing	map.jax	/*map-typing*
 map-which-keys	map.jax	/*map-which-keys*
 map.txt	map.jax	/*map.txt*
-map_CTRL_C	map.jax	/*map_CTRL_C*
+map_CTRL-C	map.jax	/*map_CTRL-C*
 map_backslash	map.jax	/*map_backslash*
 map_bar	map.jax	/*map_bar*
 map_empty_rhs	map.jax	/*map_empty_rhs*
@@ -7597,7 +7598,6 @@ tcl-window-expr	if_tcl.jax	/*tcl-window-expr*
 tcl-window-height	if_tcl.jax	/*tcl-window-height*
 tcl-window-option	if_tcl.jax	/*tcl-window-option*
 tcsh-style	cmdline.jax	/*tcsh-style*
-tcsh-syntax	syntax.jax	/*tcsh-syntax*
 tcsh.vim	syntax.jax	/*tcsh.vim*
 tear-off-menus	gui.jax	/*tear-off-menus*
 telnet-CTRL-]	tagsrch.jax	/*telnet-CTRL-]*
