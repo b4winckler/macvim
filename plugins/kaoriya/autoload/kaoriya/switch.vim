@@ -3,10 +3,10 @@ scriptencoding utf-8
 "
 " Switches by existance of files in $VIM/switches/enabled directory.
 "
-" (�ق�)�N������$VIM/switches/enabled�f�B���N�g�����̃t�@�C���̗L���𒲂ׂ�X
-" �C�b�`.
+" (ほぼ)起動時の$VIM/switches/enabledディレクトリ下のファイルの有無を調べるス
+" イッチ.
 "
-" Last Change:  29-Apr-2011.
+" Last Change:  16-Sep-2011.
 " Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 
 let g:kaoriya_switch = {}

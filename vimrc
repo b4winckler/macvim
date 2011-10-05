@@ -3,7 +3,7 @@
 " An example for a Japanese version vimrc file.
 " 日本語版のデフォルト設定ファイル(vimrc) - Vim7用試作
 "
-" Last Change: 29-Apr-2011.
+" Last Change: 16-Sep-2011.
 " Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 "
 " 解説:
@@ -224,5 +224,10 @@ endif
 
 " autofmt: 日本語文章のフォーマット(折り返し)プラグイン.
 set formatexpr=autofmt#japanese#formatexpr()
+
+" vimdoc-ja: 日本語ヘルプを無効化する.
+if kaoriya#switch#enabled('disable-vimdoc-ja')
+  let &rtp = join(filter(split(&rtp, ','), 'v:val !~ "vimdoc-ja"'), ',')
+endif
 
 " Copyright (C) 2011 KaoriYa/MURAOKA Taro

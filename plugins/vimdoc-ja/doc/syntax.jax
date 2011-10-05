@@ -2553,7 +2553,7 @@ SQLにはANSI標準があるのだが、ほとんどのデータベースエン�
 より詳しい説明は|ft_sql.txt|を参照。
 
 
-TCSH						*tcsh.vim* *tcsh-syntax*
+TCSH						*tcsh.vim* *ft-tcsh-syntax*
 
 これは"tcsh"という名前のシェルをカバーしている。これはcshのスーパーセットであ
 る。ファイル形式がどのように判定されるかは|csh.vim|を参照。
