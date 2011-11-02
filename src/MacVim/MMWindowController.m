@@ -1424,6 +1424,7 @@
       [fileBrowserController setNextKeyView:[vimView textView]];
     }
     [self collapseSidebar:NO];
+    [fileBrowserController makeFirstResponder:self];
 }
 
 - (IBAction)closeFileBrowser:(id)sender
