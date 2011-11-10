@@ -1576,7 +1576,7 @@ v:termresponse	termcapのエントリ|t_RV|で端末から返されるエスケ�
 		 "<Esc>[ Pp ; Pv ; Pc c"。ここでPpは端末のタイプ: 0ならvt100、
 		 1ならvt220。Pvはパッチレベル(パッチ95で導入されたため常
 		 に95以上)。Pcは常に0。
-		{Vi mが|+termresponse|機能付きでコンパイルされたときのみ有効}
+		{Vimが|+termresponse|機能付きでコンパイルされたときのみ有効}
 
 				*v:this_session* *this_session-variable*
 v:this_session	最後にロードされたか、セーブされたセッションファイルの完全な
@@ -4385,7 +4385,7 @@ range({expr} [, {max} [, {stride}]])				*range()*
 		以下のような数値のリスト|List|を返す。
 		- {expr}のみを指定したときは:  [0, 1, ..., {expr} - 1]
 		- {max}を指定したときは: [{expr}, {expr} + 1, ..., {max}]
-		- {string}を指定したときは: [{expr}, {expr} + {stride}, ...,
+		- {stride}を指定したときは: [{expr}, {expr} + {stride}, ...,
 		  {max}] ({max}を超えないように{expr}を{stride}ずつ増加させる)
 		最大値が開始位置より1だけ前のときは空リストを返す。最大値が開
 		始位置より1以上前のときはエラーになる。
