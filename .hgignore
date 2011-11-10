@@ -37,6 +37,9 @@ src/Obj*/pathdef.c
 gvimext.dll
 gvimext.lib
 
+# Android
+*.o.d
+
 # All platforms
 *.rej
 *.orig

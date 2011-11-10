@@ -241,6 +241,8 @@ guess_eucjp_check(encode_state* state, char_u d)
 		state->mode = 1;
 	    else if (d < 0x80)
 		++state->score;
+            else
+                return 1;
 	    break;
 	case 1:
 	    if (is_euc_range)
