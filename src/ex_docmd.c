@@ -373,11 +373,9 @@ static void	ex_tag_cmd __ARGS((exarg_T *eap, char_u *name));
 # define ex_endif		ex_ni
 # define ex_else		ex_ni
 # define ex_while		ex_ni
-# define ex_for			ex_ni
 # define ex_continue		ex_ni
 # define ex_break		ex_ni
 # define ex_endwhile		ex_ni
-# define ex_endfor		ex_ni
 # define ex_throw		ex_ni
 # define ex_try			ex_ni
 # define ex_catch		ex_ni
@@ -8227,6 +8225,12 @@ do_sleep(msec)
     {
 	ui_delay(msec - done > 1000L ? 1000L : msec - done, TRUE);
 	ui_breakcheck();
+#ifdef FEAT_NETBEANS_INTG
+	/* Process the netbeans messages that may have been received in the
+	 * call to ui_breakcheck() when the GUI is in use. This may occur when
+	 * running a test case. */
+	netbeans_parse_messages();
+#endif
     }
 }
 

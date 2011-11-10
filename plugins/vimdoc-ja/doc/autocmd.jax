@@ -502,7 +502,7 @@ CursorHold			'updatetime' の時間の間、ユーザがキーを押さな
 				ヒント: ステータスラインの更新を強制的に行うに
 				は、これを使うこと: >
 					:let &ro = &ro
-<				{Vi mのAmiga版、Unix版、Win32版、MSDOS版および
+<				{VimのAmiga版、Unix版、Win32版、MSDOS版および
 				全てのGUI 版でのみ有効}
 							*CursorHoldI*
 CursorHoldI			CursorHoldと同様だが、インサートモードのとき発
