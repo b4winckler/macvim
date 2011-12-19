@@ -1122,7 +1122,7 @@ endif " !exists("did_install_default_menus")
 if !exists("did_install_syntax_menu")
   an 50.212 &Syntax.&Manual		:syn manual<CR>
   an 50.214 &Syntax.A&utomatic		:syn on<CR>
-  an <silent> 50.216 &Syntax.On/Off\ for\ &This\ File :call <SID>SynOnOff()<CR>
+  an <silent> 50.216 &Syntax.Toggle\ for\ &This\ File :call <SID>SynOnOff()<CR>
   if !exists("*s:SynOnOff")
     fun s:SynOnOff()
       if has("syntax_items")
