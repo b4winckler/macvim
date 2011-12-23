@@ -367,7 +367,11 @@ au BufNewFile,BufRead *.h			call s:FTheader()
 
 func! s:FTheader()
   if match(getline(1, min([line("$"), 200])), '^@\(interface\|end\|class\)') > -1
-    setf objc
+    if exists("g:c_syntax_for_h")
+      setf objc
+    else
+      setf objcpp
+    endif
   elseif exists("g:c_syntax_for_h")
     setf c
   elseif exists("g:ch_syntax_for_h")
