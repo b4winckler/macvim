@@ -396,7 +396,9 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
       [self sendSelectionChangedNotification];
     }
     return;
-  } else if (event.keyCode != TAB_KEY_CODE && event.keyCode != ESCAPE_KEY_CODE) {
+  } else if (event.keyCode != TAB_KEY_CODE && event.keyCode != ESCAPE_KEY_CODE
+      && event.keyCode != LEFT_KEY_CODE && event.keyCode != RIGHT_KEY_CODE
+      && event.keyCode != DOWN_KEY_CODE && event.keyCode != UP_KEY_CODE) {
     switch ([[event.characters uppercaseString] characterAtIndex:0]) {
     case 'H':
       LEFT_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf702];
