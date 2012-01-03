@@ -2,7 +2,7 @@
 "
 " dicwin.vim - Dictionary window
 "
-" Maintainer:	MURAOKA Taro <koron@tka.att.ne.jp>
+" Maintainer:	MURAOKA Taro <koron.kaoriya@gmail.com>
 " Last Change:	04-Aug-2007.
 " Commands:	<C-k><C-k>  Search word under cursor.
 "		<C-k>/	    Search prompted word.

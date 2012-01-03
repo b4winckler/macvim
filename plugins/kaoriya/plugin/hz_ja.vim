@@ -3,7 +3,7 @@
 " hz_ja.vim - Convert character between HANKAKU and ZENKAKU
 "
 " Last Change: 06-Feb-2006.
-" Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
+" Written By:  MURAOKA Taro <koron.kaoriya@gmail.com>
 "
 " Commands:
 "   :Hankaku	  Convert to HANKAKU.

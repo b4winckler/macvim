@@ -1,6 +1,6 @@
 " Vim Keymap file for Japanese (AZIK)
 "
-" Maintainer:  MURAOKA Taro <koron@tka.att.ne.jp>
+" Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 " Last Change: 06-Feb-2006.
 "
 " You can get more information about AZIK in here:

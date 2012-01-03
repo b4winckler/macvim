@@ -2,7 +2,7 @@
 "
 " cmdex.vim - Extra coomands
 "
-" Maintainer:	Muraoka Taro <koron@tka.att.ne.jp>
+" Maintainer:	Muraoka Taro <koron.kaoriya@gmail.com>
 " Last Change:	18-Dec-2010.
 " Commands:
 "		:MenuLang {language}
