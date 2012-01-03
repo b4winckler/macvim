@@ -4943,7 +4943,7 @@ static int	cin_iscomment __ARGS((char_u *));
 static int	cin_islinecomment __ARGS((char_u *));
 static int	cin_isterminated __ARGS((char_u *, int, int));
 static int	cin_isinit __ARGS((void));
-static int	cin_isfuncdecl __ARGS((char_u **, linenr_T));
+static int	cin_isfuncdecl __ARGS((char_u **, linenr_T, linenr_T, int, int));
 static int	cin_isif __ARGS((char_u *));
 static int	cin_iselse __ARGS((char_u *));
 static int	cin_isdo __ARGS((char_u *));
@@ -5137,6 +5137,9 @@ cin_isinit(void)
 
     if (STRNCMP(s, "typedef", 7) == 0 && !vim_isIDc(s[7]))
 	s = cin_skipcomment(s + 7);
+
+    if (STRNCMP(s, "static", 6) == 0 && !vim_isIDc(s[6]))
+	s = cin_skipcomment(s + 6);
 
     if (STRNCMP(s, "enum", 4) == 0 && !vim_isIDc(s[4]))
 	return TRUE;
@@ -5582,20 +5585,36 @@ cin_isterminated(s, incl_open, incl_comma)
  * "sp" points to a string with the line.  When looking at other lines it must
  * be restored to the line.  When it's NULL fetch lines here.
  * "lnum" is where we start looking.
+ * "min_lnum" is the line before which we will not be looking.
  */
     static int
-cin_isfuncdecl(sp, first_lnum)
+cin_isfuncdecl(sp, first_lnum, min_lnum, ind_maxparen, ind_maxcomment)
     char_u	**sp;
     linenr_T	first_lnum;
+    linenr_T	min_lnum;
+    int		ind_maxparen;
+    int		ind_maxcomment;
 {
     char_u	*s;
     linenr_T	lnum = first_lnum;
     int		retval = FALSE;
+    pos_T	*trypos;
+    int		just_started = TRUE;
 
     if (sp == NULL)
 	s = ml_get(lnum);
     else
 	s = *sp;
+
+    if (find_last_paren(s, '(', ')')
+	&& (trypos = find_match_paren(ind_maxparen, ind_maxcomment)) != NULL)
+    {
+	lnum = trypos->lnum;
+	if (lnum < min_lnum)
+	    return FALSE;
+
+	s = ml_get(lnum);
+    }
 
     /* Ignore line starting with #. */
     if (cin_ispreproc(s))
@@ -5647,13 +5666,17 @@ cin_isfuncdecl(sp, first_lnum)
 	    /* Require a comma at end of the line or a comma or ')' at the
 	     * start of next line. */
 	    s = skipwhite(s);
-	    if (!comma && *s != ',' && *s != ')')
+	    if (!just_started && (!comma && *s != ',' && *s != ')'))
 		break;
+	    just_started = FALSE;
 	}
 	else if (cin_iscomment(s))	/* ignore comments */
 	    s = cin_skipcomment(s);
 	else
+	{
 	    ++s;
+	    just_started = FALSE;
+	}
     }
 
 done:
@@ -6127,7 +6150,7 @@ corr_ind_maxparen(ind_maxparen, startpos)
 
 /*
  * Set w_cursor.col to the column number of the last unmatched ')' or '{' in
- * line "l".
+ * line "l".  "l" must point to the start of the line.
  */
     static int
 find_last_paren(l, start, end)
@@ -6140,7 +6163,7 @@ find_last_paren(l, start, end)
 
     curwin->w_cursor.col = 0;		    /* default is start of line */
 
-    for (i = 0; l[i]; i++)
+    for (i = 0; l[i] != NUL; i++)
     {
 	i = (int)(cin_skipcomment(l + i) - l); /* ignore parens in comments */
 	i = (int)(skip_string(l + i) - l);    /* ignore parens in quotes */
@@ -7155,7 +7178,8 @@ get_c_indent()
 			 * (it's a variable declaration).
 			 */
 			if (start_brace != BRACE_IN_COL0
-				|| !cin_isfuncdecl(&l, curwin->w_cursor.lnum))
+				|| !cin_isfuncdecl(&l, curwin->w_cursor.lnum,
+					     0, ind_maxparen, ind_maxcomment))
 			{
 			    /* if the line is terminated with another ','
 			     * it is a continued variable initialization.
@@ -7953,6 +7977,7 @@ term_again:
 			 * If we're at the end of a block, skip to the start of
 			 * that block.
 			 */
+			l = ml_get_curline();
 			if (find_last_paren(l, '{', '}')
 				&& (trypos = find_start_brace(ind_maxcomment))
 							    != NULL) /* XXX */
@@ -8015,7 +8040,9 @@ term_again:
 		&& vim_strchr(theline, '}') == NULL
 		&& !cin_ends_in(theline, (char_u *)":", NULL)
 		&& !cin_ends_in(theline, (char_u *)",", NULL)
-		&& cin_isfuncdecl(NULL, cur_curpos.lnum + 1)
+		&& cin_isfuncdecl(NULL, cur_curpos.lnum + 1,
+				  cur_curpos.lnum + 1,
+				  ind_maxparen, ind_maxcomment)
 		&& !cin_isterminated(theline, FALSE, TRUE))
 	{
 	    amount = ind_func_type;
@@ -8121,7 +8148,8 @@ term_again:
 		 * If the line looks like a function declaration, and we're
 		 * not in a comment, put it the left margin.
 		 */
-		if (cin_isfuncdecl(NULL, cur_curpos.lnum))  /* XXX */
+		if (cin_isfuncdecl(NULL, cur_curpos.lnum, 0,
+				   ind_maxparen, ind_maxcomment))  /* XXX */
 		    break;
 		l = ml_get_curline();
 
@@ -8142,11 +8170,35 @@ term_again:
 		    break;
 
 		/*
+		 * Find a line only has a semicolon that belongs to a previous
+		 * line ending in '}', e.g. before an #endif.  Don't increase
+		 * indent then.
+		 */
+		if (*(look = skipwhite(l)) == ';' && cin_nocode(look + 1))
+		{
+		    pos_T curpos_save = curwin->w_cursor;
+
+		    while (curwin->w_cursor.lnum > 1)
+		    {
+			look = ml_get(--curwin->w_cursor.lnum);
+			if (!(cin_nocode(look) || cin_ispreproc_cont(
+					      &look, &curwin->w_cursor.lnum)))
+			    break;
+		    }
+		    if (curwin->w_cursor.lnum > 0
+				    && cin_ends_in(look, (char_u *)"}", NULL))
+			break;
+
+		    curwin->w_cursor = curpos_save;
+		}
+
+		/*
 		 * If the PREVIOUS line is a function declaration, the current
 		 * line (and the ones that follow) needs to be indented as
 		 * parameters.
 		 */
-		if (cin_isfuncdecl(&l, curwin->w_cursor.lnum))
+		if (cin_isfuncdecl(&l, curwin->w_cursor.lnum, 0,
+				   ind_maxparen, ind_maxcomment))
 		{
 		    amount = ind_param;
 		    break;
