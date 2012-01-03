@@ -300,6 +300,8 @@ static NSMutableArray *leafNode = nil;
 @end
 
 #define ENTER_KEY_CODE 36
+#define TAB_KEY_CODE 48
+#define ESCAPE_KEY_CODE 53
 #define LEFT_KEY_CODE 123
 #define RIGHT_KEY_CODE 124
 #define DOWN_KEY_CODE 125
@@ -394,7 +396,9 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
       [self sendSelectionChangedNotification];
     }
     return;
-  } else {
+  } else if (event.keyCode != TAB_KEY_CODE && event.keyCode != ESCAPE_KEY_CODE
+      && event.keyCode != LEFT_KEY_CODE && event.keyCode != RIGHT_KEY_CODE
+      && event.keyCode != DOWN_KEY_CODE && event.keyCode != UP_KEY_CODE) {
     switch ([[event.characters uppercaseString] characterAtIndex:0]) {
     case 'H':
       LEFT_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf702];
@@ -412,9 +416,27 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
       UP_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf700];
       event = [self keyEventWithEvent:event character:UP_KEY_CHAR code:UP_KEY_CODE];
       break;
+    case 'T':
+      [(MMFileBrowserController *)[self delegate] openSelectedFilesInCurrentWindowWithLayout:MMLayoutTabs];
+      event = nil;
+      break;
+    case 'I':
+      [(MMFileBrowserController *)[self delegate] openSelectedFilesInCurrentWindowWithLayout:MMLayoutHorizontalSplit];
+      event = nil;
+      break;
+    case 'S':
+      [(MMFileBrowserController *)[self delegate] openSelectedFilesInCurrentWindowWithLayout:MMLayoutVerticalSplit];
+      event = nil;
+      break;
+    default:
+      event = nil;
+      break;
     }
   }
-  [super keyDown:event];
+
+  if (event != nil) {
+    [super keyDown:event];
+  }
 }
 
 - (NSMenu *)menuForEvent:(NSEvent *)event {
