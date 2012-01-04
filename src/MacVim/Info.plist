@@ -1232,7 +1232,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>20111111</string>
+	<string>20120105</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
