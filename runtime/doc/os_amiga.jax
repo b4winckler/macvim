@@ -1,0 +1,148 @@
+*os_amiga.txt*  For Vim バージョン 7.3.  Last change: 2010 Aug 14
+
+
+		  VIM REFERENCE MANUAL    by Bram Moolenaar
+
+
+							*Amiga*
+このファイルは Amiga version の Vim 特有の事柄に関して記述されています。
+下には特別に|MorphOS|についてのセクションが設けられています。
+
+NOTE: Amiga 用のコードはまだソースに含まれていますが、メンテナンスもテストもさ
+れていません。
+
+Amiga へのインストール:
+- "VIm:" を Vim の "doc" ディレクトリがある場所に割り当てます。help コマンドで
+  "VIM:doc/help.txt" が検索されます。
+  $VIM 環境変数を設定してもうまく動作します。他の方法では: $VIM が使われてい
+  て、定義されていないと "VIM:" が使われます。
+- DOS 1.3 かそれ以前では: "arp.library" を "libs:" に追加してください。|+ARP|
+  機能を有効にしてコンパイルしている必要があります。newcli と run が "C:" に含
+  まれていることを確認してください(外部コマンドを実行するため)。
+- "-c" を受け付ける shell (例えば、Fish disk 624 に含まれている "Csh")を "c:"
+  か他の検索パスが通っている場所においてください(外部コマンドを実行するため)。
+
+もし十分なメモリーを積んでいれば、"rez csh vim" コマンドを実行し、Vim と csh
+を resident にすることで起動の遅さを回避することができます。"rezlib.library"
+を "libs:" ディレクトリにおく必要があるでしょう。2.0 以下では rez version 0.5
+が必要です。
+
+digraph を使わない場合は、|+digraphs| 機能を無効にして再コンパイルすることでメ
+モリーをいくらか節約することができます。他の端末で Vim を使いたい場合は
+TERMCAP オプション付きで再コンパイルします。Manx 5.x と SAS 6.x つきでコンパイ
+ルされます。makefile と feature.h を参照してください。
+
+構文強調がオンになっているときや、検索にネストしたワイルドカードを含めたときに
+Vim がクラッシュしたら、それはスタックが小さすぎる可能性があります。スタックサ
+イズを大きくしてみてください。Vim を起動する前にシェル内で Stack コマンドを使
+います。workbench では Vim のアイコンを選択し、workbench の "Info" メニューを
+選択し、フォーム内の Stack フィールドを変更します。
+
+もし異なる色を使いたい場合は、termcap コードを設定してください:
+	t_mr (反転テキスト)
+	t_md (太字テキスト)
+	t_me (t_mr と t_md 後の普通のテキスト)
+	t_so (standout モード)
+	t_se (t_so 後の普通のテキスト)
+	t_us (下線付きテキスト)
+	t_ue (t_us 後の普通のテキスト)
+	t_ZH (イタリック・テキスト)
+	t_ZR (t_ZH 後の普通のテキスト)
+
+標準の ANSI エスケープ・シーケンスが使われます。コードは:
+30 grey char   40 grey cell   >0 grey background    0 all attributes off
+31 black char  41 black cell  >1 black background   1 boldface
+32 white char  42 white cell  >2 white background   2 faint
+33 blue char   43 blue cell   >3 blue background    3 italic
+34 grey char   44 grey cell   >4 grey background    4 underscore
+35 black char  45 black cell  >5 black background   7 reverse video
+36 white char  46 white cell  >6 white background   8 invisible
+37 blue char   47 blue cell   >7 blue background
+
+'>' つきのコードは最後になければなりません。cell と background の色は同じであ
+る必要があります。コードはセミコロンで分割することで組み合わせることができます。
+例えば、青い背景に白のテキストにするには: >
+  :set t_me=^V<Esc>[0;32;43;>3m
+  :set t_se=^V<Esc>[0;32;43;>3m
+  :set t_ue=^V<Esc>[0;32;43;>3m
+  :set t_ZR=^V<Esc>[0;32;43;>3m
+  :set t_md=^V<Esc>[1;32;43;>3m
+  :set t_mr=^V<Esc>[7;32;43;>3m
+  :set t_so=^V<Esc>[0;31;43;>3m
+  :set t_us=^V<Esc>[4;32;43;>3m
+  :set t_ZH=^V<Esc>[3;32;43;>3m
+
+複数のコマンドをフィルターコマンドとして使う場合、例えば: >
+  :r! echo this; echo that
+では、最後のコマンドの出力のみが使われます。この問題を回避するには、コマンドを
+グループにする必要があります。そして、これは使っている shell に依存しています
+(このため、Vim では自動的に行いません)。例: >
+  :r! (echo this; echo that)
+  :r! {echo this; echo that}
+
+1つのファイル名のみを受け付けるコマンドではファイル名にスペースが使われていて
+もかまいません。しかしながら、複数のファイル名を引数として受け付けるコマンドで
+は、スペースの前のバック・スラッシュをつける必要があります。
+
+------------------------------------------------------------------------------
+Vim for MorphOS							*MorphOS*
+
+[このセクションの大部分は Ali Akcaagac による]
+
+MorphOS 版についての最新情報は:
+	http://www.akcaagac.com/index_vim.html
+
+
+Problems ~
+
+MorphOSではなくVimやUN*Xに関連した問題が2つあります。ram(訳注1)内のVimを起動す
+るとMorphOSは小煩いrequester(訳注2)を出していろいろと不満を言いますが、それは
+無視してください。もう1つ、普通にVimを起動するといくつかのプラグインが無視でき
+るような問題を起こします。いつか誰かが直してくれることでしょう。
+訳注1: ram = RAM ディスク?
+訳注2: requester = ダイアログ or メッセージボックス?
+
+とりあえずこれらの問題には目をつむり、次のように起動するか:
+
+	vim <編集するファイル>
+
+もしくは、このヘルプの意向を享受し、質素に Vim を起動したいなら、次のように
+するのが良いでしょう:
+
+	vim --noplugin <もちろんファイルを指定することもできます>
+
+
+インストール ~
+
+1) 'VIM' バイナリを c: にコピーしてください
+2) Vim のランタイムパッケージを次から入手してください
+
+	ftp://ftp.vim.org/pub/vim/amiga/vim62rt.tgz
+
+   そしてそれを MorphOS がインストールされている場所の 'Apps' ディレクトリに
+   展開してください。私の場合は次のような階層になってます:
+
+	MorphOS:Apps/Vim/Vim62/...
+
+3) s:shell-startup に次の行を加えてください (重要!)。
+
+	;Begin VIM
+	Set VIM=MorphOS:Apps/Vim/Vim62
+	Assign HOME: ""
+	;End VIM
+
+4) '.vimrc' ファイルを s: にコピーしてください。
+
+5) アーカイブには 'color-sequence' というファイルも含まれています。これは
+   MorphOS のシェルで ANSI カラーを表示するようにします。このファイルを s: に
+   コピーし s:shell-startup を以下のように変更してください:
+
+	;Begin VIM
+	Set VIM=MorphOS:Apps/Vim/Vim62
+	Assign HOME: ""
+	Execute S:Color-Sequence
+	Cls
+	;End VIM
+
+
+ vim:tw=78:ts=8:ft=help:norl:

@@ -2,8 +2,8 @@
 "
 " scrnmode.vim - Screen mode changer.
 "
-" Maintainer:	MURAOKA Taro <koron@tka.att.ne.jp>
-" Last Change:	06-Feb-2006.
+" Maintainer:	MURAOKA Taro <koron.kaoriya@gmail.com>
+" Last Change:	09-Dec-2011.
 "
 " Commands:	:ScreenMode {n}		Set screen mode {n} n:0-8
 "		:SM {n}			Same as :ScreenMode
@@ -78,7 +78,7 @@ function! s:ScreenMode(modenum)
 
   call s:SaveOptions()
   if a:modenum < 4
-    simalt ~r
+    if has('win32') | simalt ~r | endif
   endif
   call s:LoadOptions()
 
@@ -119,14 +119,14 @@ function! s:ScreenMode(modenum)
       endif
     endif
     let &guioptions = new_guioptions
-    simalt ~x
+    if has('win32') | simalt ~x | endif
     return
   endif
 endfunction
 
 function! s:FullScreen()
   let &guioptions = substitute(&guioptions, '[LRTlrm]', '', 'g')
-  simalt ~x
+  if has('win32') | simalt ~x | endif
 endfunction
 
 "---------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 " verifyenc.vim
 "   Verify the file is truly in 'fileencoding' encoding.
 "
-" Maintainer:	MURAOKA Taro <koron@tka.att.ne.jp>
+" Maintainer:	MURAOKA Taro <koron.kaoriya@gmail.com>
 " Last Change:	27-Jul-2003.
 " Options:	'verifyenc_enable'	When 0, checking become disable.
 "		'verifyenc_maxlines'	Maximum range to check (for speed).

@@ -1,5 +1,5 @@
 " Vim Keymap file for Japanese (ROMA)
-" Maintainer: MURAOKA Taro <koron@tka.att.ne.jp>
+" Maintainer: MURAOKA Taro <koron.kaoriya@gmail.com>
 " Last Change: 06-Feb-2006.
 
 scriptencoding cp932

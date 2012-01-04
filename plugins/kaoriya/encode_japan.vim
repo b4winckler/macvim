@@ -2,7 +2,7 @@
 "
 " 日本語向けにエンコードを設定するサンプル - Vim7用
 "
-" Last Change: 15-May-2011.
+" Last Change: 09-Dec-2011.
 " Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 
 " 各エンコードを示す文字列のデフォルト値。s:CheckIconvCapabilityを()呼ぶことで
@@ -56,7 +56,27 @@ function! s:DetermineFileencodings()
   let &fileencodings = value
 endfunction
 
+"===========================================================================
+" パスに日本語を含む際にencを変更した場合の処置.
 
+let s:last_enc = &enc
+
+function! s:OnEncodingChanged()
+  " runtimepath(rtp)を変換する.
+  if s:last_enc !=# &enc
+    if has('iconv')
+      let &rtp = iconv(&rtp, s:last_enc, &enc)
+    endif
+    let s:last_enc = &enc
+  endif
+endfunction
+
+augroup EncodeJapan
+autocmd!
+autocmd EncodingChanged * call <SID>OnEncodingChanged()
+augroup END
+
+"===========================================================================
 " 本ファイルを読み込み(sourceした)時に、最適な設定を実行する。
 "
 if kaoriya#switch#enabled('utf-8')
