@@ -1,0 +1,225 @@
+*help.txt*	For Vim バージョン 7.3.  Last change: 2010 Jul 20
+
+			   VIM - メインヘルプファイル
+									 k
+	      移動:  カーソルを使用するか、"h" で左、"j" で下、	       h   l
+		     "k" で上、"l" で右に移動できます。			 j
+      ヘルプの終了:  ":q<Enter>" とタイプします。
+	Vim の終了:  ":qa!<Enter>" とします(注意! 変更はすべて破棄される)。
+
+    項目へジャンプ:  タグ (例:|bars|) にカーソルを合わせ、CTRL-] を押します。
+  マウスでジャンプ:  ":set mouse=a"と入力してマウスを有効にしてください (xterm
+		     or GUI で利用可)。タグ (例:|bars|) をマウスの左ボタンでダ
+		     ブルクリックすると、項目にジャンプできます。
+    元の場所に戻る:  CTRL-T or CTRL-O を押す。
+
+    項目を指定する:  |:help| コマンドに項目を指定することで、その項目を直ちに
+		    表示できます。調べたい項目の種類を指定することもできます。
+							*help-context*
+			  種類			修飾子	    例	~
+		  ノーマルモードコマンド	(無し)	   :help x
+		  ビジュアルモードコマンド	 v_	   :help v_u
+		  挿入モードコマンド		 i_	   :help i_<Esc>
+		  コマンドラインコマンド	 :	   :help :quit
+		  コマンドライン編集		 c_	   :help c_<Del>
+		  Vim の起動引数		 -	   :help -r
+		  オプション			 '	   :help 'textwidth'
+  ヘルプを検索する: ":help word" とタイプしてから CTRL-D を押すと "word" に
+		    マッチするヘルプ項目の一覧が表示されます。
+		    もしくは ":helpgrep word" を使ってください。 |:helpgrep|
+
+VIM は Vi IMproved の略です。VIM の大部分は Bram Moolenaar によって作成され、
+たくさんの人が協力しました。|credits| 参照。
+------------------------------------------------------------------------------
+						*doc-file-list* *Q_ct*
+基本:
+|quickref|	よく使うコマンドのクイックリファレンス
+|tutor|		30分の初心者向けトレーニングコース
+|copying|	著作権について
+|iccf|		ウガンダの恵まれない子供達への支援活動
+|sponsor|	Vim 開発スポンサー制度、Vim の登録ユーザになろう
+|www|		インターネット上の Vim 情報
+|bugs|		バグレポートの送信先
+
+ユーザマニュアルでは編集作業の進め方を説明します。
+
+|usr_toc.txt|	ユーザマニュアル目次
+
+初級編 ~
+|usr_01.txt|  マニュアルについて
+|usr_02.txt|  初めての Vim
+|usr_03.txt|  カーソルの移動
+|usr_04.txt|  簡単な編集
+|usr_05.txt|  設定の変更
+|usr_06.txt|  構文強調表示
+|usr_07.txt|  複数のファイルを開く
+|usr_08.txt|  ウィンドウの分割
+|usr_09.txt|  GUI を使う
+|usr_10.txt|  大規模な編集
+|usr_11.txt|  クラッシュからの復帰
+|usr_12.txt|  便利な小技
+
+上級編 ~
+|usr_20.txt|  コマンドラインを素早く入力する
+|usr_21.txt|  中断と再開
+|usr_22.txt|  ファイルを探す
+|usr_23.txt|  特殊なファイルを編集する
+|usr_24.txt|  素早く入力する
+|usr_25.txt|  テキストの整形
+|usr_26.txt|  繰り返し
+|usr_27.txt|  検索コマンドと正規表現
+|usr_28.txt|  折り畳み
+|usr_29.txt|  プログラムの中を移動する
+|usr_30.txt|  プログラムの編集
+|usr_31.txt|  GUI を活用する
+|usr_32.txt|  undo ツリー
+
+カスタマイズ ~
+|usr_40.txt|  新しいコマンドを作る
+|usr_41.txt|  Vim スクリプト書法
+|usr_42.txt|  新しいメニューを追加する
+|usr_43.txt|  ファイルタイプを使う
+|usr_44.txt|  構文ファイルを作成する
+|usr_45.txt|  言語を選択する
+
+インストール ~
+|usr_90.txt|  Vim のインストール
+
+
+								*reference_toc*
+リファレンスマニュアルでは Vim の詳細を説明します。
+
+一般事項 ~
+|intro.txt|	Vimについての前書き。と、ヘルプの表記について
+|help.txt|	全体説明とクイックリファレンス (今見ているファイル)
+|helphelp.txt|	ヘルプの使い方
+|index.txt|	全コマンド一覧。アルファベット順
+|help-tags|	ジャンプできるタグ一覧
+|howto.txt|	一般的な編集操作についてのHow to
+|tips.txt|	さまざまなTips
+|message.txt|	(エラー)メッセージの説明
+|quotes.txt|	Vimユーザーの感想
+|todo.txt|	既知のバグと、機能拡張の要望
+|debug.txt|	Vimのデバッグについて
+|develop.txt|	Vimの開発に関して
+|uganda.txt|	Vimの配布条件と、あなたが支払ったお金の使い道について
+
+基本的な編集 ~
+|starting.txt|	Vimの起動。起動引数や初期化に関して
+|editing.txt|	ファイルの編集と保存
+|motion.txt|	移動コマンド
+|scroll.txt|	ウィンドウのスクロール
+|insert.txt|	挿入モードと上書きモード
+|change.txt|	テキストの削除と変更
+|indent.txt|	C言語や、その他の言語の自動インデント
+|undo.txt|	アンドゥとリドゥ
+|repeat.txt|	繰り返しコマンド、Vimスクリプト、スクリプトのデバッグ
+|visual.txt|	ビジュアルモード (テキストの選択)
+|various.txt|	その他の様々なコマンド
+|recover.txt|	クラッシュからの復帰
+
+高度な編集 ~
+|cmdline.txt|	コマンドラインの編集
+|options.txt|	全オプションの説明
+|pattern.txt|	検索コマンドと正規表現
+|map.txt|	キーマップと短縮入力
+|tagsrch.txt|	タグと特別な検索
+|quickfix.txt|	編集、コンパイル、修正、の流れを早くするコマンド
+|windows.txt|	マルチウィンドウとマルチバッファのコマンド
+|tabpage.txt|	タブページを操作するコマンド
+|syntax.txt|	構文強調
+|spell.txt|	スペルチェック
+|diff.txt|	バージョン違いのファイルの編集。差分モード
+|autocmd.txt|	イベントに応じて自動的にコマンドを実行する
+|filetype.txt|	ファイルタイプ別の設定
+|eval.txt|	式の評価。条件式。 (Vim スクリプトリファレンス)
+|fold.txt|	ある範囲を隠す (折り畳む)
+
+特定機能 ~
+|print.txt|	印刷
+|remote.txt|	クライアント/サーバ機能
+|term.txt|	いろいろな端末やマウスについて
+|digraph.txt|	利用可能な二重字の一覧
+|mbyte.txt|	マルチバイトテキストのサポート
+|mlang.txt|	英語以外の言語のサポート
+|arabic.txt|	アラビア語のサポート
+|farsi.txt|	ペルシア語のサポート
+|hebrew.txt|	ヘブライ語のサポート
+|russian.txt|	ロシア語のサポート
+|ft_ada.txt|	Ada (プログラミング言語) のサポート
+|ft_sql.txt|	SQL ファイルタイププラグイン
+|hangulin.txt|	ハングル (韓国語) の入力
+|rileft.txt|	右横書き (書字方向が右から左になるモード)
+
+GUI ~
+|gui.txt|	グラフィカルユーザインターフェース (GUI)
+|gui_w16.txt|	Windows 3.1 GUI
+|gui_w32.txt|	Win32 GUI
+|gui_x11.txt|	X11 GUI
+
+拡張インターフェース ~
+|if_cscop.txt|	cscopeを使う
+|if_lua.txt|	Lua インターフェース
+|if_mzsch.txt|	MzScheme インターフェース
+|if_perl.txt|	Perl インターフェース
+|if_pyth.txt|	Python インターフェース
+|if_sniff.txt|	SNiFF+ インターフェース
+|if_tcl.txt|	Tcl インターフェース
+|if_ole.txt|	Win32のOLEオートメーション
+|if_ruby.txt|	Ruby インターフェース
+|debugger.txt|	デバッガ用のインターフェース
+|workshop.txt|	Sun Visual Workshop インターフェース
+|netbeans.txt|	NetBeans External Editor インターフェース
+|sign.txt|	デバッグ用の目印
+
+バージョン情報 ~
+|vi_diff.txt|	VimとViの主な違い
+|version4.txt|	Vim version 3.0 と 4.x の違い
+|version5.txt|	Vim version 4.6 と 5.x の違い
+|version6.txt|	Vim version 5.7 と 6.x の違い
+|version7.txt|	Vim version 6.4 と 7.x の違い
+						*sys-file-list*
+システムに関する説明 ~
+|os_390.txt|	OS/390 Unix
+|os_amiga.txt|	Amiga
+|os_beos.txt|	BeOS と BeBox
+|os_dos.txt|	MS-DOS と MS-Windows NT/95 の共通事項
+|os_mac.txt|	Macintosh
+|os_mint.txt|	Atari MiNT
+|os_msdos.txt|	MS-DOS (DOS と Windows の DOS プロンプト)
+|os_os2.txt|	OS/2
+|os_qnx.txt|	QNX
+|os_risc.txt|	RISC-OS
+|os_unix.txt|	Unix
+|os_vms.txt|	VMS
+|os_win32.txt|	MS-Windows 95/98/NT
+						*standard-plugin-list*
+標準プラグイン ~
+|pi_getscript.txt| Vim スクリプトの最新版をダウンロードする
+|pi_gzip.txt|	   圧縮ファイルの読み書き
+|pi_netrw.txt|	   ネットワークファイルの読み書き
+|pi_paren.txt|	   対括弧の強調表示
+|pi_tar.txt|	   Tar ファイルエクスプローラ
+|pi_vimball.txt|   Vim スクリプトインストーラを作成する
+|pi_zip.txt|	   Zip アーカイブエクスプローラ
+
+その他 ~
+|vim_faq.txt|	FAQ
+
+LOCAL ADDITIONS:				*local-additions*
+
+------------------------------------------------------------------------------
+*bars*		Bars example
+
+今、あなたはマウスのダブルクリックか CTRL-] でジャンプしてきました。CTRL-T、
+CTRL-O、g<RightMouse>、<C-RightMouse> のどれかで元の場所に戻れます。
+
+Note: タグは | で囲まれていますが、その文字は、カラー表示が有効になっている場
+合は表示されません。読みやすさのためです。
+
+CTRL-] はどの単語の上でも使えます。| で囲まれていない単語でも大丈夫です。選択
+された単語がヘルプから検索されます。特にシングルクオートで囲まれたオプション名
+(例: 'compatible')。
+
+------------------------------------------------------------------------------
+ vim:tw=78:fo=tcq2:isk=!-~,^*,^\|,^\":ts=8:ft=help:norl:

@@ -1,0 +1,99 @@
+*workshop.txt*  For Vim バージョン 7.3.  Last change: 2010 Jul 20
+
+
+		VIM リファレンスマニュアル    by Gordon Prieur
+
+
+Sun Visual WorkShop との連携機能		*workshop* *workshop-support*
+
+1. 機能紹介						|workshop-intro|
+2. コマンド						|workshop-commands|
+3. WorkShop用vim/gvimのコンパイル			|workshop-compiling|
+4. Configuring gvim for a WorkShop release tree		|workshop-configure|
+5. 最新のXPMライブラリの取得方法			|workshop-xpm|
+
+{Vi にはこれらの機能はない}
+{|+sun_workshop|機能を付けてコンパイルしたときのみ利用可能}
+
+==============================================================================
+1. 機能紹介						*workshop-intro*
+
+Sun Visual WorkShopではデバッグに使用するエディタを"Editor of Choice" (訳注:エ
+ディタの選択)によってユーザの好みのものに変更できる。バージョン6.0のリリースに
+あたりgvimはこれに対応した。WorkShopのデバッグセッションにはデバッグウィンドウ
+とエディタウィンドウが表示される(同じように他のウィンドウが表示される可能性も
+ある)。ウィンドウを切換える必要は最低限で良く、ユーザはエディタウィンドウから
+多くのデバッグ操作を行なうことができる。
+
+Sun Visual WorkShop 6 (Forte Developer6とも呼ばれる)に付属するVimのバージョン
+は5.3である。このリリース(訳注:Vim 6)の機能はVisual WorkShopに付属するvim/gvim
+よりもかなり頼りになる。vimをエディタとして選択しているVWS(訳注:Visual
+WorkShopの略)のユーザは、(訳注: Vim 6の)ソースをコンパイルしWorkShopのリリース
+ツリーへインストールするべきだ。
+
+==============================================================================
+2. コマンド						*workshop-commands*
+
+						*:ws* *:wsverb*
+:ws[verb] {verb}		{verb}を命令実行エンジンに渡す
+
+WorkShop関数に{verb}を渡し、関数は幾つかの引数を集めて{verb}とデータをIPC接続
+を通じてWorkShopへ送る。
+
+==============================================================================
+3. WorkShop用vim/gvimのコンパイル			*workshop-compiling*
+
+コンパイル時にFEAT_SUN_WORKSHOPを指定すると、Visual WorkShopに対応したVimを構
+築するのに必要なコンパイルフラグが全て有効化される。VWSのリリースに含まれるSun
+のコンパイラを使って、VWSに必要な機能が構築されテストされる。GNUのコンパイラを
+使っている場合は構築もテストもされない。これはgccでは決して構築し実行すること
+ができないのではなく、単に保証ができないという意味である。
+
+==============================================================================
+4. Configuring gvim for a WorkShop release tree		*workshop-configure*
+
+VimをSun Visual WorkShop 6と供に使えるようにするためには、幾つかの仮定をしなけ
+ればならない。
+
+    o gccではなくVWSに付属のコンパイラを使わなければならない。gccでは構築もテ
+      ストもしていないので正しく構築できるかは保証できない。
+
+    o XPMライブラリを自分で用意しなければならない。最新のXPMの入手方法の詳細は
+      下記の|workshop-xpm|を参照すること。
+
+    o ディレクトリsrc/の中のMakefileを編集し、Sun Visual WorkShopのための何行
+      かのコメントを解除する。文字列FEAT_SUN_WORKSHOPを検索すれば簡単に見つけ
+      ることができる。
+
+    o GUIにはMotifを使用することを提案する。そうすればgvimの外見と感触がSun
+      Visual WorkShopの他の部分と同じようなものになる。
+
+下のコマンドはSun Visual WorkShopに対応したvimを構築するよう構成したい時に使用
+できる: >
+
+    $ CC=cc configure --enable-workshop --enable-gui=motif \
+	-prefix=<VWS-install-dir>/contrib/contrib6/<vim-version>
+<
+<VWS-install-dir>にはSun Visual WorkShopをインストールしたベースディレクトリを
+指定する。デフォルトでは/opt/SUNWsproである。通常Vimをインストールするには管理
+者権限が必要になる。<VWS-install-dir>/bin/gvimが新しくインストールしたgvimを指
+すようにsymlinkを変更する必要もある。<vim-version>にはバージョンを示す文字列を
+指定する。著者は"vim"にversion.hの中のVIM_VERSION_SHORTと同じ物を付加して使っ
+ている。
+
+==============================================================================
+5. 最新のXPMライブラリの取得方法			*workshop-xpm*
+
+XPMライブラリはVimで(MotifかAthenaを使って)画像を表示するために必要とされる。
+それ無しではツールバーと目印が利用できなくなる。
+
+XPMライブラリは French National Institute for Research in Computer Science and
+Control(訳注:フランス国立コンピュータ科学/制御研究所---通称INRIA) の Arnaud Le
+Hors によって提供されている。http://cgit.freedesktop.org/xorg/lib/libXpm より
+ダウンロードできる。これを書いている時点での最新版はxpm-3.4k-solaris.tgzでgzip
+されたtarファイルである。ディレクトリ /usr/local/xpmを作成してそこにファイルを
+伸長展開したならば、Makefile内のコメントアウトされた行を内容は変更せずにコメン
+トを解除するだけで使うことができる。もしもxpmを他のディレクトリに置いたならば
+src/Makefile内のXPM_DIRを変更する必要がある。
+
+ vim:tw=78:ts=8:ft=help:norl:
