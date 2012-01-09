@@ -171,7 +171,7 @@ static NSMutableArray *leafNode = nil;
       // It's a swap file, ignore it.
       return YES;
     }
-  } else {
+  } else if (!includesHiddenFiles) {
     NSString *eval = [NSString stringWithFormat:@"empty(expand(fnameescape('%@')))", filename];
     NSString *result = [vim evaluateVimExpression:eval];
     return [result isEqualToString:@"1"];
