@@ -6,6 +6,9 @@
 # 
 # Uses https://github.com/andreyvit/yoursway-create-dmg.
 #
+# Thanks to Drew Yeaton for awesome MacVim logo (used in background.png)
+# http://dribbble.com/shots/337065-MacVim-Icon-Updated
+#
 
 # Directory with source files (MacVim.app, Readme.txt, mvim)
 SOURCE="../build/Release/"
