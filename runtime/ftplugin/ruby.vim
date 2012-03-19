@@ -1,17 +1,11 @@
 " Vim filetype plugin
 " Language:		Ruby
-" Maintainer:		Gavin Sinclair <gsinclair at gmail.com>
-" Last Change:		2010 Mar 15
-" URL:			http://vim-ruby.rubyforge.org
+" Maintainer:		Tim Pope <vimNOSPAM@tpope.org>
+" URL:			https://github.com/vim-ruby/vim-ruby
 " Anon CVS:		See above site
 " Release Coordinator:  Doug Kearns <dougkearns@gmail.com>
 " ----------------------------------------------------------------------------
-"
-" Original matchit support thanks to Ned Konz.  See his ftplugin/ruby.vim at
-"   http://bike-nomad.com/vim/ruby.vim.
-" ----------------------------------------------------------------------------
 
-" Only do this when not done yet for this buffer
 if (exists("b:did_ftplugin"))
   finish
 endif
@@ -49,7 +43,7 @@ endif
 
 setlocal formatoptions-=t formatoptions+=croql
 
-setlocal include=^\\s*\\<\\(load\\\|\w*require\\)\\>
+setlocal include=^\\s*\\<\\(load\\>\\\|require\\>\\\|autoload\\s*:\\=[\"']\\=\\h\\w*[\"']\\=,\\)
 setlocal includeexpr=substitute(substitute(v:fname,'::','/','g'),'$','.rb','')
 setlocal suffixesadd=.rb
 
@@ -71,39 +65,50 @@ setlocal commentstring=#\ %s
 
 if !exists("s:ruby_path")
   if exists("g:ruby_path")
-    let s:ruby_path = g:ruby_path
-  elseif has("ruby") && has("win32")
-    ruby VIM::command( 'let s:ruby_path = "%s"' % ($: + begin; require %q{rubygems}; Gem.all_load_paths.sort.uniq; rescue LoadError; []; end).join(%q{,}) )
-    let s:ruby_path = '.,' . substitute(s:ruby_path, '\%(^\|,\)\.\%(,\|$\)', ',,', '')
-  elseif executable("ruby")
-    let s:code = "print ($: + begin; require %q{rubygems}; Gem.all_load_paths.sort.uniq; rescue LoadError; []; end).join(%q{,})"
-    if &shellxquote == "'"
-      let s:ruby_path = system('ruby -e "' . s:code . '"')
-    else
-      let s:ruby_path = system("ruby -e '" . s:code . "'")
-    endif
-    let s:ruby_path = '.,' . substitute(s:ruby_path, '\%(^\|,\)\.\%(,\|$\)', ',,', '')
+    let s:ruby_path = type(g:ruby_path) == type([]) ? join(g:ruby_path,',') : g:ruby_path
   else
-    " If we can't call ruby to get its path, just default to using the
-    " current directory and the directory of the current file.
-    let s:ruby_path = ".,,"
+    if has("ruby") && has("win32")
+      ruby ::VIM::command( 'let s:ruby_paths = split("%s",",")' % $:.join(%q{,}) )
+    elseif executable('ruby')
+      let s:code = "print $:.join(%q{,})"
+      if executable('env') && $PATH !~# '\s'
+        let prefix = 'env PATH='.$PATH.' '
+      else
+        let prefix = ''
+      endif
+      if &shellxquote == "'"
+        let s:ruby_paths = split(system(prefix.'ruby -e "' . s:code . '"'),',')
+      else
+        let s:ruby_paths = split(system(prefix."ruby -e '" . s:code . "'"),',')
+      endif
+    else
+      let s:ruby_paths = split($RUBYLIB,':')
+    endif
+    let s:ruby_path = substitute(join(s:ruby_paths,","), '\%(^\|,\)\.\%(,\|$\)', ',,', '')
+    if &g:path !~# '\v^\.%(,/%(usr|emx)/include)=,,$'
+      let s:ruby_path = substitute(&g:path,',,$',',','') . ',' . s:ruby_path
+    endif
   endif
 endif
 
-let &l:path = s:ruby_path
+if stridx(&l:path, s:ruby_path) == -1
+  let &l:path = s:ruby_path
+endif
+if exists('s:ruby_paths') && stridx(&l:tags, join(map(copy(s:ruby_paths),'v:val."/tags"'),',')) == -1
+  let &l:tags .= ',' . join(map(copy(s:ruby_paths),'v:val."/tags"'),',')
+endif
 
 if has("gui_win32") && !exists("b:browsefilter")
   let b:browsefilter = "Ruby Source Files (*.rb)\t*.rb\n" .
                      \ "All Files (*.*)\t*.*\n"
 endif
 
-let b:undo_ftplugin = "setl fo< inc< inex< sua< def< com< cms< path< kp<"
+let b:undo_ftplugin = "setl fo< inc< inex< sua< def< com< cms< path< tags< kp<"
       \."| unlet! b:browsefilter b:match_ignorecase b:match_words b:match_skip"
       \."| if exists('&ofu') && has('ruby') | setl ofu< | endif"
       \."| if has('balloon_eval') && exists('+bexpr') | setl bexpr< | endif"
 
 if !exists("g:no_plugin_maps") && !exists("g:no_ruby_maps")
-
   nnoremap <silent> <buffer> [m :<C-U>call <SID>searchsyn('\<def\>','rubyDefine','b','n')<CR>
   nnoremap <silent> <buffer> ]m :<C-U>call <SID>searchsyn('\<def\>','rubyDefine','','n')<CR>
   nnoremap <silent> <buffer> [M :<C-U>call <SID>searchsyn('\<end\>','rubyDefine','b','n')<CR>
@@ -125,6 +130,21 @@ if !exists("g:no_plugin_maps") && !exists("g:no_ruby_maps")
   let b:undo_ftplugin = b:undo_ftplugin
         \."| sil! exe 'unmap <buffer> [[' | sil! exe 'unmap <buffer> ]]' | sil! exe 'unmap <buffer> []' | sil! exe 'unmap <buffer> ]['"
         \."| sil! exe 'unmap <buffer> [m' | sil! exe 'unmap <buffer> ]m' | sil! exe 'unmap <buffer> [M' | sil! exe 'unmap <buffer> ]M'"
+        \."! sil! exe 'ounmap <buffer> im'| sil! exe 'ounmap <buffer> am'| sil! exe 'ounmap <buffer> ic'| sil! exe 'ounmap <buffer> ac'"
+
+  if maparg('im','n') == ''
+    onoremap <silent> <buffer> im :<C-U>call <SID>wrap_i('[m',']M')<CR>
+    onoremap <silent> <buffer> am :<C-U>call <SID>wrap_a('[m',']M')<CR>
+    let b:undo_ftplugin = b:undo_ftplugin
+          \."! sil! exe 'ounmap <buffer> im' | sil! exe 'ounmap <buffer> am'"
+  endif
+
+  if maparg('iM','n') == ''
+    onoremap <silent> <buffer> iM :<C-U>call <SID>wrap_i('[[','][')<CR>
+    onoremap <silent> <buffer> aM :<C-U>call <SID>wrap_a('[[','][')<CR>
+    let b:undo_ftplugin = b:undo_ftplugin
+          \."| sil! exe 'ounmap <buffer> iM' | sil! exe 'ounmap <buffer> aM'"
+  endif
 
   if maparg("\<C-]>",'n') == ''
     nnoremap <silent> <buffer> <C-]>       :<C-U>exe  v:count1."tag <C-R>=RubyCursorIdentifier()<CR>"<CR>
@@ -141,6 +161,17 @@ if !exists("g:no_plugin_maps") && !exists("g:no_ruby_maps")
           \."| sil! exe 'nunmap <buffer> <C-W>]'| sil! exe 'nunmap <buffer> <C-W><C-]>'"
           \."| sil! exe 'nunmap <buffer> <C-W>g<C-]>'| sil! exe 'nunmap <buffer> <C-W>g]'"
           \."| sil! exe 'nunmap <buffer> <C-W>}'| sil! exe 'nunmap <buffer> <C-W>g}'"
+  endif
+
+  if maparg("gf",'n') == ''
+    " By using findfile() rather than gf's normal behavior, we prevent
+    " erroneously editing a directory.
+    nnoremap <silent> <buffer> gf         :<C-U>exe <SID>gf(v:count1,"gf",'edit')<CR>
+    nnoremap <silent> <buffer> <C-W>f     :<C-U>exe <SID>gf(v:count1,"\<Lt>C-W>f",'split')<CR>
+    nnoremap <silent> <buffer> <C-W><C-F> :<C-U>exe <SID>gf(v:count1,"\<Lt>C-W>\<Lt>C-F>",'split')<CR>
+    nnoremap <silent> <buffer> <C-W>gf    :<C-U>exe <SID>gf(v:count1,"\<Lt>C-W>gf",'tabedit')<CR>
+    let b:undo_ftplugin = b:undo_ftplugin
+          \."| sil! exe 'nunmap <buffer> gf' | sil! exe 'nunmap <buffer> <C-W>f' | sil! exe 'nunmap <buffer> <C-W><C-F>' | sil! exe 'nunmap <buffer> <C-W>gf'"
   endif
 endif
 
@@ -191,7 +222,7 @@ function! RubyBalloonexpr()
     if str !~ '^\w'
       return ''
     endif
-    silent! let res = substitute(system("ri -f simple -T \"".str.'"'),'\n$','','')
+    silent! let res = substitute(system("ri -f rdoc -T \"".str.'"'),'\n$','','')
     if res =~ '^Nothing known about' || res =~ '^Bad argument:' || res =~ '^More than one method'
       return ''
     endif
@@ -227,6 +258,34 @@ function! s:synname()
     return synIDattr(synID(line('.'),col('.'),0),'name')
 endfunction
 
+function! s:wrap_i(back,forward)
+  execute 'norm k'.a:forward
+  let line = line('.')
+  execute 'norm '.a:back
+  if line('.') == line - 1
+    return s:wrap_a(a:back,a:forward)
+  endif
+  execute 'norm jV'.a:forward.'k'
+endfunction
+
+function! s:wrap_a(back,forward)
+  execute 'norm '.a:forward
+  if line('.') < line('$') && getline(line('.')+1) ==# ''
+    let after = 1
+  endif
+  execute 'norm '.a:back
+  while getline(line('.')-1) =~# '^\s*#' && line('.')
+    -
+  endwhile
+  if exists('after')
+    execute 'norm V'.a:forward.'j'
+  elseif line('.') > 1 && getline(line('.')-1) =~# '^\s*$'
+    execute 'norm kV'.a:forward
+  else
+    execute 'norm V'.a:forward
+  endif
+endfunction
+
 function! RubyCursorIdentifier()
   let asciicode    = '\%(\w\|[]})\"'."'".']\)\@<!\%(?\%(\\M-\\C-\|\\C-\\M-\|\\M-\\c\|\\c\\M-\|\\c\|\\C-\|\\M-\)\=\%(\\\o\{1,3}\|\\x\x\{1,2}\|\\\=\S\)\)'
   let number       = '\%(\%(\w\|[]})\"'."'".']\s*\)\@<!-\)\=\%(\<[[:digit:]_]\+\%(\.[[:digit:]_]\+\)\=\%([Ee][[:digit:]_]\+\)\=\>\|\<0[xXbBoOdD][[:xdigit:]_]\+\>\)\|'.asciicode
@@ -239,6 +298,27 @@ function! RubyCursorIdentifier()
   let raw          = matchstr(getline('.')[col-1 : ],pattern)
   let stripped     = substitute(substitute(raw,'\s\+=$','=',''),'^\s*:\=','','')
   return stripped == '' ? expand("<cword>") : stripped
+endfunction
+
+function! s:gf(count,map,edit) abort
+  if getline('.') =~# '^\s*require_relative\s*\(["'']\).*\1\s*$'
+    let target = matchstr(getline('.'),'\(["'']\)\zs.\{-\}\ze\1')
+    return a:edit.' %:h/'.target.'.rb'
+  elseif getline('.') =~# '^\s*\%(require[( ]\|load[( ]\|autoload[( ]:\w\+,\)\s*\s*\%(::\)\=File\.expand_path(\(["'']\)\.\./.*\1,\s*__FILE__)\s*$'
+    let target = matchstr(getline('.'),'\(["'']\)\.\./\zs.\{-\}\ze\1')
+    return a:edit.' %:h/'.target.'.rb'
+  elseif getline('.') =~# '^\s*\%(require \|load \|autoload :\w\+,\)\s*\(["'']\).*\1\s*$'
+    let target = matchstr(getline('.'),'\(["'']\)\zs.\{-\}\ze\1')
+  else
+    let target = expand('<cfile>')
+  endif
+  let g:target = target
+  let found = findfile(target, &path, a:count)
+  if found ==# ''
+    return 'norm! '.a:count.a:map
+  else
+    return a:edit.' '.fnameescape(found)
+  endif
 endfunction
 
 "
