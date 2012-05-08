@@ -1,14 +1,12 @@
 " Menu Translations:	Slovak
 " Translated By:	Martin Lacko <lacko@host.sk>
-" Last Change:		2012 May 01
+" Last Change:		2006 Jun 17
 
 " Quit when menu translations have already been done.
 if exists("did_menu_trans")
   finish
 endif
 let did_menu_trans = 1
-let s:keepcpo= &cpo
-set cpo&vim
 
 scriptencoding cp1250
 
@@ -232,6 +230,3 @@ menutrans on/off\ for\ &This\ file	Zapnú/vypnú\ pre\ &tento\ súbor
 menutrans Co&lor\ test		Test\ &farieb
 menutrans &Highlight\ test	&Test\ zvırazòovania
 menutrans &Convert\ to\ HTML	&Previes\ do\ HTML
-
-let &cpo = s:keepcpo
-unlet s:keepcpo

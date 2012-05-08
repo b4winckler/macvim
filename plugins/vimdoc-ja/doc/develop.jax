@@ -1,4 +1,4 @@
-*develop.txt*   For Vim バージョン 7.3.  Last change: 2008 Dec 17
+*develop.txt*   For Vim バージョン 7.3.  Last change: 2012 Jan 10
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -236,6 +236,17 @@ index		グローバル宣言を覆い隠す
 time		グローバル宣言を覆い隠す
 new		C++の予約語
 try		Borland C++は、これを変数として使うことを好まない
+
+clear		Mac curses.h
+echo		Mac curses.h
+instr		Mac curses.h
+meta		Mac curses.h
+newwin		Mac curses.h
+nl		Mac curses.h
+overwrite	Mac curses.h
+refresh		Mac curses.h
+scroll		Mac curses.h
+typeahead	Mac curses.h
 
 basename()	GNU 文字列関数(GNU string function)
 dirname()	GNU 文字列関数(GNU string function)

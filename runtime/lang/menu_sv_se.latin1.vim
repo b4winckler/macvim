@@ -1,14 +1,12 @@
 " Menu Translations:    Swedish
 " Maintainer:		Johan Svedberg <johan@svedberg.com>
-" Last Change:		2012 May 01
+" Last Change:		2006 Apr 13
 
 " Quit when menu translations have already been done.
 if exists("did_menu_trans")
   finish
 endif
 let did_menu_trans = 1
-let s:keepcpo= &cpo
-set cpo&vim
 
 " The translations below are in latin1, but they work for cp1252 and
 " iso-8859-15 without conversion as well.
@@ -250,6 +248,3 @@ let g:menutrans_path_dialog = "Skriv in sökväg för filer.\nSeparera katalognamn 
 let g:menutrans_tags_dialog = "Skriv in namn på taggfiler.\nSeparera namn med komma."
 let g:menutrans_textwidth_dialog = "Välj ny textbredd (0 för att förhindra formatering): "
 let g:menutrans_fileformat_dialog = "Välj filformat som filen ska sparas med"
-
-let &cpo = s:keepcpo
-unlet s:keepcpo

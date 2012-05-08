@@ -1,4 +1,4 @@
-*quickref.txt*  For Vim バージョン 7.3.  Last change: 2011 Jun 12
+*quickref.txt*  For Vim バージョン 7.3.  Last change: 2012 Feb 22
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -16,13 +16,13 @@
 |Q_vm|	移動: 雑多			|Q_qf|	Quickfixコマンド
 |Q_ta|	移動: タグの利用		|Q_vc|	その他の雑多なコマンド
 |Q_sc|	スクロール			|Q_ce|	Exモード: コマンド行編集
-|Q_in|	挿入: 文字列の挿入 		|Q_ra|	Exモード: 範囲指定
+|Q_in|	挿入: 文字列の挿入		|Q_ra|	Exモード: 範囲指定
 |Q_ai|	挿入: キー			|Q_ex|	Exモード: 特殊文字
-|Q_ss|	挿入: 特殊キー 			|Q_st|	Vim の起動方法
+|Q_ss|	挿入: 特殊キー			|Q_st|	Vim の起動方法
 |Q_di|	挿入: 合字(digraph)		|Q_ed|	ファイル編集
-|Q_si|	挿入: 特殊な挿入 		|Q_fl|	引数リストの使い方
-|Q_de|	変更: 文字の削除 		|Q_wq|	書き出しと終了
-|Q_cm|	変更: コピーと移動  		|Q_ac|	自動コマンド
+|Q_si|	挿入: 特殊な挿入		|Q_fl|	引数リストの使い方
+|Q_de|	変更: 文字の削除		|Q_wq|	書き出しと終了
+|Q_cm|	変更: コピーと移動		|Q_ac|	自動コマンド
 |Q_ch|	変更: 文字列の変更		|Q_wi|	複数ウィンドウのコマンド
 |Q_co|	変更: 複雑な変更		|Q_bu|	バッファ一覧コマンド
 |Q_vi|	ビジュアルモード		|Q_sy|	シンタックスハイライト
@@ -133,9 +133,9 @@
 			    単語の末尾に一致	\>	\>
 		    指定の範囲の１文字に一致	[a-z]	\[a-z]
 		指定の範囲にない１文字に一致	[^a-z]	\[^a-z]
-		  	  識別子の文字に一致	\i	\i
+			  識別子の文字に一致	\i	\i
 		上の条件から数字を除いたもの	\I	\I
-		 	キーワード文字に一致	\k	\k
+			キーワード文字に一致	\k	\k
 		上の条件から数字を除いたもの	\K	\K
 	      ファイル名(で使える)文字に一致	\f	\f
 		上の条件から数字を除いたもの	\F	\F
@@ -149,10 +149,10 @@
 				  <CR>に一致	\r	\r
 				  <BS>に一致	\b	\b
 
-	    直前に指定したatomと0回以上一致 	*	\*
-	    直前に指定したatomと1回以上一致 	\+	\+
-      直前に指定した文字と0回もしくは1回一致 	\=	\=
-	    直前に指定した文字と2回〜5回一致 	\{2,5}  \{2,5}
+	    直前に指定したatomと0回以上一致	*	\*
+	    直前に指定したatomと1回以上一致	\+	\+
+      直前に指定した文字と0回もしくは1回一致	\=	\=
+	    直前に指定した文字と2回〜5回一致	\{2,5}  \{2,5}
 		       2種類の正規表現を列記	\|	\|
 	  パターンをグループ化してatomとする	\(\)	\(\)
 
@@ -866,6 +866,7 @@ smz			   号のこと。英語圏では昔から使われている。
 'shellslash'	  'ssl'     シェルで使うファイルのパス区切りに使う
 'shelltemp'	  'stmp'    シェルコマンドに一時ファイルを使うかどうか
 'shelltype'	  'st'      Amiga: シェルの使い方に影響する
+'shellxescape'	  'sxe'     'shellxquote' が '(' のときにエスケープする文字
 'shellxquote'	  'sxq'     'shellquote'に似ているがリダイレクションを含む
 'shiftround'	  'sr'      インデントを'shiftwidth'の倍数に丸める
 'shiftwidth'	  'sw'      (自動的な)インデントにつかうシフト幅
@@ -1061,7 +1062,7 @@ smz			   号のこと。英語圏では昔から使われている。
 
 文脈依存の補完機能
 
-|c_wildchar|	'wildchar'  	(デフォルト: <Tab>)
+|c_wildchar|	'wildchar'	(デフォルト: <Tab>)
 				カーソルの直前のパターンに合せた補完を実施
 				合致するものが複数ある場合は、ビープを鳴らし
 				最初に合致したものを表示。さらに'wildchar'を
@@ -1253,7 +1254,7 @@ smz			   号のこと。英語圏では昔から使われている。
 
 |viminfo-file|	起動時にレジスタ、マーク、ヒストリを読み込み、終了時に保存
 
-|:rviminfo|	:rv[iminfo] [file] 	viminfoファイル [file] から情報を読む
+|:rviminfo|	:rv[iminfo] [file]	viminfoファイル [file] から情報を読む
 |:rviminfo|	:rv[iminfo]! [file]	同上。既存情報を破棄して読む
 |:wviminfo|	:wv[iminfo] [file]	viminfoファイル [file] に情報を追記
 |:wviminfo|	:wv[iminfo]! [file]	viminfoファイル [file] に情報を上書き

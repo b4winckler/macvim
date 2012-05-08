@@ -15,11 +15,14 @@
 "    Help Page: compiler-decada
 "------------------------------------------------------------------------------
 
-if (exists("current_compiler") && current_compiler == "decada") || version < 700
-   finish
-endif
 let s:keepcpo= &cpo
 set cpo&vim
+
+if (exists("current_compiler")	    &&
+   \ current_compiler == "decada")  ||
+   \ version < 700
+   finish
+endif
 
 let current_compiler = "decada"
 

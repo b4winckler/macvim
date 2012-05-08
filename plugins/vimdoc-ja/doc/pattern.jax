@@ -1,4 +1,4 @@
-*pattern.txt*   For Vim バージョン 7.3.  Last change: 2011 May 25
+*pattern.txt*   For Vim バージョン 7.3.  Last change: 2011 Nov 26
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -21,7 +21,7 @@
 10. マッチしたテキストを強調する|match-highlight|
 
 ==============================================================================
-1. 検索コマンド					*search-commands* *E486*
+1. 検索コマンド					*search-commands*
 
 							*/*
 /{pattern}[/]<CR>	[count] 番目にマッチする {pattern} を前方検索します。
@@ -148,6 +148,11 @@ CTRL-C			現在の(検索)コマンドを中止します。MS-DOSではCTRL-Brea
 
 'hlsearch' オプションがオンの場合、最後に使った検索パターンは強調表示されます。
 |:nohlsearch| コマンドを使うと、一時的に強調表示をやめさせることができます。
+
+マッチが見つからなかった場合はエラーが表示されます: *E486* Pattern not found
+Note: |:global| コマンドではこの動作はノーマルメッセージと同じです (Vi 互換の
+ため)。|:s| コマンドでは "e" フラグを指定することでエラーメッセージを抑制でき
+ます |:s_flags|。
 
 					*search-offset* *{offset}*
 上記の検索コマンドは指定されたパターンを検索します。"/" と "?" ではさらにオフ

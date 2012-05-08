@@ -1,4 +1,4 @@
-*eval.txt*	For Vim バージョン 7.3.  Last change: 2011 Jul 13
+*eval.txt*	For Vim バージョン 7.3.  Last change: 2012 Mar 07
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -39,7 +39,7 @@ Vimスクリプトの利用についてはユーザマニュアルの41章|usr_4
 							*E712*
 変数には6種類の型がある:
 
-数値		32ビット符合有整数  |expr-number| *Number*
+数値		32ビットまたは64ビットの符合有整数  |expr-number| *Number*
 		例: -123 0x10 0177
 
 浮動小数点数	浮動小数点数  |floating-point-format| *Float*
@@ -768,11 +768,12 @@ expr6 .	 expr6 ..	文字列の連結			*expr-.*
 リストに対しては"+"のみ可能で、expr6は両方ともリストでなければならない。結果は
 2つのリストを連結した新しいリスト。
 
-expr7 *	 expr7 ..	掛け算				*expr-star*
-expr7 /	 expr7 ..	割り算				*expr-/*
-expr7 %	 expr7 ..	剰余(割った余り)		*expr-%*
+expr7 *	 expr7 ..	掛け算					*expr-star*
+expr7 /	 expr7 ..	割り算					*expr-/*
+expr7 %	 expr7 ..	剰余(割った余り)			*expr-%*
 
 "."を除く全ての演算子は自動的に文字列を数値に変換する。
+ビット演算については |and()|, |or()|, |xor()| を参照。
 
 "+"と"."の違いに注意:
 	"123" + "456" = 579
@@ -911,7 +912,8 @@ expr8が|Funcref|型の変数のとき、その参照する関数を呼び出す
 							*expr9*
 数
 ------
-number			数定数			*expr-number*
+number			数定数				*expr-number*
+						*hex-number* *octal-number*
 
 10進数、16進数(0xか0Xで始まる)、もしくは8進数(0で始まる)の数定数。
 
@@ -957,8 +959,8 @@ number			数定数			*expr-number*
 浮動小数点数の精度と範囲は、Vim とリンクしたライブラリの "double" の意味によ
 る。実行時にこれを変更することはできない。
 
-浮動小数点数 |Float| は printf("%g, f) とするのと同様に、小数点以下6桁まで表示
-される。表示する桁数は |printf()| を使えば変えられる。例: >
+浮動小数点数 |Float| は printf("%g", f) とするのと同様に、小数点以下6桁まで表
+示される。表示する桁数は |printf()| を使えば変えられる。例: >
 	:echo printf('%.15e', atan(1))
 <	7.853981633974483e-01
 
@@ -1280,7 +1282,7 @@ v:cmdbang	v:cmdargと同じく読み書きコマンドを実行したとき設�
 		となる。Note オートコマンドの中でのみ利用可能なことに注意。ユー
 		ザ定義コマンドでは|<bang>|を使えば同じことができる。
 
- 					*v:count* *count-variable*
+					*v:count* *count-variable*
 v:count		最後に実行されたノーマルモードコマンドに渡されたコマンドの実行
 		回数を返す。読出し専用。使用例: >
 	:map _x :<C-U>echo "the count is " . count<CR>
@@ -1525,7 +1527,7 @@ v:searchforward			*v:searchforward* *searchforward-variable*
 		|function-search-undo|。
 		読み書き両用。
 
-			    		*v:shell_error* *shell_error-variable*
+					*v:shell_error* *shell_error-variable*
 v:shell_error	最後に実行したシェルコマンドの結果。シェルコマンドの実行時にな
 		にかエラーがあったならば、非零の値を取る。問題がなければ零にな
 		る。これはシェルがエラーコードをVimに通知する時のみ働く。コマ
@@ -1635,6 +1637,7 @@ v:windowid	X11 ベースの GUI を使っているとき、もしくは端末の
 abs( {expr})			浮動小数点数または数値	{expr}の絶対値
 acos( {expr})			浮動小数点数	{expr}のアークコサイン
 add( {list}, {item})		リスト	{item}をリスト{list}に追加する
+and( {expr}, {expr})		数値  ビット論理積
 append( {lnum}, {string})	数値	{string}を{lnum}行目に付け加える
 append( {lnum}, {list})		数値	行{list}を{lnum}行目に付け加える
 argc()				数値	引数内のファイルの数
@@ -1693,10 +1696,11 @@ exists( {var})			数値	変数{var}が存在したらTRUE
 extend( {expr1}, {expr2} [, {expr3}])
 				リスト/辞書 {expr1}に{expr2}の要素を挿入
 exp( {expr})			浮動小数点数	{expr}の指数
-expand( {expr} [, {flag}])	文字列	{expr}内の特別なキーワードを展開
+expand( {expr} [, {nosuf} [, {list}]])
+				任意	{expr}内の特別なキーワードを展開
 feedkeys( {string} [, {mode}])	数値	先行入力バッファにキーシーケンスを追加
 filereadable( {file})		数値	{file}が読みこみ可能ならTRUE
-filewritable( {file})		Number	{file}が書き込み可能ならTRUE
+filewritable( {file})		数値	{file}が書き込み可能ならTRUE
 filter( {expr}, {string})	リスト/辞書  {string}が0となる要素を{expr}から
 					とり除く
 finddir( {name}[, {path}[, {count}]])
@@ -1717,7 +1721,7 @@ foldtext( )			文字列	閉じた折り畳みに表示されている行
 foldtextresult( {lnum})		文字列	{lnum}で閉じている折り畳みのテキスト
 foreground( )			数値	Vimウィンドウを前面に移動する
 function( {name})		Funcref 関数{name}への参照を取得
-garbagecollect( [at_exit])	なし	メモリを解放する。循環参照を断ち切る
+garbagecollect( [{atexit}])	なし	メモリを解放する。循環参照を断ち切る
 get( {list}, {idx} [, {def}])	任意	{list}や{def}から要素{idx}を取得
 get( {dict}, {key} [, {def}])	任意	{dict}や{def}から要素{key}を取得
 getbufline( {expr}, {lnum} [, {end}])
@@ -1747,7 +1751,8 @@ gettabwinvar( {tabnr}, {winnr}, {name})
 getwinposx()			数値	GUI vim windowのX座標
 getwinposy()			数値	GUI vim windowのY座標
 getwinvar( {nr}, {varname})	文字列	ウィンドウ{nr}の変数{varname}
-glob( {expr} [, {flag}])	文字列	{expr}内のfile wildcardを展開
+glob( {expr} [, {nosuf} [, {list}]])
+				任意	{expr}内のfile wildcardを展開
 globpath( {path}, {expr} [, {flag}])
 				文字列	{path}の全ディレクトリに対し
 					glob({expr})を行う
@@ -1776,6 +1781,7 @@ inputrestore()			数値	先行入力を復元する
 inputsave()			数値	先行入力を保存し、クリアする
 inputsecret( {prompt} [, {text}]) 文字列  input()だがテキストを隠す
 insert( {list}, {item} [, {idx}]) リスト  {list}に要素{item}を挿入 [{idx}の前]
+invert( {expr})			数値  ビット反転
 isdirectory( {directory})	数値	{directory}がディレクトリならばTRUE
 islocked( {expr})		数値	{expr}がロックされているならTRUE
 items( {dict})			リスト	{dict}のキーと値のペアを取得
@@ -1795,7 +1801,8 @@ map( {expr}, {string})		リスト/辞書  {expr}の各要素を{expr}に変え�
 matchadd( {group}, {pattern}[, {priority}[, {id}]])
 				数値	{pattern} を {group} で強調表示する
 maparg( {name}[, {mode} [, {abbr} [, {dict}]]])
-				文字列	モード{mode}でのマッピング{name}の値
+				文字列/辞書
+					モード{mode}でのマッピング{name}の値
 mapcheck( {name}[, {mode} [, {abbr}]])
 				文字列	{name}にマッチするマッピングを確認
 match( {expr}, {pat}[, {start}[, {count}]])
@@ -1816,6 +1823,7 @@ mode( [expr])			文字列	現在の編集モード
 mzeval( {expr})			任意	|MzScheme| の式を評価する
 nextnonblank( {lnum})		数値	{lnum}行目以降で空行でない行の行番号
 nr2char( {expr})		文字列	ASCIIコード{expr}で示されるキャラクタ
+or( {expr}, {expr})		数値  ビット論理和
 pathshorten( {expr})		文字列	path内の短縮したディレクトリ名
 pow( {x}, {y})			浮動小数点数	{x} の {y} 乗
 prevnonblank( {lnum})		数値	{lnum}行目以前の空行でない行の行番号
@@ -1873,7 +1881,7 @@ settabwinvar( {tabnr}, {winnr}, {varname}, {val})  タブページ{tabnr}内の�
 setwinvar( {nr}, {varname}, {val})	ウィンドウ{nr}の変数{varname}に{val}を
 					セット
 shellescape( {string} [, {special}])
-		    		文字列	{string}をシェルコマンド引数として使う
+				文字列	{string}をシェルコマンド引数として使う
 					ためにエスケープする。
 simplify( {filename})		文字列	ファイル名を可能なかぎり簡略化する
 sin( {expr})			浮動小数点数	{expr} の正弦(サイン)
@@ -1946,6 +1954,7 @@ winsaveview()			辞書	現在のウィンドウのビューを保存
 winwidth( {nr})			数値	ウィンドウ{nr}の幅を取得
 writefile( {list}, {fname} [, {binary}])
 				数値	行のリストをファイル{fname}に書き込む
+xor( {expr}, {expr})		数値  ビット排他的論理和
 
 
 abs({expr})							*abs()*
@@ -1984,6 +1993,13 @@ add({list}, {expr})					*add()*
 <		Note {expr}がリストのときは、1個の要素として追加される。リスト
 		を連結するには|extend()|を使う。
 		他の位置に要素を追加するには|insert()|を使う。
+
+
+and({expr}, {expr})					*and()*
+		二つの引数のビット論理積。引数は数値に変換される。リスト、辞
+		書、浮動小数点数を指定するとエラーになる。
+		例: >
+			:let flag = and(bits, 0x80)
 
 
 append({lnum}, {expr})					*append()*
@@ -2226,7 +2242,7 @@ char2nr({expr})
 			char2nr(" ")		returns 32
 			char2nr("ABC")		returns 65
 <		現在の'encoding'の値が適用される。"utf-8"のときの例: >
-			char2nr("á")	 	returns 225
+			char2nr("á")		returns 225
 			char2nr("á"[0])	returns 195
 <		合成文字は個別の文字として扱われる。
 		|nr2char()| はこの逆を行う。
@@ -2651,14 +2667,15 @@ exp({expr})						*exp()*
 		{|+float| 機能を有効にしてコンパイルしたときのみ有効}
 
 
-							*expand()*
-expand({expr} [, {flag}])
-		ワイルドカードと{expr}内の特殊なキーワードを展開する。戻り値は
-		文字列。 'wildignorecase' が適用される。
+expand({expr} [, {nosuf} [, {list}]])				*expand()*
+		ワイルドカードと{expr}内の特殊なキーワードを展開する。
+		'wildignorecase' が適用される。
 
-		複数の候補があった場合、それらは文字<NL>で区切られる。[注意:
-		バージョン5.0では空白文字が用いられ、スペースを含むファイル名
-		について問題を引き起こしていた]
+		{list} が指定されその値が非ゼロなら、結果はリストで返される。
+		そうでない場合は結果は文字列で返される。その場合、複数のマッチ
+		があるときはそれらは文字 <NL> で区切られる。[注意: バージョン
+		5.0 では空白文字が用いられ、スペースを含むファイル名について問
+		題を引き起こしていた]
 
 		展開が失敗した場合、結果は空文字列となる。また存在しないファイ
 		ル名というのは、結果の文字列には含まれない。
@@ -2707,11 +2724,11 @@ expand({expr} [, {flag}])
 		結果はカレントディレクトリに'/'が付加されたものになる。
 
 		'%'や'#'や'<'で始まらない{expr}は、コマンドラインのファイル名
-		と同じように展開される。{flag}引数に非ゼロを指定しない限り、
-		'suffixes'と'wildignore'が使用される。存在しないファイルの名前
-		も結果の文字列に含まれる。"**"を使うとディレクトリツリーを検索
-		できる。例えば、カレントディレクトリ以下にある全ての"README"を
-		見つけるには次のようにする: >
+		と同じように展開される。{nosuf}引数に非ゼロを指定しない限り、
+		'suffixes'と'wildignore'が使用される。
+		存在しないファイルの名前も結果の文字列に含まれる。"**"を使うと
+		ディレクトリツリーを検索できる。例えば、カレントディレクトリ以
+		下にある全ての"README"を見つけるには次のようにする: >
 			:echo expand("**/README")
 < 
 		expand()は、シェルの持っている変数や環境変数を展開することがで
@@ -2977,7 +2994,7 @@ function({name})					*function()* *E700*
 		関数でも組み込み関数でもよい。
 
 
-garbagecollect([at_exit])				*garbagecollect()*
+garbagecollect([{atexit}])				*garbagecollect()*
 		循環参照を持ち、使われていないリスト|List|と辞書|Dictionaries|
 		をクリーンアップする。これはメモリ不足に陥ったときや、
 		'updatetime'経過後ユーザのキー入力を待っているときに自動的に行
@@ -2985,7 +3002,7 @@ garbagecollect([at_exit])				*garbagecollect()*
 		循環参照を持たない要素は、使われなくなったとき必ず解放される。
 		長時間実行されるスクリプトの中で循環参照を持つ非常に大きなリス
 		トや辞書を削除したときに有用である。
-		省略可能な引数 "at_exit" に 1 を指定すると、Vim を終了するとき
+		省略可能な引数 {atexit} に 1 を指定すると、Vim を終了するとき
 		にもガベージコレクションが行われる。これはメモリリークを発見す
 		るのに役に立つ。
 
@@ -3052,18 +3069,20 @@ getchar([expr])						*getchar()*
 		ドして文字列にして返す。
 		特殊キーとは0x80(10進数で128)で始まるバイト列である。これは
 		文字列"\<Key>"と同じ値である(例: "\<Left>")。戻り値は文字列で
-		あり、修飾キー(shift, contro, alt)は含まれない。
+		あり、修飾キー(shift, control, alt)は含まれない。
 
 		{expr}が1のときは最初のバイトだけを返す。1バイト文字の場合、こ
 		れはその文字そのものを表す数値である。これを文字列に変換するに
 		はnr2char()を使う。
+
+		修飾キーを取得するには getcharmod() を使う。
 
 		ユーザがマウスをクリックしたときはマウスイベントを返す。クリッ
 		クした位置は|v:mouse_col|, |v:mouse_lnum|, |v:mouse_win|で得ら
 		れる。以下の例は、普通にマウスがクリックされたときと同じように
 		カーソルを移動させる。 >
 			let c = getchar()
-		  	if c == "\<LeftMouse>" && v:mouse_win > 0
+			if c == "\<LeftMouse>" && v:mouse_win > 0
 			  exe v:mouse_win . "wincmd w"
 			  exe v:mouse_lnum
 			  exe "normal " . v:mouse_col . "|"
@@ -3096,10 +3115,11 @@ getcharmod()						*getcharmod()*
 			2	shift
 			4	control
 			8	alt (meta)
-			16	マウスダブルクリック
-			32	マウストリプルクリック
-			64	マウスクアドラプルクリック
-			128	Macintoshのみ: command
+			16	meta (ALT と META が区別される場合)
+			32	マウスのダブルクリック
+			64	マウスのトリプルクリック
+			96	マウスのクアドラプルクリック (== 32 + 64)
+			128	command (Macintosh のみ)
 		文字自身に含まれていない修飾キーのみ取得できる。つまり、
 		Shift-aは修飾キーなしの"A"となる。
 
@@ -3326,17 +3346,24 @@ getwinvar({winnr}, {varname})				*getwinvar()*
 		例: >
 			:let list_is_on = getwinvar(2, '&list')
 			:echo "myvar = " . getwinvar(1, 'myvar')
-
-glob({expr} [, {flag}])					*glob()*
+<
+glob({expr} [, {nosuf} [, {list}]])				*glob()*
 		{expr}内のファイル名のワイルドカードを展開する。特殊文字につい
-		ては|wildcards|を参照。結果は文字列。
-		結果が複数存在する場合、各々が文字<NL>によって区切られる。
-		{flag} に非零を指定しない限り、'suffixes' と 'wildignore' が適
-		用される。つまり'wildignore' のパターンにマッチする名前はス
+		ては|wildcards|を参照。
+
+		{nosuf} に非零を指定しない限り、'suffixes' と 'wildignore' が
+		適用される。つまり'wildignore' のパターンにマッチする名前はス
 		キップされ、'suffixes' がマッチの順番に影響を与える。
 		'wildignorecase' は常に適用される。
-		展開が失敗した場合、結果は空文字列。結果には、存在しないファイ
-		ル名は含まれない。
+
+		{list} が指定されその値が非ゼロなら、マッチしたすべてのファイ
+		ルがリストとして返される。リストを使うことで、改行を含むファイ
+		ル名があっても結果を正しく受け取ることができる。
+		そうでない場合は結果は文字列で返される。その場合、複数のマッチ
+		があるときはそれらは文字 <NL> で区切られる。
+
+		展開が失敗した場合、空の文字列またはリストが返される。存在しな
+		いファイル名は結果に含まれない。
 
 		多くのシステムではバッククォート(「`」という文字のこと)を、外
 		部コマンドの実行結果からファイル名を取得するために使用できる。
@@ -3657,6 +3684,11 @@ insert({list}, {item} [, {idx}])			*insert()*
 		Note {item}がリストの場合は、1個の要素として追加される。リスト
 		を連結するには|extend()|を使うこと。
 
+invert({expr})						*invert()*
+		ビット反転。引数は数値に変換される。リスト、辞書、浮動小数点数
+		を指定するとエラーになる。例: >
+			:let bits = invert(bits)
+
 							*isdirectory()*
 isdirectory({directory})
 		結果は数値で、{directory}という名前のディレクトリが存在すれば
@@ -3687,7 +3719,7 @@ items({dict})						*items()*
 join({list} [, {sep}])					*join()*
 		リスト{list}の要素を連結し、1個の文字列にして返す。
 		{sep}が指定されたときは、要素の間にそれを挿入する。{sep}が指定
-		されたときは1個のスペースが使われる。
+		されなかったときは1個のスペースが使われる。
 		Note 末尾には{sep}がつかない。末尾にもつけたければ以下のように
 		する: >
 			let lines = join(mylist, "\n") . "\n"
@@ -3788,11 +3820,13 @@ line({expr})	結果は数値で、{expr}で与えられた位置のファイル�
 line2byte({lnum})
 		バッファの先頭から、{lnum}行目までのバイト数を返す。これには現
 		在のバッファのオプション'fileformat'に従った、end-of-line(行終
-		端)文字も含まれている。最初の行においては1が返る。
+		端)文字も含まれている。最初の行においては1が返る。バイト数は
+		'encoding' に基づく。'fileencoding' は無視される。
 		次のようにすることで最終行を含むバイトサイズを獲得することがで
 		きる: >
 			line2byte(line("$") + 1)
-<		これはファイルの大きさプラス1になる。
+<		これはバッファの大きさプラス1になる。もし 'fileencoding' が空
+		ならその値はファイルの大きさプラス1に等しい。
 		{lnum}が無効であるか、|+byte_offset|機能がコンパイル時に無効に
 		されている場合、-1が返される。
 		|byte2line()|、|go|及び|:goto|も参照。
@@ -4202,6 +4236,13 @@ getpos({expr})	{expr}の位置を返す。{expr}として指定できる値に�
 			call setpos('.', save_cursor)
 <		|setpos()|も参照。
 
+or({expr}, {expr})					*or()*
+		二つの引数のビット論理和。引数は数値に変換される。リスト、辞
+		書、浮動小数点数を指定するとエラーになる。
+		例: >
+			:let bits = or(bits, 0x80)
+
+
 pathshorten({expr})					*pathshorten()*
 		パス{expr}におけるディレクトリ名を短縮して返す。拡張子、ファイ
 		ル名はそのまま保たれる。パスのその他の構成要素は1文字に縮めら
@@ -4266,7 +4307,7 @@ printf({fmt}, {expr1} ...)				*printf()*
 			0個以上の以下のフラグを指定できる
 
 		    #	      値を「代替形式」に変換する。変換指示子c, d, sに
-		    	      対してはこのオプションは効果を持たない。変換指示
+			      対してはこのオプションは効果を持たない。変換指示
 			      子oに対しては数値の精度を上げ、出力文字列の最初
 			      の文字が0になる。(明示的な精度0で値0が表示される
 			      ときを除く)
@@ -4601,6 +4642,10 @@ search({pattern} [, {flags} [, {stopline} [, {timeout}]]])	*search()*
 		正規表現パターン{pattern}を検索する。検索はカーソル位置から開
 		始する(検索位置を指定するには|cursor()|を使えばよい)。
 
+		マッチがない場合は0を返し、カーソルは移動しない。エラーメッ
+		セージは表示されない。
+		マッチが見つかった場合はその行番号を返す。
+
 		{flags} は以下のフラグ文字からなる文字列
 		'b'	後方(上方)に検索する
 		'c'     カーソル位置のマッチを受け入れる
@@ -4632,9 +4677,6 @@ search({pattern} [, {flags} [, {stopline} [, {timeout}]]])	*search()*
 		じになる。
 		{|+reltime| 機能つきでコンパイルされたときのみ有効}
 
-		マッチがない場合は0を返し、カーソルは移動しない。エラーメッ
-		セージは表示されない。
-		マッチが見つかった場合はその行番号を返す。
 							*search()-sub-match*
 		フラグ 'p' を指定すると、戻り値は \(\) によるグループ化のうち
 		最初にマッチしたものの番号プラス 1 となる。パターン全体はマッ
@@ -4842,7 +4884,8 @@ setcmdpos({pos})					*setcmdpos()*
 		成功なら0、コマンドラインを編集しているとき以外には1を返す。
 
 setline({lnum}, {text})					*setline()*
-		カレントバッファの{lnum}行目を{text}にする。
+		カレントバッファの{lnum}行目を{text}にする。行を挿入したい場合
+		は |append()| を使う。
 		{lnum}は|getline()|のときと同じように解釈される。
 		{lnum}が最後の行の次の行の場合、新規行として{text}を追加する。
 		成功したら0を返す。失敗したら(大抵{lnum}が無効な値のとき)1を返
@@ -5361,8 +5404,8 @@ submatch({nr})						*submatch()*
 substitute({expr}, {pat}, {sub}, {flags})
 		結果は文字列で、{expr}内で最初に{pat}にマッチした部分を{sub}に
 		置換えたコピーになる。
-		{flags} が "g" なら、{expr} 無いの {pat} にマッチした部分をす
-		べて置換する。そうしたくない場合は {flags} は "" にすべきであ
+		{flags} が "g" なら、{expr} 内の {pat} にマッチした部分をすべ
+		て置換する。そうしたくない場合は {flags} は "" にすべきであ
 		る。
 
 		これはコマンド":substitute"(一切のフラグ
@@ -5896,7 +5939,15 @@ writefile({list}, {fname} [, {binary}])
 		バイト単位でファイルをコピーするには次のようにする: >
 			:let fl = readfile("foo", "b")
 			:call writefile(fl, "foocopy", "b")
+
+
+xor({expr}, {expr})					*xor()*
+		二つの引数のビット排他的論理和。引数は数値に変換される。リス
+		ト、辞書、浮動小数点数を指定するとエラーになる。
+		例: >
+			:let bits = xor(bits, 0x80)
 <
+
 							*feature-list*
 機能は大別して3つの系統に分けられる:
 1.  コンパイル時に|+feature-list|とした時にだけサポートされる機能。例: >
@@ -5991,6 +6042,7 @@ mouse_gpm		gpmをサポート (Linuxのコンソールマウス)
 mouse_netterm		nettermのマウスをサポート
 mouse_pterm		qnx ptermのマウスをサポート
 mouse_sysmouse		sysmouse (*BSD コンソールマウス)をサポート
+mouse_urxvt		urxvt のマウスをサポート
 mouse_xterm		xtermのマウスをサポート
 mouseshape		'mouseshape'をサポート
 multi_byte		'encoding' をサポート
@@ -6060,6 +6112,7 @@ windows			複数ウィンドウをサポート
 writebackup		オプション'writebackup'が起動時にonになる
 xfontset		X fontsetをサポート |xfontset|
 xim			XIMをサポート |xim|
+xpm_w32			Win32 で pixmap をサポート
 xsmp			Xセッションマネージメントをサポート
 xsmp_interact		対話的Xセッションマネージメントをサポート
 xterm_clipboard		xtermのクリップボードサポート
@@ -6129,7 +6182,7 @@ x11			X11をサポート
 <
 より詳しくは|:verbose-cmd|を参照。
 
-							*E124* *E125*
+							*E124* *E125* *E853*
 :fu[nction][!] {name}([arguments]) [range] [abort] [dict]
 			{name}という名前で新しい関数を定義する。関数名はアル
 			ファベットと数字と'_'からなり、通常の関数はアルファベッ
@@ -6375,8 +6428,8 @@ Hint: たくさんのファイルからなるスクリプトを配布する場�
 ==============================================================================
 6. 波括弧変数						*curly-braces-names*
 
-変数を使える文脈ではいつでも「波括弧」変数を使うことができる。これは有効な変数
-名であり、次のように、1個以上の式を波括弧{}で囲む: >
+変数を使用可能なほとんどの文脈では「波括弧」変数を使うことができる。これは有効
+な変数名であり、次のように、1個以上の式を波括弧{}で囲む: >
 	my_{adjective}_variable
 
 Vimはこれを見つけると、まず波括弧の中の式を評価し、その値をもとの位置に置きか
@@ -6410,6 +6463,11 @@ Vimはこれを見つけると、まず波括弧の中の式を評価し、そ�
 	:call my_func_{func_end}(parameter)
 
 この例は関数"my_func_whizz(parameter)"を呼びだす。
+
+これらは機能しない: >
+  :let i = 3
+  :let @{i} = ''  " error
+  :echo @{i}      " error
 
 ==============================================================================
 7. コマンド						*expression-commands*
@@ -7049,7 +7107,7 @@ try条件文が外側の条件文のtryブロックの中にある場合はcatch
 例外処理のコードはトリッキーになりがちである。何が起こっているか知りたいときは
 スクリプトファイルをsourceするときに'verbose'を13に設定するか、コマンド修飾子
 ":13verbose"を使う。すると例外が発生・破棄・捕捉・完了したときには表示されるよ
-うになる。冗長度のレベルを14異常にすると、finally節において保留されているもの
+うになる。冗長度のレベルを14以上にすると、finally節において保留されているもの
 も表示されるようになる。この情報はデバッグモードでも表示される
 (|debug-scripts|を参照)。
 

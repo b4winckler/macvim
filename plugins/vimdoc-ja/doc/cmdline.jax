@@ -1,4 +1,4 @@
-*cmdline.txt*   For Vim バージョン 7.3.  Last change: 2011 Mar 27
+*cmdline.txt*   For Vim バージョン 7.3.  Last change: 2012 Feb 05
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -402,6 +402,9 @@ CTRL-L		カーソルより前のパターンに対してマッチの検索が行
 ある。以前のヴァージョンでは <Esc> が使われていた)。パターンがファイル名に対し
 て適用されるときは標準のワイルドカード '*' と '?' が使用できる。'*' はあらゆる
 文字列に一致し、'?' はちょうど 1文字に一致する。
+
+オプション 'wildignorecase' を設定するとファイル名の大文字と小文字を区別しない
+ようにできます。
 
 tcshのautolist補完が好みなら、このマッピングが使える。 >
 	:cnoremap X <C-L><C-D>

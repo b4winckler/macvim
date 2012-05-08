@@ -778,6 +778,7 @@ $VIMRUNTIME	starting.jax	/*$VIMRUNTIME*
 'shellslash'	options.jax	/*'shellslash'*
 'shelltemp'	options.jax	/*'shelltemp'*
 'shelltype'	options.jax	/*'shelltype'*
+'shellxescape'	options.jax	/*'shellxescape'*
 'shellxquote'	options.jax	/*'shellxquote'*
 'shiftround'	options.jax	/*'shiftround'*
 'shiftwidth'	options.jax	/*'shiftwidth'*
@@ -847,6 +848,7 @@ $VIMRUNTIME	starting.jax	/*$VIMRUNTIME*
 'swf'	options.jax	/*'swf'*
 'switchbuf'	options.jax	/*'switchbuf'*
 'sws'	options.jax	/*'sws'*
+'sxe'	options.jax	/*'sxe'*
 'sxq'	options.jax	/*'sxq'*
 'syn'	options.jax	/*'syn'*
 'synmaxcol'	options.jax	/*'synmaxcol'*
@@ -1179,6 +1181,7 @@ $VIMRUNTIME	starting.jax	/*$VIMRUNTIME*
 +mouse_netterm	various.jax	/*+mouse_netterm*
 +mouse_pterm	various.jax	/*+mouse_pterm*
 +mouse_sysmouse	various.jax	/*+mouse_sysmouse*
++mouse_urxvt	various.jax	/*+mouse_urxvt*
 +mouse_xterm	various.jax	/*+mouse_xterm*
 +mouseshape	various.jax	/*+mouseshape*
 +multi_byte	various.jax	/*+multi_byte*
@@ -1237,6 +1240,7 @@ $VIMRUNTIME	starting.jax	/*$VIMRUNTIME*
 +writebackup	various.jax	/*+writebackup*
 +xfontset	various.jax	/*+xfontset*
 +xim	various.jax	/*+xim*
++xpm_w32	various.jax	/*+xpm_w32*
 +xsmp	various.jax	/*+xsmp*
 +xsmp_interact	various.jax	/*+xsmp_interact*
 +xterm_clipboard	various.jax	/*+xterm_clipboard*
@@ -2083,6 +2087,7 @@ $VIMRUNTIME	starting.jax	/*$VIMRUNTIME*
 :display	change.jax	/*:display*
 :dj	tagsrch.jax	/*:dj*
 :djump	tagsrch.jax	/*:djump*
+:dl	change.jax	/*:dl*
 :dli	tagsrch.jax	/*:dli*
 :dlist	tagsrch.jax	/*:dlist*
 :do	autocmd.jax	/*:do*
@@ -3180,6 +3185,7 @@ $VIMRUNTIME	starting.jax	/*$VIMRUNTIME*
 <line1>	map.jax	/*<line1>*
 <line2>	map.jax	/*<line2>*
 <lt>	intro.jax	/*<lt>*
+<nomodeline>	autocmd.jax	/*<nomodeline>*
 <q-args>	map.jax	/*<q-args>*
 <reg>	map.jax	/*<reg>*
 <register>	map.jax	/*<register>*
@@ -3593,9 +3599,6 @@ E287	mbyte.jax	/*E287*
 E288	mbyte.jax	/*E288*
 E289	mbyte.jax	/*E289*
 E29	change.jax	/*E29*
-E290	mbyte.jax	/*E290*
-E291	mbyte.jax	/*E291*
-E292	mbyte.jax	/*E292*
 E293	message.jax	/*E293*
 E294	message.jax	/*E294*
 E295	message.jax	/*E295*
@@ -3662,6 +3665,7 @@ E356	message.jax	/*E356*
 E357	options.jax	/*E357*
 E358	options.jax	/*E358*
 E359	term.jax	/*E359*
+E36	windows.jax	/*E36*
 E360	various.jax	/*E360*
 E362	term.jax	/*E362*
 E363	options.jax	/*E363*
@@ -4166,6 +4170,11 @@ E848	syntax.jax	/*E848*
 E849	syntax.jax	/*E849*
 E85	options.jax	/*E85*
 E850	change.jax	/*E850*
+E851	gui_x11.jax	/*E851*
+E852	gui_x11.jax	/*E852*
+E853	eval.jax	/*E853*
+E854	options.jax	/*E854*
+E855	autocmd.jax	/*E855*
 E86	windows.jax	/*E86*
 E88	windows.jax	/*E88*
 E89	message.jax	/*E89*
@@ -4584,6 +4593,7 @@ alt	intro.jax	/*alt*
 alt-input	debugger.jax	/*alt-input*
 alternate-file	editing.jax	/*alternate-file*
 amiga-window	starting.jax	/*amiga-window*
+and()	eval.jax	/*and()*
 anonymous-function	eval.jax	/*anonymous-function*
 ant.vim	syntax.jax	/*ant.vim*
 ap	motion.jax	/*ap*
@@ -4684,6 +4694,7 @@ beval_col-variable	eval.jax	/*beval_col-variable*
 beval_lnum-variable	eval.jax	/*beval_lnum-variable*
 beval_text-variable	eval.jax	/*beval_text-variable*
 beval_winnr-variable	eval.jax	/*beval_winnr-variable*
+bitwise-function	usr_41.jax	/*bitwise-function*
 blockwise-examples	visual.jax	/*blockwise-examples*
 blockwise-operators	visual.jax	/*blockwise-operators*
 blockwise-register	change.jax	/*blockwise-register*
@@ -4845,7 +4856,6 @@ cino-(	indent.jax	/*cino-(*
 cino-)	indent.jax	/*cino-)*
 cino-+	indent.jax	/*cino-+*
 cino-/	indent.jax	/*cino-\/*
-cino-2	indent.jax	/*cino-2*
 cino-:	indent.jax	/*cino-:*
 cino-=	indent.jax	/*cino-=*
 cino->	indent.jax	/*cino->*
@@ -4872,6 +4882,7 @@ cino-p	indent.jax	/*cino-p*
 cino-star	indent.jax	/*cino-star*
 cino-t	indent.jax	/*cino-t*
 cino-u	indent.jax	/*cino-u*
+cino-w	indent.jax	/*cino-w*
 cino-{	indent.jax	/*cino-{*
 cino-}	indent.jax	/*cino-}*
 cinoptions-values	indent.jax	/*cinoptions-values*
@@ -5543,6 +5554,7 @@ ft-ptcap-syntax	syntax.jax	/*ft-ptcap-syntax*
 ft-python-indent	indent.jax	/*ft-python-indent*
 ft-python-syntax	syntax.jax	/*ft-python-syntax*
 ft-quake-syntax	syntax.jax	/*ft-quake-syntax*
+ft-r-indent	indent.jax	/*ft-r-indent*
 ft-readline-syntax	syntax.jax	/*ft-readline-syntax*
 ft-rexx-syntax	syntax.jax	/*ft-rexx-syntax*
 ft-ruby-omni	insert.jax	/*ft-ruby-omni*
@@ -5607,6 +5619,7 @@ g-	undo.jax	/*g-*
 g0	motion.jax	/*g0*
 g8	various.jax	/*g8*
 g:NetrwTopLvlMenu	pi_netrw.jax	/*g:NetrwTopLvlMenu*
+g:Netrw_corehandler	pi_netrw.jax	/*g:Netrw_corehandler*
 g:Netrw_funcref	pi_netrw.jax	/*g:Netrw_funcref*
 g:ada#Comment	ft_ada.jax	/*g:ada#Comment*
 g:ada#Ctags_Kinds	ft_ada.jax	/*g:ada#Ctags_Kinds*
@@ -5694,9 +5707,11 @@ g:netrw_maxfilenamelen	pi_netrw.jax	/*g:netrw_maxfilenamelen*
 g:netrw_menu	pi_netrw.jax	/*g:netrw_menu*
 g:netrw_mkdir_cmd	pi_netrw.jax	/*g:netrw_mkdir_cmd*
 g:netrw_mousemaps	pi_netrw.jax	/*g:netrw_mousemaps*
+g:netrw_nobeval	pi_netrw.jax	/*g:netrw_nobeval*
 g:netrw_nogx	pi_netrw.jax	/*g:netrw_nogx*
 g:netrw_preview	pi_netrw.jax	/*g:netrw_preview*
 g:netrw_rcp_cmd	pi_netrw.jax	/*g:netrw_rcp_cmd*
+g:netrw_remote_mkdir	pi_netrw.jax	/*g:netrw_remote_mkdir*
 g:netrw_retmap	pi_netrw.jax	/*g:netrw_retmap*
 g:netrw_rm_cmd	pi_netrw.jax	/*g:netrw_rm_cmd*
 g:netrw_rmdir_cmd	pi_netrw.jax	/*g:netrw_rmdir_cmd*
@@ -5724,6 +5739,8 @@ g:netrw_use_nt_rcp	pi_netrw.jax	/*g:netrw_use_nt_rcp*
 g:netrw_win95ftp	pi_netrw.jax	/*g:netrw_win95ftp*
 g:netrw_winsize	pi_netrw.jax	/*g:netrw_winsize*
 g:netrw_xstrlen	pi_netrw.jax	/*g:netrw_xstrlen*
+g:sh_isk	syntax.jax	/*g:sh_isk*
+g:sh_noisk	syntax.jax	/*g:sh_noisk*
 g:syntax_on	syntax.jax	/*g:syntax_on*
 g:tar_browseoptions	pi_tar.jax	/*g:tar_browseoptions*
 g:tar_cmd	pi_tar.jax	/*g:tar_cmd*
@@ -5784,6 +5801,7 @@ g`a	motion.jax	/*g`a*
 ga	various.jax	/*ga*
 garbagecollect()	eval.jax	/*garbagecollect()*
 gd	pattern.jax	/*gd*
+gdb	debug.jax	/*gdb*
 ge	motion.jax	/*ge*
 get()	eval.jax	/*get()*
 get-ms-debuggers	debug.jax	/*get-ms-debuggers*
@@ -5873,6 +5891,7 @@ gtk-tooltip-colors	gui_x11.jax	/*gtk-tooltip-colors*
 gu	change.jax	/*gu*
 gugu	change.jax	/*gugu*
 gui	gui.jax	/*gui*
+gui-IME	gui.jax	/*gui-IME*
 gui-clipboard	gui_w32.jax	/*gui-clipboard*
 gui-colors	syntax.jax	/*gui-colors*
 gui-extras	gui.jax	/*gui-extras*
@@ -5968,6 +5987,7 @@ helpfile_name.txt	helphelp.jax	/*helpfile_name.txt*
 helphelp	helphelp.jax	/*helphelp*
 helphelp.txt	helphelp.jax	/*helphelp.txt*
 hex-editing	tips.jax	/*hex-editing*
+hex-number	eval.jax	/*hex-number*
 hidden-buffer	windows.jax	/*hidden-buffer*
 hidden-menus	gui.jax	/*hidden-menus*
 hidden-options	options.jax	/*hidden-options*
@@ -6077,6 +6097,7 @@ i)	motion.jax	/*i)*
 i<	motion.jax	/*i<*
 i>	motion.jax	/*i>*
 iB	motion.jax	/*iB*
+iBus	gui.jax	/*iBus*
 iW	motion.jax	/*iW*
 i[	motion.jax	/*i[*
 i]	motion.jax	/*i]*
@@ -6258,6 +6279,7 @@ internet	intro.jax	/*internet*
 intro	intro.jax	/*intro*
 intro.txt	intro.jax	/*intro.txt*
 inverse	syntax.jax	/*inverse*
+invert()	eval.jax	/*invert()*
 ip	motion.jax	/*ip*
 iquote	motion.jax	/*iquote*
 is	motion.jax	/*is*
@@ -6590,6 +6612,7 @@ netrw-browse-cmds	pi_netrw.jax	/*netrw-browse-cmds*
 netrw-browse-maps	pi_netrw.jax	/*netrw-browse-maps*
 netrw-browser	pi_netrw.jax	/*netrw-browser*
 netrw-browser-options	pi_netrw.jax	/*netrw-browser-options*
+netrw-browser-settings	pi_netrw.jax	/*netrw-browser-settings*
 netrw-browser-var	pi_netrw.jax	/*netrw-browser-var*
 netrw-browsing	pi_netrw.jax	/*netrw-browsing*
 netrw-c	pi_netrw.jax	/*netrw-c*
@@ -6638,6 +6661,7 @@ netrw-history	pi_netrw.jax	/*netrw-history*
 netrw-horiz	pi_netrw.jax	/*netrw-horiz*
 netrw-i	pi_netrw.jax	/*netrw-i*
 netrw-incompatible	pi_netrw.jax	/*netrw-incompatible*
+netrw-internal-variables	pi_netrw.jax	/*netrw-internal-variables*
 netrw-intro-browse	pi_netrw.jax	/*netrw-intro-browse*
 netrw-leftmouse	pi_netrw.jax	/*netrw-leftmouse*
 netrw-list	pi_netrw.jax	/*netrw-list*
@@ -6715,8 +6739,10 @@ netrw-rexplore	pi_netrw.jax	/*netrw-rexplore*
 netrw-rightmouse	pi_netrw.jax	/*netrw-rightmouse*
 netrw-s	pi_netrw.jax	/*netrw-s*
 netrw-settings	pi_netrw.jax	/*netrw-settings*
+netrw-settings-window	pi_netrw.jax	/*netrw-settings-window*
 netrw-sexplore	pi_netrw.jax	/*netrw-sexplore*
 netrw-sort	pi_netrw.jax	/*netrw-sort*
+netrw-sort-sequence	pi_netrw.jax	/*netrw-sort-sequence*
 netrw-sortsequence	pi_netrw.jax	/*netrw-sortsequence*
 netrw-source	pi_netrw.jax	/*netrw-source*
 netrw-ssh-hack	pi_netrw.jax	/*netrw-ssh-hack*
@@ -6735,7 +6761,6 @@ netrw-updir	pi_netrw.jax	/*netrw-updir*
 netrw-urls	pi_netrw.jax	/*netrw-urls*
 netrw-userpass	pi_netrw.jax	/*netrw-userpass*
 netrw-v	pi_netrw.jax	/*netrw-v*
-netrw-var	pi_netrw.jax	/*netrw-var*
 netrw-variables	pi_netrw.jax	/*netrw-variables*
 netrw-vexplore	pi_netrw.jax	/*netrw-vexplore*
 netrw-write	pi_netrw.jax	/*netrw-write*
@@ -6771,7 +6796,8 @@ objects	index.jax	/*objects*
 obtaining-exted	netbeans.jax	/*obtaining-exted*
 ocaml.vim	syntax.jax	/*ocaml.vim*
 octal	eval.jax	/*octal*
-octal-number	options.jax	/*octal-number*
+octal-nrformats	options.jax	/*octal-nrformats*
+octal-number	eval.jax	/*octal-number*
 oldfiles-variable	eval.jax	/*oldfiles-variable*
 ole-activation	if_ole.jax	/*ole-activation*
 ole-eval	if_ole.jax	/*ole-eval*
@@ -6795,6 +6821,7 @@ option-window	options.jax	/*option-window*
 options	options.jax	/*options*
 options.txt	options.jax	/*options.txt*
 optwin	options.jax	/*optwin*
+or()	eval.jax	/*or()*
 oracle	ft_sql.jax	/*oracle*
 os2	os_os2.jax	/*os2*
 os2ansi	os_os2.jax	/*os2ansi*
@@ -7183,6 +7210,8 @@ setuid	change.jax	/*setuid*
 setwinvar()	eval.jax	/*setwinvar()*
 sftp	pi_netrw.jax	/*sftp*
 sgml.vim	syntax.jax	/*sgml.vim*
+sh-awk	syntax.jax	/*sh-awk*
+sh-embed	syntax.jax	/*sh-embed*
 sh.vim	syntax.jax	/*sh.vim*
 shell-window	tips.jax	/*shell-window*
 shell_error-variable	eval.jax	/*shell_error-variable*
@@ -7690,6 +7719,7 @@ unix	os_unix.jax	/*unix*
 unlisted-buffer	windows.jax	/*unlisted-buffer*
 up-down-motions	motion.jax	/*up-down-motions*
 uppercase	change.jax	/*uppercase*
+urxvt-mouse	options.jax	/*urxvt-mouse*
 use-cpo-save	usr_41.jax	/*use-cpo-save*
 use-visual-cmds	version4.jax	/*use-visual-cmds*
 useful-mappings	tips.jax	/*useful-mappings*
@@ -7948,13 +7978,27 @@ vimdev	intro.jax	/*vimdev*
 vimdiff	diff.jax	/*vimdiff*
 vimfiles	options.jax	/*vimfiles*
 viminfo	starting.jax	/*viminfo*
+viminfo-!	options.jax	/*viminfo-!*
+viminfo-%	options.jax	/*viminfo-%*
+viminfo-'	options.jax	/*viminfo-'*
+viminfo-/	options.jax	/*viminfo-\/*
+viminfo-:	options.jax	/*viminfo-:*
+viminfo-<	options.jax	/*viminfo-<*
+viminfo-@	options.jax	/*viminfo-@*
+viminfo-c	options.jax	/*viminfo-c*
 viminfo-encoding	starting.jax	/*viminfo-encoding*
 viminfo-errors	starting.jax	/*viminfo-errors*
+viminfo-f	options.jax	/*viminfo-f*
 viminfo-file	starting.jax	/*viminfo-file*
 viminfo-file-marks	starting.jax	/*viminfo-file-marks*
 viminfo-file-name	starting.jax	/*viminfo-file-name*
+viminfo-h	options.jax	/*viminfo-h*
+viminfo-n	options.jax	/*viminfo-n*
+viminfo-quote	options.jax	/*viminfo-quote*
+viminfo-r	options.jax	/*viminfo-r*
 viminfo-read	starting.jax	/*viminfo-read*
 viminfo-read-write	starting.jax	/*viminfo-read-write*
+viminfo-s	options.jax	/*viminfo-s*
 viminfo-write	starting.jax	/*viminfo-write*
 vimrc	starting.jax	/*vimrc*
 vimrc-filetype	usr_05.jax	/*vimrc-filetype*
@@ -8102,6 +8146,7 @@ xiterm	syntax.jax	/*xiterm*
 xml-folding	syntax.jax	/*xml-folding*
 xml-omni-datafile	insert.jax	/*xml-omni-datafile*
 xml.vim	syntax.jax	/*xml.vim*
+xor()	eval.jax	/*xor()*
 xpm.vim	syntax.jax	/*xpm.vim*
 xterm-8-bit	term.jax	/*xterm-8-bit*
 xterm-8bit	term.jax	/*xterm-8bit*

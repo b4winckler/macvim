@@ -1,4 +1,4 @@
-*gui_w32.txt*   For Vim バージョン 7.3.  Last change: 2010 Dec 19
+*gui_w32.txt*   For Vim バージョン 7.3.  Last change: 2011 Jul 23
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -139,6 +139,9 @@ Vim"メニュー項目を使うと、ダブルクリックで開ける既に存�
 "Edit with existing gvim    -- すでに起動しているgvimでそのファイルの編集を開
                                始する。
 
+"edit with existing Vim" メニューはレジストリを設定することで無効化できます。
+HKLM\Software\Vim\Gvim に DisableEditWithExisting という名前のエントリを追加し
+てください。値はなんでも構いません。
 						*install-registry*
 "install.exe"プログラムを使用すれば、簡単に"Edit with Vim"メニュー項目を追加す
 ることができる。これはレジストリに幾つかの項目を書き加える。

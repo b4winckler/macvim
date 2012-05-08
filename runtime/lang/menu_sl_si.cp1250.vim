@@ -11,8 +11,6 @@ if exists("did_menu_trans")
   finish
 endif
 let did_menu_trans = 1
-let s:keepcpo= &cpo
-set cpo&vim
 
 scriptencoding cp1250
 
@@ -294,6 +292,3 @@ let g:menutrans_textwidth_dialog = "Vnesite novo širino besedila (ali 0 za izklo
 let g:menutrans_fileformat_dialog = "Izberite format datoteke"
 let g:menutrans_fileformat_choices = "&Unix\n&Dos\n&Mac\n&Preklièi"
 " }}}
-
-let &cpo = s:keepcpo
-unlet s:keepcpo

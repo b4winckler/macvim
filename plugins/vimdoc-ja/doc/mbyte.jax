@@ -1,4 +1,4 @@
-*mbyte.txt*     For Vim バージョン 7.3.  Last change: 2011 Jul 18
+*mbyte.txt*     For Vim バージョン 7.3.  Last change: 2012 Feb 29
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar et al.
 
@@ -778,8 +778,7 @@ XIMはXの国際化入力機構です。Xlibユニット型と|IM-server| (Input
   あるため、まず平仮名を入力し、必要なら、それを漢字や片仮名に変換する。仮名漢
   字変換サーバにはjserver(Wnnと一緒に提供されている。下記参照)やcannaなどがあ
   る。Cannaはここから入手できる:
-  ftp://ftp.nec.co.jp/pub/Canna/ (もう機能していない)
-訳注: Cannaのサイト http://www.nec.co.jp/canna/
+  http://canna.sourceforge.jp/
 
 Wnn4.2というよくできた入力システムがある。Wnn4.2は以下のものを含んでいる。
     xwnmo (|IM-server|)
@@ -831,7 +830,7 @@ Wnn4.2は多くのシステムで動作し、インターネットのさまざ�
 
 
 XIMを使用する (USING XIM)	*multibyte-input* *E284* *E286* *E287* *E288*
-				*E285* *E291* *E292* *E290* *E289*
+				*E285* *E289*
 
 Note 表示と入力は独立している。インプットメソッドがなくてもあなたの言語を見る
 ことができる。しかし、表示方法とインプットメソッドが合わないと、テキストは間

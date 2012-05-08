@@ -1,9 +1,9 @@
                    Vim version 7.3 香り屋版 導入マニュアル
 
-                                                         Version: 1.6.5
+                                                         Version: 1.6.6
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 22-Sep-2011.
+                                                     Last Change: 11-Jan-2012.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -64,7 +64,7 @@ Vimの拡張機能について
   Perl(ActivePerl)との連携
     注意: PerlをインストールしなくてもVimは使用できます。
 
-    ActiveState社により公開されているActivePerl 5.12をインストールすることで、
+    ActiveState社により公開されているActivePerl 5.14をインストールすることで、
     Perlインターフェースを使用することができます。ActivePerlをインストールして
     いない場合は、Perlインターフェースは自動的に無効となります。Perlインター
     フェースの詳細については":help perl"としてVim付属のマニュアルを参照してく

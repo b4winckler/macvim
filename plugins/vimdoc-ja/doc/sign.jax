@@ -1,4 +1,4 @@
-*sign.txt*      For Vim バージョン 7.3.  Last change: 2010 Oct 14
+*sign.txt*      For Vim バージョン 7.3.  Last change: 2012 Jan 04
 
 
 		VIMリファレンスマニュアル    by Gordon Prieur
@@ -72,7 +72,7 @@ SignColumnの色を使う|hl-SignColumn|。色を設定するには次のよう�
 
 		利用可能な引数:
 
-	icon={pixmap}
+	icon={bitmap}
 		目印に使用する画像ファイルを定義する。フルパス指定したほうが良
 		い。画像は2文字の幅に納まるものでなければならない。これは
 		チェックされない。大きすぎる画像を使用すると再描画の際に問題が
@@ -83,6 +83,8 @@ SignColumnの色を使う|hl-SignColumn|。色を設定するには次のよう�
 			GTK 1		pixmap (.xpm)
 			GTK 2		many
 			Motif		pixmap (.xpm)
+			Win32		.bmp, .ico, .cur
+					pixmap (.xpm) |+xpm_w32|
 
 	linehl={group}
 		目印が設置された行全体を強調表示するのに使われるハイライトグ
