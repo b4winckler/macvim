@@ -4,7 +4,7 @@
 		  VIM REFERENCE MANUAL    by Sven Verdoolaege
 					 and Matt Gerassimof
 
-Perl と Vim 				*perl* *Perl*
+Perl と Vim				*perl* *Perl*
 
 1. Perl のファイルを編集する		|perl-editing|
 2. Perl インタフェイス付きのコンパイル	|perl-compiling|

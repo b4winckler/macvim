@@ -1,4 +1,4 @@
-*debug.txt*     For Vim バージョン 7.3.  Last change: 2010 Dec 22
+*debug.txt*     For Vim バージョン 7.3.  Last change: 2012 Feb 11
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -16,7 +16,7 @@ Vim スクリプトや関数などのデバッグについては、|debug-script
 
 ==============================================================================
 
-1. gcc と gdb を使ってクラッシュの場所を特定する	*debug-gcc*
+1. gcc と gdb を使ってクラッシュの場所を特定する	*debug-gcc* *gdb*
 
 テストファイルで Vim がクラッシュした場合、gcc を使っているなら、以下の方法で
 場所を特定できます。MinGW でも同じようにできます。

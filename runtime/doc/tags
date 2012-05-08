@@ -795,6 +795,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 'shellslash'	options.txt	/*'shellslash'*
 'shelltemp'	options.txt	/*'shelltemp'*
 'shelltype'	options.txt	/*'shelltype'*
+'shellxescape'	options.txt	/*'shellxescape'*
 'shellxquote'	options.txt	/*'shellxquote'*
 'shiftround'	options.txt	/*'shiftround'*
 'shiftwidth'	options.txt	/*'shiftwidth'*
@@ -864,6 +865,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 'swf'	options.txt	/*'swf'*
 'switchbuf'	options.txt	/*'switchbuf'*
 'sws'	options.txt	/*'sws'*
+'sxe'	options.txt	/*'sxe'*
 'sxq'	options.txt	/*'sxq'*
 'syn'	options.txt	/*'syn'*
 'synmaxcol'	options.txt	/*'synmaxcol'*
@@ -1260,6 +1262,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 +writebackup	various.txt	/*+writebackup*
 +xfontset	various.txt	/*+xfontset*
 +xim	various.txt	/*+xim*
++xpm_w32	various.txt	/*+xpm_w32*
 +xsmp	various.txt	/*+xsmp*
 +xsmp_interact	various.txt	/*+xsmp_interact*
 +xterm_clipboard	various.txt	/*+xterm_clipboard*
@@ -2635,6 +2638,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 :resize	windows.txt	/*:resize*
 :ret	change.txt	/*:ret*
 :retab	change.txt	/*:retab*
+:retab!	change.txt	/*:retab!*
 :retu	eval.txt	/*:retu*
 :return	eval.txt	/*:return*
 :rew	editing.txt	/*:rew*
@@ -3240,6 +3244,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 <line1>	map.txt	/*<line1>*
 <line2>	map.txt	/*<line2>*
 <lt>	intro.txt	/*<lt>*
+<nomodeline>	autocmd.txt	/*<nomodeline>*
 <q-args>	map.txt	/*<q-args>*
 <reg>	map.txt	/*<reg>*
 <register>	map.txt	/*<register>*
@@ -3673,9 +3678,6 @@ E287	mbyte.txt	/*E287*
 E288	mbyte.txt	/*E288*
 E289	mbyte.txt	/*E289*
 E29	change.txt	/*E29*
-E290	mbyte.txt	/*E290*
-E291	mbyte.txt	/*E291*
-E292	mbyte.txt	/*E292*
 E293	message.txt	/*E293*
 E294	message.txt	/*E294*
 E295	message.txt	/*E295*
@@ -4286,6 +4288,7 @@ E851	gui_x11.txt	/*E851*
 E852	gui_x11.txt	/*E852*
 E853	eval.txt	/*E853*
 E854	options.txt	/*E854*
+E855	autocmd.txt	/*E855*
 E86	windows.txt	/*E86*
 E87	windows.txt	/*E87*
 E88	windows.txt	/*E88*
@@ -4793,6 +4796,7 @@ autocmds-kept	version5.txt	/*autocmds-kept*
 autocommand	autocmd.txt	/*autocommand*
 autocommand-events	autocmd.txt	/*autocommand-events*
 autocommand-pattern	autocmd.txt	/*autocommand-pattern*
+autoformat	change.txt	/*autoformat*
 autoload	eval.txt	/*autoload*
 autoload-functions	eval.txt	/*autoload-functions*
 avoid-hit-enter	version5.txt	/*avoid-hit-enter*
@@ -4841,6 +4845,7 @@ beval_col-variable	eval.txt	/*beval_col-variable*
 beval_lnum-variable	eval.txt	/*beval_lnum-variable*
 beval_text-variable	eval.txt	/*beval_text-variable*
 beval_winnr-variable	eval.txt	/*beval_winnr-variable*
+bitwise-function	usr_41.txt	/*bitwise-function*
 blockwise-examples	visual.txt	/*blockwise-examples*
 blockwise-operators	visual.txt	/*blockwise-operators*
 blockwise-register	change.txt	/*blockwise-register*
@@ -5039,6 +5044,7 @@ cino-g	indent.txt	/*cino-g*
 cino-h	indent.txt	/*cino-h*
 cino-i	indent.txt	/*cino-i*
 cino-j	indent.txt	/*cino-j*
+cino-k	indent.txt	/*cino-k*
 cino-l	indent.txt	/*cino-l*
 cino-m	indent.txt	/*cino-m*
 cino-n	indent.txt	/*cino-n*
@@ -5877,6 +5883,7 @@ g:netrw_cygwin	pi_netrw.txt	/*g:netrw_cygwin*
 g:netrw_dav_cmd	pi_netrw.txt	/*g:netrw_dav_cmd*
 g:netrw_decompress	pi_netrw.txt	/*g:netrw_decompress*
 g:netrw_dirhistmax	pi_netrw.txt	/*g:netrw_dirhistmax*
+g:netrw_errorlvl	pi_netrw.txt	/*g:netrw_errorlvl*
 g:netrw_fastbrowse	pi_netrw.txt	/*g:netrw_fastbrowse*
 g:netrw_fetch_cmd	pi_netrw.txt	/*g:netrw_fetch_cmd*
 g:netrw_fname_escape	pi_netrw.txt	/*g:netrw_fname_escape*
@@ -5884,6 +5891,7 @@ g:netrw_ftp	pi_netrw.txt	/*g:netrw_ftp*
 g:netrw_ftp_browse_reject	pi_netrw.txt	/*g:netrw_ftp_browse_reject*
 g:netrw_ftp_cmd	pi_netrw.txt	/*g:netrw_ftp_cmd*
 g:netrw_ftp_list_cmd	pi_netrw.txt	/*g:netrw_ftp_list_cmd*
+g:netrw_ftp_options	pi_netrw.txt	/*g:netrw_ftp_options*
 g:netrw_ftp_sizelist_cmd	pi_netrw.txt	/*g:netrw_ftp_sizelist_cmd*
 g:netrw_ftp_timelist_cmd	pi_netrw.txt	/*g:netrw_ftp_timelist_cmd*
 g:netrw_ftpextracmd	pi_netrw.txt	/*g:netrw_ftpextracmd*
@@ -5898,10 +5906,10 @@ g:netrw_keepdir	pi_netrw.txt	/*g:netrw_keepdir*
 g:netrw_list_cmd	pi_netrw.txt	/*g:netrw_list_cmd*
 g:netrw_list_hide	pi_netrw.txt	/*g:netrw_list_hide*
 g:netrw_liststyle	pi_netrw.txt	/*g:netrw_liststyle*
-g:netrw_local_mkdir	pi_netrw.txt	/*g:netrw_local_mkdir*
-g:netrw_local_rmdir	pi_netrw.txt	/*g:netrw_local_rmdir*
 g:netrw_localcopycmd	pi_netrw.txt	/*g:netrw_localcopycmd*
+g:netrw_localmkdir	pi_netrw.txt	/*g:netrw_localmkdir*
 g:netrw_localmovecmd	pi_netrw.txt	/*g:netrw_localmovecmd*
+g:netrw_localrmdir	pi_netrw.txt	/*g:netrw_localrmdir*
 g:netrw_maxfilenamelen	pi_netrw.txt	/*g:netrw_maxfilenamelen*
 g:netrw_menu	pi_netrw.txt	/*g:netrw_menu*
 g:netrw_mkdir_cmd	pi_netrw.txt	/*g:netrw_mkdir_cmd*
@@ -5950,6 +5958,7 @@ g:tar_readoptions	pi_tar.txt	/*g:tar_readoptions*
 g:tar_secure	pi_tar.txt	/*g:tar_secure*
 g:tar_writeoptions	pi_tar.txt	/*g:tar_writeoptions*
 g:tex_conceal	syntax.txt	/*g:tex_conceal*
+g:tex_isk	syntax.txt	/*g:tex_isk*
 g:var	eval.txt	/*g:var*
 g:vimball_home	pi_vimball.txt	/*g:vimball_home*
 g:vimball_mkdir	pi_vimball.txt	/*g:vimball_mkdir*
@@ -6000,6 +6009,7 @@ g`a	motion.txt	/*g`a*
 ga	various.txt	/*ga*
 garbagecollect()	eval.txt	/*garbagecollect()*
 gd	pattern.txt	/*gd*
+gdb	debug.txt	/*gdb*
 ge	motion.txt	/*ge*
 get()	eval.txt	/*get()*
 get-ms-debuggers	debug.txt	/*get-ms-debuggers*
@@ -6232,6 +6242,7 @@ hl-Cursor	syntax.txt	/*hl-Cursor*
 hl-CursorColumn	syntax.txt	/*hl-CursorColumn*
 hl-CursorIM	syntax.txt	/*hl-CursorIM*
 hl-CursorLine	syntax.txt	/*hl-CursorLine*
+hl-CursorLineNr	syntax.txt	/*hl-CursorLineNr*
 hl-DiffAdd	syntax.txt	/*hl-DiffAdd*
 hl-DiffChange	syntax.txt	/*hl-DiffChange*
 hl-DiffDelete	syntax.txt	/*hl-DiffDelete*
@@ -6608,9 +6619,13 @@ lpc.vim	syntax.txt	/*lpc.vim*
 lua	if_lua.txt	/*lua*
 lua-buffer	if_lua.txt	/*lua-buffer*
 lua-commands	if_lua.txt	/*lua-commands*
+lua-dict	if_lua.txt	/*lua-dict*
+lua-list	if_lua.txt	/*lua-list*
+lua-luaeval	if_lua.txt	/*lua-luaeval*
 lua-vim	if_lua.txt	/*lua-vim*
 lua-window	if_lua.txt	/*lua-window*
 lua.vim	syntax.txt	/*lua.vim*
+luaeval()	eval.txt	/*luaeval()*
 m	motion.txt	/*m*
 m'	motion.txt	/*m'*
 m[	motion.txt	/*m[*
@@ -7018,8 +7033,11 @@ netrw-updir	pi_netrw.txt	/*netrw-updir*
 netrw-urls	pi_netrw.txt	/*netrw-urls*
 netrw-userpass	pi_netrw.txt	/*netrw-userpass*
 netrw-v	pi_netrw.txt	/*netrw-v*
+netrw-var	pi_netrw.txt	/*netrw-var*
 netrw-variables	pi_netrw.txt	/*netrw-variables*
 netrw-vexplore	pi_netrw.txt	/*netrw-vexplore*
+netrw-windows-netrc	pi_netrw.txt	/*netrw-windows-netrc*
+netrw-windows-s	pi_netrw.txt	/*netrw-windows-s*
 netrw-write	pi_netrw.txt	/*netrw-write*
 netrw-x	pi_netrw.txt	/*netrw-x*
 netrw-xfer	pi_netrw.txt	/*netrw-xfer*
@@ -7131,8 +7149,8 @@ objects	index.txt	/*objects*
 obtaining-exted	netbeans.txt	/*obtaining-exted*
 ocaml.vim	syntax.txt	/*ocaml.vim*
 octal	eval.txt	/*octal*
+octal-nrformats	options.txt	/*octal-nrformats*
 octal-number	eval.txt	/*octal-number*
-octal-number	options.txt	/*octal-number*
 odbeditor	gui_mac.txt	/*odbeditor*
 oldfiles-variable	eval.txt	/*oldfiles-variable*
 ole-activation	if_ole.txt	/*ole-activation*
@@ -8449,13 +8467,27 @@ vimdev	intro.txt	/*vimdev*
 vimdiff	diff.txt	/*vimdiff*
 vimfiles	options.txt	/*vimfiles*
 viminfo	starting.txt	/*viminfo*
+viminfo-!	options.txt	/*viminfo-!*
+viminfo-%	options.txt	/*viminfo-%*
+viminfo-'	options.txt	/*viminfo-'*
+viminfo-/	options.txt	/*viminfo-\/*
+viminfo-:	options.txt	/*viminfo-:*
+viminfo-<	options.txt	/*viminfo-<*
+viminfo-@	options.txt	/*viminfo-@*
+viminfo-c	options.txt	/*viminfo-c*
 viminfo-encoding	starting.txt	/*viminfo-encoding*
 viminfo-errors	starting.txt	/*viminfo-errors*
+viminfo-f	options.txt	/*viminfo-f*
 viminfo-file	starting.txt	/*viminfo-file*
 viminfo-file-marks	starting.txt	/*viminfo-file-marks*
 viminfo-file-name	starting.txt	/*viminfo-file-name*
+viminfo-h	options.txt	/*viminfo-h*
+viminfo-n	options.txt	/*viminfo-n*
+viminfo-quote	options.txt	/*viminfo-quote*
+viminfo-r	options.txt	/*viminfo-r*
 viminfo-read	starting.txt	/*viminfo-read*
 viminfo-read-write	starting.txt	/*viminfo-read-write*
+viminfo-s	options.txt	/*viminfo-s*
 viminfo-write	starting.txt	/*viminfo-write*
 vimrc	starting.txt	/*vimrc*
 vimrc-filetype	usr_05.txt	/*vimrc-filetype*

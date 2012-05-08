@@ -1,4 +1,4 @@
-*map.txt*       For Vim version 7.3.  Last change: 2011 Oct 22
+*map.txt*       For Vim version 7.3.  Last change: 2012 Apr 13
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -527,7 +527,7 @@ mappings.
 <LocalLeader> is just like <Leader>, except that it uses "maplocalleader"
 instead of "mapleader".  <LocalLeader> is to be used for mappings which are
 local to a buffer.  Example: >
-      :map <LocalLeader>q  \DoItNow
+      :map <buffer> <LocalLeader>A  oanother line<Esc>
 <
 In a global plugin <Leader> should be used and in a filetype plugin
 <LocalLeader>.  "mapleader" and "maplocalleader" can be equal.  Although, if
@@ -1188,7 +1188,7 @@ reported if any are supplied).  However, it is possible to specify that the
 command can take arguments, using the -nargs attribute.  Valid cases are:
 
 	-nargs=0    No arguments are allowed (the default)
-	-nargs=1    Exactly one argument is require, it includes spaces 
+	-nargs=1    Exactly one argument is required, it includes spaces 
 	-nargs=*    Any number of arguments are allowed (0, 1, or many),
 		    separated by white space
 	-nargs=?    0 or 1 arguments are allowed
@@ -1219,6 +1219,7 @@ completion can be enabled:
 
 	-complete=augroup	autocmd groups
 	-complete=buffer	buffer names
+	-complete=behave	:behave suboptions
 	-complete=color		color schemes
 	-complete=command	Ex command (and arguments)
 	-complete=compiler	compilers
@@ -1233,6 +1234,7 @@ completion can be enabled:
 	-complete=function	function name
 	-complete=help		help subjects
 	-complete=highlight	highlight groups
+	-complete=history	:history suboptions
 	-complete=locale	locale names (as output of locale -a)
 	-complete=mapping	mapping name
 	-complete=menu		menus

@@ -1,4 +1,4 @@
-*windows.txt*   For Vim バージョン 7.3.  Last change: 2010 Aug 15
+*windows.txt*   For Vim バージョン 7.3.  Last change: 2011 Aug 14
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -132,7 +132,7 @@ Buf/Win Enter/Leave 時のオートコマンド|autocommand|は、新しいウ�
 られる。
 
 ==============================================================================
-3. ウィンドウのオープンとクローズ			*opening-window*
+3. ウィンドウのオープンとクローズ			*opening-window* *E36*
 
 CTRL-W s						*CTRL-W_s*
 CTRL-W S						*CTRL-W_S*
@@ -167,7 +167,7 @@ CTRL-W v						*CTRL-W_v*
 CTRL-W n						*CTRL-W_n*
 CTRL-W CTRL_N						*CTRL-W_CTRL-N*
 :[N]new [++opt] [+cmd]					*:new*
-		新しいウィンドウが作成して空のファイルの編集が始まる。新しい
+		新しいウィンドウを作成して空のファイルの編集が始まる。新しい
 		ウィンドウの高さはNになる(デフォルトの高さはカレントウィンドウ
 		の高さの半分)。新しいウィンドウの場所を確保するため、カレント
 		ウィンドウの高さは低くなる。 ('equalalways' オプションがセット
@@ -256,7 +256,7 @@ CTRL-W ^	":split #" と同じ。つまり、ウィンドウを2つに分割し�
 
 これらのコマンドモディファイヤを組み合わせて、最大高さの垂直分割したウィンドウ
 を作ることができる。例: >
-	:vertical topleft edit tags
+	:vertical topleft split tags
 ウィンドウを垂直分割し、"tags"ファイルのウィンドウを最大の高さで最も左に開く。
 
 
@@ -801,11 +801,11 @@ CTRL-W gF						*CTRL-W_gF*
 						*:pta* *:ptag*
 :pta[g][!] [tagname]
 		":tag[!] [tagname]" を実行し、現在のバッファまたはカーソル位置
-		を変えずに「プレビュー」ウィンドウないで検索したタグを表示す
-		る。「プレビュー」ウィンドウがすでに存在していた場合は、(ヘル
-		プウィンドウのように)そのウィンドウに表示する。新しいウィンド
-		ウが開いたときは、'previewheight' の設定がそのウィンドウの高さ
-		になる。|:tag| も参照のこと。
+		を変えずに「プレビュー」ウィンドウ内で検索したタグを表示する。
+		「プレビュー」ウィンドウがすでに存在していた場合は、(ヘルプ
+		ウィンドウのように)そのウィンドウに表示する。新しいウィンドウ
+		が開いたときは、'previewheight' の設定がそのウィンドウの高さに
+		なる。|:tag| も参照のこと。
 		例は下を参照。|CursorHold-example|
 		|:tag|とは小さな違いがある:[tagname] がすでに表示されているタ
 		グと同じ場合、マッチしたタグリスト内の位置はリセットされない。
@@ -857,7 +857,7 @@ CTRL-W g }						*CTRL-W_g}*
 <		注意:遅いかもしれない。
 
 
-例	     				 		*CursorHold-example*
+例							*CursorHold-example*
 
   :au! CursorHold *.[ch] nested exe "silent! ptag " . expand("<cword>")
 

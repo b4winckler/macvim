@@ -21,6 +21,7 @@ LANGUAGES = \
 		ko \
 		ko.UTF-8 \
 		nb \
+		nl \
 		no \
 		pl \
 		pt_BR \
@@ -51,6 +52,7 @@ MOFILES = \
 		ko.mo \
 		ko.UTF-8.mo \
 		nb.mo \
+		nl.mo \
 		no.mo \
 		pl.mo \
 		pt_BR.mo \
@@ -91,6 +93,7 @@ CHECKFILES = \
 		ko.ck \
 		ko.UTF-8.ck \
 		nb.ck \
+		nl.ck \
 		no.ck \
 		pl.ck \
 		pt_BR.ck \

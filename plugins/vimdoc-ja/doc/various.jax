@@ -1,4 +1,4 @@
-*various.txt*   For Vim バージョン 7.3.  Last change: 2011 May 19
+*various.txt*   For Vim バージョン 7.3.  Last change: 2012 Jan 15
 
 
 		VIM リファレンスマニュアル    by Bram Moolenaar
@@ -135,6 +135,9 @@ g8			カーソル位置の文字のバイト列を 16 進数で表示します�
 			場合、ウィンドウが一つだけなら  'scroll' オプションの
 			2 倍の数が、そうでなければカレントウィンドウの高さから
 			3 を引いた数が使われます。
+
+			{count} が指定された場合は 'window' オプションがその値
+			に設定される。
 
 			:z は修飾マークを付加して使うこともできます。次の効果
 			があります。
@@ -349,72 +352,74 @@ N  *+mouseshape*	|'mouseshape'|
 B  *+mouse_dec*		Unix のみ: Dec端末マウス操作 |dec-mouse|
 N  *+mouse_gpm*		Unix のみ: Linuxコンソールマウス操作 |gpm-mouse|
 B  *+mouse_netterm*	Unix のみ: nettermマウス操作 |netterm-mouse|
-N  *+mouse_pterm*	QNX  のみ: ptermマウス操作 |qnx-terminal|
+N  *+mouse_pterm*		QNX  のみ: ptermマウス操作 |qnx-terminal|
 N  *+mouse_sysmouse*	Unix のみ: *BSD コンソールマウス操作 |sysmouse|
-N  *+mouse_xterm*	Unix のみ: xtermマウス操作 |xterm-mouse|
-B  *+multi_byte*	16ビット、32 ビット文字 |multibyte|
+N  *+mouse_urxvt*		Unix のみ: urxvtマウス操作 |urxvt-mouse|
+N  *+mouse_xterm*		Unix のみ: xtermマウス操作 |xterm-mouse|
+B  *+multi_byte*		16ビット、32 ビット文字 |multibyte|
    *+multi_byte_ime*	Win32 IMEサポート
-N  *+multi_lang*	多言語サポート |multi-lang|
+N  *+multi_lang*		多言語サポート |multi-lang|
 m  *+mzscheme*		Mzscheme インターフェース |mzscheme|
 m  *+mzscheme/dyn*	Mzscheme インターフェース |mzscheme-dynamic| |/dyn|
 m  *+netbeans_intg*	|netbeans|
-m  *+ole*		Win32 GUI のみ: |ole-interface|
-N  *+path_extra*	'path'や'tags'での上下階の検索
+m  *+ole*			Win32 GUI のみ: |ole-interface|
+N  *+path_extra*		'path'や'tags'での上下階の検索
 m  *+perl*		Perl インターフェース |perl|
 m  *+perl/dyn*		Perl インターフェース |perl-dynamic| |/dyn|
 N  *+persistent_undo*	永続 undo |undo-persistence|
-   *+postscript*	|:hardcopy| でPostScriptファイルの書き出し
+   *+postscript*		|:hardcopy| でPostScriptファイルの書き出し
 N  *+printer*		|:hardcopy| コマンド
 H  *+profile*		|:profile| コマンド
 m  *+python*		Python 2 インターフェース |python|
-m  *+python/dyn*	Python 2 インターフェース |python-dynamic| |/dyn|
+m  *+python/dyn*		Python 2 インターフェース |python-dynamic| |/dyn|
 m  *+python3*		Python 3 インターフェース |python|
-m  *+python3/dyn*	Python 3 インターフェース |python-dynamic| |/dyn|
+m  *+python3/dyn*		Python 3 インターフェース |python-dynamic| |/dyn|
 N  *+quickfix*		|:make| と |quickfix| コマンド
 N  *+reltime*		|reltime()| 関数, 'hlsearch'/'incsearch' タイムアウト,
 			'redrawtime' オプション
 B  *+rightleft*		右から左へタイプ |'rightleft'|
 m  *+ruby*		Ruby インターフェース |ruby|
 m  *+ruby/dyn*		Ruby インターフェース |ruby-dynamic| |/dyn|
-N  *+scrollbind*	|'scrollbind'|
+N  *+scrollbind*		|'scrollbind'|
 B  *+signs*		|:sign|
-N  *+smartindent*	|'smartindent'|
+N  *+smartindent*		|'smartindent'|
 m  *+sniff*		SniFFインターフェース |sniff|
-N  *+startuptime*	|--startuptime| 引数
-N  *+statusline*	オプション'statusline'、'rulerformat'と、
+N  *+startuptime*		|--startuptime| 引数
+N  *+statusline*		オプション'statusline'、'rulerformat'と、
 			'titlestring'と'iconstring'の特殊フォーマット
 m  *+sun_workshop*	|workshop|
 N  *+syntax*		構文強調 |syntax|
    *+system()*		Unix のみ: |+fork|の反対
-N  *+tag_binary*	タグファイル内の高速(二分探査)検索 |tag-binary-search|
+N  *+tag_binary*		タグファイル内の高速(二分探査)検索 |tag-binary-search|
 N  *+tag_old_static*	静的タグの古い方法 |tag-old-static|
 m  *+tag_any_white*	tagsファイル内で空白文字を許す |tag-any-white|
-m  *+tcl*		Tcl インターフェース |tcl|
+m  *+tcl*			Tcl インターフェース |tcl|
 m  *+tcl/dyn*		Tcl インターフェース |tcl-dynamic| |/dyn|
    *+terminfo*		|terminfo|でtermcapを代替
 N  *+termresponse*	|t_RV| と |v:termresponse| のサポート
-N  *+textobjects*	|text-objects| 選択
+N  *+textobjects*		|text-objects| 選択
    *+tgetent*		非Unix のみ: 外部termcapを使用可能
 N  *+title*		ウィンドウタイトルとアイコン設定 |'title'| |'icon'|
 N  *+toolbar*		|gui-toolbar|
 N  *+user_commands*	ユーザ定義コマンド |user-commands|
 N  *+viminfo*		|'viminfo'|
 N  *+vertsplit*		ウィンドウの垂直分割 |:vsplit|
-N  *+virtualedit*	|'virtualedit'|
+N  *+virtualedit*		|'virtualedit'|
 S  *+visual*		ビジュアルモード |Visual-mode|
-N  *+visualextra*	拡張ビジュアルモードコマンド |blockwise-operators|
+N  *+visualextra*		拡張ビジュアルモードコマンド |blockwise-operators|
 N  *+vreplace*		|gR|と|gr|
-N  *+wildignore*	|'wildignore'|
+N  *+wildignore*		|'wildignore'|
 N  *+wildmenu*		|'wildmenu'|
 S  *+windows*		複数ウィンドウ
-m  *+writebackup*	|'writebackup'|がデフォルトで有効
-m  *+xim*		Xインプットメソッド |xim|
+m  *+writebackup*		|'writebackup'|がデフォルトで有効
+m  *+xim*			Xインプットメソッド |xim|
    *+xfontset*		Xフォントセットサポート |xfontset|
+m  *+xpm_w32*		Win32 GUI のみ: pixmap サポート |:sign-define|
    *+xsmp*		XSMP(X session management)サポート
    *+xsmp_interact*	対話型XSMP(X session management)サポート
 N  *+xterm_clipboard*	Unix のみ: xtermクリップボード操作
-m  *+xterm_save*	xtermのスクリーンを保存と復帰 |xterm-screens|
-N  *+X11*		Unix のみ: ウィンドウタイトルを復帰可能 |X11|
+m  *+xterm_save*		xtermのスクリーンを保存と復帰 |xterm-screens|
+N  *+X11*			Unix のみ: ウィンドウタイトルを復帰可能 |X11|
 
 							*/dyn* *E370* *E448*
 			機能が動的ライブラリを利用する場合には機能名に"/dyn"
@@ -599,6 +604,10 @@ K			カーソル位置のキーワードを調べるためのプログラムを�
 			カーソルが表示可能な位置にある場合は、スリープしている
 			間、カーソルはテキスト中に表示されます。
 			{Vi にはない}
+			スリープ中に受信した netbeans メッセージは処理されま
+			す。{|+netbeans_intg| 機能つきでコンパイルされたときの
+			み利用可能}
+
 
 							*g_CTRL-A*
 g CTRL-A		MEM_PROFILING を define して Vim をコンパイルしたとき

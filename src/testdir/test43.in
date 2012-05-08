@@ -1,6 +1,7 @@
 Tests for regexp with various magic settings.
 
 STARTTEST
+:so small.vim
 :set nocompatible viminfo+=nviminfo
 /^1
 /a*b\{2}c\+/e
@@ -13,7 +14,11 @@ x/\V^aa$
 x:set magic
 /\v(a)(b)\2\1\1/e
 x/\V[ab]\(\[xy]\)\1
-x:?^1?,$w! test.out
+x:$
+:set undolevels=100
+dv?bar?
+Yup:"
+:?^1?,$w! test.out
 :qa!
 ENDTEST
 
@@ -25,3 +30,5 @@ ENDTEST
 6 x ^aa$ x
 7 (a)(b) abbaa
 8 axx [ab]xx
+9 foobar
+

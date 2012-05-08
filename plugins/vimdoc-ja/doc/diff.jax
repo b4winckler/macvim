@@ -135,7 +135,7 @@ Vimが各ファイルについてウィンドウを開く時に起こること�
 	'scrollbind'	off
 	'cursorbind'	off
 	'scrollopt'	"hor" を外す
-	'wrap'		off
+	'wrap'		on
 	'foldmethod'	"manual"
 	'foldcolumn'	0
 

@@ -1,4 +1,4 @@
-*index.txt*     For Vim バージョン 7.3.  Last change: 2011 Jan 04
+*index.txt*     For Vim バージョン 7.3.  Last change: 2011 Aug 06
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -1297,7 +1297,7 @@ You found it, Arthur!				*holy-grail*
 |:k|		:k		マークを設定
 |:keepalt|	:keepa[lt]	代替ファイルを変更せずにコマンドを実行する
 |:keepmarks|	:kee[pmarks]	マークを変更せずにコマンドを実行する
-|:keepjumps|	:keepj[jumps]	マークやジャンプリストを変更せずにコマンドを実
+|:keepjumps|	:keepj[umps]	マークやジャンプリストを変更せずにコマンドを実
 				行する
 |:lNext|	:lN[ext]	ロケーションリストの前の項目の位置へ移動
 |:lNfile|	:lNf[ile]	前のファイルの最後の項目の位置へ移動
@@ -1622,17 +1622,19 @@ You found it, Arthur!				*holy-grail*
 |:visual|	:vi[sual]	":edit" と同じ、ただし "Ex" モードから抜ける。
 |:viusage|	:viu[sage]	ノーマルモードコマンドの概観
 |:view|		:vie[w]		読み込み専用でファイルを開く
-|:vmap|		:vm[ap]		ビジュアル・セレクトモードを対象とする ":map" コマンド
-|:vmapclear|	:vmapc[lear]	ビジュアル・セレクトモードのマッピングをすべて削除
+|:vmap|		:vm[ap]		ビジュアル・セレクトモードを対象とする
+				":map" コマンド
+|:vmapclear|	:vmapc[lear]	ビジュアル・セレクトモードのマッピングをすべて
+				削除
 |:vmenu|	:vme[nu]	ビジュアル・セレクトモードのメニューを追加
 |:vnew|		:vne[w]		新しいウィンドウを垂直分割して作る
-|:vnoremap|	:vn[oremap]	ビジュアル・セレクトモードを対象とする ":noremap"
-				コマンド
-|:vnoremenu|	:vnoreme[nu]	ビジュアル・セレクトモードを対象とする ":noremenu"
-				コマンド
+|:vnoremap|	:vn[oremap]	ビジュアル・セレクトモードを対象とする
+				":noremap" コマンド
+|:vnoremenu|	:vnoreme[nu]	ビジュアル・セレクトモードを対象とする
+				":noremenu" コマンド
 |:vsplit|	:vs[plit]	カレントウィンドウを垂直分割する
-|:vunmap|	:vu[nmap]	ビジュアル・セレクトモードを対象とする ":unmap" コマン
-				ド
+|:vunmap|	:vu[nmap]	ビジュアル・セレクトモードを対象とする
+				":unmap" コマンド
 |:vunmenu|	:vunme[nu]	ビジュアルモードのメニューを削除
 |:windo|	:windo		各ウィンドウに対してコマンドを実行する
 |:write|	:w[rite]	ファイルに保存

@@ -4,14 +4,14 @@
 # Do ":help credits" in Vim to see a list of people who contributed.
 #
 # MURAOKA Taro <koron.kaoriya@gmail.com>, 2001-11.
-# Last Change: 24-Mar-2011.
+# Last Change: 28-Oct-2011.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: Vim 7.3\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-03-23 20:58+0900\n"
-"PO-Revision-Date: 2011-03-23 21:20+0900\n"
+"PO-Revision-Date: 2011-10-28 08:50+0900\n"
 "Last-Translator: MURAOKA Taro <koron.kaoriya@gmail.com>\n"
 "Language-Team: MURAOKA Taro <koron.kaoriya@gmail.com>\n"
 "MIME-Version: 1.0\n"
@@ -1500,7 +1500,7 @@ msgstr "E606: :try のない :finally があります"
 
 #. Give up for a multiple ":finally" and ignore it.
 msgid "E607: multiple :finally"
-msgstr "E607: 複数の :finalyy があります"
+msgstr "E607: 複数の :finally があります"
 
 msgid "E602: :endtry without :try"
 msgstr "E602: :try のない :endtry です"
@@ -3110,7 +3110,7 @@ msgid "--serverlist\t\tList available Vim server names and exit"
 msgstr "--serverlist\t\tVimサーバ名の一覧を表示して終了する"
 
 msgid "--servername <name>\tSend to/become the Vim server <name>"
-msgstr "--servename <name>\t\tVimサーバ <name> に送信/名前設定する"
+msgstr "--servename <name>\tVimサーバ <name> に送信/名前設定する"
 
 msgid "--startuptime <file>\tWrite startup timing messages to <file>"
 msgstr "--startuptime <file>\t起動にかかった時間の詳細を <file> へ出力する"
@@ -3488,7 +3488,7 @@ msgid "??? from here until ???END lines may be messed up"
 msgstr "??? ここから???ENDまでの行が破壊されているようです"
 
 msgid "??? from here until ???END lines may have been inserted/deleted"
-msgstr "??? ここから??ENDまでの行が挿入か削除されたようです"
+msgstr "??? ここから???ENDまでの行が挿入か削除されたようです"
 
 msgid "???END"
 msgstr "???END"
@@ -3729,7 +3729,7 @@ msgid ""
 "    to recover the changes (see \":help recovery\").\n"
 msgstr ""
 "\"\n"
-"    を使用して変更をリカバーします(\":help recover\" を参照).\n"
+"    を使用して変更をリカバーします(\":help recovery\" を参照).\n"
 
 msgid "    If you did this already, delete the swap file \""
 msgstr "    既にこれを行なったのならば, スワップファイル \""
@@ -3865,7 +3865,7 @@ msgid "-- More --"
 msgstr "-- 継続 --"
 
 msgid " SPACE/d/j: screen/page/line down, b/u/k: up, q: quit "
-msgstr " SPACE/d/j: 画面/ページ/行 下, b/uk: 上, q: 終了 "
+msgstr " SPACE/d/j: 画面/ページ/行 下, b/u/k: 上, q: 終了 "
 
 msgid "Question"
 msgstr "質問"
@@ -3910,7 +3910,7 @@ msgid "E807: Expected Float argument for printf()"
 msgstr "E807: printf() の引数には浮動少数が期待されています"
 
 msgid "E767: Too many arguments to printf()"
-msgstr "E767: pirntf() の引数が多過ぎます"
+msgstr "E767: printf() の引数が多過ぎます"
 
 msgid "W10: Warning: Changing a readonly file"
 msgstr "W10: 警告: 読込専用ファイルを変更します"

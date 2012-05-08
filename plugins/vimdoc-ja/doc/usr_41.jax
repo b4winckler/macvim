@@ -1,4 +1,4 @@
-*usr_41.txt*	For Vim バージョン 7.3.  Last change: 2011 Jun 19
+*usr_41.txt*	For Vim バージョン 7.3.  Last change: 2011 Dec 15
 
 		     VIM USER MANUAL - by Bram Moolenaar
 
@@ -647,6 +647,12 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	sinh()			hyperbolic sine
 	cosh()			hyperbolic cosine
 	tanh()			hyperbolic tangent
+
+その他の計算:						*bitwise-function*
+	and()			bitwise AND
+	invert()		bitwise invert
+	or()			bitwise OR
+	xor()			bitwise XOR
 
 変数:							*var-functions*
 	type()			変数の型
@@ -1583,7 +1589,7 @@ Unix では特別なコメント書式を使って Vim スクリプトを実行�
 	let XXX_loaded = 1
 
 ==============================================================================
-*41.11*	プラグインを書く 				*write-plugin*
+*41.11*	プラグインを書く				*write-plugin*
 
 Vim スクリプトを書いて、それを多くの人に使ってもらうことができます。そのような
 スクリプトはプラグインと呼ばれます。Vim ユーザーはあなたのスクリプトをプラグイ

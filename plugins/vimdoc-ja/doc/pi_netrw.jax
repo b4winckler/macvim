@@ -1,4 +1,4 @@
-*pi_netrw.txt*  For Vim バージョン 7.3.  Last change: 2011 May 31
+*pi_netrw.txt*  For Vim バージョン 7.3.  Last change: 2012 Jan 26
 
 	    -----------------------------------------------------
 	    NETRW REFERENCE MANUAL    by Charles E. Campbell, Jr.
@@ -43,7 +43,7 @@ Copyright: Copyright (C) 1999-2011 Charles E Campbell, Jr    *netrw-copyright*
 5.  netrw の有効化.......................................|netrw-activate|
 6.  透過的なリモートファイル編集.........................|netrw-transparent|
 7.  Ex コマンド..........................................|netrw-ex|
-8.  変数とオプション.....................................|netrw-var|
+8.  変数とオプション.....................................|netrw-settings|
 9.  ブラウジング.........................................|netrw-browse|
       ブラウジングの紹介.................................|netrw-intro-browse|
       クイックリファレンス: マップ.......................|netrw-browse-maps|
@@ -89,7 +89,7 @@ Copyright: Copyright (C) 1999-2011 Charles E Campbell, Jr    *netrw-copyright*
       マークファイル: マーク解除.........................|netrw-mu|
       Netrw ブラウザ変数.................................|netrw-browser-var|
       Netrw ブラウザとオプション設定の互換性.............|netrw-incompatible|
-      Netrw の設定.......................................|netrw-settings|
+      Netrw 設定ウィンドウ...............................|netrw-settings-window|
       ファイルを取得する.................................|netrw-O|
       プレビューウィンドウ...............................|netrw-p|
       以前のウィンドウ...................................|netrw-P|
@@ -289,12 +289,13 @@ scp や ftp 以外のプロトコルもサポートされています。次の�
 USERID と PASSWORD の変更		*netrw-chgup* *netrw-userpass* {{{2
 
 	ftp を使うと user-id と password を入力するプロンプトが表示されます。
-	それらはグローバル変数の g:netrw_uid と s:netrw_passwd に記録されま
-	す。記録された ID とパスワードは次に ftp を使うときに再使用されます。
-	他の id/password を使う必要が出てきた場合は NetUserPass() 関数を呼び出
-	してください。パスワードの入力を省略したい場合は ftp が <.netrc> ファ
-	イルをサポートしているかどうか確認してください。|netrw-passwd| も参照
-	(ssh/scp でパスワードを省略したい場合は |netrw-ssh-hach| を参照)。
+	それらはグローバル変数の |g:netrw_uid| と |s:netrw_passwd| に記録され
+	ます。記録された ID とパスワードは次に ftp を使うときに再使用されま
+	す。他の id/password を使う必要が出てきた場合は |NetUserPass()| 関数を
+	呼び出してください。パスワードの入力を省略したい場合は ftp が <.netrc>
+	ファイルをサポートしているかどうか確認してください。|netrw-passwd| も
+	参照 (ssh/scp でパスワードを省略したい場合は |netrw-ssh-hach| を参
+	照)。
 
 	:NetUserPass [uid [password]]		-- password入力(必要ならuidも)
 	:call NetUserPass()			-- uid と password 入力
@@ -302,7 +303,7 @@ USERID と PASSWORD の変更		*netrw-chgup* *netrw-userpass* {{{2
 	:call NetUserPass("uid","password")	-- uid と password 設定
 
 NETRW の変数と設定					*netrw-variables* {{{2
-(|netrw-browser-var| |netrw-protocol| |netrw-settings| |netrw-var| も参照)
+(|netrw-browser-var| |netrw-protocol| |netrw-settings| も参照)
 
 Netrw にはたくさんの変数が用意されていて、好きなようにカスタマイズできます。
 :NetrwSettings コマンド (|netrw-settings|参照) を使うと、現在の netrw の設定が
@@ -323,7 +324,8 @@ Netrw にはたくさんの変数が用意されていて、好きなように�
 		      まずファイルが開かれ、それから指定された関数参照
 		      (|Funcref|) が呼ばれる。複数指定する場合は関数参照のリス
 		      ト (|List|) を指定する。
-		      (初期設定) 定義なし
+		      (初期設定) 定義なし。(g:Netrw... で大文字が使われていま
+		      すが、これは関数参照を保存するために必要です)
 >
 			    例: .vimrc で次のように設定します。すべてのファイ
 			        ルを開く操作に作用します。
@@ -465,6 +467,10 @@ Jan は netrw における ftp の処理を多少誤解しているようです�
 	let g:netrw_scp_cmd = '"c:\Program Files\PuTTY\pscp.exe" -q -batch'
 	let g:netrw_sftp_cmd= '"c:\Program Files\PuTTY\psftp.exe"'
 <
+(note: windows 7 では putty v0.6 の "-batch" オプションが機能しないという報告
+があったので、そのようなシステムではオプションを使わないようにするといいでしょ
+う。)
+
 putty、pscp、psftp 等に関する説明は |netrw-p8| 参照。
 
 Ftp (古いプロトコル) は多くの実装に恵まれました。しかし残念ながら、いまいちな
@@ -691,13 +697,16 @@ netrw のようなプラグインの使用方法は |netrw-activate| を参照�
 
 
 ==============================================================================
-8. 変数とオプション			*netrw-options* *netrw-var* {{{1
+8. 変数とオプション				*netrw-settings* {{{1
 
-(netrw ブラウザの設定に関しては |netrw-browser-var| を見てください)
+(参照: |netrw-options| |netrw-variables| |netrw-protocol|
+       |netrw-browser-settings| |netrw-browser-options|
+       |netrw-browser-var| )
 
 <netrw.vim> スクリプトでは、ファイル転送の動作を変更するためのオプションとし
 て、いくつかの変数が定義されています。通常、それらの変数を <.vimrc> ファイルの
 中で設定して使います。(|netrw-settings| |netrw-protocol| も参照)
+						*netrw-options*
 >
                         ----------------
                         Netrw オプション
@@ -729,6 +738,7 @@ netrw のようなプラグインの使用方法は |netrw-activate| を参照�
                                 =1 標準の ftp を使う >
 	-----------------------------------------------------------------------
 <
+							*netrw-internal-variables*
 netrw は次の変数を一時的に使用します。
 >
 				   --------
@@ -1106,15 +1116,14 @@ gui (gvim) では <leftmouse> (左クリック) でファイルを選択でき�
 ばウィンドウを分割して開くことができます。ウィンドウは水平分割されます。(垂直
 分割は |netrw-v|)
 
-通常、o キーを押すと新しいウィンドウが上に分割されます。下に分割したい場合は
-<.vimrc> の中で次のように設定してください:
-
-	let g:netrw_alto = 1
-
-(|netrw-t| と |netrw-T| と|netrw-v| も参照)
+通常、o キーを押すと新しいウィンドウが上に分割されます。
 
 関連設定: |g:netrw_alto| |g:netrw_winsize|
 
+関連アクション |netrw-cr| |netrw-p| |netrw-t| |netrw-T| |netrw-v|
+関連設定変数:
+   |g:netrw_alto|    分割の方向 (上/下) を制御
+   |g:netrw_winsize| 初期サイズを制御
 
 タブを使ったブラウジング			*netrw-t* *netrw-T* {{{2
 
@@ -1122,8 +1131,9 @@ gui (gvim) では <leftmouse> (左クリック) でファイルを選択でき�
 ばそれを新しいタブで開くことができます。"T" を使うと、ファイル/ディレクトリを
 バックグラウンドタブで開くことができます (|gT| 参照)。
 
-関連項目: |netrw-o| |netrw-v|
-
+関連アクション |netrw-cr| |netrw-o| |netrw-p| |netrw-v|
+関連設定変数:
+   |g:netrw_winsize| 初期サイズを制御
 
 垂直分割ウィンドウを使ったブラウジング			*netrw-v* {{{2
 
@@ -1131,17 +1141,17 @@ gui (gvim) では <leftmouse> (左クリック) でファイルを選択でき�
 ばウィンドウを分割して開くことができます。ウィンドウは垂直分割されます。(水平
 分割は |netrw-o|)
 
-通常、v キーを押すと新しいウィンドウが左に分割されます。右に分割したい場合は
-<.vimrc> の中で次のように設定してください:
-
-	let g:netrw_altv = 1
-
-(|netrw-o| と|netrw-t| |netrw-T| も参照)
+通常、v キーを押すと新しいウィンドウが左に分割されます。
 
 一つのディレクトリには一つのバッファが使われます。"v" で表示済みのサブディレク
 トリを開くとウィンドウは分割されますが、同じバッファが再び表示されます。
 
 関連設定: |g:netrw_altv| |g:netrw_winsize|
+
+関連アクション |netrw-cr| |netrw-o| |netrw-t| |netrw-T| |netrw-v|
+関連設定変数:
+   |g:netrw_altv|    分割の方向 (右/左) を制御
+   |g:netrw_winsize| 初期サイズを制御
 
 一覧表示スタイル変更 (THIN LONG WIDE TREE)			*netrw-i* {{{2
                      (細   長   広   ツリー)
@@ -1337,6 +1347,7 @@ g:netrw_rmdir_cmd によるディレクトリの削除が失敗した場合は�
 
 	g:netrw_rmf_cmd: ssh HOSTNAME rm -f
 
+関連項目: |netrw-d|
 関連設定: |g:netrw_local_rmdir| |g:netrw_rm_cmd|
           |g:netrw_rmdir_cmd|   |g:netrw_ssh_cmd|
 
@@ -1463,6 +1474,7 @@ shift-downarrow と shift-uparrow を使うと便利でしょう。
 関連項目: |netrw-a| |netrw-gh| |netrw-mh|
 
 
+					*netrw-sort-sequence*
 ソートシーケンスを編集する		*netrw-S* *netrw-sortsequence* {{{2
 
 "Sorted by" が name (名前順ソート) のとき 、g:netrw_sort_sequence を設定するこ
@@ -1657,9 +1669,9 @@ g:netrw_mkdir_cmd 変数に依存。ローカル操作は g:netrw_locak_mkdir �
 レクトリを作成するときに既存のファイルまたはディレクトリと同じ名前を指定する
 と、エラーが表示され、操作は無視されます。
 
-現在、ftp でのディレクトリ作成はサポートされていません。
-
-関連設定: |g:netrw_local_mkdir| |g:netrw_mkdir_cmd|
+関連項目: |netrw-D|
+関連設定変数:	|g:netrw_local_mkdir|  |g:netrw_mkdir_cmd|
+		|g:netrw_remote_mkdir|
 
 
 ブラウジングディレクトリをカレントディレクトリにする	*netrw-c* {{{2
@@ -1880,9 +1892,10 @@ netrw によって url が開かれ、タグに移動できます。
 "mu" マップを使うと現在設定されているすべてのマークが解除されます。
 
 
+				*netrw-browser-settings*
 NETRW ブラウザ変数		*netrw-browser-options* *netrw-browser-var* {{{2
 
-(ファイル転送の設定については |netrw-options| を参照)
+(ファイル転送の設定については |netrw-options| と |netrw-protocol| を参照)
 
 netrw ブラウザの各種設定は変数で管理されていて、それを変更することができます。
 <.vimrc> などで変数を設定することでブラウザの動作をカスタマイズできます。
@@ -1930,6 +1943,14 @@ netrw ブラウザの各種設定は変数で管理されていて、それを�
 
   *g:netrw_compress*		  ="gzip"
 				    ファイル圧縮コマンド
+
+  *g:Netrw_corehandler*		  netrw ブラウザの "x" コマンドで <core> ファ
+				イルを処理するときの追加処理を設定できます。
+				g:Netrw_corehandler には一つ、または複数の関数
+				参照 (|Funcref|) を指定できます。(g:Netrw...
+				で大文字が使われていますが、これは関数参照を保
+				存するために必要です)
+
 
   *g:netrw_ctags*		  ="ctags"
 				タグを作成するための外部コマンド
@@ -2073,7 +2094,8 @@ netrw ブラウザの各種設定は変数で管理されていて、それを�
 				前のファイル/ディレクトリがあるなら、このオプ
 				ションを設定して表示を調整するといいでしょう。
 
-  *g:netrw_mkdir_cmd*		  リモートディレクトリ作成コマンド
+  *g:netrw_mkdir_cmd*		  ssh 経由でのリモートディレクトリ作成コマンド
+				(|g:netrw_remote_mkdir| も参照)
 				 初期設定: "ssh USEPORT HOSTNAME mkdir"
 
   *g:netrw_mousemaps*		  =1 (初期設定) ブラウジングでマウスボタンを有効
@@ -2085,6 +2107,14 @@ netrw ブラウザの各種設定は変数で管理されていて、それを�
 				     右クリック      : ファイル/ディレクトリを
 				                       削除
 				=0: マウスのマップを無効にする
+
+  *g:netrw_nobeval*		未設定 (初期設定)
+				この変数を定義するとバルーン評価は抑制される。
+				(参照 |'ballooneval'|)
+
+  *g:netrw_remote_mkdir*	  ftp 経由でのローカルディレクトリ作成コマンド
+				(|g:netrw_mkdir_cmd| も参照)
+				 初期設定: "mkdir"
 
   *g:netrw_retmap*		  この変数が存在し、その値が 1 なら:
 				 * netrw でファイルを開いたとき
@@ -2199,6 +2229,9 @@ netrw ブラウザの各種設定は変数で管理されていて、それを�
 				です。新しいウィンドウのサイズを netrw のカレ
 				ントバッファウィンドウに対する比率で指定しま
 				す。
+				 g:netrw_winsize が 0 より小さい場合、新しい
+				ウィンドウの行または列の大きさにはその値の絶対
+				値が使われる。
 				 初期設定: 50 (50%)
 
   *g:netrw_xstrlen*		  マルチバイト文字列の長さを計算する方法を指定す
@@ -2229,7 +2262,7 @@ Netrw 内部でオプションを変更するときは、ユーザー設定を�
 も) が置かれているディレクトリがカレントディレクトリとして設定されてしまいま
 す。
 
-NETRW ブラウザの設定						*netrw-settings* {{{2
+NETRW 設定ウィンドウ				*netrw-settings-window* {{{2
 
 NetrwSettings.vim プラグインのコマンド >
 	:NetrwSettings
@@ -2237,7 +2270,7 @@ NetrwSettings.vim プラグインのコマンド >
 てファイルを保存すると設定が反映されます。それぞれの変数の上で "?" を押すとそ
 の変数のヘルプが表示されます。
 
-(参照: |netrw-browser-var| |netrw-protocol| |netrw-var| |netrw-variables|)
+(参照: |netrw-browser-var| |netrw-protocol| |netrw-settings| |netrw-variables|)
 
 
 ==============================================================================
@@ -2305,13 +2338,19 @@ netrw を次のように設定すると便利かもしれません: >
 
 ファイル/ディレクトリを以前の (最後にアクセスした) ウィンドウ (:he |CTRL-W_p|)
 で開くには、"P" を押します。ウィンドウが一つしかない場合は、新しいウィンドウが
-水平分割で作成されます (分割位置は |g:netrw_alto| で設定できます。ウィンドウの
-初期サイズは |g:netrw_winsize| で設定できます)。
+水平分割 (初期設定) で作成されます。
 
 ウィンドウが複数ある場合は、以前のウィンドウを使ってファイル/ディレクトリが開
 かれます。以前のウィンドウで表示されているバッファに未保存の変更があり、その
 バッファを表示しているウィンドウが一つだけの場合、バッファを保存するかどうかを
 尋ねるプロンプトが表示されます (yes, no, または cancel)。
+
+関連アクション |netrw-cr| |netrw-o| |netrw-t| |netrw-T| |netrw-v|
+関連設定変数:
+   |g:netrw_alto|    分割の方向 (上/下) を制御
+   |g:netrw_altv|    分割の方向 (右/左) を制御
+   |g:netrw_preview| 分割の方向 (水平/垂直) を制御
+   |g:netrw_winsize| 初期サイズを制御
 
 
 一覧を更新する				*netrw-ctrl-l* *netrw-ctrl_l* {{{2
@@ -2707,6 +2746,30 @@ V (|linewise-visual|) で選択することで複数のファイル/ディレク
 ==============================================================================
 12. 変更履歴						*netrw-history* {{{1
 
+	v143: Jun 01, 2011 * |g:netrw_winsize| will accept a negative
+			     number; the absolute value of it will then
+			     be used to specify lines/columns instead of
+			     a percentage.
+	      Jul 05, 2011 * the "d" map now supports mkdir via ftp
+			     See |netrw-d| and |g:netrw_remote_mkdir|
+	      Jul 11, 2011 * Changed Explore!, Sexplore!, and Vexplore
+			     to use a percentage of |winwidth()| instead
+			     of a percentage of |winheight()|.
+	      Jul 11, 2011 * included support for https://... I'm just
+			     beginning to test this, however.
+	      Aug 01, 2011 * changed RestoreOptions to also restore
+			     cursor position in netrw buffers.
+	      Aug 12, 2011 * added a note about "%" to the balloon
+	      Aug 30, 2011 * if |g:netrw_nobeval| exists, then balloon
+			     evaluation is suppressed.
+	      Aug 31, 2011 * (Benjamin R Haskell) provided a patch that
+			     implements non-standard port handling for
+			     files opened via the remote browser.
+	      Aug 31, 2011 * Fixed a **//pattern  Explorer bug
+	      Sep 15, 2011 * (reported by Francesco Campana) netrw
+			     now permits the "@" to be part of the
+			     user id (if there's an @ that appears
+			     to the right).
 	v142: Apr 06, 2011 * I modified NetrwRemoteListing() to use
 			     shellescape(fnameescape(s:path),1) for
 			     the benefit of those using scp://.../

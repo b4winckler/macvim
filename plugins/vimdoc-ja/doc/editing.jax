@@ -431,7 +431,7 @@ Unix などではファイル名にバッククォート '`' も使える。例:
 するために使われる。指定の形式は次の通り。  >
 	++{optname}
 または >
-<	++{optname}={value}
+	++{optname}={value}
 
 {optname} は次のうちのどれか:	    *++ff* *++enc* *++bin* *++nobin* *++edit*
     ff  または  fileformat	'fileformat'	を指定

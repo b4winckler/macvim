@@ -1,4 +1,4 @@
-*os_vms.txt*    For Vim バージョン 7.3.  Last change: 2010 Aug 16
+*os_vms.txt*    For Vim バージョン 7.3.  Last change: 2011 Aug 14
 
 
 			  VIMリファレンスマニュアル
@@ -37,9 +37,6 @@ Vimのソースコードは公式サイトからftpでダウンロードする�
 	ftp://ftp.vim.org/pub/vim/
 またはミラーサイトを利用しても良い:
 	ftp://ftp.vim.org/pub/vim/MIRRORS
-
-VMSでvim.exeを構築するにはUNIXとextraアーカイブの両方が必要である。Vimの全機能
-を利用するにはランタイムアーカイブも同様に必要となる。
 
 コンパイル済み実行可能ファイルは以下のところで入手可能:
 	http://www.polarfox.com/vim/
@@ -91,9 +88,8 @@ NOTE: VAXではDEC Cコンパイラを使えば問題ない。VAXCコンパイ�
 解釈できる形へ変換するプログラムを使用しなければならない。詳細はINSTALLvms.txt
 を参照。
 
-MMS_VIM.EXEはVIM.EXEと一緒に構築されるが、CTAGS.EXEとXXD.EXEは手動でサブディレ
-クトリ<.CTAGS>や<.XXD>へ移動して個別に構築しなければならない。CTAGSとXXDのVMS
-用Makefileが常に最新のものとは限らないので注意を払う必要がある。
+MMS_VIM.EXEはVIM.EXEと一緒に構築されるが、XXD.EXEは手動でサブディレ
+へ移動して個別に構築しなければならない。
 
 もはやCTAGSはVimとは独立したソフトウェアになっているが、以下で述べるように
 OpenVMS特有のソースコードにはCTAGSのソースコードファイルも含まれている。
@@ -216,7 +212,7 @@ NOTE: 独立サーバやクラスタ環境で使用しているならばこの�
 	$ define VIM "<server_name>[""user password""]::device:<path>"
 	$ vi*m :== "mcr VIM:VIM.EXE"
 
-例としては: >
+例: >
 
 	$ define VIM "PLUTO::RF10:[UTIL.VIM]"
 	$ define VIM "PLUTO""ZAY mypass""::RF10:[UTIL.VIM]" ! if passwd required
@@ -385,7 +381,7 @@ NOTE: 折カッコ<,>を(device:<path>file.ext;version)のように使うこと�
 例: rf10:<user.zay.work>test.c;1
 
 (David Elins <delins@foliage.com>, Jerome Lauret
-<JLAURET@mail.chem.sunysb.edu> Vim 5.6 )
+<JLAURET@mail.chem.sunysb.edu> Vim 5.6)
 
 
 8.5 リモートホストの実際
@@ -572,7 +568,7 @@ GNU/UNIX 互換ではないので機能しない。
 他に問題の起こりそうなプログラムとして、patch や make などがある。
 www.polarhome.com では OpenVMS 上での GNU プログラムに関する問題を解決するた
 めに、Alpha や VAX 向けの GNU パッケージを配布している。
-( Zoltan Arpadffy, Vim 6.1)
+(Zoltan Arpadffy, Vim 6.1)
 
 
 8.12 diff モード
@@ -633,7 +629,7 @@ vimdiff として新しいシンボルを定義することもできる。例: >
     3. VIM  diff:  $ VIMDIFF  <FILE1> <FILE2>
     4. GVIM diff:  $ GVIMDIFF <FILE1> <FILE2>
 
-( Coen Engelbarts, Vim 6.1)
+(Coen Engelbarts, Vim 6.1)
 
 
 8.13 C 言語のキーワードに '$' を認める
@@ -654,19 +650,19 @@ DEC C では識別子に '$' を使用できる。ANSI C では使用できな�
 しい識別子を選択することができる。(VMS 上の Ctags もバージョン 5.1 から C 言
 語のキーワードに '$' を認めている)
 
-( Coen Engelbarts, Vim 6.1)
+(Coen Engelbarts, Vim 6.1)
 
 8.14 初心者のための VIMTUTOR
 
 OpenVMS 上で Vim 初心者の最初の一歩を手助けするために DCL スクリプトの
-VIMTUTOR.COM が用意されている。バイナリ配布物においては次のようにして開始で
-きるだろう: >
+VIMTUTOR.COM が用意されている。バイナリ配布物によっては次のようにして開始でき
+るだろう: >
 
 	@vim:vimtutor
 
 (Thomas.R.Wyant III, Vim 6.1)
 
-8.15 コンソールモードでの起動が遅い問題について
+8.16 コンソールモードでの起動が遅い問題について
 
 GUI/GTK 版の Vim はコンソールモードでも同じように動作するので、多くの管理者は
 それをシステムワイドでデプロイする。
@@ -679,7 +675,7 @@ GUI/GTK 版の Vim はコンソールモードでも同じように動作する�
 
     |- vim73
     |----- doc
-    |----- syntax        
+    |----- syntax
        vimrc    (system rc files)
        gvimrc
        gvim.exe (GUI/GTK 版の vim.exe をリネームしたもの)
@@ -706,13 +702,13 @@ GUI/GTK 版の Vim はコンソールモードでも同じように動作する�
 $show cluster
 View of Cluster from system ID 11655  node: TOR                                                                     18-AUG-2008 11:58:31
 +---------------------------------+
-ｦ        SYSTEMS        ｦ MEMBERS ｦ
-+-----------------------+---------ｦ
-ｦ  NODE  ｦ   SOFTWARE   ｦ  STATUS ｦ
-+--------+--------------+---------ｦ
-ｦ TOR    ｦ VMS V7.3-2   ｦ MEMBER  ｦ
-ｦ TITAN2 ｦ VMS V8.3     ｦ MEMBER  ｦ
-ｦ ODIN   ｦ VMS V7.3-2   ｦ MEMBER  ｦ
+¦        SYSTEMS        ¦ MEMBERS ¦
++-----------------------+---------¦
+¦  NODE  ¦   SOFTWARE   ¦  STATUS ¦
++--------+--------------+---------¦
+¦ TOR    ¦ VMS V7.3-2   ¦ MEMBER  ¦
+¦ TITAN2 ¦ VMS V8.3     ¦ MEMBER  ¦
+¦ ODIN   ¦ VMS V7.3-2   ¦ MEMBER  ¦
 +---------------------------------+
 
 VIM ディレクトリは共通にし、実行ファイルだけ異なるようにすると便利である。この

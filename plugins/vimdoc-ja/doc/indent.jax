@@ -1,4 +1,4 @@
-*indent.txt*    For Vim バージョン 7.3.  Last change: 2011 Jul 15
+*indent.txt*    For Vim バージョン 7.3.  Last change: 2011 Sep 02
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -133,8 +133,8 @@ CTRL-TやCTRL-Dを使用してインデントを変更した後では、Vimは�
 プション文字の後ろは次のような形式で指定できる (N は任意の数字):
 	N	N スペースインデント
 	-N	N スペースインデント (左方向に)
-	Ns	'shiftwidth の N 倍のスペース
-	-Ns	'shiftwidth の N 倍のスペース (左方向に)
+	Ns	'shiftwidth' の N 倍のスペース
+	-Ns	'shiftwidth' の N 倍のスペース (左方向に)
 
 以下のリストでは、"N" は指定したい数値を意味する(数値は負でも良い)。数値のあと
 に 's'がある時には、数値に'shiftwidth'の数を掛算して使用する: "1s"は
@@ -437,7 +437,7 @@ shiftwidth'に等しく、"2s"は'shiftwidth'の2倍になり、以下同様。
 		       c3			    c3
 		      ) && c4;			) && c4;
 <
-							*cino-2*
+							*cino-w*
 	wN    N が 0 ではなければ次に示すような場合の、閉じていない丸カッコ後
 	      の非空白文字ではなく、カッコ直後の位置がインデントに使用される:
 		  - "(0" を使用している時の閉じていない丸カッコ
@@ -699,6 +699,42 @@ PYTHON							*ft-python-indent*
 	let g:pyindent_nested_paren = '&sw'
 継続行のインデント: >
 	let g:pyindent_continue = '&sw * 2'
+
+R								*ft-r-indent*
+
+関数の引数が複数行にまたがる場合はそれらは整列されます。関数の引数を整列させた
+くない場合は |vimrc| に次の設定を書いてください:
+>
+   let r_indent_align_args = 0
+<
+コメント文字 (#) で始まるすべての行は R の通常のコードと同じレベルでインデント
+されます。Emacs/ESS のユーザーは 1 つの # で始まる行を 40 桁でインデントし、##
+で始まる行を R コードと同じ桁でインデントし、### で始まる行をインデントしない
+ようにしています。Emacs/ESS と同じようにインデントをしたい場合は |vimrc| に次
+の設定を書いてください:
+>
+   let r_indent_ess_comments = 1
+<
+1 つの # で始まる行の整列位置を 40 桁から変えたい場合は
+r_indent_comment_column の値を設定してください。次のようにします:
+>
+   let r_indent_comment_column = 30
+<
+行末が "<-" で終わる行に続くコードはインデントされます。Emacs/ESS ではそれが
+トップレベル関数ならインデントはされません。Emacs/ESS と同じようにインデントし
+たい場合は次の設定を |vimrc| に書いてください:
+>
+   let r_indent_ess_compatible = 1
+<
+このオプションを設定するかしないかで次のようにインデントが変わります:
+>
+   ### r_indent_ess_compatible = 1           ### r_indent_ess_compatible = 0
+   foo <-                                    foo <-
+       function(x)                               function(x)
+   {                                             {
+       paste(x)                                      paste(x)
+   }                                             }
+<
 
 SHELL							*ft-sh-indent*
 

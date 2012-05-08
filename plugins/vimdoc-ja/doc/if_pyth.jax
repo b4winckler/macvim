@@ -1,4 +1,4 @@
-*if_pyth.txt*   For Vim バージョン 7.3.  Last change: 2011 May 07
+*if_pyth.txt*   For Vim バージョン 7.3.  Last change: 2012 Feb 04
 
 
 		  VIM REFERENCE MANUAL    by Paul Moore
@@ -216,9 +216,9 @@ Pythonからの出力					*python-output*
 	- vim.buffersのインデックス化から (|python-buffers|)
 	- ウィンドウの"buffer"属性から (|python-window|)
 
-バッファオブジェクトは、そのバッファの完全なファイル名を読み取り専用属性(name)
-として持っています。バッファオブジェクトは３つのメソッドを持っています(append、
-mark、range。以下参照)。
+バッファオブジェクトは二つの読み取り専用属性を持っています。name はバッファの
+フルファイル名です。number はバッファ番号です。バッファオブジェクトは 3 つのメ
+ソッドを持っています (append、mark、range。以下参照)。
 
 バッファオブジェクトは、シークエンスオブジェクトとして扱うこともできます。この
 文脈では、バッファオブジェクトは文字列のリスト(そう、これはmutableです)のよう
@@ -375,7 +375,7 @@ Vim の動作はコンフィグを実行したシステムに依存します。P
 どのバージョンの Python が利用可能になっているかは次のコマンドで確認できます:
 >
 	if has('python')
-	  echo 'there is Pyton 2.x'
+	  echo 'there is Python 2.x'
   	elseif has('python3')
 	  echo 'there is Python 3.x'
 	endif

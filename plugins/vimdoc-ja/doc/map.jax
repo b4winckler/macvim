@@ -1,4 +1,4 @@
-*map.txt*       For Vim バージョン 7.3.  Last change: 2011 Jun 13
+*map.txt*       For Vim バージョン 7.3.  Last change: 2012 Feb 02
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -231,9 +231,20 @@ InsertDot() 関数の戻り値が挿入されます。カーソルの前のテ�
 - 他のバッファの編集。
 - |:normal| コマンド。
 - カーソルの移動は可能ですが、後で元に戻されます。
-- getchar() は使用できますが、既存の入力バッファからは取得できず、新しい入力
-  バッファは捨てられます。
 以上のことを実現したい場合は、そのためのコマンド文字列を返してください。
+
+getchar() が使用できます。先行入力があればそれが消費されます。例えば次のような
+マップを定義します: >
+  inoremap <expr> <C-L> nr2char(getchar())
+  inoremap <expr> <C-L>x "foo"
+そして CTRL-L を押してみます。すぐには何も起きません。どのマップを使うかを決定
+するためには文字がもう一つ必要です。次に 'x' を押すと後者のマップが使われ、
+"foo" が挿入されます。他のキーを押すと前者のマップが使われ、その文字が
+getchar() によって取得され、返されます。
+If you now type CTRL-L nothing happens yet, Vim needs the next character to
+decide what mapping to use.  If you type 'x' the second mapping is used and
+"foo" is inserted.  If you type any other key the first mapping is used,
+getchar() gets the typed key and returns it.
 
 例を示します。リスト番号を自動的に増加させつつ挿入します: >
 	let counter = 0
@@ -517,7 +528,7 @@ Note: 変数 "mapleader" はマップを定義するときに使用されます�
 <LocalLeader> は <Leader> に似ていますが、"mapleader" ではなく
 "maplocalleader" を使用します。<LocalLeader> はバッファローカルのマップに使用
 するといいでしょう。例: >
-      :map <LocalLeader>q  \DoItNow
+      :map <buffer> <LocalLeader>A  oanother line<Esc>
 <
 グローバルプラグインでは <Leader> を使用し、ファイルタイププラグインでは
 <LocalLeader> を使用するといいでしょう。"mapleader" と "maplocalleader" の設定
@@ -540,6 +551,7 @@ Note: 変数 "mapleader" はマップを定義するときに使用されます�
 	<Char-123>	character 123
 	<Char-033>	character 27
 	<Char-0x7f>	character 127
+	<S-Char-114>    character 114 ('r') shifted ('R')
 これは 'keymap' ファイルで (マルチバイト) 文字を定義するのに便利です。表記は大
 文字でも小文字でも構いません。
 
@@ -1181,7 +1193,7 @@ Note: 引数はVimスクリプトの式としてではなく、テキストと�
 script2.vimを実行すると"None"が表示されます。期待した結果とは違うでしょう。
 代わりに関数呼び出しを使ってください。
 
-保管の種類					*:command-completion* *E179*
+補完の種類					*:command-completion* *E179*
 					*E180* *E181* *:command-complete*
 
 属性を指定しない場合、ユーザ定義コマンドの入力時に引数は補完されません。下記の

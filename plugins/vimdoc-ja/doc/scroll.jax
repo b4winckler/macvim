@@ -303,12 +303,12 @@ XFree86を使っているときには、/etc/XF86Configに貴方のマウスの�
 追加すれば変換ができる。 >
 
   XTerm*VT100.Translations:		#override \n\
-  		s<Btn4Down>: string("0x9b") string("[64~") \n\
-  		s<Btn5Down>: string("0x9b") string("[65~") \n\
-  		<Btn4Down>: string("0x9b") string("[62~") \n\
-  		<Btn5Down>: string("0x9b") string("[63~") \n\
- 		<Btn4Up>: \n\
- 		<Btn5Up>: 
+		s<Btn4Down>: string("0x9b") string("[64~") \n\
+		s<Btn5Down>: string("0x9b") string("[65~") \n\
+		<Btn4Down>: string("0x9b") string("[62~") \n\
+		<Btn5Down>: string("0x9b") string("[63~") \n\
+		<Btn4Up>: \n\
+		<Btn5Up>: 
 
 以下のマッピングを vimrc ファイルに追加してください: >
 	:map <M-Esc>[62~ <ScrollWheelUp>

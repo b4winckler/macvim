@@ -2901,10 +2901,6 @@ failed:
     }
 #endif
 
-    /* Reset now, following writes should not omit the EOL.  Also, the line
-     * number will become invalid because of edits. */
-    curbuf->b_no_eol_lnum = 0;
-
     if (recoverymode && error)
 	return FAIL;
     return OK;
@@ -5343,6 +5339,8 @@ nofail:
 #endif
     {
 	aco_save_T	aco;
+
+	curbuf->b_no_eol_lnum = 0;  /* in case it was set by the previous read */
 
 	/*
 	 * Apply POST autocommands.
@@ -9023,6 +9021,8 @@ ex_doautoall(eap)
     int		retval;
     aco_save_T	aco;
     buf_T	*buf;
+    char_u	*arg = eap->arg;
+    int		call_do_modelines = check_nomodeline(&arg);
 
     /*
      * This is a bit tricky: For some commands curwin->w_buffer needs to be
@@ -9039,11 +9039,15 @@ ex_doautoall(eap)
 	    aucmd_prepbuf(&aco, buf);
 
 	    /* execute the autocommands for this buffer */
-	    retval = do_doautocmd(eap->arg, FALSE);
+	    retval = do_doautocmd(arg, FALSE);
 
-	    /* Execute the modeline settings, but don't set window-local
-	     * options if we are using the current window for another buffer. */
-	    do_modelines(curwin == aucmd_win ? OPT_NOWIN : 0);
+	    if (call_do_modelines)
+	    {
+		/* Execute the modeline settings, but don't set window-local
+		 * options if we are using the current window for another
+		 * buffer. */
+		do_modelines(curwin == aucmd_win ? OPT_NOWIN : 0);
+	    }
 
 	    /* restore the current window */
 	    aucmd_restbuf(&aco);
@@ -9055,6 +9059,23 @@ ex_doautoall(eap)
     }
 
     check_cursor();	    /* just in case lines got deleted */
+}
+
+/*
+ * Check *argp for <nomodeline>.  When it is present return FALSE, otherwise
+ * return TRUE and advance *argp to after it.
+ * Thus return TRUE when do_modelines() should be called.
+ */
+    int
+check_nomodeline(argp)
+    char_u **argp;
+{
+    if (STRNCMP(*argp, "<nomodeline>", 12) == 0)
+    {
+	*argp = skipwhite(*argp + 12);
+	return FALSE;
+    }
+    return TRUE;
 }
 
 /*
@@ -9182,10 +9203,11 @@ aucmd_restbuf(aco)
 		    if (tp != curtab)
 			goto_tabpage_tp(tp);
 		    win_goto(aucmd_win);
-		    break;
+		    goto win_found;
 		}
 	    }
 	}
+win_found:
 
 	/* Remove the window and frame from the tree of frames. */
 	(void)winframe_remove(curwin, &dummy, NULL);
@@ -9244,6 +9266,10 @@ aucmd_restbuf(aco)
 		    && buf_valid(aco->new_curbuf)
 		    && aco->new_curbuf->b_ml.ml_mfp != NULL)
 	    {
+# if defined(FEAT_SYN_HL) || defined(FEAT_SPELL)
+		if (curwin->w_s == &curbuf->b_s)
+		    curwin->w_s = &aco->new_curbuf->b_s;
+# endif
 		--curbuf->b_nwindows;
 		curbuf = aco->new_curbuf;
 		curwin->w_buffer = curbuf;
@@ -9374,6 +9400,15 @@ has_cursormoved()
 has_cursormovedI()
 {
     return (first_autopat[(int)EVENT_CURSORMOVEDI] != NULL);
+}
+
+/*
+ * Return TRUE when there is an InsertCharPre autocommand defined.
+ */
+    int
+has_insertcharpre()
+{
+    return (first_autopat[(int)EVENT_INSERTCHARPRE] != NULL);
 }
 
     static int

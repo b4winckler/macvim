@@ -3,7 +3,7 @@
 " dicwin.vim - Dictionary window
 "
 " Maintainer:	MURAOKA Taro <koron.kaoriya@gmail.com>
-" Last Change:	04-Aug-2007.
+" Last Change:	01-May-2012.
 " Commands:	<C-k><C-k>  Search word under cursor.
 "		<C-k>/	    Search prompted word.
 "		<C-k>c	    Close dictionary window.
@@ -15,46 +15,68 @@
 " URL where you can get 'gene.txt':
 "   http://www.namazu.org/~tsuchiya/sdic/data/gene.html
 
+scriptencoding utf-8
+
 if exists('plugin_dicwin_disable')
   finish
 endif
 let s:myname = expand('<sfile>:t:r')
 
-" Search default dictionary
-if !exists('dicwin_dictpath')
-  let s:dict = 'gene.txt'
-  let g:dicwin_dictpath = globpath(&rtp, 'dict/'.s:dict)
-  if g:dicwin_dictpath == ''
-    let dicwin_dictpath = globpath(&rtp, s:dict)
-  endif
-  unlet s:dict
-endif
-" Windows return '\\' as directory separator in globpath(), replace it.
-let dicwin_dictpath = substitute(dicwin_dictpath, '\\', '/', 'g')
-
 let s:lastword = ''
 let s:lastpattern = ''
 
+function! s:DicwinOnload()
+  call s:DetermineDictpath()
+  if filereadable(g:dicwin_dictpath)
+    call s:SetupKeymap()
+  endif
+endfunction
+
+function! s:DetermineDictpath()
+  " Search default dictionary
+  if !exists('g:dicwin_dictpath')
+    let s:dict = 'gene.txt'
+    let g:dicwin_dictpath = s:GlobPath(&rtp, 'dict/'.s:dict)
+    if g:dicwin_dictpath == ''
+      let g:dicwin_dictpath = s:GlobPath(&rtp, s:dict)
+    endif
+    unlet s:dict
+  endif
+  " Windows return '\\' as directory separator in globpath(), replace it.
+  "let g:dicwin_dictpath = substitute(g:dicwin_dictpath, '\\', '/', 'g')
+endfunction
+
+function! s:GlobPath(paths, target)
+  let list = split(globpath(a:paths, a:target), "\n")
+  if len(list) <= 0
+    return ''
+  else
+    return list[0]
+  end
+endfunction
+
 " Kemaps
-let s:use_mapleader = 0
-if !exists('g:mapleader')
-  let g:mapleader = "\<C-k>"
-  let s:use_mapleader = 1
-endif
-nnoremap <silent> <Leader>k :call <SID>OpenDictionary(g:dicwin_dictpath, expand('<cword>'))<CR>
-nnoremap <silent> <Leader>n :call <SID>Search(g:dicwin_dictpath, 0)<CR>
-nnoremap <silent> <Leader>p :call <SID>Search(g:dicwin_dictpath, 1)<CR>
-nnoremap <silent> <Leader>w :call <SID>GoDictWindow()<CR>
-nnoremap <silent> <Leader>c :call <SID>Close()<CR>
-nnoremap <silent> <Leader>/ :call <SID>Query()<CR>
-nnoremap <silent> <Leader><C-k> :call <SID>OpenDictionary(g:dicwin_dictpath, expand('<cword>'))<CR>
-nnoremap <silent> <Leader><C-n> :call <SID>Search(g:dicwin_dictpath, 0)<CR>
-nnoremap <silent> <Leader><C-p> :call <SID>Search(g:dicwin_dictpath, 1)<CR>
-nnoremap <silent> <Leader><C-w> :call <SID>GoDictWindow()<CR>
-if s:use_mapleader > 0
-  unlet s:use_mapleader
-  unlet g:mapleader
-endif
+function! s:SetupKeymap()
+  let s:use_mapleader = 0
+  if !exists('g:mapleader')
+    let g:mapleader = "\<C-k>"
+    let s:use_mapleader = 1
+  endif
+  nnoremap <silent> <Leader>k :call <SID>OpenDictionary(g:dicwin_dictpath, expand('<cword>'))<CR>
+  nnoremap <silent> <Leader>n :call <SID>Search(g:dicwin_dictpath, 0)<CR>
+  nnoremap <silent> <Leader>p :call <SID>Search(g:dicwin_dictpath, 1)<CR>
+  nnoremap <silent> <Leader>w :call <SID>GoDictWindow()<CR>
+  nnoremap <silent> <Leader>c :call <SID>Close()<CR>
+  nnoremap <silent> <Leader>/ :call <SID>Query()<CR>
+  nnoremap <silent> <Leader><C-k> :call <SID>OpenDictionary(g:dicwin_dictpath, expand('<cword>'))<CR>
+  nnoremap <silent> <Leader><C-n> :call <SID>Search(g:dicwin_dictpath, 0)<CR>
+  nnoremap <silent> <Leader><C-p> :call <SID>Search(g:dicwin_dictpath, 1)<CR>
+  nnoremap <silent> <Leader><C-w> :call <SID>GoDictWindow()<CR>
+  if s:use_mapleader > 0
+    unlet s:use_mapleader
+    unlet g:mapleader
+  endif
+endfunction
 
 "
 " WinEnter/WinLeave hooks
@@ -259,3 +281,5 @@ function! s:PrevWindowRevert()
     unlet w:dicwin_prevwin
   endif
 endfunction
+
+call s:DicwinOnload()
