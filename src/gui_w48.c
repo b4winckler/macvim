@@ -329,6 +329,10 @@ static LOGFONT norm_logfont;
 static LRESULT _OnImeNotify(HWND hWnd, DWORD dwCommand, DWORD dwData);
 #endif
 
+#if defined(FEAT_MBYTE) && defined(WIN3264)
+static char_u *convert_filter(char_u *s);
+#endif
+
 #ifdef DEBUG_PRINT_ERROR
 /*
  * Print out the last Windows error message

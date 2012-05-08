@@ -1,4 +1,4 @@
-*options.txt*	For Vim version 7.3.  Last change: 2011 Dec 15
+*options.txt*	For Vim version 7.3.  Last change: 2012 Mar 28
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -301,9 +301,8 @@ You will not get back the 'list' value as it was the last time you edited
 			copying the value.
 			{not in Vi}
 
-:se[t] {option}<	Set the local value of {option} to its global value by
-			making it empty.  Only makes sense for |global-local|
-			options.
+:se[t] {option}<	For |global-local| options: Remove the local value of
+			{option}, so that the global value will be used.
 			{not in Vi}
 
 							*:setg* *:setglobal*
@@ -3783,9 +3782,10 @@ A jump table for the options with a short description can be found at |Q_op|.
 'highlight' 'hl'	string	(default (as a single string):
 				     "8:SpecialKey,@:NonText,d:Directory,
 				     e:ErrorMsg,i:IncSearch,l:Search,m:MoreMsg,
-				     M:ModeMsg,n:LineNr,r:Question,
-				     s:StatusLine,S:StatusLineNC,c:VertSplit,
-				     t:Title,v:Visual,w:WarningMsg,W:WildMenu,
+				     M:ModeMsg,n:LineNr,N:CursorLineNr,
+				     r:Question,s:StatusLine,S:StatusLineNC,
+				     c:VertSplit, t:Title,v:Visual,
+				     w:WarningMsg,W:WildMenu,
 				     f:Folded,F:FoldColumn,A:DiffAdd,
 				     C:DiffChange,D:DiffDelete,T:DiffText,
 				     >:SignColumn,B:SpellBad,P:SpellCap,
@@ -3811,6 +3811,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 	|hl-ModeMsg|	 M  Mode (e.g., "-- INSERT --")
 	|hl-LineNr|	 n  line number for ":number" and ":#" commands, and
 			    when 'number' or 'relativenumber' option is set.
+	|hl-CursorLineNr|  N like n for when 'cursorline' is set.
 	|hl-Question|	 r  |hit-enter| prompt and yes/no questions
 	|hl-StatusLine|	 s  status line of current window |status-line|
 	|hl-StatusLineNC| S  status lines of not-current windows
@@ -5089,7 +5090,8 @@ A jump table for the options with a short description can be found at |Q_op|.
 	number.
 	When a long, wrapped line doesn't start with the first character, '-'
 	characters are put before the number.
-	See |hl-LineNr| for the highlighting used for the number.
+	See |hl-LineNr|  and |hl-CursorLineNr| for the highlighting used for
+	the number.
 	When setting this option, 'relativenumber' is reset.
 
 						*'numberwidth'* *'nuw'*
@@ -5488,7 +5490,8 @@ A jump table for the options with a short description can be found at |Q_op|.
 	number.
 	When a long, wrapped line doesn't start with the first character, '-'
 	characters are put before the number.
-	See |hl-LineNr| for the highlighting used for the number.
+	See |hl-LineNr|  and |hl-CursorLineNr| for the highlighting used for
+	the number.
 	When setting this option, 'number' is reset.
 
 						*'remap'* *'noremap'*
@@ -5910,8 +5913,9 @@ A jump table for the options with a short description can be found at |Q_op|.
 	security reasons.
 
 						*'shellcmdflag'* *'shcf'*
-'shellcmdflag' 'shcf'	string	(default: "-c", MS-DOS and Win32, when 'shell'
-					does not contain "sh" somewhere: "/c")
+'shellcmdflag' 'shcf'	string	(default: "-c";
+				 MS-DOS and Win32, when 'shell' does not
+				 contain "sh" somewhere: "/c")
 			global
 			{not in Vi}
 	Flag passed to the shell to execute "!" and ":!" commands; e.g.,
@@ -6050,8 +6054,18 @@ A jump table for the options with a short description can be found at |Q_op|.
 	0 and 2: use "shell 'shellcmdflag' cmd" to start external commands
 	1 and 3: use "shell cmd" to start external commands
 
+						*'shellxescape'* *'sxe'*
+'shellxescape' 'sxe'	string	(default: "";
+				 for MS-DOS and MS-Windows: "\"&|<>()@^")
+			global
+			{not in Vi}
+	When 'shellxquote' is set to "(" then the characters listed in this
+	option will be escaped with a '^' character.  This makes it possible
+	to execute most external commands with cmd.exe.
+
 						*'shellxquote'* *'sxq'*
 'shellxquote' 'sxq'	string	(default: "";
+					for Win32, when 'shell' is cmd.exe: "("
 					for Win32, when 'shell' contains "sh"
 					somewhere: "\""
 					for Unix, when using system(): "\"")
@@ -6061,11 +6075,15 @@ A jump table for the options with a short description can be found at |Q_op|.
 	the "!" and ":!" commands.  Includes the redirection.  See
 	'shellquote' to exclude the redirection.  It's probably not useful
 	to set both options.
-	This is an empty string by default.  Known to be useful for
-	third-party shells when using the Win32 version, such as the MKS Korn
-	Shell or bash, where it should be "\"".  The default is adjusted
-	according the value of 'shell', to reduce the need to set this option
-	by the user.  See |dos-shell|.
+	When the value is '(' then ')' is appended. When the value is '"('
+	then ')"' is appended.
+	When the value is '(' then also see 'shellxescape'.
+	This is an empty string by default on most systems, but is known to be
+	useful for on Win32 version, either for cmd.exe which automatically
+	strips off the first and last quote on a command, or 3rd-party shells
+	such as the MKS Korn Shell or bash, where it should be "\"".  The
+	default is adjusted according the value of 'shell', to reduce the need
+	to set this option by the user.  See |dos-shell|.
 	This option cannot be set from a |modeline| or in the |sandbox|, for
 	security reasons.
 
@@ -6559,6 +6577,9 @@ A jump table for the options with a short description can be found at |Q_op|.
 	evaluated and the result is used as the option value.  Example: >
 		:set statusline=%!MyStatusLine()
 <	The result can contain %{} items that will be evaluated too.
+	Note that the "%!" expression is evaluated in the context of the
+	current window and buffer, while %{} items are evaluated in the
+	context of the window that the statusline belongs to.
 
 	When there is error while evaluating the option then it will be made
 	empty to avoid further errors.  Otherwise screen updating would loop.

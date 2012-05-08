@@ -4006,17 +4006,17 @@ syn_list_one(id, syncing, link_only)
 }
 
     static void
-syn_list_flags(nl, flags, attr)
-    struct name_list	*nl;
+syn_list_flags(nlist, flags, attr)
+    struct name_list	*nlist;
     int			flags;
     int			attr;
 {
     int		i;
 
-    for (i = 0; nl[i].flag != 0; ++i)
-	if (flags & nl[i].flag)
+    for (i = 0; nlist[i].flag != 0; ++i)
+	if (flags & nlist[i].flag)
 	{
-	    msg_puts_attr((char_u *)nl[i].name, attr);
+	    msg_puts_attr((char_u *)nlist[i].name, attr);
 	    msg_putchar(' ');
 	}
 }
@@ -6516,8 +6516,6 @@ static char *(highlight_init_both[]) =
 	     "DiffText term=reverse cterm=bold ctermbg=Red gui=bold guibg=Red"),
 #endif
 #ifdef FEAT_INS_EXPAND
-	CENT("PmenuThumb cterm=reverse",
-	     "PmenuThumb cterm=reverse gui=reverse"),
 	CENT("PmenuSbar ctermbg=Grey",
 	     "PmenuSbar ctermbg=Grey guibg=Grey"),
 #endif
@@ -6540,6 +6538,8 @@ static char *(highlight_init_light[]) =
 	     "Directory term=bold ctermfg=DarkBlue guifg=Blue"),
 	CENT("LineNr term=underline ctermfg=Brown",
 	     "LineNr term=underline ctermfg=Brown guifg=Brown"),
+	CENT("CursorLineNr term=bold ctermfg=Brown",
+	     "CursorLineNr term=bold ctermfg=Brown gui=bold guifg=Brown"),
 	CENT("MoreMsg term=bold ctermfg=DarkGreen",
 	     "MoreMsg term=bold ctermfg=DarkGreen gui=bold guifg=SeaGreen"),
 	CENT("Question term=standout ctermfg=DarkGreen",
@@ -6557,10 +6557,12 @@ static char *(highlight_init_light[]) =
 	     "SpellLocal term=underline ctermbg=Cyan guisp=DarkCyan gui=undercurl"),
 #endif
 #ifdef FEAT_INS_EXPAND
-	CENT("Pmenu ctermbg=LightMagenta",
-	     "Pmenu ctermbg=LightMagenta guibg=LightMagenta"),
-	CENT("PmenuSel ctermbg=LightGrey",
-	     "PmenuSel ctermbg=LightGrey guibg=Grey"),
+	CENT("PmenuThumb ctermbg=Black",
+	     "PmenuThumb ctermbg=Black guibg=Black"),
+	CENT("Pmenu ctermbg=LightMagenta ctermfg=Black",
+	     "Pmenu ctermbg=LightMagenta ctermfg=Black guibg=LightMagenta"),
+	CENT("PmenuSel ctermbg=LightGrey ctermfg=Black",
+	     "PmenuSel ctermbg=LightGrey ctermfg=Black guibg=Grey"),
 #endif
 	CENT("SpecialKey term=bold ctermfg=DarkBlue",
 	     "SpecialKey term=bold ctermfg=DarkBlue guifg=Blue"),
@@ -6626,6 +6628,8 @@ static char *(highlight_init_dark[]) =
 	     "Directory term=bold ctermfg=LightCyan guifg=Cyan"),
 	CENT("LineNr term=underline ctermfg=Yellow",
 	     "LineNr term=underline ctermfg=Yellow guifg=Yellow"),
+	CENT("CursorLineNr term=bold ctermfg=Yellow",
+	     "CursorLineNr term=bold ctermfg=Yellow gui=bold guifg=Yellow"),
 	CENT("MoreMsg term=bold ctermfg=LightGreen",
 	     "MoreMsg term=bold ctermfg=LightGreen gui=bold guifg=SeaGreen"),
 	CENT("Question term=standout ctermfg=LightGreen",
@@ -6645,10 +6649,12 @@ static char *(highlight_init_dark[]) =
 	     "SpellLocal term=underline ctermbg=Cyan guisp=Cyan gui=undercurl"),
 #endif
 #ifdef FEAT_INS_EXPAND
-	CENT("Pmenu ctermbg=Magenta",
-	     "Pmenu ctermbg=Magenta guibg=Magenta"),
-	CENT("PmenuSel ctermbg=DarkGrey",
-	     "PmenuSel ctermbg=DarkGrey guibg=DarkGrey"),
+	CENT("PmenuThumb ctermbg=White",
+	     "PmenuThumb ctermbg=White guibg=White"),
+	CENT("Pmenu ctermbg=Magenta ctermfg=Black",
+	     "Pmenu ctermbg=Magenta ctermfg=Black guibg=Magenta"),
+	CENT("PmenuSel ctermbg=DarkGrey ctermfg=Black",
+	     "PmenuSel ctermbg=DarkGrey ctermfg=Black guibg=DarkGrey"),
 #endif
 	CENT("Title term=bold ctermfg=LightMagenta",
 	     "Title term=bold ctermfg=LightMagenta gui=bold guifg=Magenta"),

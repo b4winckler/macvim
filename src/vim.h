@@ -803,6 +803,7 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define WILD_PREV		5
 #define WILD_ALL		6
 #define WILD_LONGEST		7
+#define WILD_ALL_KEEP		8
 
 #define WILD_LIST_NOTFOUND	1
 #define WILD_HOME_REPLACE	2
@@ -1329,6 +1330,7 @@ typedef enum
     , HLF_M	    /* "--More--" message */
     , HLF_CM	    /* Mode (e.g., "-- INSERT --") */
     , HLF_N	    /* line number for ":number" and ":#" commands */
+    , HLF_CLN	    /* current line number */
     , HLF_R	    /* return to continue message and yes/no questions */
     , HLF_S	    /* status lines */
     , HLF_SNC	    /* status lines of not-current windows */
@@ -1366,7 +1368,7 @@ typedef enum
 /* The HL_FLAGS must be in the same order as the HLF_ enums!
  * When changing this also adjust the default for 'highlight'. */
 #define HL_FLAGS {'8', '@', 'd', 'e', 'h', 'i', 'l', 'm', 'M', \
-		  'n', 'r', 's', 'S', 'c', 't', 'v', 'V', 'w', 'W', \
+		  'n', 'N', 'r', 's', 'S', 'c', 't', 'v', 'V', 'w', 'W', \
 		  'f', 'F', 'A', 'C', 'D', 'T', '-', '>', \
 		  'B', 'P', 'R', 'L', \
 		  '+', '=', 'x', 'X', '*', '#', '_', '!', '.', 'o'}

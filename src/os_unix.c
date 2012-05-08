@@ -2746,6 +2746,13 @@ mch_get_acl(fname)
 #ifdef HAVE_POSIX_ACL
     ret = (vim_acl_T)acl_get_file((char *)fname, ACL_TYPE_ACCESS);
 #else
+#ifdef HAVE_SOLARIS_ZFS_ACL
+    acl_t *aclent;
+
+    if (acl_get((char *)fname, 0, &aclent) < 0)
+	return NULL;
+    ret = (vim_acl_T)aclent;
+#else
 #ifdef HAVE_SOLARIS_ACL
     vim_acl_solaris_T   *aclent;
 
@@ -2791,6 +2798,7 @@ mch_get_acl(fname)
     ret = (vim_acl_T)aclent;
 #endif /* HAVE_AIX_ACL */
 #endif /* HAVE_SOLARIS_ACL */
+#endif /* HAVE_SOLARIS_ZFS_ACL */
 #endif /* HAVE_POSIX_ACL */
     return ret;
 }
@@ -2808,6 +2816,9 @@ mch_set_acl(fname, aclent)
 #ifdef HAVE_POSIX_ACL
     acl_set_file((char *)fname, ACL_TYPE_ACCESS, (acl_t)aclent);
 #else
+#ifdef HAVE_SOLARIS_ZFS_ACL
+    acl_set((char *)fname, (acl_t *)aclent);
+#else
 #ifdef HAVE_SOLARIS_ACL
     acl((char *)fname, SETACL, ((vim_acl_solaris_T *)aclent)->acl_cnt,
 	    ((vim_acl_solaris_T *)aclent)->acl_entry);
@@ -2816,6 +2827,7 @@ mch_set_acl(fname, aclent)
     chacl((char *)fname, aclent, ((struct acl *)aclent)->acl_len);
 #endif /* HAVE_AIX_ACL */
 #endif /* HAVE_SOLARIS_ACL */
+#endif /* HAVE_SOLARIS_ZFS_ACL */
 #endif /* HAVE_POSIX_ACL */
 }
 
@@ -2828,6 +2840,9 @@ mch_free_acl(aclent)
 #ifdef HAVE_POSIX_ACL
     acl_free((acl_t)aclent);
 #else
+#ifdef HAVE_SOLARIS_ZFS_ACL
+    acl_free((acl_t *)aclent);
+#else
 #ifdef HAVE_SOLARIS_ACL
     free(((vim_acl_solaris_T *)aclent)->acl_entry);
     free(aclent);
@@ -2836,6 +2851,7 @@ mch_free_acl(aclent)
     free(aclent);
 #endif /* HAVE_AIX_ACL */
 #endif /* HAVE_SOLARIS_ACL */
+#endif /* HAVE_SOLARIS_ZFS_ACL */
 #endif /* HAVE_POSIX_ACL */
 }
 #endif
@@ -3884,7 +3900,6 @@ mch_call_shell(cmd, options)
     char_u	*p_shcf_copy = NULL;
     int		i;
     char_u	*p;
-    char_u	*s;
     int		inquote;
     int		pty_master_fd = -1;	    /* for pty's */
 # ifdef FEAT_GUI
@@ -3963,6 +3978,8 @@ mch_call_shell(cmd, options)
     }
     if (cmd != NULL)
     {
+	char_u	*s;
+
 	if (extra_shell_arg != NULL)
 	    argv[argc++] = (char *)extra_shell_arg;
 
@@ -4325,7 +4342,6 @@ mch_call_shell(cmd, options)
 			linenr_T    lnum = curbuf->b_op_start.lnum;
 			int	    written = 0;
 			char_u	    *lp = ml_get(lnum);
-			char_u	    *s;
 			size_t	    l;
 
 			close(fromshell_fd);
@@ -4339,7 +4355,8 @@ mch_call_shell(cmd, options)
 				len = write(toshell_fd, "", (size_t)1);
 			    else
 			    {
-				s = vim_strchr(lp + written, NL);
+				char_u	*s = vim_strchr(lp + written, NL);
+
 				len = write(toshell_fd, (char *)lp + written,
 					   s == NULL ? l
 					      : (size_t)(s - (lp + written)));

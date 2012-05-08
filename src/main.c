@@ -554,6 +554,31 @@ main
     debug_break_level = params.use_debug_break_level;
 #endif
 
+#ifdef FEAT_MZSCHEME
+    /*
+     * Newer version of MzScheme (Racket) require earlier (trampolined)
+     * initialisation via scheme_main_setup.
+     * Implement this by initialising it as early as possible
+     * and splitting off remaining Vim main into vim_main2
+     */
+    {
+	/* Pack up preprocessed command line arguments.
+	 * It is safe because Scheme does not access argc/argv. */
+	char *args[2];
+	args[0] = (char *)fname;
+	args[1] = (char *)&params;
+	return mzscheme_main(2, args);
+    }
+}
+
+int vim_main2(int argc, char **argv)
+{
+    char_u	*fname = (char_u *)argv[0];
+    mparm_T	params;
+
+    memcpy(&params, argv[1], sizeof(params));
+#endif
+
     /* Execute --cmd arguments. */
     exe_pre_commands(&params);
 
@@ -957,14 +982,8 @@ main
 
     /*
      * Call the main command loop.  This never returns.
-     * For embedded MzScheme the main_loop will be called by Scheme
-     * for proper stack tracking
-     */
-#ifndef FEAT_MZSCHEME
+    */
     main_loop(FALSE, FALSE);
-#else
-    mzscheme_main();
-#endif
 
     return 0;
 }
@@ -3165,6 +3184,7 @@ usage()
 #endif
     main_msg(_("-v\t\t\tVi mode (like \"vi\")"));
     main_msg(_("-e\t\t\tEx mode (like \"ex\")"));
+    main_msg(_("-E\t\t\tImproved Ex mode"));
     main_msg(_("-s\t\t\tSilent (batch) mode (only for \"ex\")"));
 #ifdef FEAT_DIFF
     main_msg(_("-d\t\t\tDiff mode (like \"vimdiff\")"));
@@ -3288,6 +3308,7 @@ usage()
     main_msg(_("-display <display>\tRun vim on <display> (also: --display)"));
     main_msg(_("--role <role>\tSet a unique role to identify the main window"));
     main_msg(_("--socketid <xid>\tOpen Vim inside another GTK widget"));
+    main_msg(_("--echo-wid\t\tMake gvim echo the Window ID on stdout"));
 #endif
 #ifdef FEAT_GUI_W32
     main_msg(_("-P <parent title>\tOpen Vim inside parent application"));

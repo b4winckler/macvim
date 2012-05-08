@@ -64,6 +64,9 @@ static void buf_delete_signs __ARGS((buf_T *buf));
 static char *msg_loclist = N_("[Location List]");
 static char *msg_qflist = N_("[Quickfix List]");
 #endif
+#ifdef FEAT_AUTOCMD
+static char *e_auabort = N_("E855: Autocommands caused command to abort");
+#endif
 
 /*
  * Open current buffer, that is: open the memfile and read the file into
@@ -96,7 +99,7 @@ open_buffer(read_stdin, eap, flags)
 	 * There MUST be a memfile, otherwise we can't do anything
 	 * If we can't create one for the current buffer, take another buffer
 	 */
-	close_buffer(NULL, curbuf, 0);
+	close_buffer(NULL, curbuf, 0, FALSE);
 	for (curbuf = firstbuf; curbuf != NULL; curbuf = curbuf->b_next)
 	    if (curbuf->b_ml.ml_mfp != NULL)
 		break;
@@ -341,12 +344,17 @@ buf_valid(buf)
  * get a new buffer very soon!
  *
  * The 'bufhidden' option can force freeing and deleting.
+ *
+ * When "abort_if_last" is TRUE then do not close the buffer if autocommands
+ * cause there to be only one window with this buffer.  e.g. when ":quit" is
+ * supposed to close the window but autocommands close all other windows.
  */
     void
-close_buffer(win, buf, action)
+close_buffer(win, buf, action, abort_if_last)
     win_T	*win;		/* if not NULL, set b_last_cursor */
     buf_T	*buf;
     int		action;
+    int		abort_if_last UNUSED;
 {
 #ifdef FEAT_AUTOCMD
     int		is_curbuf;
@@ -396,8 +404,12 @@ close_buffer(win, buf, action)
     {
 	apply_autocmds(EVENT_BUFWINLEAVE, buf->b_fname, buf->b_fname,
 								  FALSE, buf);
-	if (!buf_valid(buf))	    /* autocommands may delete the buffer */
+	/* Return if autocommands deleted the buffer or made it the only one. */
+	if (!buf_valid(buf) || (abort_if_last && one_window()))
+	{
+	    EMSG(_(e_auabort));
 	    return;
+	}
 
 	/* When the buffer becomes hidden, but is not unloaded, trigger
 	 * BufHidden */
@@ -405,8 +417,13 @@ close_buffer(win, buf, action)
 	{
 	    apply_autocmds(EVENT_BUFHIDDEN, buf->b_fname, buf->b_fname,
 								  FALSE, buf);
-	    if (!buf_valid(buf))	/* autocmds may delete the buffer */
+	    /* Return if autocommands deleted the buffer or made it the only
+	     * one. */
+	    if (!buf_valid(buf) || (abort_if_last && one_window()))
+	    {
+		EMSG(_(e_auabort));
 		return;
+	    }
 	}
 # ifdef FEAT_EVAL
 	if (aborting())	    /* autocmds may abort script processing */
@@ -800,7 +817,7 @@ handle_swap_exists(old_curbuf)
 	 * open a new, empty buffer. */
 	swap_exists_action = SEA_NONE;	/* don't want it again */
 	swap_exists_did_quit = TRUE;
-	close_buffer(curwin, curbuf, DOBUF_UNLOAD);
+	close_buffer(curwin, curbuf, DOBUF_UNLOAD, FALSE);
 	if (!buf_valid(old_curbuf) || old_curbuf == curbuf)
 	    old_curbuf = buflist_new(NULL, NULL, 1L, BLN_CURBUF | BLN_LISTED);
 	if (old_curbuf != NULL)
@@ -1147,7 +1164,7 @@ do_buffer(action, start, dir, count, forceit)
 	     * if the buffer still exists.
 	     */
 	    if (buf != curbuf && buf_valid(buf) && buf->b_nwindows == 0)
-		close_buffer(NULL, buf, action);
+		close_buffer(NULL, buf, action, FALSE);
 	    return retval;
 	}
 
@@ -1171,7 +1188,7 @@ do_buffer(action, start, dir, count, forceit)
 	    close_windows(buf, FALSE);
 #endif
 	    if (buf != curbuf && buf_valid(buf) && buf->b_nwindows <= 0)
-		close_buffer(NULL, buf, action);
+		close_buffer(NULL, buf, action, FALSE);
 	    return OK;
 	}
 
@@ -1403,7 +1420,7 @@ set_curbuf(buf, action)
 	    close_buffer(prevbuf == curwin->w_buffer ? curwin : NULL, prevbuf,
 		    unload ? action : (action == DOBUF_GOTO
 			&& !P_HID(prevbuf)
-			&& !bufIsChanged(prevbuf)) ? DOBUF_UNLOAD : 0);
+			&& !bufIsChanged(prevbuf)) ? DOBUF_UNLOAD : 0, FALSE);
 	}
     }
 #ifdef FEAT_AUTOCMD
@@ -2733,7 +2750,8 @@ setfname(buf, ffname, sfname, message)
 		vim_free(ffname);
 		return FAIL;
 	    }
-	    close_buffer(NULL, obuf, DOBUF_WIPE); /* delete from the list */
+	    /* delete from the list */
+	    close_buffer(NULL, obuf, DOBUF_WIPE, FALSE);
 	}
 	sfname = vim_strsave(sfname);
 	if (ffname == NULL || sfname == NULL)
@@ -3283,9 +3301,8 @@ maketitle()
 	    if (maxlen > 0)
 	    {
 		/* make it shorter by removing a bit in the middle */
-		len = vim_strsize(buf);
-		if (len > maxlen)
-		    trunc_string(buf, buf, maxlen);
+		if (vim_strsize(buf) > maxlen)
+		    trunc_string(buf, buf, maxlen, IOSIZE);
 	    }
 	}
     }
@@ -4413,7 +4430,12 @@ do_arg_all(count, forceit, keep_tabs)
 {
     int		i;
     win_T	*wp, *wpnext;
-    char_u	*opened;	/* array of flags for which args are open */
+    char_u	*opened;	/* Array of weight for which args are open:
+				 *  0: not opened
+				 *  1: opened in other tab
+				 *  2: opened in curtab
+				 *  3: opened in curtab and curwin
+				 */
     int		opened_len;	/* length of opened[] */
     int		use_firstwin = FALSE;	/* use first window for arglist */
     int		split_ret = OK;
@@ -4422,6 +4444,8 @@ do_arg_all(count, forceit, keep_tabs)
     buf_T	*buf;
     tabpage_T	*tpnext;
     int		had_tab = cmdmod.tab;
+    win_T	*old_curwin, *last_curwin;
+    tabpage_T	*old_curtab, *last_curtab;
     win_T	*new_curwin = NULL;
     tabpage_T	*new_curtab = NULL;
 
@@ -4437,6 +4461,15 @@ do_arg_all(count, forceit, keep_tabs)
     opened = alloc_clear((unsigned)opened_len);
     if (opened == NULL)
 	return;
+
+    /* Autocommands may do anything to the argument list.  Make sure it's not
+     * freed while we are working here by "locking" it.  We still have to
+     * watch out for its size to be changed. */
+    alist = curwin->w_alist;
+    ++alist->al_refcount;
+
+    old_curwin = curwin;
+    old_curtab = curtab;
 
 #ifdef FEAT_GUI
     need_mouse_correct = TRUE;
@@ -4459,36 +4492,51 @@ do_arg_all(count, forceit, keep_tabs)
 	    wpnext = wp->w_next;
 	    buf = wp->w_buffer;
 	    if (buf->b_ffname == NULL
-		    || buf->b_nwindows > 1
+		    || (!keep_tabs && buf->b_nwindows > 1)
 #ifdef FEAT_VERTSPLIT
 		    || wp->w_width != Columns
 #endif
 		    )
-		i = ARGCOUNT;
+		i = opened_len;
 	    else
 	    {
 		/* check if the buffer in this window is in the arglist */
-		for (i = 0; i < ARGCOUNT; ++i)
+		for (i = 0; i < opened_len; ++i)
 		{
-		    if (ARGLIST[i].ae_fnum == buf->b_fnum
-			    || fullpathcmp(alist_name(&ARGLIST[i]),
-					      buf->b_ffname, TRUE) & FPC_SAME)
+		    if (i < alist->al_ga.ga_len
+			    && (AARGLIST(alist)[i].ae_fnum == buf->b_fnum
+				|| fullpathcmp(alist_name(&AARGLIST(alist)[i]),
+					      buf->b_ffname, TRUE) & FPC_SAME))
 		    {
-			if (i < opened_len)
+			int weight = 1;
+
+			if (old_curtab == curtab)
 			{
-			    opened[i] = TRUE;
+			    ++weight;
+			    if (old_curwin == wp)
+				++weight;
+			}
+
+			if (weight > (int)opened[i])
+			{
+			    opened[i] = (char_u)weight;
 			    if (i == 0)
 			    {
+				if (new_curwin != NULL)
+				    new_curwin->w_arg_idx = opened_len;
 				new_curwin = wp;
 				new_curtab = curtab;
 			    }
 			}
-			if (wp->w_alist != curwin->w_alist)
+			else if (keep_tabs)
+			    i = opened_len;
+
+			if (wp->w_alist != alist)
 			{
 			    /* Use the current argument list for all windows
 			     * containing a file from it. */
 			    alist_unlink(wp->w_alist);
-			    wp->w_alist = curwin->w_alist;
+			    wp->w_alist = alist;
 			    ++wp->w_alist->al_refcount;
 			}
 			break;
@@ -4497,7 +4545,7 @@ do_arg_all(count, forceit, keep_tabs)
 	    }
 	    wp->w_arg_idx = i;
 
-	    if (i == ARGCOUNT && !keep_tabs)	/* close this window */
+	    if (i == opened_len && !keep_tabs)/* close this window */
 	    {
 		if (P_HID(buf) || forceit || buf->b_nwindows > 1
 							|| !bufIsChanged(buf))
@@ -4519,7 +4567,8 @@ do_arg_all(count, forceit, keep_tabs)
 		    }
 #ifdef FEAT_WINDOWS
 		    /* don't close last window */
-		    if (firstwin == lastwin && first_tabpage->tp_next == NULL)
+		    if (firstwin == lastwin
+			    && (first_tabpage->tp_next == NULL || !had_tab))
 #endif
 			use_firstwin = TRUE;
 #ifdef FEAT_WINDOWS
@@ -4553,20 +4602,16 @@ do_arg_all(count, forceit, keep_tabs)
      * Open a window for files in the argument list that don't have one.
      * ARGCOUNT may change while doing this, because of autocommands.
      */
-    if (count > ARGCOUNT || count <= 0)
-	count = ARGCOUNT;
-
-    /* Autocommands may do anything to the argument list.  Make sure it's not
-     * freed while we are working here by "locking" it.  We still have to
-     * watch out for its size to be changed. */
-    alist = curwin->w_alist;
-    ++alist->al_refcount;
+    if (count > opened_len || count <= 0)
+	count = opened_len;
 
 #ifdef FEAT_AUTOCMD
     /* Don't execute Win/Buf Enter/Leave autocommands here. */
     ++autocmd_no_enter;
     ++autocmd_no_leave;
 #endif
+    last_curwin = curwin;
+    last_curtab = curtab;
     win_enter(lastwin, FALSE);
 #ifdef FEAT_WINDOWS
     /* ":drop all" should re-use an empty window to avoid "--remote-tab"
@@ -4576,11 +4621,11 @@ do_arg_all(count, forceit, keep_tabs)
 	use_firstwin = TRUE;
 #endif
 
-    for (i = 0; i < count && i < alist->al_ga.ga_len && !got_int; ++i)
+    for (i = 0; i < count && i < opened_len && !got_int; ++i)
     {
 	if (alist == &global_alist && i == global_alist.al_ga.ga_len - 1)
 	    arg_had_last = TRUE;
-	if (i < opened_len && opened[i])
+	if (opened[i] > 0)
 	{
 	    /* Move the already present window to below the current window */
 	    if (curwin->w_arg_idx != i)
@@ -4589,7 +4634,13 @@ do_arg_all(count, forceit, keep_tabs)
 		{
 		    if (wpnext->w_arg_idx == i)
 		    {
-			win_move_after(wpnext, curwin);
+			if (keep_tabs)
+			{
+			    new_curwin = wpnext;
+			    new_curtab = curtab;
+			}
+			else
+			    win_move_after(wpnext, curwin);
 			break;
 		    }
 		}
@@ -4644,6 +4695,14 @@ do_arg_all(count, forceit, keep_tabs)
 #ifdef FEAT_AUTOCMD
     --autocmd_no_enter;
 #endif
+    /* restore last referenced tabpage's curwin */
+    if (last_curtab != new_curtab)
+    {
+	if (valid_tabpage(last_curtab))
+	    goto_tabpage_tp(last_curtab);
+	if (win_valid(last_curwin))
+	    win_enter(last_curwin, FALSE);
+    }
     /* to window with first arg */
     if (valid_tabpage(new_curtab))
 	goto_tabpage_tp(new_curtab);
@@ -5523,7 +5582,7 @@ sign_list_placed(rbuf)
 	buf = firstbuf;
     else
 	buf = rbuf;
-    while (buf != NULL)
+    while (buf != NULL && !got_int)
     {
 	if (buf->b_signlist != NULL)
 	{
@@ -5531,7 +5590,7 @@ sign_list_placed(rbuf)
 	    MSG_PUTS_ATTR(lbuf, hl_attr(HLF_D));
 	    msg_putchar('\n');
 	}
-	for (p = buf->b_signlist; p != NULL; p = p->next)
+	for (p = buf->b_signlist; p != NULL && !got_int; p = p->next)
 	{
 	    vim_snprintf(lbuf, BUFSIZ, _("    line=%ld  id=%d  name=%s"),
 			   (long)p->lnum, p->id, sign_typenr2name(p->typenr));
@@ -5664,7 +5723,7 @@ wipe_buffer(buf, aucmd)
     if (!aucmd)		    /* Don't trigger BufDelete autocommands here. */
 	block_autocmds();
 #endif
-    close_buffer(NULL, buf, DOBUF_WIPE);
+    close_buffer(NULL, buf, DOBUF_WIPE, FALSE);
 #ifdef FEAT_AUTOCMD
     if (!aucmd)
 	unblock_autocmds();

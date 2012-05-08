@@ -1,7 +1,7 @@
 " Vim support file to detect file types
 "
 " Maintainer:	Bram Moolenaar <Bram@vim.org>
-" Last Change:	2011 Dec 28
+" Last Change:	2012 Apr 13
 
 " Listen very carefully, I will say this only once
 if exists("did_load_filetypes")
@@ -17,7 +17,7 @@ augroup filetypedetect
 
 " Ignored extensions
 if exists("*fnameescape")
-au BufNewFile,BufRead ?\+.orig,?\+.bak,?\+.old,?\+.new,?\+.dpkg-dist,?\+.dpkg-old,?\+.rpmsave,?\+.rpmnew
+au BufNewFile,BufRead ?\+.orig,?\+.bak,?\+.old,?\+.new,?\+.dpkg-dist,?\+.dpkg-old,?\+.dpkg-new,?\+.dpkg-bak,?\+.rpmsave,?\+.rpmnew
 	\ exe "doau filetypedetect BufRead " . fnameescape(expand("<afile>:r"))
 au BufNewFile,BufRead *~
 	\ let s:name = expand("<afile>") |
@@ -239,8 +239,8 @@ func! s:FTVB(alt)
   endif
 endfunc
 
-" Visual Basic Script (close to Visual Basic)
-au BufNewFile,BufRead *.vbs,*.dsm,*.ctl		setf vb
+" Visual Basic Script (close to Visual Basic) or Visual Basic .NET
+au BufNewFile,BufRead *.vb,*.vbs,*.dsm,*.ctl	setf vb
 
 " IBasic file (similar to QBasic)
 au BufNewFile,BufRead *.iba,*.ibi		setf ibasic
@@ -367,7 +367,11 @@ au BufNewFile,BufRead *.h			call s:FTheader()
 
 func! s:FTheader()
   if match(getline(1, min([line("$"), 200])), '^@\(interface\|end\|class\)') > -1
-    setf objc
+    if exists("g:c_syntax_for_h")
+      setf objc
+    else
+      setf objcpp
+    endif
   elseif exists("g:c_syntax_for_h")
     setf c
   elseif exists("g:ch_syntax_for_h")
@@ -731,9 +735,11 @@ au BufNewFile,BufRead *.mo,*.gdmo		setf gdmo
 au BufNewFile,BufRead *.ged,lltxxxxx.txt	setf gedcom
 
 " Git
-au BufNewFile,BufRead *.git/COMMIT_EDITMSG setf gitcommit
+au BufNewFile,BufRead *.git/COMMIT_EDITMSG 	setf gitcommit
 au BufNewFile,BufRead *.git/config,.gitconfig,.gitmodules setf gitconfig
-au BufNewFile,BufRead git-rebase-todo      setf gitrebase
+au BufNewFile,BufRead *.git/modules/**/COMMIT_EDITMSG setf gitcommit
+au BufNewFile,BufRead *.git/modules/**/config 	setf gitconfig
+au BufNewFile,BufRead git-rebase-todo      	setf gitrebase
 au BufNewFile,BufRead .msg.[0-9]*
       \ if getline(1) =~ '^From.*# This line is ignored.$' |
       \   setf gitsendemail |
@@ -1217,6 +1223,9 @@ au BufNewFile,BufRead *.NS[ACGLMNPS]		setf natural
 " Netrc
 au BufNewFile,BufRead .netrc			setf netrc
 
+" Ninja file
+au BufNewFile,BufRead *.ninja			setf ninja
+
 " Novell netware batch files
 au BufNewFile,BufRead *.ncf			setf ncf
 
@@ -1261,7 +1270,7 @@ au BufNewFile,BufRead *.nqc			setf nqc
 au BufNewFile,BufRead *.nsi			setf nsis
 
 " OCAML
-au BufNewFile,BufRead *.ml,*.mli,*.mll,*.mly	setf ocaml
+au BufNewFile,BufRead *.ml,*.mli,*.mll,*.mly,.ocamlinit	setf ocaml
 
 " Occam
 au BufNewFile,BufRead *.occ			setf occam
@@ -2135,6 +2144,9 @@ au BufNewFile,BufReadPost *.tssop		setf tssop
 " TSS - Command Line (temporary)
 au BufNewFile,BufReadPost *.tsscl		setf tsscl
 
+" TWIG files
+au BufNewFile,BufReadPost *.twig		setf twig
+
 " Motif UIT/UIL files
 au BufNewFile,BufRead *.uit,*.uil		setf uil
 
@@ -2313,6 +2325,9 @@ au BufNewFile,BufRead fglrxrc			setf xml
 " XLIFF (XML Localisation Interchange File Format) is also XML
 au BufNewFile,BufRead *.xlf			setf xml
 au BufNewFile,BufRead *.xliff			setf xml
+
+" XML User Interface Language
+au BufNewFile,BufRead *.xul			setf xml
 
 " X11 xmodmap (also see below)
 au BufNewFile,BufRead *Xmodmap			setf xmodmap
@@ -2542,16 +2557,18 @@ au BufNewFile,BufRead *.txt,*.text		setf text
 " detected filetypes.
 runtime! ftdetect/*.vim
 
+" NOTE: The above command could have ended the filetypedetect autocmd group
+" and started another one. Let's make sure it has ended to get to a consistent
+" state.
+augroup END
 
 " Generic configuration file (check this last, it's just guessing!)
-au BufNewFile,BufRead,StdinReadPost *
+au filetypedetect BufNewFile,BufRead,StdinReadPost *
 	\ if !did_filetype() && expand("<amatch>") !~ g:ft_ignore_pat
 	\    && (getline(1) =~ '^#' || getline(2) =~ '^#' || getline(3) =~ '^#'
 	\	|| getline(4) =~ '^#' || getline(5) =~ '^#') |
 	\   setf conf |
 	\ endif
-
-augroup END
 
 
 " If the GUI is already running, may still need to install the Syntax menu.

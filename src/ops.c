@@ -1648,6 +1648,7 @@ op_delete(oap)
 	    && !oap->block_mode
 #endif
 	    && oap->line_count > 1
+	    && oap->motion_force == NUL
 	    && oap->op_type == OP_DELETE)
     {
 	ptr = ml_get(oap->end.lnum) + oap->end.col;
@@ -1942,27 +1943,32 @@ op_delete(oap)
 	else				/* delete characters between lines */
 	{
 	    pos_T   curpos;
+	    int     delete_last_line;
 
 	    /* save deleted and changed lines for undo */
 	    if (u_save((linenr_T)(curwin->w_cursor.lnum - 1),
 		 (linenr_T)(curwin->w_cursor.lnum + oap->line_count)) == FAIL)
 		return FAIL;
 
+	    delete_last_line = (oap->end.lnum == curbuf->b_ml.ml_line_count);
 	    truncate_line(TRUE);	/* delete from cursor to end of line */
 
 	    curpos = curwin->w_cursor;	/* remember curwin->w_cursor */
 	    ++curwin->w_cursor.lnum;
 	    del_lines((long)(oap->line_count - 2), FALSE);
 
+	    if (delete_last_line)
+		oap->end.lnum = curbuf->b_ml.ml_line_count;
+
 	    n = (oap->end.col + 1 - !oap->inclusive);
-	    if (oap->inclusive && oap->end.lnum == curbuf->b_ml.ml_line_count
+	    if (oap->inclusive && delete_last_line
 		    && n > (int)STRLEN(ml_get(oap->end.lnum)))
 	    {
 		/* Special case: gH<Del> deletes the last line. */
 		del_lines(1L, FALSE);
 		curwin->w_cursor = curpos;	/* restore curwin->w_cursor */
-		if (curwin->w_cursor.lnum > 1)
-		    --curwin->w_cursor.lnum;
+		if (curwin->w_cursor.lnum > curbuf->b_ml.ml_line_count)
+		    curwin->w_cursor.lnum = curbuf->b_ml.ml_line_count;
 	    }
 	    else
 	    {
@@ -2596,7 +2602,8 @@ op_insert(oap, count1)
 	firstline = ml_get(oap->start.lnum) + bd.textcol;
 	if (oap->op_type == OP_APPEND)
 	    firstline += bd.textlen;
-	if ((ins_len = (long)STRLEN(firstline) - pre_textlen) > 0)
+	if (pre_textlen >= 0
+		     && (ins_len = (long)STRLEN(firstline) - pre_textlen) > 0)
 	{
 	    ins_text = vim_strnsave(firstline, (int)ins_len);
 	    if (ins_text != NULL)
@@ -4434,7 +4441,7 @@ same_leader(lnum, leader1_len, leader1_flags, leader2_len, leader2_flags)
 #endif
 
 /*
- * implementation of the format operator 'gq'
+ * Implementation of the format operator 'gq'.
  */
     void
 op_format(oap, keep_cursor)

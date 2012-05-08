@@ -899,8 +899,7 @@ qf_new_list(qi, qf_title)
     }
     else
 	qi->qf_curlist = qi->qf_listcount++;
-    qi->qf_lists[qi->qf_curlist].qf_index = 0;
-    qi->qf_lists[qi->qf_curlist].qf_count = 0;
+    vim_memset(&qi->qf_lists[qi->qf_curlist], 0, (size_t)(sizeof(qf_list_T)));
     if (qf_title != NULL)
     {
 	char_u *p = alloc((int)STRLEN(qf_title) + 2);
@@ -909,8 +908,6 @@ qf_new_list(qi, qf_title)
 	if (p != NULL)
 	    sprintf((char *)p, ":%s", (char *)qf_title);
     }
-    else
-	qi->qf_lists[qi->qf_curlist].qf_title = NULL;
 }
 
 /*
@@ -1845,8 +1842,10 @@ win_found:
 #endif
 	if (print_message)
 	{
-	    /* Update the screen before showing the message */
-	    update_topline_redraw();
+	    /* Update the screen before showing the message, unless the screen
+	     * scrolled up. */
+	    if (!msg_scrolled)
+		update_topline_redraw();
 	    sprintf((char *)IObuff, _("(%d of %d)%s%s: "), qf_index,
 		    qi->qf_lists[qi->qf_curlist].qf_count,
 		    qf_ptr->qf_cleared ? _(" (line deleted)") : "",
@@ -2996,11 +2995,28 @@ ex_cfile(eap)
 {
     win_T	*wp = NULL;
     qf_info_T	*qi = &ql_info;
+#ifdef FEAT_AUTOCMD
+    char_u	*au_name = NULL;
+#endif
 
     if (eap->cmdidx == CMD_lfile || eap->cmdidx == CMD_lgetfile
-	|| eap->cmdidx == CMD_laddfile)
+					       || eap->cmdidx == CMD_laddfile)
 	wp = curwin;
 
+#ifdef FEAT_AUTOCMD
+    switch (eap->cmdidx)
+    {
+	case CMD_cfile:	    au_name = (char_u *)"cfile"; break;
+	case CMD_cgetfile:  au_name = (char_u *)"cgetfile"; break;
+	case CMD_caddfile:  au_name = (char_u *)"caddfile"; break;
+	case CMD_lfile:	    au_name = (char_u *)"lfile"; break;
+	case CMD_lgetfile:  au_name = (char_u *)"lgetfile"; break;
+	case CMD_laddfile:  au_name = (char_u *)"laddfile"; break;
+	default: break;
+    }
+    if (au_name != NULL)
+	apply_autocmds(EVENT_QUICKFIXCMDPRE, au_name, NULL, FALSE, curbuf);
+#endif
 #ifdef FEAT_BROWSE
     if (cmdmod.browse)
     {
@@ -3032,9 +3048,21 @@ ex_cfile(eap)
 				  && (eap->cmdidx == CMD_cfile
 					     || eap->cmdidx == CMD_lfile))
     {
+#ifdef FEAT_AUTOCMD
+	if (au_name != NULL)
+	    apply_autocmds(EVENT_QUICKFIXCMDPOST, au_name, NULL, FALSE, curbuf);
+#endif
 	if (wp != NULL)
 	    qi = GET_LOC_LIST(wp);
 	qf_jump(qi, 0, 0, eap->forceit);	/* display first error */
+    }
+
+    else
+    {
+#ifdef FEAT_AUTOCMD
+	if (au_name != NULL)
+	    apply_autocmds(EVENT_QUICKFIXCMDPOST, au_name, NULL, FALSE, curbuf);
+#endif
     }
 }
 
@@ -3566,7 +3594,7 @@ unload_dummy_buffer(buf)
     buf_T	*buf;
 {
     if (curbuf != buf)		/* safety check */
-	close_buffer(NULL, buf, DOBUF_UNLOAD);
+	close_buffer(NULL, buf, DOBUF_UNLOAD, FALSE);
 }
 
 #if defined(FEAT_EVAL) || defined(PROTO)
@@ -3879,15 +3907,34 @@ ex_helpgrep(eap)
     qf_info_T	*qi = &ql_info;
     int		new_qi = FALSE;
     win_T	*wp;
-
-    /* Make 'cpoptions' empty, the 'l' flag should not be used here. */
-    save_cpo = p_cpo;
-    p_cpo = empty_option;
+#ifdef FEAT_AUTOCMD
+    char_u	*au_name =  NULL;
+#endif
 
 #ifdef FEAT_MULTI_LANG
     /* Check for a specified language */
     lang = check_help_lang(eap->arg);
 #endif
+
+#ifdef FEAT_AUTOCMD
+    switch (eap->cmdidx)
+    {
+	case CMD_helpgrep:  au_name = (char_u *)"helpgrep"; break;
+	case CMD_lhelpgrep: au_name = (char_u *)"lhelpgrep"; break;
+	default: break;
+    }
+    if (au_name != NULL)
+    {
+	apply_autocmds(EVENT_QUICKFIXCMDPRE, au_name,
+					       curbuf->b_fname, TRUE, curbuf);
+	if (did_throw || force_abort)
+	    return;
+    }
+#endif
+
+    /* Make 'cpoptions' empty, the 'l' flag should not be used here. */
+    save_cpo = p_cpo;
+    p_cpo = empty_option;
 
     if (eap->cmdidx == CMD_lhelpgrep)
     {
@@ -3914,6 +3961,16 @@ ex_helpgrep(eap)
     regmatch.rm_ic = FALSE;
     if (regmatch.regprog != NULL)
     {
+#ifdef FEAT_MBYTE
+	vimconv_T vc;
+
+	/* Help files are in utf-8 or latin1, convert lines when 'encoding'
+	 * differs. */
+	vc.vc_type = CONV_NONE;
+	if (!enc_utf8)
+	    convert_setup(&vc, (char_u *)"utf-8", p_enc);
+#endif
+
 	/* create a new quickfix list */
 	qf_new_list(qi, *eap->cmdlinep);
 
@@ -3948,21 +4005,33 @@ ex_helpgrep(eap)
 			lnum = 1;
 			while (!vim_fgets(IObuff, IOSIZE, fd) && !got_int)
 			{
-			    if (vim_regexec(&regmatch, IObuff, (colnr_T)0))
+			    char_u    *line = IObuff;
+#ifdef FEAT_MBYTE
+			    /* Convert a line if 'encoding' is not utf-8 and
+			     * the line contains a non-ASCII character. */
+			    if (vc.vc_type != CONV_NONE
+						   && has_non_ascii(IObuff)) {
+				line = string_convert(&vc, IObuff, NULL);
+				if (line == NULL)
+				    line = IObuff;
+			    }
+#endif
+
+			    if (vim_regexec(&regmatch, line, (colnr_T)0))
 			    {
-				int	l = (int)STRLEN(IObuff);
+				int	l = (int)STRLEN(line);
 
 				/* remove trailing CR, LF, spaces, etc. */
-				while (l > 0 && IObuff[l - 1] <= ' ')
-				     IObuff[--l] = NUL;
+				while (l > 0 && line[l - 1] <= ' ')
+				     line[--l] = NUL;
 
 				if (qf_add_entry(qi, &prevp,
 					    NULL,	/* dir */
 					    fnames[fi],
 					    0,
-					    IObuff,
+					    line,
 					    lnum,
-					    (int)(regmatch.startp[0] - IObuff)
+					    (int)(regmatch.startp[0] - line)
 								+ 1, /* col */
 					    FALSE,	/* vis_col */
 					    NULL,	/* search pattern */
@@ -3972,9 +4041,17 @@ ex_helpgrep(eap)
 					    ) == FAIL)
 				{
 				    got_int = TRUE;
+#ifdef FEAT_MBYTE
+				    if (line != IObuff)
+					vim_free(line);
+#endif
 				    break;
 				}
 			    }
+#ifdef FEAT_MBYTE
+			    if (line != IObuff)
+				vim_free(line);
+#endif
 			    ++lnum;
 			    line_breakcheck();
 			}
@@ -3984,7 +4061,12 @@ ex_helpgrep(eap)
 		FreeWild(fcount, fnames);
 	    }
 	}
+
 	vim_free(regmatch.regprog);
+#ifdef FEAT_MBYTE
+	if (vc.vc_type != CONV_NONE)
+	    convert_setup(&vc, NULL, NULL);
+#endif
 
 	qi->qf_lists[qi->qf_curlist].qf_nonevalid = FALSE;
 	qi->qf_lists[qi->qf_curlist].qf_ptr =
@@ -4000,6 +4082,17 @@ ex_helpgrep(eap)
 
 #ifdef FEAT_WINDOWS
     qf_update_buffer(qi);
+#endif
+
+#ifdef FEAT_AUTOCMD
+    if (au_name != NULL)
+    {
+	apply_autocmds(EVENT_QUICKFIXCMDPOST, au_name,
+					       curbuf->b_fname, TRUE, curbuf);
+	if (!new_qi && qi != &ql_info && qf_find_buf(qi) == NULL)
+	    /* autocommands made "qi" invalid */
+	    return;
+    }
 #endif
 
     /* Jump to first match. */

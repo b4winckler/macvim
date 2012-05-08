@@ -1,4 +1,4 @@
-*insert.txt*    For Vim version 7.3.  Last change: 2011 Sep 14
+*insert.txt*    For Vim version 7.3.  Last change: 2012 Apr 05
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -398,7 +398,12 @@ An example for using CTRL-G u: >
 
 This redefines the backspace key to start a new undo sequence.  You can now
 undo the effect of the backspace key, without changing what you typed before
-that, with CTRL-O u.
+that, with CTRL-O u.  Another example: >
+
+	:inoremap <CR> <C-]><C-G>u<CR>
+
+This breaks undo at each line break.  It also expands abbreviations before
+this.
 
 Using CTRL-O splits undo: the text typed before and after it is undone
 separately.  If you want to avoid this (e.g., in a mapping) you might be able
@@ -1010,7 +1015,8 @@ number between zero and the cursor column "col('.')".  This involves looking
 at the characters just before the cursor and including those characters that
 could be part of the completed item.  The text between this column and the
 cursor column will be replaced with the matches.  Return -1 if no completion
-can be done.
+can be done, the completion will be cancelled with an error message.  Return
+-2 to cancel silently.
 
 On the second invocation the arguments are:
    a:findstart  0
