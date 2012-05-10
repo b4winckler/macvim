@@ -3744,9 +3744,7 @@ wait4pid(child, status)
 	 * wait() sometimes hangs for no obvious reason.  Use waitpid()
 	 * instead and loop (like the GUI). Also needed for other interfaces,
 	 * they might call system(). */
-# ifdef FEAT_GUI_MACVIM
-	wait_pid = wait(status);
-# elif defined(__NeXT__)
+# ifdef __NeXT__
 	wait_pid = wait4(child, status, WNOHANG, (struct rusage *)0);
 # else
 	wait_pid = waitpid(child, status, WNOHANG);
