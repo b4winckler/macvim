@@ -719,7 +719,7 @@ u_compute_hash(hash)
     char_u		*p;
 
     sha256_start(&ctx);
-    for (lnum = 1; lnum < curbuf->b_ml.ml_line_count; ++lnum)
+    for (lnum = 1; lnum <= curbuf->b_ml.ml_line_count; ++lnum)
     {
 	p = ml_get(lnum);
 	sha256_update(&ctx, p, (UINT32_T)(STRLEN(p) + 1));
@@ -1535,6 +1535,7 @@ write_error:
 	/* For systems that support ACL: get the ACL from the original file. */
 	acl = mch_get_acl(buf->b_ffname);
 	mch_set_acl(file_name, acl);
+	mch_free_acl(acl);
     }
 #endif
 

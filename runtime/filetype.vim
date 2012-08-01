@@ -1,7 +1,7 @@
 " Vim support file to detect file types
 "
 " Maintainer:	Bram Moolenaar <Bram@vim.org>
-" Last Change:	2011 Sep 07
+" Last Change:	2012 Jun 20
 
 " Listen very carefully, I will say this only once
 if exists("did_load_filetypes")
@@ -17,7 +17,7 @@ augroup filetypedetect
 
 " Ignored extensions
 if exists("*fnameescape")
-au BufNewFile,BufRead ?\+.orig,?\+.bak,?\+.old,?\+.new,?\+.dpkg-dist,?\+.dpkg-old,?\+.rpmsave,?\+.rpmnew
+au BufNewFile,BufRead ?\+.orig,?\+.bak,?\+.old,?\+.new,?\+.dpkg-dist,?\+.dpkg-old,?\+.dpkg-new,?\+.dpkg-bak,?\+.rpmsave,?\+.rpmnew
 	\ exe "doau filetypedetect BufRead " . fnameescape(expand("<afile>:r"))
 au BufNewFile,BufRead *~
 	\ let s:name = expand("<afile>") |
@@ -239,8 +239,8 @@ func! s:FTVB(alt)
   endif
 endfunc
 
-" Visual Basic Script (close to Visual Basic)
-au BufNewFile,BufRead *.vbs,*.dsm,*.ctl		setf vb
+" Visual Basic Script (close to Visual Basic) or Visual Basic .NET
+au BufNewFile,BufRead *.vb,*.vbs,*.dsm,*.ctl	setf vb
 
 " IBasic file (similar to QBasic)
 au BufNewFile,BufRead *.iba,*.ibi		setf ibasic
@@ -367,7 +367,11 @@ au BufNewFile,BufRead *.h			call s:FTheader()
 
 func! s:FTheader()
   if match(getline(1, min([line("$"), 200])), '^@\(interface\|end\|class\)') > -1
-    setf objc
+    if exists("g:c_syntax_for_h")
+      setf objc
+    else
+      setf objcpp
+    endif
   elseif exists("g:c_syntax_for_h")
     setf c
   elseif exists("g:ch_syntax_for_h")
@@ -566,7 +570,10 @@ au BufNewFile,BufRead *.d			call s:DtraceCheck()
 
 func! s:DtraceCheck()
   let lines = getline(1, min([line("$"), 100]))
-  if match(lines, '^#!\S\+dtrace\|#pragma\s\+D\s\+option\|:\S\{-}:\S\{-}:') > -1
+  if match(lines, '^module\>\|^import\>') > -1
+    " D files often start with a module and/or import statement.
+    setf d
+  elseif match(lines, '^#!\S\+dtrace\|#pragma\s\+D\s\+option\|:\S\{-}:\S\{-}:') > -1
     setf dtrace
   else
     setf d
@@ -728,9 +735,11 @@ au BufNewFile,BufRead *.mo,*.gdmo		setf gdmo
 au BufNewFile,BufRead *.ged,lltxxxxx.txt	setf gedcom
 
 " Git
-au BufNewFile,BufRead *.git/COMMIT_EDITMSG setf gitcommit
+au BufNewFile,BufRead *.git/COMMIT_EDITMSG 	setf gitcommit
 au BufNewFile,BufRead *.git/config,.gitconfig,.gitmodules setf gitconfig
-au BufNewFile,BufRead git-rebase-todo      setf gitrebase
+au BufNewFile,BufRead *.git/modules/**/COMMIT_EDITMSG setf gitcommit
+au BufNewFile,BufRead *.git/modules/**/config 	setf gitconfig
+au BufNewFile,BufRead git-rebase-todo      	setf gitrebase
 au BufNewFile,BufRead .msg.[0-9]*
       \ if getline(1) =~ '^From.*# This line is ignored.$' |
       \   setf gitsendemail |
@@ -753,6 +762,11 @@ au BufNewFile,BufRead */usr/**/gnupg/options.skel setf gpg
 
 " gnash(1) configuration files
 au BufNewFile,BufRead gnashrc,.gnashrc,gnashpluginrc,.gnashpluginrc setf gnash
+
+" Gitolite
+au BufNewFile,BufRead gitolite.conf		setf gitolite
+au BufNewFile,BufRead */gitolite-admin/conf/*	call s:StarSetf('gitolite')
+au BufNewFile,BufRead {,.}gitolite.rc,example.gitolite.rc 	setf perl
 
 " Gnuplot scripts
 au BufNewFile,BufRead *.gpi			setf gnuplot
@@ -1186,7 +1200,7 @@ au BufNewFile,BufRead *.mysql			setf mysql
 au BufNewFile,BufRead */etc/Muttrc.d/*		call s:StarSetf('muttrc')
 
 " M$ Resource files
-au BufNewFile,BufRead *.rc			setf rc
+au BufNewFile,BufRead *.rc,*.rch		setf rc
 
 " MuPAD source
 au BufRead,BufNewFile *.mu			setf mupad
@@ -1208,6 +1222,9 @@ au BufNewFile,BufRead *.NS[ACGLMNPS]		setf natural
 
 " Netrc
 au BufNewFile,BufRead .netrc			setf netrc
+
+" Ninja file
+au BufNewFile,BufRead *.ninja			setf ninja
 
 " Novell netware batch files
 au BufNewFile,BufRead *.ncf			setf ncf
@@ -1250,10 +1267,10 @@ endfunc
 au BufNewFile,BufRead *.nqc			setf nqc
 
 " NSIS
-au BufNewFile,BufRead *.nsi			setf nsis
+au BufNewFile,BufRead *.nsi,*.nsh		setf nsis
 
 " OCAML
-au BufNewFile,BufRead *.ml,*.mli,*.mll,*.mly	setf ocaml
+au BufNewFile,BufRead *.ml,*.mli,*.mll,*.mly,.ocamlinit	setf ocaml
 
 " Occam
 au BufNewFile,BufRead *.occ			setf occam
@@ -1825,7 +1842,7 @@ au BufNewFile,BufRead .zsh*,.zlog*,.zcompdump*  call s:StarSetf('zsh')
 au BufNewFile,BufRead *.zsh			setf zsh
 
 " Scheme
-au BufNewFile,BufRead *.scm,*.ss		setf scheme
+au BufNewFile,BufRead *.scm,*.ss,*.rkt		setf scheme
 
 " Screen RC
 au BufNewFile,BufRead .screenrc,screenrc	setf screen
@@ -2127,6 +2144,9 @@ au BufNewFile,BufReadPost *.tssop		setf tssop
 " TSS - Command Line (temporary)
 au BufNewFile,BufReadPost *.tsscl		setf tsscl
 
+" TWIG files
+au BufNewFile,BufReadPost *.twig		setf twig
+
 " Motif UIT/UIL files
 au BufNewFile,BufRead *.uit,*.uil		setf uil
 
@@ -2306,6 +2326,9 @@ au BufNewFile,BufRead fglrxrc			setf xml
 au BufNewFile,BufRead *.xlf			setf xml
 au BufNewFile,BufRead *.xliff			setf xml
 
+" XML User Interface Language
+au BufNewFile,BufRead *.xul			setf xml
+
 " X11 xmodmap (also see below)
 au BufNewFile,BufRead *Xmodmap			setf xmodmap
 
@@ -2347,6 +2370,9 @@ au BufNewFile,BufRead *.yaml,*.yml		setf yaml
 
 " yum conf (close enough to dosini)
 au BufNewFile,BufRead */etc/yum.conf 		setf dosini
+
+" Zimbu
+au BufNewFile,BufRead *.zu 			setf zimbu
 
 " Zope
 "   dtml (zope dynamic template markup language), pt (zope page template),
@@ -2525,21 +2551,27 @@ au BufNewFile,BufRead */etc/yum.repos.d/* 	call s:StarSetf('dosini')
 au BufNewFile,BufRead zsh*,zlog*		call s:StarSetf('zsh')
 
 
+" Plain text files, needs to be far down to not override others.  This avoids
+" the "conf" type being used if there is a line starting with '#'.
+au BufNewFile,BufRead *.txt,*.text		setf text
+
 
 " Use the filetype detect plugins.  They may overrule any of the previously
 " detected filetypes.
 runtime! ftdetect/*.vim
 
+" NOTE: The above command could have ended the filetypedetect autocmd group
+" and started another one. Let's make sure it has ended to get to a consistent
+" state.
+augroup END
 
 " Generic configuration file (check this last, it's just guessing!)
-au BufNewFile,BufRead,StdinReadPost *
+au filetypedetect BufNewFile,BufRead,StdinReadPost *
 	\ if !did_filetype() && expand("<amatch>") !~ g:ft_ignore_pat
 	\    && (getline(1) =~ '^#' || getline(2) =~ '^#' || getline(3) =~ '^#'
 	\	|| getline(4) =~ '^#' || getline(5) =~ '^#') |
 	\   setf conf |
 	\ endif
-
-augroup END
 
 
 " If the GUI is already running, may still need to install the Syntax menu.

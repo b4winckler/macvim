@@ -576,6 +576,31 @@ main
     debug_break_level = params.use_debug_break_level;
 #endif
 
+#ifdef FEAT_MZSCHEME
+    /*
+     * Newer version of MzScheme (Racket) require earlier (trampolined)
+     * initialisation via scheme_main_setup.
+     * Implement this by initialising it as early as possible
+     * and splitting off remaining Vim main into vim_main2
+     */
+    {
+	/* Pack up preprocessed command line arguments.
+	 * It is safe because Scheme does not access argc/argv. */
+	char *args[2];
+	args[0] = (char *)fname;
+	args[1] = (char *)&params;
+	return mzscheme_main(2, args);
+    }
+}
+
+int vim_main2(int argc, char **argv)
+{
+    char_u	*fname = (char_u *)argv[0];
+    mparm_T	params;
+
+    memcpy(&params, argv[1], sizeof(params));
+#endif
+
     /* Execute --cmd arguments. */
     exe_pre_commands(&params);
 
@@ -952,6 +977,18 @@ main
     TIME_MSG("VimEnter autocommands");
 #endif
 
+#if defined(FEAT_EVAL) && defined(FEAT_CLIPBOARD)
+    /* Adjust default register name for "unnamed" in 'clipboard'. Can only be
+     * done after the clipboard is available and all initial commands that may
+     * modify the 'clipboard' setting have run; i.e. just before entering the
+     * main loop. */
+    {
+	int default_regname = 0;
+	adjust_clip_reg(&default_regname);
+	set_reg_var(default_regname);
+    }
+#endif
+
 #if defined(FEAT_DIFF) && defined(FEAT_SCROLLBIND)
     /* When a startup script or session file setup for diff'ing and
      * scrollbind, sync the scrollbind now. */
@@ -1018,14 +1055,8 @@ main
 
     /*
      * Call the main command loop.  This never returns.
-     * For embedded MzScheme the main_loop will be called by Scheme
-     * for proper stack tracking
-     */
-#ifndef FEAT_MZSCHEME
+    */
     main_loop(FALSE, FALSE);
-#else
-    mzscheme_main();
-#endif
 
 #ifdef FEAT_GUI_MACVIM
     objc_msgSend(autoreleasePool, sel_getUid("release"));
@@ -1418,7 +1449,7 @@ getout(exitval)
 		{
 		    apply_autocmds(EVENT_BUFWINLEAVE, buf->b_fname,
 						    buf->b_fname, FALSE, buf);
-		    buf->b_changedtick = -1;    /* note that we did it already */
+		    buf->b_changedtick = -1;  /* note that we did it already */
 		    /* start all over, autocommands may mess up the lists */
 		    next_tp = first_tabpage;
 		    break;
@@ -3251,6 +3282,7 @@ usage()
 #endif
     main_msg(_("-v\t\t\tVi mode (like \"vi\")"));
     main_msg(_("-e\t\t\tEx mode (like \"ex\")"));
+    main_msg(_("-E\t\t\tImproved Ex mode"));
     main_msg(_("-s\t\t\tSilent (batch) mode (only for \"ex\")"));
 #ifdef FEAT_DIFF
     main_msg(_("-d\t\t\tDiff mode (like \"vimdiff\")"));
@@ -3374,6 +3406,7 @@ usage()
     main_msg(_("-display <display>\tRun vim on <display> (also: --display)"));
     main_msg(_("--role <role>\tSet a unique role to identify the main window"));
     main_msg(_("--socketid <xid>\tOpen Vim inside another GTK widget"));
+    main_msg(_("--echo-wid\t\tMake gvim echo the Window ID on stdout"));
 #endif
 #ifdef FEAT_GUI_W32
     main_msg(_("-P <parent title>\tOpen Vim inside parent application"));
@@ -3383,7 +3416,10 @@ usage()
 #ifdef FEAT_GUI_GNOME
     /* Gnome gives extra messages for --help if we continue, but not for -h. */
     if (gui.starting)
+    {
 	mch_msg("\n");
+	gui.dofork = FALSE;
+    }
     else
 #endif
 	mch_exit(0);

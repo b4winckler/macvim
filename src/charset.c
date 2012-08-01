@@ -463,41 +463,42 @@ str_foldcase(str, orglen, buf, buflen)
 	    if (enc_utf8)
 	    {
 		int	c = utf_ptr2char(STR_PTR(i));
-		int	ol = utf_ptr2len(STR_PTR(i));
+		int	olen = utf_ptr2len(STR_PTR(i));
 		int	lc = utf_tolower(c);
 
 		/* Only replace the character when it is not an invalid
 		 * sequence (ASCII character or more than one byte) and
 		 * utf_tolower() doesn't return the original character. */
-		if ((c < 0x80 || ol > 1) && c != lc)
+		if ((c < 0x80 || olen > 1) && c != lc)
 		{
-		    int	    nl = utf_char2len(lc);
+		    int	    nlen = utf_char2len(lc);
 
 		    /* If the byte length changes need to shift the following
 		     * characters forward or backward. */
-		    if (ol != nl)
+		    if (olen != nlen)
 		    {
-			if (nl > ol)
+			if (nlen > olen)
 			{
-			    if (buf == NULL ? ga_grow(&ga, nl - ol + 1) == FAIL
-						    : len + nl - ol >= buflen)
+			    if (buf == NULL
+				    ? ga_grow(&ga, nlen - olen + 1) == FAIL
+				    : len + nlen - olen >= buflen)
 			    {
 				/* out of memory, keep old char */
 				lc = c;
-				nl = ol;
+				nlen = olen;
 			    }
 			}
-			if (ol != nl)
+			if (olen != nlen)
 			{
 			    if (buf == NULL)
 			    {
-				STRMOVE(GA_PTR(i) + nl, GA_PTR(i) + ol);
-				ga.ga_len += nl - ol;
+				STRMOVE(GA_PTR(i) + nlen, GA_PTR(i) + olen);
+				ga.ga_len += nlen - olen;
 			    }
 			    else
 			    {
-				STRMOVE(buf + i + nl, buf + i + ol);
-				len += nl - ol;
+				STRMOVE(buf + i + nlen, buf + i + olen);
+				len += nlen - olen;
 			    }
 			}
 		    }
@@ -763,7 +764,7 @@ ptr2cells(p)
 }
 
 /*
- * Return the number of characters string "s" will take on the screen,
+ * Return the number of character cells string "s" will take on the screen,
  * counting TABs as two characters: "^I".
  */
     int
@@ -774,8 +775,8 @@ vim_strsize(s)
 }
 
 /*
- * Return the number of characters string "s[len]" will take on the screen,
- * counting TABs as two characters: "^I".
+ * Return the number of character cells string "s[len]" will take on the
+ * screen, counting TABs as two characters: "^I".
  */
     int
 vim_strnsize(s, len)
@@ -1601,10 +1602,9 @@ vim_isxdigit(c)
 #define LATIN1LOWER 'l'
 #define LATIN1UPPER 'U'
 
-/*                                                                 !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]%_'abcdefghijklmnopqrstuvwxyz{|}~                                  ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÛÜİŞßàáâãäåæçèéêëìíîïğñòóôõö÷øùúûüışÿ */
 static char_u latin1flags[257] = "                                                                 UUUUUUUUUUUUUUUUUUUUUUUUUU      llllllllllllllllllllllllll                                                                     UUUUUUUUUUUUUUUUUUUUUUU UUUUUUUllllllllllllllllllllllll llllllll";
-static char_u latin1upper[257] = "                                 !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`ABCDEFGHIJKLMNOPQRSTUVWXYZ{|}~€‚ƒ„…†‡ˆ‰Š‹Œ‘’“”•–—˜™š›œŸ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÛÜİŞßÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ÷ØÙÚÛÜİŞÿ";
-static char_u latin1lower[257] = "                                 !\"#$%&'()*+,-./0123456789:;<=>?@abcdefghijklmnopqrstuvwxyz[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹Œ‘’“”•–—˜™š›œŸ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿àáâãäåæçèéêëìíîïğñòóôõö×øùúûüışßàáâãäåæçèéêëìíîïğñòóôõö÷øùúûüışÿ";
+static char_u latin1upper[257] = "                                 !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`ABCDEFGHIJKLMNOPQRSTUVWXYZ{|}~\x7f\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xf7\xd8\xd9\xda\xdb\xdc\xdd\xde\xff";
+static char_u latin1lower[257] = "                                 !\"#$%&'()*+,-./0123456789:;<=>?@abcdefghijklmnopqrstuvwxyz[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\x7f\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xd7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff";
 
     int
 vim_islower(c)
@@ -1829,7 +1829,7 @@ vim_str2nr(start, hexp, len, dooct, dohex, nptr, unptr)
 			hex = 0;	/* can't be octal */
 			break;
 		    }
-		    if (ptr[n] > '0')
+		    if (ptr[n] >= '0')
 			hex = '0';	/* assume octal */
 		}
 	    }

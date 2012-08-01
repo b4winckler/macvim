@@ -28,6 +28,16 @@ dnl in autoconf needs it, where it uses STDC_HEADERS.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 
+dnl Check for the flag that fails if stuff are missing.
+
+AC_MSG_CHECKING(--enable-fail-if-missing argument)
+AC_ARG_ENABLE(fail_if_missing,
+	[  --enable-fail-if-missing    Fail if dependencies on additional features
+     specified on the command line are missing.], 
+	[fail_if_missing="yes"],
+	[fail_if_missing="no"])
+AC_MSG_RESULT($fail_if_missing)
+
 dnl Set default value for CFLAGS if none is defined or it's empty
 if test -z "$CFLAGS"; then
   CFLAGS="-O"
@@ -333,15 +343,18 @@ case `uname` in
 		  echo ""
 		  echo "------------------------------------------"
 		  echo " On z/OS Unix, the environment variable"
-		  echo " __CC_${ccn}MODE must be set to \"1\"!"
+		  echo " _CC_${ccn}MODE must be set to \"1\"!"
 		  echo " Do:"
 		  echo "    export _CC_${ccn}MODE=1"
 		  echo " and then call configure again."
 		  echo "------------------------------------------"
 		  exit 1
 		fi
-		CFLAGS="$CFLAGS -D_ALL_SOURCE -Wc,float\\(IEEE\\)";
-                LDFLAGS="$LDFLAGS -Wl,EDIT=NO"
+		# Set CFLAGS for configure process.
+		# This will be reset later for config.mk.
+		# Use haltonmsg to force error for missing H files.
+		CFLAGS="$CFLAGS -D_ALL_SOURCE -Wc,float(ieee),haltonmsg(3296)";
+		LDFLAGS="$LDFLAGS -Wl,EDIT=NO"
 		AC_MSG_RESULT(yes)
 		;;
     *)		zOSUnix="no";
@@ -504,6 +517,9 @@ if test "$enable_luainterp" = "yes" -o "$enable_luainterp" = "dynamic"; then
       LUA_LIBS=""
       LUA_CFLAGS="-DDYNAMIC_LUA_DLL=\\\"liblua${vi_cv_version_lua}.so$LUA_SONAME\\\" $LUA_CFLAGS"
     fi
+  fi
+  if test "$fail_if_missing" = "yes" -a -z "$LUA_SRC"; then
+    AC_MSG_ERROR([could not configure lua])
   fi
   AC_SUBST(LUA_SRC)
   AC_SUBST(LUA_OBJ)
@@ -805,6 +821,10 @@ if test "$enable_perlinterp" = "yes" -o "$enable_perlinterp" = "dynamic"; then
       PERL_CFLAGS="-DDYNAMIC_PERL_DLL=\\\"$libperl\\\" $PERL_CFLAGS"
     fi
   fi
+
+  if test "$fail_if_missing" = "yes" -a "$perl_ok" != "yes"; then
+    AC_MSG_ERROR([could not configure perl])
+  fi
 fi
 AC_SUBST(shrpenv)
 AC_SUBST(PERL_SRC)
@@ -999,6 +1019,10 @@ eof
     else
       AC_MSG_RESULT(too old)
     fi
+  fi
+
+  if test "$fail_if_missing" = "yes" -a "$python_ok" != "yes"; then
+    AC_MSG_ERROR([could not configure python])
   fi
 fi
 
@@ -1423,6 +1447,9 @@ if test "$enable_tclinterp" = "yes"; then
       AC_MSG_RESULT(too old; need Tcl version 8.0 or later)
     fi
   fi
+  if test "$fail_if_missing" = "yes" -a -z "$TCL_SRC"; then
+    AC_MSG_ERROR([could not configure Tcl])
+  fi
 fi
 AC_SUBST(TCL_SRC)
 AC_SUBST(TCL_OBJ)
@@ -1508,6 +1535,10 @@ if test "$enable_rubyinterp" = "yes" -o "$enable_rubyinterp" = "dynamic"; then
     else
       AC_MSG_RESULT(too old; need Ruby version 1.6.0 or later)
     fi
+  fi
+
+  if test "$fail_if_missing" = "yes" -a -z "$RUBY_OBJ"; then
+    AC_MSG_ERROR([could not configure Ruby])
   fi
 fi
 AC_SUBST(RUBY_SRC)
@@ -2410,10 +2441,15 @@ dnl Only use the Xm directory when compiling Motif, don't use it for Athena
 if test -z "$SKIP_MOTIF"; then
   cppflags_save=$CPPFLAGS
   CPPFLAGS="$CPPFLAGS $X_CFLAGS"
-  AC_CHECK_HEADERS(Xm/Xm.h Xm/XpmP.h Xm/JoinSideT.h Xm/TraitP.h Xm/Manager.h \
-		   Xm/UnhighlightT.h Xm/Notebook.h)
+  if test "$zOSUnix" = "yes"; then
+	xmheader="Xm/Xm.h"
+  else
+	xmheader="Xm/Xm.h Xm/XpmP.h Xm/JoinSideT.h Xm/TraitP.h Xm/Manager.h
+  	   Xm/UnhighlightT.h Xm/Notebook.h"  
+  fi    
+  AC_CHECK_HEADERS($xmheader)
 
-  if test $ac_cv_header_Xm_XpmP_h = yes; then
+  if test "x$ac_cv_header_Xm_XpmP_h" = "xyes"; then
     dnl Solaris uses XpmAttributes_21, very annoying.
     AC_MSG_CHECKING([for XpmAttributes_21 in Xm/XpmP.h])
     AC_TRY_COMPILE([#include <Xm/XpmP.h>], [XpmAttributes_21 attr;],
@@ -3138,6 +3174,7 @@ AC_TRY_LINK([
 
 dnl Link with -lposix1e for ACL stuff; if not found, try -lacl for SGI
 dnl when -lacl works, also try to use -lattr (required for Debian).
+dnl On Solaris, use the acl_get/set functions in libsec, if present.
 AC_MSG_CHECKING(--disable-acl argument)
 AC_ARG_ENABLE(acl,
 	[  --disable-acl           Don't check for ACL support.],
@@ -3160,6 +3197,7 @@ acl_t acl;], [acl = acl_get_file("foo", ACL_TYPE_ACCESS);
 	AC_MSG_RESULT(yes); AC_DEFINE(HAVE_POSIX_ACL),
 	AC_MSG_RESULT(no))
 
+AC_CHECK_LIB(sec, acl_get, [LIBS="$LIBS -lsec"; AC_DEFINE(HAVE_SOLARIS_ZFS_ACL)],
 AC_MSG_CHECKING(for Solaris ACL support)
 AC_TRY_LINK([
 #ifdef HAVE_SYS_ACL_H
@@ -3167,7 +3205,7 @@ AC_TRY_LINK([
 #endif], [acl("foo", GETACLCNT, 0, NULL);
 	],
 	AC_MSG_RESULT(yes); AC_DEFINE(HAVE_SOLARIS_ACL),
-	AC_MSG_RESULT(no))
+	AC_MSG_RESULT(no)))
 
 AC_MSG_CHECKING(for AIX ACL support)
 AC_TRY_LINK([
@@ -3343,7 +3381,7 @@ main() {
 }],
 AC_MSG_RESULT(ok),
 AC_MSG_ERROR([WRONG!  uint32_t not defined correctly.]),
-AC_MSG_ERROR([could not compile program using uint32_t.]))
+AC_MSG_WARN([cannot check uint32_t when cross-compiling.]))
 
 dnl Check for memmove() before bcopy(), makes memmove() be used when both are
 dnl present, fixes problem with incompatibility between Solaris 2.4 and 2.5.
@@ -3653,9 +3691,10 @@ if test "$GCC" = yes; then
   dnl -D_FORTIFY_SOURCE=2 crashes Vim on strcpy(buf, "000") when buf is
   dnl declared as char x[1] but actually longer.  Introduced in gcc 4.0.
   dnl Also remove duplicate _FORTIFY_SOURCE arguments.
+  dnl And undefine it first to avoid a warning.
   AC_MSG_CHECKING(whether we need -D_FORTIFY_SOURCE=1)
   if test "$gccmajor" -gt "3"; then
-    CFLAGS=`echo "$CFLAGS" | sed -e 's/-Wp,-D_FORTIFY_SOURCE=.//g' -e 's/-D_FORTIFY_SOURCE=.//g' -e 's/$/ -D_FORTIFY_SOURCE=1/'`
+    CFLAGS=`echo "$CFLAGS" | sed -e 's/-Wp,-D_FORTIFY_SOURCE=.//g' -e 's/-D_FORTIFY_SOURCE=.//g' -e 's/$/ -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1/'`
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
@@ -3679,6 +3718,11 @@ else
   AC_MSG_RESULT(no)
 fi
 AC_SUBST(LINK_AS_NEEDED)
+
+# IBM z/OS reset CFLAGS for config.mk
+if test "$zOSUnix" = "yes"; then
+	CFLAGS="-D_ALL_SOURCE -Wc,float\(ieee\),dll"
+fi
 
 dnl write output files
 AC_OUTPUT(auto/config.mk:config.mk.in)

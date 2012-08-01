@@ -1,13 +1,14 @@
 /* window.c */
 void do_window __ARGS((int nchar, long Prenum, int xchar));
 int win_split __ARGS((int size, int flags));
-int win_split_ins __ARGS((int size, int flags, win_T *newwin, int dir));
+int win_split_ins __ARGS((int size, int flags, win_T *new_wp, int dir));
 int win_valid __ARGS((win_T *win));
 int win_count __ARGS((void));
 int make_windows __ARGS((int count, int vertical));
 void win_move_after __ARGS((win_T *win1, win_T *win2));
 void win_equal __ARGS((win_T *next_curwin, int current, int dir));
 void close_windows __ARGS((buf_T *buf, int keep_curwin));
+int one_window __ARGS((void));
 void win_close __ARGS((win_T *win, int free_buf));
 void win_close_othertab __ARGS((win_T *win, int free_buf, tabpage_T *tp));
 void win_free_all __ARGS((void));
@@ -26,7 +27,7 @@ int valid_tabpage __ARGS((tabpage_T *tpc));
 tabpage_T *find_tabpage __ARGS((int n));
 int tabpage_index __ARGS((tabpage_T *ftp));
 void goto_tabpage __ARGS((int n));
-void goto_tabpage_tp __ARGS((tabpage_T *tp));
+void goto_tabpage_tp __ARGS((tabpage_T *tp, int trigger_autocmds));
 void goto_tabpage_win __ARGS((tabpage_T *tp, win_T *wp));
 void tabpage_move __ARGS((int nr));
 void win_goto __ARGS((win_T *wp));

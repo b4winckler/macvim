@@ -1,4 +1,4 @@
-*cmdline.txt*   For Vim version 7.3.  Last change: 2011 Mar 27
+*cmdline.txt*   For Vim version 7.3.  Last change: 2012 Jun 20
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -330,12 +330,12 @@ terminals)
 
 :his[tory] [{name}] [{first}][, [{last}]]
 		List the contents of history {name} which can be:
-		c[md]	 or :	command-line history
-		s[earch] or /	search string history
-		e[xpr]	 or =	expression register history
-		i[nput]	 or @	input line history
-		d[ebug]	 or >	debug command history
-		a[ll]		all of the above
+		c[md]	 or :		command-line history
+		s[earch] or / or ?	search string history
+		e[xpr]	 or =		expression register history
+		i[nput]	 or @		input line history
+		d[ebug]	 or >		debug command history
+		a[ll]			all of the above
 		{not in Vi}
 
 		If the numbers {first} and/or {last} are given, the respective
@@ -425,6 +425,8 @@ The 'wildchar' option defaults to <Tab> (CTRL-E when in Vi compatible mode; in
 a previous version <Esc> was used).  In the pattern standard wildcards '*' and
 '?' are accepted when matching file names.  '*' matches any string, '?'
 matches exactly one character.
+
+The 'wildignorecase' option can be set to ignore case in filenames.
 
 If you like tcsh's autolist completion, you can use this mapping:
 	:cnoremap X <C-L><C-D>
@@ -824,10 +826,11 @@ These modifiers can be given, in this order:
 		the home directory.  If the name is a directory a path
 		separator is added at the end.  For a file name that does not
 		exist and does not have an absolute path the result is
-		unpredictable.
+		unpredictable.  On MS-Windows an 8.3 filename is expanded to
+		the long name.
 	:8	Converts the path to 8.3 short format (currently only on
-		win32).  Will act on as much of a path that is an existing
-		path.
+		MS-Windows).  Will act on as much of a path that is an
+		existing path.
 	:~	Reduce file name to be relative to the home directory, if
 		possible.  File name is unmodified if it is not below the home
 		directory.

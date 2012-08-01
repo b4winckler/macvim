@@ -1996,6 +1996,7 @@ set_termname(term)
 #  define HMT_DEC	4
 #  define HMT_JSBTERM	8
 #  define HMT_PTERM	16
+#  define HMT_URXVT	32
 static int has_mouse_termcode = 0;
 # endif
 
@@ -2029,6 +2030,11 @@ set_mouse_termcode(n, s)
 #   ifdef FEAT_MOUSE_PTERM
     if (n == KS_PTERM_MOUSE)
 	has_mouse_termcode |= HMT_PTERM;
+    else
+#   endif
+#   ifdef FEAT_MOUSE_URXVT
+    if (n == KS_URXVT_MOUSE)
+	has_mouse_termcode |= HMT_URXVT;
     else
 #   endif
 	has_mouse_termcode |= HMT_NORMAL;
@@ -2066,6 +2072,11 @@ del_mouse_termcode(n)
 #   ifdef FEAT_MOUSE_PTERM
     if (n == KS_PTERM_MOUSE)
 	has_mouse_termcode &= ~HMT_PTERM;
+    else
+#   endif
+#   ifdef FEAT_MOUSE_URXVT
+    if (n == KS_URXVT_MOUSE)
+	has_mouse_termcode &= ~HMT_URXVT;
     else
 #   endif
 	has_mouse_termcode &= ~HMT_NORMAL;
@@ -3774,14 +3785,16 @@ set_mouse_topline(wp)
  * With a match, the match is removed, the replacement code is inserted in
  * typebuf.tb_buf[] and the number of characters in typebuf.tb_buf[] is
  * returned.
- * When "buf" is not NULL, it is used instead of typebuf.tb_buf[]. "buflen" is
- * then the length of the string in buf[].
+ * When "buf" is not NULL, buf[bufsize] is used instead of typebuf.tb_buf[].
+ * "buflen" is then the length of the string in buf[] and is updated for
+ * inserts and deletes.
  */
     int
-check_termcode(max_offset, buf, buflen)
+check_termcode(max_offset, buf, bufsize, buflen)
     int		max_offset;
     char_u	*buf;
-    int		buflen;
+    int		bufsize;
+    int		*buflen;
 {
     char_u	*tp;
     char_u	*p;
@@ -3853,10 +3866,10 @@ check_termcode(max_offset, buf, buflen)
 	}
 	else
 	{
-	    if (offset >= buflen)
+	    if (offset >= *buflen)
 		break;
 	    tp = buf + offset;
-	    len = buflen - offset;
+	    len = *buflen - offset;
 	}
 
 	/*
@@ -4008,7 +4021,9 @@ check_termcode(max_offset, buf, buflen)
 	}
 
 #ifdef FEAT_TERMRESPONSE
-	if (key_name[0] == NUL)
+	if (key_name[0] == NUL
+	    /* URXVT mouse uses <ESC>[#;#;#M, but we are matching <ESC>[ */
+	    || key_name[0] == KS_URXVT_MOUSE)
 	{
 	    /* Check for xterm version string: "<Esc>[>{x};{vers};{y}c".  Also
 	     * eat other possible responses to t_RV, rxvt returns
@@ -4047,7 +4062,11 @@ check_termcode(max_offset, buf, buflen)
 		    if (tp[1 + (tp[0] != CSI)] == '>' && j == 2)
 		    {
 			/* if xterm version >= 95 use mouse dragging */
-			if (extra >= 95)
+			if (extra >= 95
+# ifdef TTYM_URXVT
+				&& ttym_flags != TTYM_URXVT
+# endif
+				)
 			    set_option_value((char_u *)"ttym", 0L,
 						       (char_u *)"xterm2", 0);
 			/* if xterm version >= 141 try to get termcap codes */
@@ -4141,6 +4160,9 @@ check_termcode(max_offset, buf, buflen)
 # ifdef FEAT_MOUSE_PTERM
 		|| key_name[0] == (int)KS_PTERM_MOUSE
 # endif
+# ifdef FEAT_MOUSE_URXVT
+		|| key_name[0] == (int)KS_URXVT_MOUSE
+# endif
 		)
 	{
 	    is_click = is_drag = FALSE;
@@ -4219,7 +4241,69 @@ check_termcode(max_offset, buf, buflen)
 		    else
 			break;
 		}
+	    }
 
+# ifdef FEAT_MOUSE_URXVT
+	    if (key_name[0] == (int)KS_URXVT_MOUSE)
+	    {
+		for (;;)
+		{
+		    /* URXVT 1015 mouse reporting mode:
+		     * Almost identical to xterm mouse mode, except the values
+		     * are decimal instead of bytes.
+		     *
+		     * \033[%d;%d;%dM
+		     *		  ^-- row
+		     *	       ^----- column
+		     *	    ^-------- code
+		     */
+		    p = tp + slen;
+
+		    mouse_code = getdigits(&p);
+		    if (*p++ != ';')
+			return -1;
+
+		    mouse_col = getdigits(&p) - 1;
+		    if (*p++ != ';')
+			return -1;
+
+		    mouse_row = getdigits(&p) - 1;
+		    if (*p++ != 'M')
+			return -1;
+
+		    slen += (int)(p - (tp + slen));
+
+		    /* skip this one if next one has same code (like xterm
+		     * case) */
+		    j = termcodes[idx].len;
+		    if (STRNCMP(tp, tp + slen, (size_t)j) == 0) {
+			/* check if the command is complete by looking for the
+			 * M */
+			int slen2;
+			int cmd_complete = 0;
+			for (slen2 = slen; slen2 < len; slen2++) {
+			    if (tp[slen2] == 'M') {
+				cmd_complete = 1;
+				break;
+			    }
+			}
+			p += j;
+			if (cmd_complete && getdigits(&p) == mouse_code) {
+			    slen += j; /* skip the \033[ */
+			    continue;
+			}
+		    }
+		    break;
+		}
+	    }
+# endif
+
+	if (key_name[0] == (int)KS_MOUSE
+#ifdef FEAT_MOUSE_URXVT
+	    || key_name[0] == (int)KS_URXVT_MOUSE
+#endif
+	    )
+	{
 #  if !defined(MSWIN) && !defined(MSDOS)
 		/*
 		 * Handle mouse events.
@@ -4920,12 +5004,18 @@ check_termcode(max_offset, buf, buflen)
 	    if (extra < 0)
 		/* remove matched characters */
 		mch_memmove(buf + offset, buf + offset - extra,
-					   (size_t)(buflen + offset + extra));
+					   (size_t)(*buflen + offset + extra));
 	    else if (extra > 0)
-		/* insert the extra space we need */
+	    {
+		/* Insert the extra space we need.  If there is insufficient
+		 * space return -1. */
+		if (*buflen + extra + new_slen >= bufsize)
+		    return -1;
 		mch_memmove(buf + offset + extra, buf + offset,
-						   (size_t)(buflen - offset));
+						   (size_t)(*buflen - offset));
+	    }
 	    mch_memmove(buf + offset, string, (size_t)new_slen);
+	    *buflen = *buflen + extra + new_slen;
 	}
 	return retval == 0 ? (len + extra + offset) : retval;
     }
@@ -5170,12 +5260,12 @@ find_term_bykeys(src)
     char_u	*src;
 {
     int		i;
-    int		slen;
+    int		slen = (int)STRLEN(src);
 
     for (i = 0; i < tc_len; ++i)
     {
-	slen = termcodes[i].len;
-	if (slen > 1 && STRNCMP(termcodes[i].code, src, (size_t)slen) == 0)
+	if (slen == termcodes[i].len
+			&& STRNCMP(termcodes[i].code, src, (size_t)slen) == 0)
 	    return i;
     }
     return -1;

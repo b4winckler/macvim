@@ -1061,6 +1061,9 @@
 # ifdef FEAT_BIG
 #  define FEAT_MOUSE_DEC
 # endif
+# ifdef FEAT_BIG
+#  define FEAT_MOUSE_URXVT
+# endif
 # if defined(FEAT_NORMAL) && (defined(MSDOS) || defined(WIN3264))
 #  define DOS_MOUSE
 # endif
@@ -1076,13 +1079,23 @@
 #if defined(FEAT_NORMAL) && defined(HAVE_SYSMOUSE)
 # define FEAT_SYSMOUSE
 #endif
+
+/* urxvt is a small variation of mouse_xterm, and shares its code */
+#if defined(FEAT_MOUSE_URXVT) && !defined(FEAT_MOUSE_XTERM)
+# define FEAT_MOUSE_XTERM
+#endif
+
 /* Define FEAT_MOUSE when any of the above is defined or FEAT_GUI. */
 #if !defined(FEAT_MOUSE_TTY) \
 	&& (defined(FEAT_MOUSE_XTERM) \
-	    || defined(FEAT_MOUSE_NET) || defined(FEAT_MOUSE_DEC) \
-	    || defined(DOS_MOUSE) || defined(FEAT_MOUSE_GPM) \
-	    || defined(FEAT_MOUSE_JSB) || defined(FEAT_MOUSE_PTERM) \
-	    || defined(FEAT_SYSMOUSE))
+	    || defined(FEAT_MOUSE_NET) \
+	    || defined(FEAT_MOUSE_DEC) \
+	    || defined(DOS_MOUSE) \
+	    || defined(FEAT_MOUSE_GPM) \
+	    || defined(FEAT_MOUSE_JSB) \
+	    || defined(FEAT_MOUSE_PTERM) \
+	    || defined(FEAT_SYSMOUSE) \
+	    || defined(FEAT_MOUSE_URXVT))
 # define FEAT_MOUSE_TTY		/* include non-GUI mouse support */
 #endif
 #if !defined(FEAT_MOUSE) && (defined(FEAT_MOUSE_TTY) || defined(FEAT_GUI))
@@ -1318,6 +1331,14 @@
  */
 #ifdef FEAT_NORMAL
 # define FEAT_PERSISTENT_UNDO
+#endif
+
+/*
+ * +filterpipe
+ */
+#if (defined(UNIX) && !defined(USE_SYSTEM)) \
+	    || (defined(WIN3264) && defined(FEAT_GUI_W32))
+# define FEAT_FILTERPIPE
 #endif
 
 /*

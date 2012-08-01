@@ -418,12 +418,12 @@ typeahead_noflush(c)
 
 /*
  * Remove the contents of the stuff buffer and the mapped characters in the
- * typeahead buffer (used in case of an error).  If 'typeahead' is true,
+ * typeahead buffer (used in case of an error).  If "flush_typeahead" is true,
  * flush all typeahead characters (used when interrupted by a CTRL-C).
  */
     void
-flush_buffers(typeahead)
-    int typeahead;
+flush_buffers(flush_typeahead)
+    int flush_typeahead;
 {
     init_typebuf();
 
@@ -431,7 +431,7 @@ flush_buffers(typeahead)
     while (read_stuff(TRUE) != NUL)
 	;
 
-    if (typeahead)	    /* remove all typeahead */
+    if (flush_typeahead)	    /* remove all typeahead */
     {
 	/*
 	 * We have to get all characters, because we may delete the first part
@@ -467,6 +467,24 @@ ResetRedobuff()
 	free_buff(&old_redobuff);
 	old_redobuff = redobuff;
 	redobuff.bh_first.b_next = NULL;
+    }
+}
+
+/*
+ * Discard the contents of the redo buffer and restore the previous redo
+ * buffer.
+ */
+    void
+CancelRedo()
+{
+    if (!block_redo)
+    {
+	free_buff(&redobuff);
+	redobuff = old_redobuff;
+	old_redobuff.bh_first.b_next = NULL;
+	start_stuff();
+	while (read_stuff(TRUE) != NUL)
+	    ;
     }
 }
 
@@ -691,9 +709,9 @@ stuffnumReadbuff(n)
  * Read a character from the redo buffer.  Translates K_SPECIAL, CSI and
  * multibyte characters.
  * The redo buffer is left as it is.
- * if init is TRUE, prepare for redo, return FAIL if nothing to redo, OK
- * otherwise
- * if old is TRUE, use old_redobuff instead of redobuff
+ * If init is TRUE, prepare for redo, return FAIL if nothing to redo, OK
+ * otherwise.
+ * If old is TRUE, use old_redobuff instead of redobuff.
  */
     static int
 read_redo(init, old_redo)
@@ -705,7 +723,7 @@ read_redo(init, old_redo)
     int				c;
 #ifdef FEAT_MBYTE
     int				n;
-    char_u			buf[MB_MAXBYTES];
+    char_u			buf[MB_MAXBYTES + 1];
     int				i;
 #endif
 
@@ -1054,7 +1072,7 @@ ins_char_typebuf(c)
     int	    c;
 {
 #ifdef FEAT_MBYTE
-    char_u	buf[MB_MAXBYTES];
+    char_u	buf[MB_MAXBYTES + 1];
 #else
     char_u	buf[4];
 #endif
@@ -1529,7 +1547,7 @@ vgetc()
     int		c, c2;
 #ifdef FEAT_MBYTE
     int		n;
-    char_u	buf[MB_MAXBYTES];
+    char_u	buf[MB_MAXBYTES + 1];
     int		i;
 #endif
 
@@ -2264,7 +2282,8 @@ vgetorpeek(advance)
 						   typebuf.tb_off] == RM_YES))
 				&& !timedout)
 			{
-			    keylen = check_termcode(max_mlen + 1, NULL, 0);
+			    keylen = check_termcode(max_mlen + 1,
+							       NULL, 0, NULL);
 
 			    /* If no termcode matched but 'pastetoggle'
 			     * matched partially it's like an incomplete key
@@ -2460,27 +2479,18 @@ vgetorpeek(advance)
 
 			/*
 			 * Handle ":map <expr>": evaluate the {rhs} as an
-			 * expression.  Save and restore the typeahead so that
-			 * getchar() can be used.  Also save and restore the
-			 * command line for "normal :".
+			 * expression.  Also save and restore the command line
+			 * for "normal :".
 			 */
 			if (mp->m_expr)
 			{
-			    tasave_T	tabuf;
 			    int		save_vgetc_busy = vgetc_busy;
 
-			    save_typeahead(&tabuf);
-			    if (tabuf.typebuf_valid)
-			    {
-				vgetc_busy = 0;
-				save_m_keys = vim_strsave(mp->m_keys);
-				save_m_str = vim_strsave(mp->m_str);
-				s = eval_map_expr(save_m_str, NUL);
-				vgetc_busy = save_vgetc_busy;
-			    }
-			    else
-				s = NULL;
-			    restore_typeahead(&tabuf);
+			    vgetc_busy = 0;
+			    save_m_keys = vim_strsave(mp->m_keys);
+			    save_m_str = vim_strsave(mp->m_str);
+			    s = eval_map_expr(save_m_str, NUL);
+			    vgetc_busy = save_vgetc_busy;
 			}
 			else
 #endif
@@ -2809,7 +2819,8 @@ vgetorpeek(advance)
 			edit_unputchar();
 		    if (State & CMDLINE)
 			unputcmdline();
-		    setcursor();	/* put cursor back where it belongs */
+		    else
+			setcursor();	/* put cursor back where it belongs */
 		}
 
 		if (c < 0)
@@ -4325,11 +4336,7 @@ check_abbr(c, ptr, col, mincol)
     int		scol;		/* starting column of the abbr. */
     int		j;
     char_u	*s;
-#ifdef FEAT_MBYTE
     char_u	tb[MB_MAXBYTES + 4];
-#else
-    char_u	tb[4];
-#endif
     mapblock_T	*mp;
 #ifdef FEAT_LOCALMAP
     mapblock_T	*mp2;
@@ -4342,8 +4349,9 @@ check_abbr(c, ptr, col, mincol)
 
     if (typebuf.tb_no_abbr_cnt)	/* abbrev. are not recursive */
 	return FALSE;
-    if ((KeyNoremap & (RM_NONE|RM_SCRIPT)) != 0)
-	/* no remapping implies no abbreviation */
+
+    /* no remapping implies no abbreviation, except for CTRL-] */
+    if ((KeyNoremap & (RM_NONE|RM_SCRIPT)) != 0 && c != Ctrl_RSB)
 	return FALSE;
 
     /*
@@ -4519,6 +4527,8 @@ eval_map_expr(str, c)
     char_u	*expr;
     char_u	*save_cmd;
     pos_T	save_cursor;
+    int		save_msg_col;
+    int		save_msg_row;
 
     /* Remove escaping of CSI, because "str" is in a format to be used as
      * typeahead. */
@@ -4542,12 +4552,16 @@ eval_map_expr(str, c)
 #endif
     set_vim_var_char(c);  /* set v:char to the typed character */
     save_cursor = curwin->w_cursor;
+    save_msg_col = msg_col;
+    save_msg_row = msg_row;
     p = eval_to_string(expr, NULL, FALSE);
     --textlock;
 #ifdef FEAT_EX_EXTRA
     --ex_normal_lock;
 #endif
     curwin->w_cursor = save_cursor;
+    msg_col = save_msg_col;
+    msg_row = save_msg_row;
 
     restore_cmdline_alloc(save_cmd);
     vim_free(expr);

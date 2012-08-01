@@ -90,6 +90,13 @@ typedef int GtkWidget;
 static void entry_activate_cb(GtkWidget *widget, gpointer data);
 static void entry_changed_cb(GtkWidget *entry, GtkWidget *dialog);
 static void find_replace_cb(GtkWidget *widget, gpointer data);
+#if defined(FEAT_BROWSE) || defined(PROTO)
+static void recent_func_log_func(
+	const gchar *log_domain,
+	GLogLevelFlags log_level,
+	const gchar *message,
+	gpointer user_data);
+#endif
 
 #if defined(FEAT_TOOLBAR)
 /*
@@ -772,9 +779,6 @@ gui_mch_destroy_scrollbar(scrollbar_T *sb)
 /*
  * Implementation of the file selector related stuff
  */
-#if GTK_CHECK_VERSION(2,4,0)
-# define USE_FILE_CHOOSER
-#endif
 
 #ifndef USE_FILE_CHOOSER
     static void
@@ -833,12 +837,15 @@ gui_mch_browse(int saving UNUSED,
 	       char_u *dflt,
 	       char_u *ext UNUSED,
 	       char_u *initdir,
-	       char_u *filter UNUSED)
+	       char_u *filter)
 {
 #ifdef USE_FILE_CHOOSER
     GtkWidget		*fc;
 #endif
     char_u		dirbuf[MAXPATHL];
+    guint		log_handler;
+    const gchar		*domain = "Gtk";
+    GtkFileFilter	*gfilter;
 
     title = CONVERT_TO_UTF8(title);
 
@@ -853,6 +860,11 @@ gui_mch_browse(int saving UNUSED,
     /* If our pointer is currently hidden, then we should show it. */
     gui_mch_mousehide(FALSE);
 
+    /* Hack: The GTK file dialog warns when it can't access a new file, this
+     * makes it shut up. http://bugzilla.gnome.org/show_bug.cgi?id=664587 */
+    log_handler = g_log_set_handler(domain, G_LOG_LEVEL_WARNING,
+						  recent_func_log_func, NULL);
+
 #ifdef USE_FILE_CHOOSER
     /* We create the dialog each time, so that the button text can be "Open"
      * or "Save" according to the action. */
@@ -865,6 +877,45 @@ gui_mch_browse(int saving UNUSED,
 	    NULL);
     gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(fc),
 						       (const gchar *)dirbuf);
+
+    if (filter != NULL && *filter != NUL)
+    {
+	int     i = 0;
+	char_u  *patt;
+	char_u  *p = filter;
+
+	gfilter = gtk_file_filter_new();
+	patt = alloc(STRLEN(filter));
+	while (p != NULL && *p != NUL)
+	{
+	    if (*p == '\n' || *p == ';' || *p == '\t')
+	    {
+		STRNCPY(patt, filter, i);
+		patt[i] = '\0';
+		if (*p == '\t')
+		    gtk_file_filter_set_name(gfilter, (gchar *)patt);
+		else
+		{
+		    gtk_file_filter_add_pattern(gfilter, (gchar *)patt);
+		    if (*p == '\n')
+		    {
+			gtk_file_chooser_add_filter((GtkFileChooser *)fc,
+								     gfilter);
+			if (*(p + 1) != NUL)
+			    gfilter = gtk_file_filter_new();
+		    }
+		}
+		filter = ++p;
+		i = 0;
+	    }
+	    else
+	    {
+		p++;
+		i++;
+	    }
+	}
+	vim_free(patt);
+    }
     if (saving && dflt != NULL && *dflt != NUL)
 	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(fc), (char *)dflt);
 
@@ -916,6 +967,7 @@ gui_mch_browse(int saving UNUSED,
     gtk_widget_show(gui.filedlg);
     gtk_main();
 #endif
+    g_log_remove_handler(domain, log_handler);
 
     CONVERT_TO_UTF8_FREE(title);
     if (gui.browse_fname == NULL)
@@ -1289,7 +1341,7 @@ gui_mch_dialog(int	type,	    /* type of dialog */
 	gtk_widget_show(entry);
 
 	/* Make Enter work like pressing OK. */
-        gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
+	gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
 
 	text = CONVERT_TO_UTF8(textfield);
 	gtk_entry_set_text(GTK_ENTRY(entry), (const char *)text);
@@ -1882,3 +1934,15 @@ ex_helpfind(eap)
      * backwards compatibility anyway. */
     do_cmdline_cmd((char_u *)"emenu ToolBar.FindHelp");
 }
+
+#if defined(FEAT_BROWSE) || defined(PROTO)
+    static void
+recent_func_log_func(const gchar *log_domain UNUSED,
+		     GLogLevelFlags log_level UNUSED,
+		     const gchar *message UNUSED,
+		     gpointer user_data UNUSED)
+{
+    /* We just want to suppress the warnings. */
+    /* http://bugzilla.gnome.org/show_bug.cgi?id=664587 */
+}
+#endif

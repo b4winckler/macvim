@@ -1,11 +1,11 @@
 " Vim indent file
 " Language:	Eiffel
-" Maintainer:	Jocelyn Fiat <eiffel@djoce.net>
+" Maintainer:	Jocelyn Fiat <jfiat@eiffel.com>
 " Previous-Maintainer:	David Clarke <gadicath@dishevelled.net>
+" Contributions from: Thilo Six
 " $Date: 2004/12/09 21:33:52 $
 " $Revision: 1.3 $
-" URL: http://www.djoce.net/page/vim/
-" Last Change:	2004 Sept 14 : removed specific value for tab (sw)
+" URL: https://github.com/eiffelhub/vim-eiffel
 
 " Only load this indent file when no other was loaded.
 if exists("b:did_indent")
@@ -23,6 +23,8 @@ setlocal indentkeys+==end,=else,=ensure,=require,=check,=loop,=until
 setlocal indentkeys+==creation,=feature,=inherit,=class,=is,=redefine,=rename,=variant
 setlocal indentkeys+==invariant,=do,=local,=export
 
+let b:undo_indent = "setl smartindent< indentkeys< indentexpr< autoindent< comments< "
+
 " Define some stuff
 " keywords grouped by indenting
 let s:trust_user_indent = '\(+\)\(\s*\(--\).*\)\=$'
@@ -37,6 +39,9 @@ let s:inheritance_dent = '\s*\(redefine\|rename\|export\)\>'
 if exists("*GetEiffelIndent")
   finish
 endif
+
+let s:keepcpo= &cpo
+set cpo&vim
 
 function GetEiffelIndent()
 
@@ -102,5 +107,8 @@ function GetEiffelIndent()
 
   return ind
 endfunction
+
+let &cpo = s:keepcpo
+unlet s:keepcpo
 
 " vim:sw=2

@@ -708,7 +708,7 @@ codepage_invalid:
 	     */
 	    n = (i & 0x80) ? 2 : 1;
 # else
-	    char buf[MB_MAXBYTES];
+	    char buf[MB_MAXBYTES + 1];
 # ifdef X_LOCALE
 #  ifndef mblen
 #   define mblen _Xmblen
@@ -1953,7 +1953,7 @@ utfc_ptr2char_len(p, pcc, maxlen)
 /*
  * Convert the character at screen position "off" to a sequence of bytes.
  * Includes the composing characters.
- * "buf" must at least have the length MB_MAXBYTES.
+ * "buf" must at least have the length MB_MAXBYTES + 1.
  * Only to be used when ScreenLinesUC[off] != 0.
  * Returns the produced number of bytes.
  */
@@ -2764,19 +2764,22 @@ utf_convert(a, table, tableSize)
     int			tableSize;
 {
     int start, mid, end; /* indices into table */
+    int entries = tableSize / sizeof(convertStruct);
 
     start = 0;
-    end = tableSize / sizeof(convertStruct);
+    end = entries;
     while (start < end)
     {
 	/* need to search further */
-	mid = (end + start) /2;
+	mid = (end + start) / 2;
 	if (table[mid].rangeEnd < a)
 	    start = mid + 1;
 	else
 	    end = mid;
     }
-    if (table[start].rangeStart <= a && a <= table[start].rangeEnd
+    if (start < entries
+	    && table[start].rangeStart <= a
+	    && a <= table[start].rangeEnd
 	    && (a - table[start].rangeStart) % table[start].step == 0)
 	return (a + table[start].offset);
     else
@@ -2791,7 +2794,7 @@ utf_convert(a, table, tableSize)
 utf_fold(a)
     int		a;
 {
-    return utf_convert(a, foldCase, sizeof(foldCase));
+    return utf_convert(a, foldCase, (int)sizeof(foldCase));
 }
 
 static convertStruct toLower[] =
@@ -2946,7 +2949,7 @@ static convertStruct toUpper[] =
 {
 	{0x61,0x7a,1,-32},
 	{0xb5,0xb5,-1,743},
-	{0xe0,0xf6,1,-32},
+	{0xe0,0xf6,1,-32},  /* 0xdf (German sharp s) is not upper-cased */
 	{0xf8,0xfe,1,-32},
 	{0xff,0xff,-1,121},
 	{0x101,0x12f,2,-1},
@@ -3119,14 +3122,15 @@ utf_toupper(a)
 	return TOUPPER_LOC(a);
 
     /* For any other characters use the above mapping table. */
-    return utf_convert(a, toUpper, sizeof(toUpper));
+    return utf_convert(a, toUpper, (int)sizeof(toUpper));
 }
 
     int
 utf_islower(a)
     int		a;
 {
-    return (utf_toupper(a) != a);
+    /* German sharp s is lower case but has no upper case equivalent. */
+    return (utf_toupper(a) != a) || a == 0xdf;
 }
 
 /*
@@ -3152,7 +3156,7 @@ utf_tolower(a)
 	return TOLOWER_LOC(a);
 
     /* For any other characters use the above mapping table. */
-    return utf_convert(a, toLower, sizeof(toLower));
+    return utf_convert(a, toLower, (int)sizeof(toLower));
 }
 
     int
@@ -4520,7 +4524,8 @@ im_show_info(void)
     vgetc_busy = TRUE;
     showmode();
     vgetc_busy = old_vgetc_busy;
-    setcursor();
+    if ((State & NORMAL) || (State & INSERT))
+	setcursor();
     out_flush();
 }
 

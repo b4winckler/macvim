@@ -25,7 +25,7 @@ struct cmdline_info
     int		cmdlen;		/* number of chars in command line */
     int		cmdpos;		/* current cursor position */
     int		cmdspos;	/* cursor column on screen */
-    int		cmdfirstc;	/* ':', '/', '?', '=' or NUL */
+    int		cmdfirstc;	/* ':', '/', '?', '=', '>' or NUL */
     int		cmdindent;	/* number of spaces before cmdline */
     char_u	*cmdprompt;	/* message in front of cmdline */
     int		cmdattr;	/* attributes for prompt */
@@ -111,6 +111,9 @@ static int	expand_showtail __ARGS((expand_T *xp));
 #ifdef FEAT_CMDL_COMPL
 static int	expand_shellcmd __ARGS((char_u *filepat, int *num_file, char_u ***file, int flagsarg));
 static int	ExpandRTDir __ARGS((char_u *pat, int *num_file, char_u ***file, char *dirname[]));
+# ifdef FEAT_CMDHIST
+static char_u	*get_history_arg __ARGS((expand_T *xp, int idx));
+# endif
 # if defined(FEAT_USR_CMDS) && defined(FEAT_EVAL)
 static int	ExpandUserDefined __ARGS((expand_T *xp, regmatch_T *regmatch, int *num_file, char_u ***file));
 static int	ExpandUserList __ARGS((expand_T *xp, int *num_file, char_u ***file));
@@ -119,6 +122,14 @@ static int	ExpandUserList __ARGS((expand_T *xp, int *num_file, char_u ***file));
 
 #ifdef FEAT_CMDWIN
 static int	ex_window __ARGS((void));
+#endif
+
+#if defined(FEAT_CMDL_COMPL) || defined(PROTO)
+static int
+#ifdef __BORLANDC__
+_RTLENTRYF
+#endif
+sort_func_compare __ARGS((const void *s1, const void *s2));
 #endif
 
 /*
@@ -637,7 +648,11 @@ getcmdline(firstc, count, indent)
 		}
 		else if (ccline.cmdpos > i)
 		    cmdline_del(i);
+
+		/* Now complete in the new directory. Set KeyTyped in case the
+		 * Up key came from a mapping. */
 		c = p_wc;
+		KeyTyped = TRUE;
 	    }
 	}
 
@@ -1848,8 +1863,11 @@ cmdline_changed:
 # endif
 		)
 	    /* Always redraw the whole command line to fix shaping and
-	     * right-left typing.  Not efficient, but it works. */
-	    redrawcmd();
+	     * right-left typing.  Not efficient, but it works.
+	     * Do it only when there are no characters left to read
+	     * to avoid useless intermediate redraws. */
+	    if (vpeekc() == NUL)
+		redrawcmd();
 #endif
     }
 
@@ -2757,6 +2775,11 @@ unputcmdline()
     msg_no_more = TRUE;
     if (ccline.cmdlen == ccline.cmdpos)
 	msg_putchar(' ');
+#ifdef FEAT_MBYTE
+    else if (has_mbyte)
+	draw_cmdline(ccline.cmdpos,
+			       (*mb_ptr2len)(ccline.cmdbuff + ccline.cmdpos));
+#endif
     else
 	draw_cmdline(ccline.cmdpos, 1);
     msg_no_more = FALSE;
@@ -3121,7 +3144,8 @@ cmdline_paste_str(s, literally)
 	    else
 #endif
 		c = *s++;
-	    if (cv == Ctrl_V || c == ESC || c == Ctrl_C || c == CAR || c == NL
+	    if (cv == Ctrl_V || c == ESC || c == Ctrl_C
+		    || c == CAR || c == NL || c == Ctrl_L
 #ifdef UNIX
 		    || c == intr_char
 #endif
@@ -3297,6 +3321,24 @@ ccheck_abbr(c)
     return check_abbr(c, ccline.cmdbuff, ccline.cmdpos, 0);
 }
 
+#if defined(FEAT_CMDL_COMPL) || defined(PROTO)
+    static int
+#ifdef __BORLANDC__
+_RTLENTRYF
+#endif
+sort_func_compare(s1, s2)
+    const void *s1;
+    const void *s2;
+{
+    char_u *p1 = *(char_u **)s1;
+    char_u *p2 = *(char_u **)s2;
+
+    if (*p1 != '<' && *p2 == '<') return -1;
+    if (*p1 == '<' && *p2 != '<') return 1;
+    return STRCMP(p1, p2);
+}
+#endif
+
 /*
  * Return FAIL if this is not an appropriate context in which to do
  * completion of anything, return OK if it is (even if there are no matches).
@@ -3439,6 +3481,7 @@ nextwild(xp, type, options)
  * mode = WILD_PREV:	    use previous match in multiple match, wrap to first
  * mode = WILD_ALL:	    return all matches concatenated
  * mode = WILD_LONGEST:	    return longest matched part
+ * mode = WILD_ALL_KEEP:    get all matches, keep matches
  *
  * options = WILD_LIST_NOTFOUND:    list entries without a match
  * options = WILD_HOME_REPLACE:	    do home_replace() for buffer names
@@ -3562,7 +3605,8 @@ ExpandOne(xp, str, orig, options, mode)
 	    /*
 	     * Check for matching suffixes in file names.
 	     */
-	    if (mode != WILD_ALL && mode != WILD_LONGEST)
+	    if (mode != WILD_ALL && mode != WILD_ALL_KEEP
+						      && mode != WILD_LONGEST)
 	    {
 		if (xp->xp_numfiles)
 		    non_suf_match = xp->xp_numfiles;
@@ -4604,6 +4648,9 @@ ExpandFromContext(xp, pat, num_file, file, options)
 	{
 	    {EXPAND_COMMANDS, get_command_name, FALSE, TRUE},
 	    {EXPAND_BEHAVE, get_behave_arg, TRUE, TRUE},
+#ifdef FEAT_CMDHIST
+	    {EXPAND_HISTORY, get_history_arg, TRUE, TRUE},
+#endif
 #ifdef FEAT_USR_CMDS
 	    {EXPAND_USER_COMMANDS, get_user_commands, FALSE, TRUE},
 	    {EXPAND_USER_CMD_FLAGS, get_user_cmd_flags, FALSE, TRUE},
@@ -4660,7 +4707,7 @@ ExpandFromContext(xp, pat, num_file, file, options)
 		if (tab[i].ic)
 		    regmatch.rm_ic = TRUE;
 		ret = ExpandGeneric(xp, &regmatch, num_file, file,
-                                                tab[i].func, tab[i].escaped);
+						tab[i].func, tab[i].escaped);
 		break;
 	    }
     }
@@ -4749,7 +4796,16 @@ ExpandGeneric(xp, regmatch, num_file, file, func, escaped)
 
     /* Sort the results.  Keep menu's in the specified order. */
     if (xp->xp_context != EXPAND_MENUNAMES && xp->xp_context != EXPAND_MENUS)
-	sort_strings(*file, *num_file);
+    {
+	if (xp->xp_context == EXPAND_EXPRESSION
+		|| xp->xp_context == EXPAND_FUNCTIONS
+		|| xp->xp_context == EXPAND_USER_FUNC)
+	    /* <SNR> functions should be sorted to the end. */
+	    qsort((void *)*file, (size_t)*num_file, sizeof(char_u *),
+							   sort_func_compare);
+	else
+	    sort_strings(*file, *num_file);
+    }
 
 #ifdef FEAT_CMDL_COMPL
     /* Reset the variables used for special highlight names expansion, so that
@@ -5084,7 +5140,7 @@ ExpandRTDir(pat, num_file, file, dirnames)
 	vim_free(matches);
     }
     if (ga.ga_len == 0)
-        return FAIL;
+	return FAIL;
 
     /* Sort and remove duplicates which can happen when specifying multiple
      * directories in dirnames. */
@@ -5214,6 +5270,34 @@ static char *(history_names[]) =
     "debug",
     NULL
 };
+
+#if defined(FEAT_CMDL_COMPL) || defined(PROTO)
+/*
+ * Function given to ExpandGeneric() to obtain the possible first
+ * arguments of the ":history command.
+ */
+    static char_u *
+get_history_arg(xp, idx)
+    expand_T	*xp UNUSED;
+    int		idx;
+{
+    static char_u compl[2] = { NUL, NUL };
+    char *short_names = ":=@>?/";
+    int short_names_count = (int)STRLEN(short_names);
+    int history_name_count = sizeof(history_names) / sizeof(char *) - 1;
+
+    if (idx < short_names_count)
+    {
+	compl[0] = (char_u)short_names[idx];
+	return compl;
+    }
+    if (idx < short_names_count + history_name_count)
+	return (char_u *)history_names[idx - short_names_count];
+    if (idx == short_names_count + history_name_count)
+	return (char_u *)"all";
+    return NULL;
+}
+#endif
 
 /*
  * init_history() - Initialize the command line history.
@@ -5898,7 +5982,7 @@ ex_history(eap)
 							      hist[i].hisnum);
 		    if (vim_strsize(hist[i].hisstr) > (int)Columns - 10)
 			trunc_string(hist[i].hisstr, IObuff + STRLEN(IObuff),
-							   (int)Columns - 10);
+			     (int)Columns - 10, IOSIZE - (int)STRLEN(IObuff));
 		    else
 			STRCAT(IObuff, hist[i].hisstr);
 		    msg_outtrans(IObuff);
@@ -6002,8 +6086,10 @@ read_viminfo_history(virp)
 	val = viminfo_readstring(virp, 1, TRUE);
 	if (val != NULL && *val != NUL)
 	{
+	    int sep = (*val == ' ' ? NUL : *val);
+
 	    if (!in_history(type, val + (type == HIST_SEARCH),
-						  viminfo_add_at_front, *val))
+						   viminfo_add_at_front, sep))
 	    {
 		/* Need to re-allocate to append the separator byte. */
 		len = STRLEN(val);
@@ -6015,7 +6101,7 @@ read_viminfo_history(virp)
 			/* Search entry: Move the separator from the first
 			 * column to after the NUL. */
 			mch_memmove(p, val + 1, (size_t)len);
-			p[len] = (*val == ' ' ? NUL : *val);
+			p[len] = sep;
 		    }
 		    else
 		    {
@@ -6416,7 +6502,7 @@ ex_window()
 	/* win_close() may have already wiped the buffer when 'bh' is
 	 * set to 'wipe' */
 	if (buf_valid(bp))
-	    close_buffer(NULL, bp, DOBUF_WIPE);
+	    close_buffer(NULL, bp, DOBUF_WIPE, FALSE);
 
 	/* Restore window sizes. */
 	win_size_restore(&winsizes);

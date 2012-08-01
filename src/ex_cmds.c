@@ -25,7 +25,6 @@ static int viminfo_encoding __ARGS((vir_T *virp));
 static int read_viminfo_up_to_marks __ARGS((vir_T *virp, int forceit, int writing));
 #endif
 
-static int check_overwrite __ARGS((exarg_T *eap, buf_T *buf, char_u *fname, char_u *ffname, int other));
 static int check_readonly __ARGS((int *forceit, buf_T *buf));
 #ifdef FEAT_AUTOCMD
 static void delbuf_msg __ARGS((char_u *name));
@@ -820,7 +819,13 @@ do_move(line1, line2, dest)
 	curwin->w_cursor.lnum = dest + (line2 - line1) + 1;
 
     if (line1 < dest)
-	changed_lines(line1, 0, dest + num_lines + 1, 0L);
+    {
+	dest += num_lines + 1;
+	last_line = curbuf->b_ml.ml_line_count;
+	if (dest > last_line + 1)
+	    dest = last_line + 1;
+	changed_lines(line1, 0, dest, 0L);
+    }
     else
 	changed_lines(dest + 1, 0, line1 + num_lines, 0L);
 
@@ -1107,7 +1112,7 @@ do_filter(line1, line2, eap, cmd, do_in, do_out)
     if (do_out)
 	shell_flags |= SHELL_DOOUT;
 
-#if (!defined(USE_SYSTEM) && defined(UNIX)) || defined(WIN3264)
+#ifdef FEAT_FILTERPIPE
     if (!do_in && do_out && !p_stmp)
     {
 	/* Use a pipe to fetch stdout of the command, do not use a temp file. */
@@ -2716,7 +2721,7 @@ theend:
  * May set eap->forceit if a dialog says it's OK to overwrite.
  * Return OK if it's OK, FAIL if it is not.
  */
-    static int
+    int
 check_overwrite(eap, buf, fname, ffname, other)
     exarg_T	*eap;
     buf_T	*buf;
@@ -3381,9 +3386,16 @@ do_ecmd(fnum, ffname, sfname, eap, newlnum, flags, oldwin)
 		/* close the link to the current buffer */
 		u_sync(FALSE);
 		close_buffer(oldwin, curbuf,
-				      (flags & ECMD_HIDE) ? 0 : DOBUF_UNLOAD);
+			       (flags & ECMD_HIDE) ? 0 : DOBUF_UNLOAD, FALSE);
 
 #ifdef FEAT_AUTOCMD
+		/* Autocommands may open a new window and leave oldwin open
+		 * which leads to crashes since the above call sets
+		 * oldwin->w_buffer to NULL. */
+		if (curwin != oldwin && oldwin != aucmd_win
+			     && win_valid(oldwin) && oldwin->w_buffer == NULL)
+		    win_close(oldwin, FALSE);
+
 # ifdef FEAT_EVAL
 		if (aborting())	    /* autocmds may abort script processing */
 		{
@@ -3408,7 +3420,7 @@ do_ecmd(fnum, ffname, sfname, eap, newlnum, flags, oldwin)
 		     * and re-attach to buffer, perhaps.
 		     */
 		    if (curwin->w_s == &(curwin->w_buffer->b_s))
-			    curwin->w_s = &(buf->b_s);
+			curwin->w_s = &(buf->b_s);
 #endif
 		    curwin->w_buffer = buf;
 		    curbuf = buf;
@@ -5138,10 +5150,13 @@ outofmem:
 
 	if (!global_busy)
 	{
-	    if (endcolumn)
-		coladvance((colnr_T)MAXCOL);
-	    else
-		beginline(BL_WHITE | BL_FIX);
+	    if (!do_ask)  /* when interactive leave cursor on the match */
+	    {
+		if (endcolumn)
+		    coladvance((colnr_T)MAXCOL);
+		else
+		    beginline(BL_WHITE | BL_FIX);
+	    }
 	    if (!do_sub_msg(do_count) && do_ask)
 		MSG("");
 	}
@@ -5530,7 +5545,7 @@ ex_help(eap)
 	}
 	arg = eap->arg;
 
-	if (eap->forceit && *arg == NUL)
+	if (eap->forceit && *arg == NUL && !curbuf->b_help)
 	{
 	    EMSG(_("E478: Don't panic!"));
 	    return;
@@ -5949,6 +5964,29 @@ find_help_tags(arg, num_matches, matches, keep_lang)
 		break;
 	  }
 	  *d = NUL;
+
+	  if (*IObuff == '`')
+	  {
+	      if (d > IObuff + 2 && d[-1] == '`')
+	      {
+		  /* remove the backticks from `command` */
+		  mch_memmove(IObuff, IObuff + 1, STRLEN(IObuff));
+		  d[-2] = NUL;
+	      }
+	      else if (d > IObuff + 3 && d[-2] == '`' && d[-1] == ',')
+	      {
+		  /* remove the backticks and comma from `command`, */
+		  mch_memmove(IObuff, IObuff + 1, STRLEN(IObuff));
+		  d[-3] = NUL;
+	      }
+	      else if (d > IObuff + 4 && d[-3] == '`'
+					     && d[-2] == '\\' && d[-1] == '.')
+	      {
+		  /* remove the backticks and dot from `command`\. */
+		  mch_memmove(IObuff, IObuff + 1, STRLEN(IObuff));
+		  d[-4] = NUL;
+	      }
+	  }
 	}
     }
 
@@ -5982,6 +6020,7 @@ fix_help_buffer()
     char_u	*line;
     int		in_example = FALSE;
     int		len;
+    char_u	*fname;
     char_u	*p;
     char_u	*rt;
     int		mustfree;
@@ -6028,124 +6067,187 @@ fix_help_buffer()
     }
 
     /*
-     * In the "help.txt" file, add the locally added help files.
-     * This uses the very first line in the help file.
+     * In the "help.txt" and "help.abx" file, add the locally added help
+     * files.  This uses the very first line in the help file.
      */
-    if (fnamecmp(gettail(curbuf->b_fname), "help.txt") == 0)
+    fname = gettail(curbuf->b_fname);
+    if (fnamecmp(fname, "help.txt") == 0
+#ifdef FEAT_MULTI_LANG
+	|| (fnamencmp(fname, "help.", 5) == 0
+	    && ASCII_ISALPHA(fname[5])
+	    && ASCII_ISALPHA(fname[6])
+	    && TOLOWER_ASC(fname[7]) == 'x'
+	    && fname[8] == NUL)
+#endif
+	)
     {
 	for (lnum = 1; lnum < curbuf->b_ml.ml_line_count; ++lnum)
 	{
 	    line = ml_get_buf(curbuf, lnum, FALSE);
-	    if (strstr((char *)line, "*local-additions*") != NULL)
+	    if (strstr((char *)line, "*local-additions*") == NULL)
+		continue;
+
+	    /* Go through all directories in 'runtimepath', skipping
+	     * $VIMRUNTIME. */
+	    p = p_rtp;
+	    while (*p != NUL)
 	    {
-		/* Go through all directories in 'runtimepath', skipping
-		 * $VIMRUNTIME. */
-		p = p_rtp;
-		while (*p != NUL)
+		copy_option_part(&p, NameBuff, MAXPATHL, ",");
+		mustfree = FALSE;
+		rt = vim_getenv((char_u *)"VIMRUNTIME", &mustfree);
+		if (fullpathcmp(rt, NameBuff, FALSE) != FPC_SAME)
 		{
-		    copy_option_part(&p, NameBuff, MAXPATHL, ",");
-		    mustfree = FALSE;
-		    rt = vim_getenv((char_u *)"VIMRUNTIME", &mustfree);
-		    if (fullpathcmp(rt, NameBuff, FALSE) != FPC_SAME)
-		    {
-			int	fcount;
-			char_u	**fnames;
-			FILE	*fd;
-			char_u	*s;
-			int	fi;
+		    int		fcount;
+		    char_u	**fnames;
+		    FILE	*fd;
+		    char_u	*s;
+		    int		fi;
 #ifdef FEAT_MBYTE
-			vimconv_T	vc;
-			char_u		*cp;
+		    vimconv_T	vc;
+		    char_u	*cp;
 #endif
 
-			/* Find all "doc/ *.txt" files in this directory. */
-			add_pathsep(NameBuff);
-			STRCAT(NameBuff, "doc/*.txt");
-			if (gen_expand_wildcards(1, &NameBuff, &fcount,
-					     &fnames, EW_FILE|EW_SILENT) == OK
-				&& fcount > 0)
-			{
-			    for (fi = 0; fi < fcount; ++fi)
-			    {
-				fd = mch_fopen((char *)fnames[fi], "r");
-				if (fd != NULL)
-				{
-				    vim_fgets(IObuff, IOSIZE, fd);
-				    if (IObuff[0] == '*'
-					    && (s = vim_strchr(IObuff + 1, '*'))
-								      != NULL)
-				    {
-#ifdef FEAT_MBYTE
-					int	this_utf = MAYBE;
-#endif
-					/* Change tag definition to a
-					 * reference and remove <CR>/<NL>. */
-					IObuff[0] = '|';
-					*s = '|';
-					while (*s != NUL)
-					{
-					    if (*s == '\r' || *s == '\n')
-						*s = NUL;
-#ifdef FEAT_MBYTE
-					    /* The text is utf-8 when a byte
-					     * above 127 is found and no
-					     * illegal byte sequence is found.
-					     */
-					    if (*s >= 0x80 && this_utf != FALSE)
-					    {
-						int	l;
-
-						this_utf = TRUE;
-						l = utf_ptr2len(s);
-						if (l == 1)
-						    this_utf = FALSE;
-						s += l - 1;
-					    }
-#endif
-					    ++s;
-					}
-#ifdef FEAT_MBYTE
-					/* The help file is latin1 or utf-8;
-					 * conversion to the current
-					 * 'encoding' may be required. */
-					vc.vc_type = CONV_NONE;
-					convert_setup(&vc, (char_u *)(
-						    this_utf == TRUE ? "utf-8"
-							  : "latin1"), p_enc);
-					if (vc.vc_type == CONV_NONE)
-					    /* No conversion needed. */
-					    cp = IObuff;
-					else
-					{
-					    /* Do the conversion.  If it fails
-					     * use the unconverted text. */
-					    cp = string_convert(&vc, IObuff,
-									NULL);
-					    if (cp == NULL)
-						cp = IObuff;
-					}
-					convert_setup(&vc, NULL, NULL);
-
-					ml_append(lnum, cp, (colnr_T)0, FALSE);
-					if (cp != IObuff)
-					    vim_free(cp);
+		    /* Find all "doc/ *.txt" files in this directory. */
+		    add_pathsep(NameBuff);
+#ifdef FEAT_MULTI_LANG
+		    STRCAT(NameBuff, "doc/*.??[tx]");
 #else
-					ml_append(lnum, IObuff, (colnr_T)0,
-								       FALSE);
+		    STRCAT(NameBuff, "doc/*.txt");
 #endif
-					++lnum;
-				    }
-				    fclose(fd);
+		    if (gen_expand_wildcards(1, &NameBuff, &fcount,
+					 &fnames, EW_FILE|EW_SILENT) == OK
+			    && fcount > 0)
+		    {
+#ifdef FEAT_MULTI_LANG
+			int	i1;
+			int	i2;
+			char_u	*f1;
+			char_u	*f2;
+			char_u	*t1;
+			char_u	*e1;
+			char_u	*e2;
+
+			/* If foo.abx is found use it instead of foo.txt in
+			 * the same directory. */
+			for (i1 = 0; i1 < fcount; ++i1)
+			{
+			    for (i2 = 0; i2 < fcount; ++i2)
+			    {
+				if (i1 == i2)
+				    continue;
+				if (fnames[i1] == NULL || fnames[i2] == NULL)
+				    continue;
+				f1 = fnames[i1];
+				f2 = fnames[i2];
+				t1 = gettail(f1);
+				if (fnamencmp(f1, f2, t1 - f1) != 0)
+				    continue;
+				e1 = vim_strrchr(t1, '.');
+				e2 = vim_strrchr(gettail(f2), '.');
+				if (e1 == NUL || e2 == NUL)
+				    continue;
+				if (fnamecmp(e1, ".txt") != 0
+				    && fnamecmp(e1, fname + 4) != 0)
+				{
+				    /* Not .txt and not .abx, remove it. */
+				    vim_free(fnames[i1]);
+				    fnames[i1] = NULL;
+				    continue;
+				}
+				if (fnamencmp(f1, f2, e1 - f1) != 0)
+				    continue;
+				if (fnamecmp(e1, ".txt") == 0
+				    && fnamecmp(e2, fname + 4) == 0)
+				{
+				    /* use .abx instead of .txt */
+				    vim_free(fnames[i1]);
+				    fnames[i1] = NULL;
 				}
 			    }
-			    FreeWild(fcount, fnames);
 			}
+#endif
+			for (fi = 0; fi < fcount; ++fi)
+			{
+			    if (fnames[fi] == NULL)
+				continue;
+			    fd = mch_fopen((char *)fnames[fi], "r");
+			    if (fd != NULL)
+			    {
+				vim_fgets(IObuff, IOSIZE, fd);
+				if (IObuff[0] == '*'
+					&& (s = vim_strchr(IObuff + 1, '*'))
+								  != NULL)
+				{
+#ifdef FEAT_MBYTE
+				    int	this_utf = MAYBE;
+#endif
+				    /* Change tag definition to a
+				     * reference and remove <CR>/<NL>. */
+				    IObuff[0] = '|';
+				    *s = '|';
+				    while (*s != NUL)
+				    {
+					if (*s == '\r' || *s == '\n')
+					    *s = NUL;
+#ifdef FEAT_MBYTE
+					/* The text is utf-8 when a byte
+					 * above 127 is found and no
+					 * illegal byte sequence is found.
+					 */
+					if (*s >= 0x80 && this_utf != FALSE)
+					{
+					    int	l;
+
+					    this_utf = TRUE;
+					    l = utf_ptr2len(s);
+					    if (l == 1)
+						this_utf = FALSE;
+					    s += l - 1;
+					}
+#endif
+					++s;
+				    }
+#ifdef FEAT_MBYTE
+				    /* The help file is latin1 or utf-8;
+				     * conversion to the current
+				     * 'encoding' may be required. */
+				    vc.vc_type = CONV_NONE;
+				    convert_setup(&vc, (char_u *)(
+						this_utf == TRUE ? "utf-8"
+						      : "latin1"), p_enc);
+				    if (vc.vc_type == CONV_NONE)
+					/* No conversion needed. */
+					cp = IObuff;
+				    else
+				    {
+					/* Do the conversion.  If it fails
+					 * use the unconverted text. */
+					cp = string_convert(&vc, IObuff,
+								    NULL);
+					if (cp == NULL)
+					    cp = IObuff;
+				    }
+				    convert_setup(&vc, NULL, NULL);
+
+				    ml_append(lnum, cp, (colnr_T)0, FALSE);
+				    if (cp != IObuff)
+					vim_free(cp);
+#else
+				    ml_append(lnum, IObuff, (colnr_T)0,
+								   FALSE);
+#endif
+				    ++lnum;
+				}
+				fclose(fd);
+			    }
+			}
+			FreeWild(fcount, fnames);
 		    }
-		    if (mustfree)
-			vim_free(rt);
 		}
-		break;
+		if (mustfree)
+		    vim_free(rt);
 	    }
+	    break;
 	}
     }
 }
@@ -6433,7 +6535,10 @@ helptags_one(dir, ext, tagfname, add_help_tags)
 	    p1 = vim_strchr(IObuff, '*');	/* find first '*' */
 	    while (p1 != NULL)
 	    {
-		p2 = vim_strchr(p1 + 1, '*');	/* find second '*' */
+		/* Use vim_strbyte() instead of vim_strchr() so that when
+		 * 'encoding' is dbcs it still works, don't find '*' in the
+		 * second byte. */
+		p2 = vim_strbyte(p1 + 1, '*');	/* find second '*' */
 		if (p2 != NULL && p2 > p1 + 1)	/* skip "*" and "**" */
 		{
 		    for (s = p1 + 1; s < p2; ++s)
@@ -6649,7 +6754,7 @@ ex_sign(eap)
 	if (idx == SIGNCMD_LIST && *arg == NUL)
 	{
 	    /* ":sign list": list all defined signs */
-	    for (sp = first_sign; sp != NULL; sp = sp->sn_next)
+	    for (sp = first_sign; sp != NULL && !got_int; sp = sp->sn_next)
 		sign_list_defined(sp);
 	}
 	else if (*arg == NUL)
@@ -6892,6 +6997,16 @@ ex_sign(eap)
 		lnum = atoi((char *)arg);
 		arg = skiptowhite(arg);
 	    }
+	    else if (STRNCMP(arg, "*", 1) == 0 && idx == SIGNCMD_UNPLACE)
+	    {
+		if (id != -1)
+		{
+		    EMSG(_(e_invarg));
+		    return;
+		}
+		id = -2;
+		arg = skiptowhite(arg + 1);
+	    }
 	    else if (STRNCMP(arg, "name=", 5) == 0)
 	    {
 		arg += 5;
@@ -6928,7 +7043,7 @@ ex_sign(eap)
 	{
 	    EMSG2(_("E158: Invalid buffer name: %s"), arg);
 	}
-	else if (id <= 0)
+	else if (id <= 0 && !(idx == SIGNCMD_UNPLACE && id == -2))
 	{
 	    if (lnum >= 0 || sign_name != NULL)
 		EMSG(_(e_invarg));
@@ -6969,11 +7084,17 @@ ex_sign(eap)
 	}
 	else if (idx == SIGNCMD_UNPLACE)
 	{
-	    /* ":sign unplace {id} file={fname}" */
 	    if (lnum >= 0 || sign_name != NULL)
 		EMSG(_(e_invarg));
+	    else if (id == -2)
+	    {
+		/* ":sign unplace * file={fname}" */
+		redraw_buf_later(buf, NOT_VALID);
+		buf_delete_signs(buf);
+	    }
 	    else
 	    {
+		/* ":sign unplace {id} file={fname}" */
 		lnum = buf_delsign(buf, id);
 		update_debug_sign(buf, lnum);
 	    }

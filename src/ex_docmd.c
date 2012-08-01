@@ -3930,7 +3930,15 @@ set_one_cmd_context(xp, buff)
 #endif
 	case CMD_behave:
 	    xp->xp_context = EXPAND_BEHAVE;
+	    xp->xp_pattern = arg;
 	    break;
+
+#if defined(FEAT_CMDHIST)
+	case CMD_history:
+	    xp->xp_context = EXPAND_HISTORY;
+	    xp->xp_pattern = arg;
+	    break;
+#endif
 
 #ifdef FEAT_GUI_MACVIM
 	case CMD_macaction:
@@ -3938,7 +3946,6 @@ set_one_cmd_context(xp, buff)
 	    xp->xp_pattern = arg;
 	    break;
 #endif
-
 
 #endif /* FEAT_CMDL_COMPL */
 
@@ -4858,12 +4865,10 @@ getargopt(eap)
 #ifdef FEAT_MBYTE
     else if (STRNCMP(arg, "enc", 3) == 0)
     {
-	arg += 3;
-	pp = &eap->force_enc;
-    }
-    else if (STRNCMP(arg, "encoding", 8) == 0)
-    {
-	arg += 8;
+	if (STRNCMP(arg, "encoding", 8) == 0)
+	    arg += 8;
+	else
+	    arg += 3;
 	pp = &eap->force_enc;
     }
     else if (STRNCMP(arg, "bad", 3) == 0)
@@ -4975,7 +4980,7 @@ ex_abclear(eap)
     map_clear(eap->cmd, eap->arg, TRUE, TRUE);
 }
 
-#ifdef FEAT_AUTOCMD
+#if defined(FEAT_AUTOCMD) || defined(PROTO)
     static void
 ex_autocmd(eap)
     exarg_T	*eap;
@@ -5002,8 +5007,12 @@ ex_autocmd(eap)
 ex_doautocmd(eap)
     exarg_T	*eap;
 {
-    (void)do_doautocmd(eap->arg, TRUE);
-    do_modelines(0);
+    char_u	*arg = eap->arg;
+    int		call_do_modelines = check_nomodeline(&arg);
+
+    (void)do_doautocmd(arg, TRUE);
+    if (call_do_modelines)  /* Only when there is no <nomodeline>. */
+	do_modelines(0);
 }
 #endif
 
@@ -5345,6 +5354,7 @@ static struct
 } command_complete[] =
 {
     {EXPAND_AUGROUP, "augroup"},
+    {EXPAND_BEHAVE, "behave"},
     {EXPAND_BUFFERS, "buffer"},
     {EXPAND_COLORS, "color"},
     {EXPAND_COMMANDS, "command"},
@@ -5366,8 +5376,11 @@ static struct
     {EXPAND_FUNCTIONS, "function"},
     {EXPAND_HELP, "help"},
     {EXPAND_HIGHLIGHT, "highlight"},
+#if defined(FEAT_CMDHIST)
+    {EXPAND_HISTORY, "history"},
+#endif
 #if (defined(HAVE_LOCALE_H) || defined(X_LOCALE)) \
-        && (defined(FEAT_GETTEXT) || defined(FEAT_MBYTE))
+	&& (defined(FEAT_GETTEXT) || defined(FEAT_MBYTE))
     {EXPAND_LOCALES, "locale"},
 #endif
     {EXPAND_MAPPINGS, "mapping"},
@@ -5849,8 +5862,14 @@ uc_split_args(arg, lenp)
 	}
 	else
 	{
+#ifdef FEAT_MBYTE
+	    int charlen = (*mb_ptr2len)(p);
+	    len += charlen;
+	    p += charlen;
+#else
 	    ++len;
 	    ++p;
+#endif
 	}
     }
 
@@ -5893,7 +5912,7 @@ uc_split_args(arg, lenp)
 	}
 	else
 	{
-	    *q++ = *p++;
+	    MB_COPY_CHAR(p, q);
 	}
     }
     *q++ = '"';
@@ -5987,7 +6006,14 @@ uc_check_code(code, len, buf, cmd, eap, split_buf, split_len)
 	    result = STRLEN(eap->arg) + 2;
 	    for (p = eap->arg; *p; ++p)
 	    {
-		if (*p == '\\' || *p == '"')
+#ifdef  FEAT_MBYTE
+		if (enc_dbcs != 0 && (*mb_ptr2len)(p) == 2)
+		    /* DBCS can contain \ in a trail byte, skip the
+		     * double-byte character. */
+		    ++p;
+		else
+#endif
+		     if (*p == '\\' || *p == '"')
 		    ++result;
 	    }
 
@@ -5996,7 +6022,14 @@ uc_check_code(code, len, buf, cmd, eap, split_buf, split_len)
 		*buf++ = '"';
 		for (p = eap->arg; *p; ++p)
 		{
-		    if (*p == '\\' || *p == '"')
+#ifdef  FEAT_MBYTE
+		    if (enc_dbcs != 0 && (*mb_ptr2len)(p) == 2)
+			/* DBCS can contain \ in a trail byte, copy the
+			 * double-byte character to avoid escaping. */
+			*buf++ = *p++;
+		    else
+#endif
+			 if (*p == '\\' || *p == '"')
 			*buf++ = '\\';
 		    *buf++ = *p;
 		}
@@ -6448,7 +6481,10 @@ ex_quit(eap)
 	return;
     }
 #ifdef FEAT_AUTOCMD
-    if (curbuf_locked())
+    apply_autocmds(EVENT_QUITPRE, NULL, NULL, FALSE, curbuf);
+    /* Refuse to quick when locked or when the buffer in the last window is
+     * being closed (can only happen in autocommands). */
+    if (curbuf_locked() || (curbuf->b_nwindows == 1 && curbuf->b_closing))
 	return;
 #endif
 
@@ -7466,7 +7502,42 @@ ex_tabnext(eap)
 ex_tabmove(eap)
     exarg_T	*eap;
 {
-    tabpage_move(eap->addr_count == 0 ? 9999 : (int)eap->line2);
+    int tab_number = 9999;
+
+    if (eap->arg && *eap->arg != NUL)
+    {
+	char_u *p = eap->arg;
+	int    relative = 0; /* argument +N/-N means: move N places to the
+			      * right/left relative to the current position. */
+
+	if (*eap->arg == '-')
+	{
+	    relative = -1;
+	    p = eap->arg + 1;
+	}
+	else if (*eap->arg == '+')
+	{
+	    relative = 1;
+	    p = eap->arg + 1;
+	}
+	else
+	    p = eap->arg;
+
+	if (p == skipdigits(p))
+	{
+	    /* No numbers as argument. */
+	    eap->errmsg = e_invarg;
+	    return;
+	}
+
+	tab_number = getdigits(&p);
+	if (relative != 0)
+	    tab_number = tab_number * relative + tabpage_index(curtab) - 1;;
+    }
+    else if (eap->addr_count != 0)
+	tab_number = eap->line2;
+
+    tabpage_move(tab_number);
 }
 
 /*
@@ -8225,6 +8296,12 @@ do_sleep(msec)
     {
 	ui_delay(msec - done > 1000L ? 1000L : msec - done, TRUE);
 	ui_breakcheck();
+#ifdef FEAT_NETBEANS_INTG
+	/* Process the netbeans messages that may have been received in the
+	 * call to ui_breakcheck() when the GUI is in use. This may occur when
+	 * running a test case. */
+	netbeans_parse_messages();
+#endif
     }
 }
 
@@ -8531,7 +8608,7 @@ ex_join(eap)
 	}
 	++eap->line2;
     }
-    (void)do_join(eap->line2 - eap->line1 + 1, !eap->forceit, TRUE);
+    (void)do_join(eap->line2 - eap->line1 + 1, !eap->forceit, TRUE, TRUE);
     beginline(BL_WHITE | BL_FIX);
     ex_may_print(eap);
 }

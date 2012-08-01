@@ -1,4 +1,4 @@
-*todo.txt*      For Vim version 7.3.  Last change: 2011 Sep 21
+*todo.txt*      For Vim version 7.3.  Last change: 2012 Jul 11
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -34,73 +34,173 @@ not be repeated below, unless there is extra information.
 							*known-bugs*
 -------------------- Known bugs and current work -----------------------
 
-Patch for redirection. (Yasuhiro Matsumoto, 2011 Sep 15) 2nd patch.
-Another on Sep 15?
-
-Patch for DFLT_EFM. (Ben Boeckel, 2011 Sep 14)
-
-Code style patch. (Elias Diem, 2011 Sep 19)
-
-Patch for 'transparency' option. (Ben Boeckel, 2011 Sep 14)
-Do we want this?  Also Sergiu Dotenco, 2011 Sep 17.
-
-Patch for gui_w32.c: call DefWindowProc(). (Sergiu Dotenco, 2011 Sep 15, 17)
-
-Patch to use task dialogs when available. (Sergiu Dotenco, 2011 Sep 15, 17)
-Addition Sep 16.
-
-Patch for alpha-blended icons and toolbar height. (Sergiu Dotenco, 2011 Sep 15, 17)
-
-Change to #ifdef for PDP_RETVAL. (Sergiu Dotenco, 2011 Sep 17, patch 2)
-
-Patch for phpcomplete.vim (Benjamin Haskell) picked up by maintainer?
-
-Add voting item: modern plugin management (automatic updates, handle
-dependencies).
-Add links to http://vimcasts.org/ and http://vimgolf.com/
-Read http://www.charlietanksley.net/philtex/sane-vim-plugin-management/
-
 Go through more coverity reports.
-
-Patch for Issue #9: http://code.google.com/p/vim/issues/detail?id=9
-C++ indenting. martin.gieseking
-
-Using "." to repeat a Visual delete counts bytes, not characters.  Can this be
-fixed? (Connor Lane Smith, 2011 Sep 1)
-
-Patch to allow getchar() in expression mapping.
-Why was typeahead saved and restored? (James Vega, 2011 Aug 31)
-
-Crash in autocomplete, valgrind log. (Greg Weber, 2011 Apr 22)
 
 Discussion about canonicalization of Hebrew. (Ron Aaron, 2011 April 10)
 
-Patch to fail if configure can't find an interface, such as Python.
-(Shlomi Fish, 2011 Jul 11)
+GTK: problem with 'L' in 'guioptions' changing the window width.
+(Aaron Cornelius, 2012 Feb 6)
 
-Patch to support UTF-8 for Hangul. (Shawn Y.H. Kim, 2011 May 1)
-Needs more work.
+Checking runtime scripts: Thilo Six, 2012 Jun 6.
 
-Patch for glob() returning a list. (Christian Brabandt, 2011 Aug 24, second
-one)
+List of broken mirrors. (Chris Pentago, 2012 Jun 15)
+/tmp/broken-mirrors.csv
 
-Patch for: (Christian Brabandt, 2011 Aug 22)
--   Make it possible to enter "r<C-E>" and "r<C-Y>" (get character from line
-    below/above).
+Javascript file where indent gets stuck on: GalaxyMaster, 2012 May 3.
 
-Patch for: (Christian Brabandt, 2011 Aug 24, updated patch)
-8   ":sign unplace * file={filename}" should work.  Also: ":sign unplace *
-    buffer={bufnr}".  So one can remove all signs for one file/buffer.
+Patch to fix black on black for terminal with 8 colors.
+(James McCoy, 2012 Jul 10)
+
+Patch to make winrestview() work better. (Lech Lorens, 2012 Jul 10)
+
+The CompleteDone autocommand needs some info passed to it:
+- The word that was selected (empty if abandoned complete)
+- Type of completion: tag, omnifunc, user func.
+
+Completefunc gets number passed instead of string.
+Patch from Yakuhiro Matsumoto, 2012 Jul 10
+
+User command complete can't handle spaces.  Patch by Yasuhiro Matsumoto, 2012
+Jul 11.
+
+Win32: When a directory name contains an exclamation mark, completion doesn't
+complete the contents of the directory.  No escaping for the "!"? (Jan
+Stocker, 2012 Jan 5)
+
+Help for v/V is not quite right. (Ben Fritz, 2012 Jun 4)
+Change [count]v to select last visual area [count] times?
+
+Issue 54: document behavior of -complete, also expands arg.
+
+Issue 72: 'autochdir' causes problems for :vimgrep.
+
+MS-Windows: Crash opening very long file name starting with "\\".
+(Christian Brock, 2012 Jun 29)
+
+Syntax update problem in one buffer opened in two windows, bottom window is
+not correctly updated. (Paul Harris, 2012 Feb 27)
+
+Patch to add getsid(). (Tyru, 2011 Oct 2)  Do we want this?  Update Oct 4.
+Or use expand('<sid>')?
+
+MS-Windows resizing problems:
+- Windows window on screen positioning: Patch by Yukihiro Nakadaira, 2012 Jun
+  20.  Uses getWindowRect() instead of GetWindowPlacement()
+- Win32: When the taskbar is at the top of the screen creating the tabbar
+  causes the window to move unnecessarily. (William E. Skeith III, 2012 Jan
+  12) Patch: 2012 Jan 13  Needs more work (2012 Feb 2)
+
+'iminsert' global value set when using ":setlocal iminsert"? (Wu, 2012 Jun 23)
+
+Help for b:undo_indent'. (Thilo Six, 2012 May 28)
+Also question if examples are correct.
+
+The input map for CTRL-O in mswin.vim causes problems after CTRL-X CTRL-O.
+Suggestion for another map. (Philip Mat, 2012 Jun 18)
+But use "gi" instead of "a".  Or use CTRL-\ CTRL-O.
+
+URXVT:
+- will get stuck if byte sequence does not containe expected semicolon.
+- Use urxvt mouse support also in xterm.  Explanations:
+  http://www.midnight-commander.org/ticket/2662
+
+Patch to add tests for if_xcmdsrv.c., Jul 8, need some more work. (Brian Burns)
+
+When running Vim in silent ex mode, an existing swapfile causes Vim to wait
+for a user action without a prompt. (Maarten Billemont, 2012 Feb 3)
+Do give the prompt? Quit with an error?
+
+Patch for Make_mvc.mak and Make_ming.mak for Ruby support. (Yasuhiro
+Matsumoto, 2012 Jan 30)
+
+Patch for 'backupcopy' default behavior for symlinks on Windows. (David Pope,
+2012 Mar 21, update Mar 31)
+
+Patch to list user digraphs. (Christian Brabandt, 2012 Apr 14)
+
+Patch for input method status. (Hirohito Higashi, 2012 Apr 18)
 
 Problem with winfixheight and resizing. (Yukihiro Nakadaira, 2011 Sep 17)
 Patch Sep 18.
 
+Patch for has('unnamedplus') docs. (Tony Mechelynck, 2011 Sep 27)
+And one for gui_x11.txt.
+
+-   Patch for 'breakindent' option: repeat indent for wrapped line. (Vaclav
+    Smilauer, 2004 Sep 13, fix Oct 31, update 2007 May 30)
+    Version for latest MacVim: Tobia Conforto, 2009 Nov 23
+    More recent version: https://retracile.net/wiki/VimBreakIndent
+    Posted to vim-dev by Taylor Hedberg, 2011 Nov 25
+
+Problem with starting Visual block mode with :norm when 'virtualedit' is set.
+(David glts, 2012 Jun 5)
+
+When 'guioptions' contains 'c' (use console dialog) then inputdialog() returns
+a different value when the dialog is cancelled. (David Fishburn, 2012 Jul 10)
+
+":cd" doesn't work when current directory path contains "**".
+finddir() has the same problem.  (Yukihiro Nakadaira, 2012 Jan 10)
+Requires a rewrite of the file_file_in_path code.
+
 Problem with l: dictionary being locked in a function. (ZyX, 2011 Jul 21)
+
+Should use has("browsefilter") in ftplugins.  Requires patch 7.3.593.
+
+Issue 48: foldopen error can't be caught by try/catch
+
+"dg_" deletes including the last character, "d:normal! g_" doesn't.
+(Nomen Nescio, 2012 Jun 27)
+
+Patch to sort functions starting with '<' after others.  Omit dict functions,
+they can't be called. (Yasuhiro Matsumoto, 2011 Oct 11)
+
+Patch to pass list to or(), and() and xor(). (Yasuhiro Matsumoto, 2012 Feb 8)
+
+Patch to improve "it" and "at" text object matching. (Christian Brabandt, 2011
+Nov 20)
+
+Patch to improve GUI find/replace dialog. (Christian Brabandt, 2012 May 26)
+Update Jun 2.
+
+Patch to add ":py3do". (Lilydjwg, 2012 Apr 7)
+
+`[ moves to character after insert, instead of the last inserted character.
+(Yukihiro Nakadaira, 2011 Dec 9)
+
+Plugin for Modeleasy. (Massimiliano Tripoli, 2011 Nov 29)
+
+When using remote-silent the -R flag is not passed on. (Axel Bender, 2012 May
+31)
+
+Updated syntax file for ssh_config, maintainer doesn't respond.
+(Leonard Ehrenfried, 2011 Sep 26)
+
+BufWinLeave triggers too late when quitting last window in a tab page. (Lech
+Lorens, 2012 Feb 21)
+
+Patch for 'transparency' option. (Sergiu Dotenco, 2011 Sep 17)
+Only for MS-Windows.  No documentation.  Do we want this?
+
+Patch to support cursor shape in Cygwin console. (Ben bgold, 2011 Dec 27)
+
+Patch to support UTF-8 for Hangul. (Shawn Y.H. Kim, 2011 May 1)
+Needs more work.  Pinged 2012 Jan 4.
+
+Issue 64: when 'incsearch' is on can't paste LF on command line.
+
+On MS-Windows a temp dir with a & init causes system() to fail. (Ben Fritz,
+2012 Jun 19)
 
 'cursorline' is displayed too short when there are concealed characters and
 'list' is set.  (Dennis Preiser)
 Patch 7.3.116 was the wrong solution.
 Christian Brabandt has another incomplete patch. (2011 Jul 13)
+Also: Alignment in help with tabs gets messed up, esp. at ":help index".
+Probably need to make a tab work like there was no concealing.  Possibly with
+an option.  Like line wrapping works as if there is no concealing.
+Patch by Dominique Pelle, Also fixes "fC" problem.
+    "fC" doesn't position the cursor correctly when there are concealed
+    characters.  Patch by Christian Brabandt, 2011 Oct 11)
 
 With concealed text mouse click doesn't put the cursor in the right position.
 (Herb Sitz)  Fix by Christian Brabandt, 2011 Jun 16.  Doesn't work properly,
@@ -110,7 +210,31 @@ Syntax region with 'concealends' and a 'cchar' value, 'conceallevel' set to 2,
 only one of the two ends gets the cchar displayed. (Brett Stahlman, 2010 Aug
 21, Ben Fritz, 2010 Sep 14)
 
+'cursorline' is drawn incorrectly in diff mode. Patch by Christian Brabandt,
+2012 Apr 2.
+
+'cursorline' works on a text line only.  Add 'cursorscreenline' for
+highlighting the screen line. (Christian Brabandt, 2012 Mar 31)
+
+Win32: Does building a 64 bit version with VC9 give warnings for int
+conversions? (Mike Williams)
+
+Win32: Patch to use task dialogs when available. (Sergiu Dotenco, 2011 Sep 17)
+New feature, requires testing.  Made some remarks.
+
+Win32: Patch for alpha-blended icons and toolbar height. (Sergiu Dotenco, 2011
+Sep 17)  Asked for feedback from others.
+
+Win32: Cannot cd into a directory that starts with a space. (Andy Wokula, 2012
+Jan 19)
+
+Win32: default for 'backupcopy' is wrong for a symbolic link. (mklink one
+two). (Benjamin Fritz, 2012 Mar 15)
+
 Need to escape $HOME on Windows?  (ZyX, 2011 Jul 21)
+
+"2" in 'formatopions' not working in comments. (Christian Corneliussen, 2011
+Oct 26)
 
 Bug in repeating Visual "u". (Lawrence Kesteloot, 2010 Dec 20)
 
@@ -143,11 +267,18 @@ call append(line, "INFO  ....12....18....24....30....36....42....48....54....60.
 When using a Vim server, a # in the path causes an error message.
 (Jeff Lanzarotta, 2011 Feb 17)
 
+Setting $HOME on MS-Windows is not very well documented.  Suggestion by Ben
+Fritz (2011 Oct 27).
+
 Bug: E685 error for func_unref(). (ZyX, 2010 Aug 5)
 
 Bug: Windows 7 64 bit system freezes  when 'clipboard' set to "unnamed" and
 doing ":g/test/d".  Putting every delete on the clipboard? (Robert Chan, 2011
 Jun 17)
+
+When there is a ">" in a line that "gq" wraps to the start of the next line,
+then the following line will pick it up as a leader.  Should get the leader
+from the first line, not a wrapped line. (Matt Ackeret, 2012 Feb 27)
 
 Using ":break" or something else that stops executing commands inside a
 ":finally" does not rethrow a previously uncaught exception. (ZyX, 2010 Oct
@@ -165,8 +296,6 @@ string() can't parse back "inf" and "nan".  Fix documentation or fix code?
 (ZyX, 2010 Aug 23)
 
 Make 'formatprg' global-local. (Sung Pae)
-
-v:register doesn't work exactly as expected. (David Fishburn, 2011 Sep 20)
 
 When doing "redir => s:foo" in a script and then "redir END" somewhere else
 (e.g. in a function) it can't find s:foo.
@@ -202,6 +331,8 @@ Patch to support sorting on floating point number.  (Alex Jakushev, 2010 Oct
 
 Patch to addd TextDeletePost and TextYankPost events. (Philippe Vaucher, 2011
 May 24)  Update May 26.
+
+Patch for :tabrecently. (Hirokazu Yoshida, 2012 Jan 30)
 
 When a script contains "redir => s:foo" but doesn't end redirection, a
 following "redir" command gives an error for not being able to access s:foo.
@@ -274,6 +405,7 @@ When putting text in the cut buffer (when exiting) and conversion doesn't work
 properly, Prepend "ENC==={value of 'enc'}:" to the text and don't convert?
 Then it should at least work from Vim to Vim and in other applications it's
 clear why it doesn't work.
+Experimental patch by Christian Brabandt, 2012 Apr 19.
 
 Editing a file with a ^M with 'ff' set to "mac", opening a help file, then the
 ^M is displayed as ^J sometimes.  Getting 'ff' value from wrong window/buffer?
@@ -298,6 +430,8 @@ the system encoding (usually utf-8).
 
 Problem producing tags file when hebrew.frx is present.  It has a BOM.
 Results in E670. (Tony Mechelynck, 2010 May 2)
+
+'beval' option should be global-local.
 
 Ruby: ":ruby print $buffer.number" returns zero.
 
@@ -330,6 +464,10 @@ mkdir().
 ":echo "\x85" =~# '[\u0085]'" returns 1 instead of 0. (ZyX, 2010 Oct 3)
 
 'cindent' not correct when 'list' is set. (Zdravi Korusef, 2010 Apr 15)
+
+C-indenting: A matching { in a comment is ignored, but intermediate { are not
+checked to be in a comment.  Implement FM_SKIPCOMM flag of findmatchlimit().
+Issue 46.
 
 When 'paste' is changed with 'pastetoggle', the ruler doesn't reflect this
 right away. (Samuel Ferencik, 2010 Dec 7)
@@ -410,6 +548,8 @@ path.
 Test 51 fails when language set to German. (Marco, 2011 Jan 9)
 Dominique can't reproduc it.
 
+'ambiwidth' should be global-local.
+
 ":function f(x) keepjumps" creates a function where every command is executed
 like it has ":keepjumps" before it.
 
@@ -421,10 +561,6 @@ Patch to support :undo absolute jump to file save number. (Christian Brabandt,
 
 Patch to use 'foldnextmax' also for "marker" foldmethod. (Arnaud Lacombe, 2011
 Jan 7)
-
-When setting 'undofile' while the file is already loaded, but unchanged, try
-to read the undo file.  Requires computing a checksum of the text. (Andy
-Wokula)
 
 Bug with 'incsearch' going to wrong line. (Wolfram Kresse, 2009 Aug 17)
 Only with "vim -u NONE".
@@ -461,14 +597,9 @@ Disable updating folds while completion is active? (Peter Odding, 2010 Jun 9)
 Using ":call foo#d.f()" doesn't autoload the "foo.vim" file.  Works OK for
 echo, just not for  ":call" and ":call call()". (Ted, 2011 Mar 17)
 
-Cannot use getchar() inside :normal and using an expression mapping.  Is this
-supposed to work?  (XyX, 2010 Sep 22)
-
 When a:base in 'completefunc' starts with a number it's passed as a number,
 not a string. (Sean Ma)  Need to add flag to call_func_retlist() to force a
 string value.
-
-There is no command line completion for ":lmap".
 
 ":e ~br<Tab>" does not complete to ":e /home/bram/".  Would need to use
 getpwent() to find all the matches.
@@ -506,6 +637,8 @@ Win32: Expanding 'path' runs into a maximum size limit. (bgold12, 2009 Nov 15)
 
 Win32: Patch for enabling quick edit mode in console. (Craig Barkhouse, 2010
 Sep 1)
+
+Win32: Patch for using .png files for icons. (Charles Peacech, 2012 Feb 5)
 
 Putting a Visual block while 'visualedit' is "all" does not leave the cursor
 on the first character. (John Beckett, 2010 Aug 7)
@@ -732,8 +865,6 @@ the buffer to be unmodified.
 Unfinished patch by Ian Kelling, 2008 Jul 11.  Followup Jul 14, need to have
 another look at it.
 
-Patch for c.vim and cpp.vim syntax files. (Chung-chieh Shan, 2008 Nov 26)
-
 c.vim: XXX in a comment is colored yellow, but not when it's after "#if 0".
 (Ilya Dogolazky, 2009 Aug 7)
 
@@ -868,9 +999,6 @@ try/catch not working when inside a for loop. (ZyX, 2011 Jan 25)
 ":tab help" always opens a new tab, while ":help" re-uses an existing window.
 Would be more consistent when an existing tab is re-used. (Tony Mechelynck)
 
-":tab drop filename" doesn't work nicely when "filename" is open in a window
-in another tab. (Tony Mechelynck, 2009 Feb 13)
-
 Add ":nofold".  Range will apply without expanding to closed fold.
 
 Including NFA regexp code:
@@ -881,6 +1009,7 @@ Performance tests:
 - ~/vim/test/slowsearch
 - ~/vim/test/rgb.vim
 - ~/vim/text/FeiqCfg.xml (file from Netjune)
+- ~/vim/text/edl.svg  (also XML)
 - search for  a.*e*exn  in the vim executable.  Go to last line to use
   'hlsearch'.
 
@@ -1009,6 +1138,16 @@ Latest version: 2011 May 18
 8   Windows install with NSIS: make it possible to do a silent install, see
     http://nsis.sourceforge.net/Docs/Chapter4.html#4.12
     Version from Guopeng Wen that does this (2010 Dec 27)
+Alternative: MSI installer: https://github.com/petrkle/vim-msi/
+
+Windows installer should install 32-bit version of right-click handler also on
+64-bit systems. (Brian Cunningham, 2011 Dec 28)
+
+Windows installer could add a "open in new tab of existing Vim" menu entry.
+Gvimext: patch to add "Edit with single Vim &tabbed" menu entry.
+Just have two choices, always using one Vim and selecting between using an
+argument list or opening each file in a separate tab.
+(Erik Falor, 2008 May 21, 2008 Jun 26)
 
 Windows installer: licence text should not use indent, causes bad word wrap.
 (Benjamin Fritz, 2010 Aug 16)
@@ -1062,12 +1201,6 @@ Win64: Seek error in swap file for a very big file (3 Gbyte).  Check storing
 pointer in long and seek offset in 64 bit var.
 
 Win32: patch for fullscreen mode. (Liushaolin, 2008 April 17)
-
-Win32: When 'shell' is cmd.exe this command fails:
-	echo system('"c:/path/echo.exe" "foo bar"')
-Should we set the default for 'shellxquote' to a double quote, when 'shell'
-contains "cmd" in the tail?  (Benjamin Fritz, 2008 Oct 13)
-Also set 'shellcmdflag' to include /s.
 
 Win32: When there is 4 Gbyte of memory mch_avail_mem() doesn't work properly.
 Unfinished patch by Jelle Geerts, 2008 Aug 24.
@@ -1175,12 +1308,6 @@ When unloading a buffer in a BufHidden autocommand the hidden flag is reset?
 
 Substituting an area with a line break with almost the same area does change
 the Visual area.  Can this be fixed? (James Vega, 2006 Sept 15)
-
-Windows installer could add a "open in new tab of existing Vim" menu entry.
-Gvimext: patch to add "Edit with single Vim &tabbed" menu entry.
-Just have two choices, always using one Vim and selecting between using an
-argument list or opening each file in a separate tab.
-(Erik Falor, 2008 May 21, 2008 Jun 26)
 
 GUI: When combining fg en bg make sure they are not equal.
 
@@ -1456,6 +1583,8 @@ Patch to support horizontal scroll wheel in GTK. Untested. (Bjorn Winckler,
 At next release:
 -   Rename src/Makefile and create a new one like toplevel Makefile that
     creates auto/config.mk when it's not there? (Ben Schmidt, 2011 Feb 11)
+-   Improve plugin handling: Automatic updates, handle dependencies?
+    E.g. Vundle: https://github.com/gmarik/vundle
 
 
 More patches:
@@ -1518,10 +1647,6 @@ Awaiting updated patches:
 7   Completion of network shares, patch by Yasuhiro Matsumoto.
     Update 2004 Sep 6.
     How does this work?  Missing comments.
--   Patch for 'breakindent' option: repeat indent for wrapped line. (Vaclav
-    Smilauer, 2004 Sep 13, fix Oct 31, update 2007 May 30)
-    Version for latest MacVim: Tobia Conforto, 2009 Nov 23
-    More recent version: https://retracile.net/wiki/VimBreakIndent
 8   Add a few more command names to the menus.  Patch from Jiri Brezina
     (28 feb 2002).  Will mess the translations...
 7   ATTENTION dialog choices are more logical when "Delete it' appears
@@ -1677,18 +1802,6 @@ Win32 GUI known bugs:
     the wide functions.
 8   On Windows 98 the unicows library is needed to support functions with UCS2
     file names.  Can we load unicows.dll dynamically?
-8   Win32: With two monitors, gvim partly on both, and adding/removing a
-    scrollbar Vim resizes and moves to one of the monitors. (Chris Monkiewicz,
-    2008 Oct)
-8   When the primary monitor is below or right of the secondary monitor and
-    Vim is on the secondary monitor it will often move to the primary monitor.
-    Window position coordinates can be negative. (James Harvey)
-    When the primary monitor is on the right, coordinates on the left monitor
-    are negative.  Clamping to zero means gvim jups to the primary monitor.
-    (Michael Wookey, 2010 Aug 17)
-    Probably the same issue: When the GUI tab pages line is displayed Vim
-    jumps from the secondary to the primary monitor. (Afton Lewis, 2007 Mar 9)
-    Possible solution using GetSystemMetrics() (Sergey Khorev, 2010 Aug 18)
 8   The -P argument doesn't work very well with many MDI applications.
     The last argument of CreateWindowEx() should be used, see MSDN docs.
     Tutorial: http://win32assembly.online.fr/tut32.html
@@ -2551,8 +2664,6 @@ Tab pages:
     font, etc.)
 8   Make GUI menu in tab pages line configurable.  Like the popup menu.
 8   balloons for the tab page labels that are shortened to show the full path.
-8   :tabmove +N	 move tab page N pages forward
-8   :tabmove -N	 move tab page N pages backward
 7   :tabdup	 duplicate the tab with all its windows.
 7   Option to put tab line at the left or right?  Need an option to specify
     its width.  It's like a separate window with ":tabs" output.
@@ -2854,6 +2965,8 @@ Syntax highlighting:
     this isn't reset.  Add a special keyword definition for the syntax rules?
     When this is done, use vim.vim syntax highlighting for help file examples,
     but without ":" in 'iskeyword' for syntax.
+    Also need a separate 'iskeyword' for the command line, e.g., in a help
+    window ":e /asdf/asdf/" CTRL-W works different.
 8   Add specific syntax item to match with parens/braces that don't have a
     "%" match.  :syntax nomatch cMatchError (,{,[,),},] [contained]
 8   Highlight the text between two matching parens (e.g., with a grey
@@ -3159,10 +3272,6 @@ Performance:
     Add command to compile a vim script and add it to the file in-place.
     Split Ex command executing into a parsing and executing phase.
     Use compiled code for functions, while loops, etc.
-8   When editing a file with extremely long lines (e.g., an executable), the
-    "linerest" in readfile() is allocated twice to be able to copy what was
-    read so far.  Use realloc() instead?  Or split the line when allocating
-    memory fails and "linerest" is big (> 100000)?
 8   When defining autocommands (e.g., from $VIMRUNTIME/filetype.vim), need to
     compare each pattern with all existing patterns.  Use a hash code to avoid
     using strcmp() too often?
@@ -3858,7 +3967,6 @@ Insert mode:
 -   Add option to 'cindent' to set indent for comments outside of {}?
 -   Make a command to line up a comment after a code line with a previous
     comment after a code line.	Can 'cindent' do this automatically?
-7   Add 'j' flag to 'formatoptions': Remove comment leader when joining lines.
 -   When 'cindent'ing a '}', showmatch is done before fixing the indent.  It
     looks better when the indent is fixed before the showmatch. (Webb)
 -   Add option to make indenting work in comments too (for commented-out
@@ -4411,9 +4519,6 @@ Sessions:
 Options:
 7   ":with option=value | command": temporarily set an option value and
     restore it after the command has executed.
-7   Setting an option always sets "w_set_curswant", while this is only
-    required for a few options.  Only do it for those options to avoid the
-    side effect.
 8   Make "old" number options that really give a number of effects into string
     options that are a comma separated list.  The old number values should
     also be supported.
@@ -4818,6 +4923,7 @@ Various improvements:
 -   Make it possible for the 'showbreak' to be displayed at the end of the
     line.  Use a comma to separate the part at the end and the start of the
     line?  Highlight the linebreak characters, add flag in 'highlight'.
+    Make 'showbreak' local to a window.
 -   Some string options should be expanded if they have wildcards, e.g.
     'dictionary' when it is "*.h".
 -   Use a specific type for number and boolean options, making it possible to

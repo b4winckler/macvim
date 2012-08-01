@@ -596,10 +596,15 @@ ex_breakdel(eap)
     garray_T	*gap;
 
     gap = &dbg_breakp;
-#ifdef FEAT_PROFILE
     if (eap->cmdidx == CMD_profdel)
+    {
+#ifdef FEAT_PROFILE
 	gap = &prof_ga;
+#else
+	ex_ni(eap);
+	return;
 #endif
+    }
 
     if (vim_isdigit(*eap->arg))
     {
@@ -1546,6 +1551,7 @@ dialog_changed(buf, checkall)
     char_u	buff[DIALOG_MSG_SIZE];
     int		ret;
     buf_T	*buf2;
+    exarg_T     ea;
 
 #ifdef FEAT_GUI_MACVIM
     /* Save dialogs on Mac OS X are standardized so in case the GUI is enabled
@@ -1571,13 +1577,19 @@ dialog_changed(buf, checkall)
     }
 #endif
 
+    /* Init ea pseudo-structure, this is needed for the check_overwrite()
+     * function. */
+    ea.append = ea.forceit = FALSE;
+
     if (ret == VIM_YES)
     {
 #ifdef FEAT_BROWSE
 	/* May get file name, when there is none */
 	browse_save_fname(buf);
 #endif
-	if (buf->b_fname != NULL)   /* didn't hit Cancel */
+	if (buf->b_fname != NULL && check_overwrite(&ea, buf,
+				    buf->b_fname, buf->b_ffname, FALSE) == OK)
+	    /* didn't hit Cancel */
 	    (void)buf_write_all(buf, FALSE);
     }
     else if (ret == VIM_NO)
@@ -1605,7 +1617,9 @@ dialog_changed(buf, checkall)
 		/* May get file name, when there is none */
 		browse_save_fname(buf2);
 #endif
-		if (buf2->b_fname != NULL)   /* didn't hit Cancel */
+		if (buf2->b_fname != NULL && check_overwrite(&ea, buf2,
+				  buf2->b_fname, buf2->b_ffname, FALSE) == OK)
+		    /* didn't hit Cancel */
 		    (void)buf_write_all(buf2, FALSE);
 #ifdef FEAT_AUTOCMD
 		/* an autocommand may have deleted the buffer */
@@ -1642,6 +1656,26 @@ can_abandon(buf, forceit)
 		|| forceit);
 }
 
+static void add_bufnum __ARGS((int *bufnrs, int *bufnump, int nr));
+
+/*
+ * Add a buffer number to "bufnrs", unless it's already there.
+ */
+    static void
+add_bufnum(bufnrs, bufnump, nr)
+    int	    *bufnrs;
+    int	    *bufnump;
+    int	    nr;
+{
+    int i;
+
+    for (i = 0; i < *bufnump; ++i)
+	if (bufnrs[i] == nr)
+	    return;
+    bufnrs[*bufnump] = nr;
+    *bufnump = *bufnump + 1;
+}
+
 /*
  * Return TRUE if any buffer was changed and cannot be abandoned.
  * That changed buffer becomes the current buffer.
@@ -1650,32 +1684,64 @@ can_abandon(buf, forceit)
 check_changed_any(hidden)
     int		hidden;		/* Only check hidden buffers */
 {
+    int		ret = FALSE;
     buf_T	*buf;
     int		save;
+    int		i;
+    int		bufnum = 0;
+    int		bufcount = 0;
+    int		*bufnrs;
 #ifdef FEAT_WINDOWS
+    tabpage_T   *tp;
     win_T	*wp;
 #endif
 
-    for (;;)
-    {
-	/* check curbuf first: if it was changed we can't abandon it */
-	if (!hidden && curbufIsChanged())
-	    buf = curbuf;
-	else
-	{
-	    for (buf = firstbuf; buf != NULL; buf = buf->b_next)
-		if ((!hidden || buf->b_nwindows == 0) && bufIsChanged(buf))
-		    break;
-	}
-	if (buf == NULL)    /* No buffers changed */
-	    return FALSE;
+    for (buf = firstbuf; buf != NULL; buf = buf->b_next)
+	++bufcount;
 
-	/* Try auto-writing the buffer.  If this fails but the buffer no
-	 * longer exists it's not changed, that's OK. */
-	if (check_changed(buf, p_awa, TRUE, FALSE, TRUE) && buf_valid(buf))
-	    break;	    /* didn't save - still changes */
+    if (bufcount == 0)
+	return FALSE;
+
+    bufnrs = (int *)alloc(sizeof(int) * bufcount);
+    if (bufnrs == NULL)
+	return FALSE;
+
+    /* curbuf */
+    bufnrs[bufnum++] = curbuf->b_fnum;
+#ifdef FEAT_WINDOWS
+    /* buf in curtab */
+    FOR_ALL_WINDOWS(wp)
+	if (wp->w_buffer != curbuf)
+	    add_bufnum(bufnrs, &bufnum, wp->w_buffer->b_fnum);
+
+    /* buf in other tab */
+    for (tp = first_tabpage; tp != NULL; tp = tp->tp_next)
+	if (tp != curtab)
+	    for (wp = tp->tp_firstwin; wp != NULL; wp = wp->w_next)
+		add_bufnum(bufnrs, &bufnum, wp->w_buffer->b_fnum);
+#endif
+    /* any other buf */
+    for (buf = firstbuf; buf != NULL; buf = buf->b_next)
+	add_bufnum(bufnrs, &bufnum, buf->b_fnum);
+
+    for (i = 0; i < bufnum; ++i)
+    {
+	buf = buflist_findnr(bufnrs[i]);
+	if (buf == NULL)
+	    continue;
+	if ((!hidden || buf->b_nwindows == 0) && bufIsChanged(buf))
+	{
+	    /* Try auto-writing the buffer.  If this fails but the buffer no
+	    * longer exists it's not changed, that's OK. */
+	    if (check_changed(buf, p_awa, TRUE, FALSE, TRUE) && buf_valid(buf))
+		break;	    /* didn't save - still changes */
+	}
     }
 
+    if (i >= bufnum)
+	goto theend;
+
+    ret = TRUE;
     exiting = FALSE;
 #if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
     /*
@@ -1708,24 +1774,29 @@ check_changed_any(hidden)
 #ifdef FEAT_WINDOWS
     /* Try to find a window that contains the buffer. */
     if (buf != curbuf)
-	for (wp = firstwin; wp != NULL; wp = wp->w_next)
+	FOR_ALL_TAB_WINDOWS(tp, wp)
 	    if (wp->w_buffer == buf)
 	    {
-		win_goto(wp);
+		goto_tabpage_win(tp, wp);
 # ifdef FEAT_AUTOCMD
 		/* Paranoia: did autocms wipe out the buffer with changes? */
 		if (!buf_valid(buf))
-		    return TRUE;
+		{
+		    goto theend;
+		}
 # endif
-		break;
+		goto buf_found;
 	    }
+buf_found:
 #endif
 
     /* Open the changed buffer in the current window. */
     if (buf != curbuf)
 	set_curbuf(buf, DOBUF_GOTO);
 
-    return TRUE;
+theend:
+    vim_free(bufnrs);
+    return ret;
 }
 
 /*
@@ -1852,22 +1923,28 @@ get_arglist(gap, str)
 #if defined(FEAT_QUICKFIX) || defined(FEAT_SYN_HL) || defined(PROTO)
 /*
  * Parse a list of arguments (file names), expand them and return in
- * "fnames[fcountp]".
+ * "fnames[fcountp]".  When "wig" is TRUE, removes files matching 'wildignore'.
  * Return FAIL or OK.
  */
     int
-get_arglist_exp(str, fcountp, fnamesp)
+get_arglist_exp(str, fcountp, fnamesp, wig)
     char_u	*str;
     int		*fcountp;
     char_u	***fnamesp;
+    int		wig;
 {
     garray_T	ga;
     int		i;
 
     if (get_arglist(&ga, str) == FAIL)
 	return FAIL;
-    i = gen_expand_wildcards(ga.ga_len, (char_u **)ga.ga_data,
-				       fcountp, fnamesp, EW_FILE|EW_NOTFOUND);
+    if (wig == TRUE)
+	i = expand_wildcards(ga.ga_len, (char_u **)ga.ga_data,
+					fcountp, fnamesp, EW_FILE|EW_NOTFOUND);
+    else
+	i = gen_expand_wildcards(ga.ga_len, (char_u **)ga.ga_data,
+					fcountp, fnamesp, EW_FILE|EW_NOTFOUND);
+
     ga_clear(&ga);
     return i;
 }
@@ -2012,7 +2089,7 @@ alist_check_arg_idx()
 }
 
 /*
- * Return TRUE if window "win" is editing then file at the current argument
+ * Return TRUE if window "win" is editing the file at the current argument
  * index.
  */
     static int
@@ -2483,7 +2560,7 @@ ex_listdo(eap)
 		/* go to window "tp" */
 		if (!valid_tabpage(tp))
 		    break;
-		goto_tabpage_tp(tp);
+		goto_tabpage_tp(tp, TRUE);
 		tp = tp->tp_next;
 	    }
 #endif
@@ -3347,7 +3424,7 @@ ex_scriptnames(eap)
 	    home_replace(NULL, SCRIPT_ITEM(i).sn_name,
 						    NameBuff, MAXPATHL, TRUE);
 	    smsg((char_u *)"%3d: %s", i, NameBuff);
-        }
+	}
 }
 
 # if defined(BACKSLASH_IN_FILENAME) || defined(PROTO)
@@ -3473,7 +3550,7 @@ getsourceline(c, cookie, indent)
 {
     struct source_cookie *sp = (struct source_cookie *)cookie;
     char_u		*line;
-    char_u		*p, *s;
+    char_u		*p;
 
 #ifdef FEAT_EVAL
     /* If breakpoints have been added/deleted need to check for it. */
@@ -3512,28 +3589,49 @@ getsourceline(c, cookie, indent)
     {
 	/* compensate for the one line read-ahead */
 	--sourcing_lnum;
-	for (;;)
+
+	/* Get the next line and concatenate it when it starts with a
+	 * backslash. We always need to read the next line, keep it in
+	 * sp->nextline. */
+	sp->nextline = get_one_sourceline(sp);
+	if (sp->nextline != NULL && *(p = skipwhite(sp->nextline)) == '\\')
 	{
-	    sp->nextline = get_one_sourceline(sp);
-	    if (sp->nextline == NULL)
-		break;
-	    p = skipwhite(sp->nextline);
-	    if (*p != '\\')
-		break;
-	    s = alloc((unsigned)(STRLEN(line) + STRLEN(p)));
-	    if (s == NULL)	/* out of memory */
-		break;
-	    STRCPY(s, line);
-	    STRCAT(s, p + 1);
+	    garray_T    ga;
+
+	    ga_init2(&ga, (int)sizeof(char_u), 400);
+	    ga_concat(&ga, line);
+	    ga_concat(&ga, p + 1);
+	    for (;;)
+	    {
+		vim_free(sp->nextline);
+		sp->nextline = get_one_sourceline(sp);
+		if (sp->nextline == NULL)
+		    break;
+		p = skipwhite(sp->nextline);
+		if (*p != '\\')
+		    break;
+		/* Adjust the growsize to the current length to speed up
+		 * concatenating many lines. */
+		if (ga.ga_len > 400)
+		{
+		    if (ga.ga_len > 8000)
+			ga.ga_growsize = 8000;
+		    else
+			ga.ga_growsize = ga.ga_len;
+		}
+		ga_concat(&ga, p + 1);
+	    }
+	    ga_append(&ga, NUL);
 	    vim_free(line);
-	    line = s;
-	    vim_free(sp->nextline);
+	    line = ga.ga_data;
 	}
     }
 
 #ifdef FEAT_MBYTE
     if (line != NULL && sp->conv.vc_type != CONV_NONE)
     {
+	char_u	*s;
+
 	/* Convert the encoding of the script line. */
 	s = string_convert(&sp->conv, line, NULL);
 	if (s != NULL)
@@ -4226,6 +4324,9 @@ ex_language(eap)
 # ifdef FEAT_EVAL
 	    /* Set v:lang, v:lc_time and v:ctype to the final result. */
 	    set_lang_var();
+# endif
+# ifdef FEAT_TITLE
+	    maketitle();
 # endif
 	}
     }

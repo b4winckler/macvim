@@ -1,13 +1,16 @@
 " Vim syntax file
 " Language:		Mail file
 " Previous Maintainer:	Felix von Leitner <leitner@math.fu-berlin.de>
-" Maintainer:		Gautam Iyer <gi1242@users.sourceforge.net>
-" Last Change:		Thu 06 Nov 2008 10:10:55 PM PST
+" Maintainer:		GI <a@b.c>, where a='gi1242+vim', b='gmail', c='com'
+" Last Change:		Thu 02 Feb 2012 08:47:04 PM EST
 
 " Quit when a syntax file was already loaded
 if exists("b:current_syntax")
   finish
 endif
+
+let s:cpo_save = &cpo
+set cpo&vim
 
 " The mail header is recognized starting with a "keyword:" line and ending
 " with an empty line or other line that can't be in the header. All lines of
@@ -89,7 +92,7 @@ hi def link mailSignature	PreProc
 hi def link mailHeaderEmail	mailEmail
 hi def link mailEmail		Special
 hi def link mailURL		String
-hi def link mailSubject		LineNR
+hi def link mailSubject		Title
 hi def link mailQuoted1		Comment
 hi def link mailQuoted3		mailQuoted1
 hi def link mailQuoted5		mailQuoted1
@@ -104,3 +107,6 @@ hi def link mailQuoteExp5	mailQuoted5
 hi def link mailQuoteExp6	mailQuoted6
 
 let b:current_syntax = "mail"
+
+let &cpo = s:cpo_save
+unlet s:cpo_save

@@ -1,4 +1,4 @@
-*insert.txt*    For Vim version 7.3.  Last change: 2011 Sep 14
+*insert.txt*    For Vim version 7.3.  Last change: 2012 Jul 10
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -383,8 +383,11 @@ will then always put the cursor on it).  Or use CTRL-\ CTRL-O, but then
 beware of the cursor possibly being beyond the end of the line.
 
 The CTRL-O command takes you to Normal mode.  If you then use a command enter
-Insert mode again it doesn't nest.  Thus when typing "a<C-O>a" and then <Esc>
-takes you back to Normal mode, you do not need to type <Esc> twice.
+Insert mode again it normally doesn't nest.  Thus when typing "a<C-O>a" and
+then <Esc> takes you back to Normal mode, you do not need to type <Esc> twice.
+An exception is when not typing the command, e.g. when executing a mapping or
+sourcing a script.  This makes mappings work that briefly switch to Insert
+mode.
 
 The shifted cursor keys are not available on all terminals.
 
@@ -398,7 +401,12 @@ An example for using CTRL-G u: >
 
 This redefines the backspace key to start a new undo sequence.  You can now
 undo the effect of the backspace key, without changing what you typed before
-that, with CTRL-O u.
+that, with CTRL-O u.  Another example: >
+
+	:inoremap <CR> <C-]><C-G>u<CR>
+
+This breaks undo at each line break.  It also expands abbreviations before
+this.
 
 Using CTRL-O splits undo: the text typed before and after it is undone
 separately.  If you want to avoid this (e.g., in a mapping) you might be able
@@ -483,7 +491,7 @@ option}
 							*ins-smarttab*
 When the 'smarttab' option is on, a <Tab> inserts 'shiftwidth' positions at
 the beginning of a line and 'tabstop' positions in other places.  This means
-that often spaces instead of a <Tab> character are inserted.  When 'smarttab
+that often spaces instead of a <Tab> character are inserted.  When 'smarttab'
 is off, a <Tab> always inserts 'tabstop' positions, and 'shiftwidth' is only
 used for ">>" and the like.  {not in Vi}
 
@@ -1009,8 +1017,13 @@ The function must return the column where the completion starts.  It must be a
 number between zero and the cursor column "col('.')".  This involves looking
 at the characters just before the cursor and including those characters that
 could be part of the completed item.  The text between this column and the
-cursor column will be replaced with the matches.  Return -1 if no completion
-can be done.
+cursor column will be replaced with the matches.
+
+Special return values:
+   -1 If no completion can be done, the completion will be cancelled with an
+      error message.
+   -2 To cancel silently and stay in completion mode.
+   -3 To cancel silently and leave completion mode.
 
 On the second invocation the arguments are:
    a:findstart  0
@@ -1030,6 +1043,8 @@ that contains the List.  The Dict can have these items:
 			effect is that the function is called whenever the
 			leading text is changed.
 Other items are ignored.
+
+For acting upon end of completion, see the |CompleteDone| autocommand event.
 
 For example, the function can contain this: >
 	let matches = ... list of words ...

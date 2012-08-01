@@ -1,12 +1,15 @@
 " Vim syntax file
 " Language:	C
 " Maintainer:	Bram Moolenaar <Bram@vim.org>
-" Last Change:	2011 Sep 07
+" Last Change:	2012 May 03
 
 " Quit when a (custom) syntax file was already loaded
 if exists("b:current_syntax")
   finish
 endif
+
+let s:cpo_save = &cpo
+set cpo&vim
 
 " A bunch of useful C keywords
 syn keyword	cStatement	goto break return continue asm
@@ -31,7 +34,7 @@ if !exists("c_no_utf")
   syn match	cSpecial	display contained "\\\(u\x\{4}\|U\x\{8}\)"
 endif
 if exists("c_no_cformat")
-  syn region	cString		start=+L\="+ skip=+\\\\\|\\"+ end=+"+ contains=cSpecial,@Spell
+  syn region	cString		start=+L\="+ skip=+\\\\\|\\"+ end=+"+ contains=cSpecial,@Spell extend
   " cCppString: same as cString, but ends at end of line
   syn region	cCppString	start=+L\="+ skip=+\\\\\|\\"\|\\$+ excludenl end=+"+ end='$' contains=cSpecial,@Spell
 else
@@ -41,7 +44,7 @@ else
     syn match	cFormat		display "%\(\d\+\$\)\=[-+' #0*]*\(\d*\|\*\|\*\d\+\$\)\(\.\(\d*\|\*\|\*\d\+\$\)\)\=\([hlL]\|ll\)\=\([bdiuoxXDOUfeEgGcCsSpn]\|\[\^\=.[^]]*\]\)" contained
   endif
   syn match	cFormat		display "%%" contained
-  syn region	cString		start=+L\="+ skip=+\\\\\|\\"+ end=+"+ contains=cSpecial,cFormat,@Spell
+  syn region	cString		start=+L\="+ skip=+\\\\\|\\"+ end=+"+ contains=cSpecial,cFormat,@Spell extend
   " cCppString: same as cString, but ends at end of line
   syn region	cCppString	start=+L\="+ skip=+\\\\\|\\"\|\\$+ excludenl end=+"+ end='$' contains=cSpecial,cFormat,@Spell
 endif
@@ -58,6 +61,25 @@ endif
 syn match	cSpecialCharacter display "L\='\\\o\{1,3}'"
 syn match	cSpecialCharacter display "'\\x\x\{1,2}'"
 syn match	cSpecialCharacter display "L'\\x\x\+'"
+
+if !exists("c_no_c11") " ISO C11
+  if exists("c_no_cformat")
+    syn region	cString		start=+\%(U\|u8\=\)"+ skip=+\\\\\|\\"+ end=+"+ contains=cSpecial,@Spell extend
+  else
+    syn region	cString		start=+\%(U\|u8\=\)"+ skip=+\\\\\|\\"+ end=+"+ contains=cSpecial,cFormat,@Spell extend
+  endif
+  syn match	cCharacter	"[Uu]'[^\\]'"
+  syn match	cCharacter	"[Uu]'[^']*'" contains=cSpecial
+  if exists("c_gnu")
+    syn match	cSpecialError	"[Uu]'\\[^'\"?\\abefnrtv]'"
+    syn match	cSpecialCharacter "[Uu]'\\['\"?\\abefnrtv]'"
+  else
+    syn match	cSpecialError	"[Uu]'\\[^'\"?\\abfnrtv]'"
+    syn match	cSpecialCharacter "[Uu]'\\['\"?\\abfnrtv]'"
+  endif
+  syn match	cSpecialCharacter display "[Uu]'\\\o\{1,3}'"
+  syn match	cSpecialCharacter display "[Uu]'\\x\x\+'"
+endif
 
 "when wanted, highlight trailing white space
 if exists("c_space_errors")
@@ -105,7 +127,7 @@ else
   syn match	cErrInBracket	display contained "[);{}]\|<%\|%>"
 endif
 
-syntax region	cBadBlock	keepend extend start="{" end="}" contained containedin=cParen,cBracket,cBadBlock transparent fold
+syntax region	cBadBlock	keepend start="{" end="}" contained containedin=cParen,cBracket,cBadBlock transparent fold
 
 "integer number, or floating point number without a dot and with "f".
 syn case ignore
@@ -178,7 +200,7 @@ if !exists("c_no_ansi") || exists("c_ansi_typedefs")
   syn keyword   cType		mbstate_t wctrans_t wint_t wctype_t
 endif
 if !exists("c_no_c99") " ISO C99
-  syn keyword	cType		bool complex
+  syn keyword	cType		_Bool bool _Complex complex _Imaginary imaginary
   syn keyword	cType		int8_t int16_t int32_t int64_t
   syn keyword	cType		uint8_t uint16_t uint32_t uint64_t
   syn keyword	cType		int_least8_t int_least16_t int_least32_t int_least64_t
@@ -199,6 +221,16 @@ if exists("c_gnu")
 endif
 if !exists("c_no_c99")
   syn keyword	cStorageClass	inline restrict
+endif
+if !exists("c_no_c11")
+  syn keyword	cStorageClass	_Alignas alignas
+  syn keyword	cOperator	_Alignof alignof
+  syn keyword	cStorageClass	_Atomic
+  syn keyword	cOperator	_Generic
+  syn keyword	cStorageClass	_Noreturn noreturn
+  syn keyword	cOperator	_Static_assert static_assert
+  syn keyword	cStorageClass	_Thread_local thread_local
+  syn keyword   cType		char16_t char32_t
 endif
 
 if !exists("c_no_ansi") || exists("c_ansi_constants") || exists("c_gnu")
@@ -299,7 +331,7 @@ syn region	cIncluded	display contained start=+"+ skip=+\\\\\|\\"+ end=+"+
 syn match	cIncluded	display contained "<[^>]*>"
 syn match	cInclude	display "^\s*\(%:\|#\)\s*include\>\s*["<]" contains=cIncluded
 "syn match cLineSkip	"\\$"
-syn cluster	cPreProcGroup	contains=cPreCondit,cIncluded,cInclude,cDefine,cErrInParen,cErrInBracket,cUserLabel,cSpecial,cOctalZero,cCppOutWrapper,cCppInWrapper,@cCppOutInGroup,cFormat,cNumber,cFloat,cOctal,cOctalError,cNumbersCom,cString,cCommentSkip,cCommentString,cComment2String,@cCommentGroup,cCommentStartError,cParen,cBracket,cMulti
+syn cluster	cPreProcGroup	contains=cPreCondit,cIncluded,cInclude,cDefine,cErrInParen,cErrInBracket,cUserLabel,cSpecial,cOctalZero,cCppOutWrapper,cCppInWrapper,@cCppOutInGroup,cFormat,cNumber,cFloat,cOctal,cOctalError,cNumbersCom,cString,cCommentSkip,cCommentString,cComment2String,@cCommentGroup,cCommentStartError,cParen,cBracket,cMulti,cBadBlock
 syn region	cDefine		start="^\s*\(%:\|#\)\s*\(define\|undef\)\>" skip="\\$" end="$" keepend contains=ALLBUT,@cPreProcGroup,@Spell
 syn region	cPreProc	start="^\s*\(%:\|#\)\s*\(pragma\>\|line\>\|warning\>\|warn\>\|error\>\)" skip="\\$" end="$" keepend contains=ALLBUT,@cPreProcGroup,@Spell
 
@@ -390,4 +422,6 @@ hi def link cCppOut		Comment
 
 let b:current_syntax = "c"
 
+let &cpo = s:cpo_save
+unlet s:cpo_save
 " vim: ts=8

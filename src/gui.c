@@ -102,6 +102,12 @@ gui_start()
     else
 #endif
     {
+#ifdef FEAT_GUI_GTK
+	/* If there is 'f' in 'guioptions' and specify -g argument,
+	 * gui_mch_init_check() was not called yet.  */
+	if (gui_mch_init_check() != OK)
+	    exit(1);
+#endif
 	gui_attempt_start();
     }
 
@@ -212,7 +218,6 @@ gui_do_fork()
     int		status;
     int		exit_status;
     pid_t	pid = -1;
-    FILE	*parent_file;
 
     /* Setup a pipe between the child and the parent, so that the parent
      * knows when the child has done the setsid() call and is allowed to
@@ -271,6 +276,12 @@ gui_do_fork()
     }
     /* Child */
 
+#ifdef FEAT_GUI_GTK
+    /* Call gtk_init_check() here after fork(). See gui_init_check(). */
+    if (gui_mch_init_check() != OK)
+	exit(1);
+#endif
+
 # if defined(HAVE_SETSID) || defined(HAVE_SETPGID)
     /*
      * Change our process group.  On some systems/shells a CTRL-C in the
@@ -290,19 +301,17 @@ gui_do_fork()
     gui_mch_forked();
 # endif
 
-    if (!pipe_error)
-	parent_file = fdopen(pipefd[1], "w");
-    else
-	parent_file = NULL;
-
     /* Try to start the GUI */
     gui_attempt_start();
 
     /* Notify the parent */
-    if (parent_file != NULL)
+    if (!pipe_error)
     {
-	fputs(gui.in_use ? "ok" : "fail", parent_file);
-	fclose(parent_file);
+	if (gui.in_use)
+	    write_eintr(pipefd[1], "ok", 3);
+	else
+	    write_eintr(pipefd[1], "fail", 5);
+	close(pipefd[1]);
     }
 
     /* If we failed to start the GUI, exit now. */
@@ -323,17 +332,16 @@ gui_do_fork()
     static int
 gui_read_child_pipe(int fd)
 {
-    size_t	bytes_read;
-    FILE	*file;
-    char	buffer[10];
+    long	bytes_read;
+#define READ_BUFFER_SIZE 10
+    char	buffer[READ_BUFFER_SIZE];
 
-    file = fdopen(fd, "r");
-    if (!file)
+    bytes_read = read_eintr(fd, buffer, READ_BUFFER_SIZE - 1);
+#undef READ_BUFFER_SIZE
+    close(fd);
+    if (bytes_read < 0)
 	return GUI_CHILD_IO_ERROR;
-
-    bytes_read = fread(buffer, sizeof(char), sizeof(buffer)-1, file);
-    buffer[bytes_read] = '\0';
-    fclose(file);
+    buffer[bytes_read] = NUL;
     if (strcmp(buffer, "ok") == 0)
 	return GUI_CHILD_OK;
     return GUI_CHILD_FAILED;
@@ -434,7 +442,17 @@ gui_init_check()
 #ifdef ALWAYS_USE_GUI
     result = OK;
 #else
+# ifdef FEAT_GUI_GTK
+    /*
+     * Note: Don't call gtk_init_check() before fork, it will be called after
+     * the fork. When calling it before fork, it make vim hang for a while.
+     * See gui_do_fork().
+     * Use a simpler check if the GUI window can probably be opened.
+     */
+    result = gui.dofork ? gui_mch_early_init_check() : gui_mch_init_check();
+# else
     result = gui_mch_init_check();
+# endif
 #endif
     return result;
 }
@@ -3180,7 +3198,7 @@ button_set:
     }
 
     if (clip_star.state != SELECT_CLEARED && !did_clip)
-	clip_clear_selection();
+	clip_clear_selection(&clip_star);
 #endif
 
     /* Don't put events in the input queue now. */

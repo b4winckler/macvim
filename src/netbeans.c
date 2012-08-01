@@ -14,6 +14,13 @@
  * which are *between* characters, whereas vim uses line number
  * and column number which are *on* characters.
  * See ":help netbeans-protocol" for explanation.
+ *
+ * The Netbeans messages are received and queued in the gui event loop, or in
+ * the select loop when Vim runs in a terminal. These messages are processed
+ * by netbeans_parse_messages() which is invoked in the idle loop when Vim is
+ * waiting for user input. The function netbeans_parse_messages() is also
+ * called from the ":sleep" command, to allow the execution of test cases that
+ * may not invoke the idle loop.
  */
 
 #include "vim.h"
@@ -458,7 +465,7 @@ getConnInfo(char *file, char **host, char **port, char **auth)
     FILE *fp;
     char_u buf[BUFSIZ];
     char_u *lp;
-    char_u *nl;
+    char_u *nlp;
 #ifdef UNIX
     struct stat	st;
 
@@ -487,8 +494,8 @@ getConnInfo(char *file, char **host, char **port, char **auth)
     /* Read the file. There should be one of each parameter */
     while ((lp = (char_u *)fgets((char *)buf, BUFSIZ, fp)) != NULL)
     {
-	if ((nl = vim_strchr(lp, '\n')) != NULL)
-	    *nl = 0;	    /* strip off the trailing newline */
+	if ((nlp = vim_strchr(lp, '\n')) != NULL)
+	    *nlp = 0;	    /* strip off the trailing newline */
 
 	if (STRNCMP(lp, "host=", 5) == 0)
 	{
@@ -1417,7 +1424,7 @@ nb_do_cmd(
     int		cmdno,
     char_u	*args)	    /* points to space before arguments or NUL */
 {
-    int		doupdate = 0;
+    int		do_update = 0;
     long	off = 0;
     nbbuf_T	*buf = nb_get_buf(bufno);
     static int	skip = 0;
@@ -1622,7 +1629,7 @@ nb_do_cmd(
 							last.lnum, last.col));
 		del_from_lnum = first.lnum;
 		del_to_lnum = last.lnum;
-		doupdate = 1;
+		do_update = 1;
 
 		/* Get the position of the first byte after the deleted
 		 * section.  "next" is NULL when deleting to the end of the
@@ -1762,7 +1769,7 @@ nb_do_cmd(
 		int	added = 0;
 		int	oldFire = netbeansFireChanges;
 		int	old_b_changed;
-		char_u	*nl;
+		char_u	*nlp;
 		linenr_T lnum;
 		linenr_T lnum_start;
 		pos_T	*pos;
@@ -1799,11 +1806,11 @@ nb_do_cmd(
 		lnum = lnum_start;
 
 		/* Loop over the "\n" separated lines of the argument. */
-		doupdate = 1;
+		do_update = 1;
 		while (*args != NUL)
 		{
-		    nl = vim_strchr(args, '\n');
-		    if (nl == NULL)
+		    nlp = vim_strchr(args, '\n');
+		    if (nlp == NULL)
 		    {
 			/* Incomplete line, probably truncated.  Next "insert"
 			 * command should append to this one. */
@@ -1811,13 +1818,13 @@ nb_do_cmd(
 		    }
 		    else
 		    {
-			len = nl - args;
+			len = nlp - args;
 
 			/*
 			 * We need to detect EOL style, because the commands
 			 * use a character offset.
 			 */
-			if (nl > args && nl[-1] == '\r')
+			if (nlp > args && nlp[-1] == '\r')
 			{
 			    ff_detected = EOL_DOS;
 			    --len;
@@ -1834,13 +1841,15 @@ nb_do_cmd(
 			char_u *oldline = ml_get(lnum);
 			char_u *newline;
 
-			/* Insert halfway a line.  For simplicity we assume we
-			 * need to append to the line. */
-			newline = alloc_check((unsigned)(STRLEN(oldline) + len + 1));
+			/* Insert halfway a line. */
+			newline = alloc_check(
+				       (unsigned)(STRLEN(oldline) + len + 1));
 			if (newline != NULL)
 			{
-			    STRCPY(newline, oldline);
+			    mch_memmove(newline, oldline, (size_t)pos->col);
+			    newline[pos->col] = NUL;
 			    STRCAT(newline, args);
+			    STRCAT(newline, oldline + pos->col);
 			    ml_replace(lnum, newline, FALSE);
 			}
 		    }
@@ -1848,14 +1857,15 @@ nb_do_cmd(
 		    {
 			/* Append a new line.  Not that we always do this,
 			 * also when the text doesn't end in a "\n". */
-			ml_append((linenr_T)(lnum - 1), args, (colnr_T)(len + 1), FALSE);
+			ml_append((linenr_T)(lnum - 1), args,
+						   (colnr_T)(len + 1), FALSE);
 			++added;
 		    }
 
-		    if (nl == NULL)
+		    if (nlp == NULL)
 			break;
 		    ++lnum;
-		    args = nl + 1;
+		    args = nlp + 1;
 		}
 
 		/* Adjust the marks below the inserted lines. */
@@ -2014,7 +2024,7 @@ nb_do_cmd(
 		EMSG("E640: invalid buffer identifier in initDone");
 		return FAIL;
 	    }
-	    doupdate = 1;
+	    do_update = 1;
 	    buf->initDone = TRUE;
 	    nb_set_curbuf(buf->bufp);
 #if defined(FEAT_AUTOCMD)
@@ -2103,7 +2113,7 @@ nb_do_cmd(
 					     ECMD_HIDE + ECMD_OLDBUF, curwin);
 	    buf->bufp = curbuf;
 	    buf->initDone = TRUE;
-	    doupdate = 1;
+	    do_update = 1;
 #if defined(FEAT_TITLE)
 	    maketitle();
 #endif
@@ -2131,7 +2141,7 @@ nb_do_cmd(
 		exarg.forceit = FALSE;
 		dosetvisible = TRUE;
 		goto_buffer(&exarg, DOBUF_FIRST, FORWARD, buf->bufp->b_fnum);
-		doupdate = 1;
+		do_update = 1;
 		dosetvisible = FALSE;
 
 #ifdef FEAT_GUI
@@ -2331,7 +2341,7 @@ nb_do_cmd(
 						     buf->bufp->b_fnum, TRUE);
 	    buf->bufp = NULL;
 	    buf->initDone = FALSE;
-	    doupdate = 1;
+	    do_update = 1;
 /* =====================================================================*/
 	}
 	else if (streq((char *)cmd, "setStyle")) /* obsolete... */
@@ -2422,7 +2432,7 @@ nb_do_cmd(
 		return FAIL;
 	    }
 
-	    doupdate = 1;
+	    do_update = 1;
 
 	    cp = (char *)args;
 	    serNum = strtol(cp, &cp, 10);
@@ -2470,7 +2480,7 @@ nb_do_cmd(
 		nbdebug(("    invalid buffer identifier in removeAnno\n"));
 		return FAIL;
 	    }
-	    doupdate = 1;
+	    do_update = 1;
 	    cp = (char *)args;
 	    serNum = strtol(cp, &cp, 10);
 	    args = (char_u *)cp;
@@ -2515,7 +2525,7 @@ nb_do_cmd(
 	    len = strtol(cp, NULL, 10);
 	    args = (char_u *)cp;
 	    pos = off2pos(buf->bufp, off);
-	    doupdate = 1;
+	    do_update = 1;
 	    if (!pos)
 		nbdebug(("    no such start pos in %s, %ld\n", cmd, off));
 	    else
@@ -2577,7 +2587,7 @@ nb_do_cmd(
 	    inAtomic = 0;
 	    if (needupdate)
 	    {
-		doupdate = 1;
+		do_update = 1;
 		needupdate = 0;
 	    }
 /* =====================================================================*/
@@ -2658,18 +2668,18 @@ nb_do_cmd(
 	 * Unrecognized command is ignored.
 	 */
     }
-    if (inAtomic && doupdate)
+    if (inAtomic && do_update)
     {
 	needupdate = 1;
-	doupdate = 0;
+	do_update = 0;
     }
 
     /*
      * Is this needed? I moved the netbeans_Xt_connect() later during startup
      * and it may no longer be necessary. If its not needed then needupdate
-     * and doupdate can also be removed.
+     * and do_update can also be removed.
      */
-    if (buf != NULL && buf->initDone && doupdate)
+    if (buf != NULL && buf->initDone && do_update)
     {
 	update_screen(NOT_VALID);
 	setcursor();

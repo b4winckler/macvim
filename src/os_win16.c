@@ -243,9 +243,9 @@ mch_system(char *cmd, int options)
 	/* Wait for the command to terminate before continuing */
 	while (GetModuleUsage((HINSTANCE)h_module) > 0 && again )
 	{
-	    while( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) && again )
+	    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) && again)
 	    {
-		if(msg.message == WM_QUIT)
+		if (msg.message == WM_QUIT)
 
 		{
 		    PostQuitMessage(msg.wParam);
@@ -379,13 +379,13 @@ mch_breakcheck()
 
 
 /*
- * How much memory is available?
+ * How much memory is available in Kbyte?
  */
     long_u
 mch_avail_mem(
     int special)
 {
-    return GetFreeSpace(0);
+    return GetFreeSpace(0) >> 10;
 }
 
 

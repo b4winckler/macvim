@@ -1330,7 +1330,12 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
         if (!pboard)
             return YES;
 
-        clip_copy_selection();
+        // The code below used to be clip_copy_selection() but it is now
+        // static, so do it manually.
+        clip_update_selection(&clip_star);
+        clip_free_selection(&clip_star);
+        clip_get_selection(&clip_star);
+        clip_gen_set_selection(&clip_star);
 
         // Get the text to put on the pasteboard.
         long_u llen = 0; char_u *str = 0;
@@ -1880,13 +1885,13 @@ static void netbeansReadCallback(CFSocketRef s,
 
         int numLines = (dy != 0) ? (int)round(dy) : (int)round(dx);
         if (numLines < 0) numLines = -numLines;
-        if (numLines == 0) numLines = 1;
 
+        if (numLines != 0) {
 #ifdef FEAT_GUI_SCROLL_WHEEL_FORCE
-        gui.scroll_wheel_force = numLines;
+            gui.scroll_wheel_force = numLines;
 #endif
-
-        gui_send_mouse_event(button, col, row, NO, flags);
+            gui_send_mouse_event(button, col, row, NO, flags);
+        }
 
 #ifdef FEAT_BEVAL
         if (p_beval && balloonEval) {

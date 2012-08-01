@@ -14,9 +14,11 @@
 # it's just run out of memory or something.  Run again, and it will continue
 # with 'xxd'.
 #
-# "make upx" makes *compressed* versions of the GUI and console EXEs, using the
-# excellent UPX compressor:
+# "make upx" makes *compressed* versions of the 32 bit GUI and console EXEs,
+# using the excellent UPX compressor:
 #     http://upx.sourceforge.net/
+# "make mpress" uses the MPRESS compressor for 32- and 64-bit EXEs:
+#     http://www.matcode.com/mpress.htm
 #
 # Maintained by Ron Aaron <ronaharon@yahoo.com>
 # updated 2003 Jan 20
@@ -49,7 +51,9 @@ POSTSCRIPT=no
 # set to yes to enable OLE support
 OLE=no
 # Set the default $(WINVER) to make it work with pre-Win2k
-WINVER = 0x0400
+ifndef WINVER
+WINVER = 0x0500
+endif
 # Set to yes to enable Cscope support
 CSCOPE=yes
 # Set to yes to enable Netbeans support
@@ -108,10 +112,10 @@ endif
 # on NT, it's here:
 PERLLIB=$(PERL)/lib
 PERLLIBS=$(PERLLIB)/Core
-XSUBPP=$(PERLLIB)/ExtUtils/xsubpp
-XSUBPP_EXISTS=$(shell perl -e "print 1 unless -e '$(XSUBPP)'")
+XSUBPPTRY=$(PERLLIB)/ExtUtils/xsubpp
+XSUBPP_EXISTS=$(shell perl -e "print 1 unless -e '$(XSUBPPTRY)'")
 ifeq "$(XSUBPP_EXISTS)" ""
-XSUBPP=perl $(XSUBPP)
+XSUBPP=perl $(XSUBPPTRY)
 else
 XSUBPP=xsubpp
 endif
@@ -640,6 +644,10 @@ upx: exes
 	upx gvim.exe
 	upx vim.exe
 
+mpress: exes
+	mpress gvim.exe
+	mpress vim.exe
+
 xxd/xxd.exe: xxd/xxd.c
 	$(MAKE) -C xxd -f Make_ming.mak CC=$(CC)
 
@@ -675,11 +683,9 @@ $(OUTDIR)/if_python3.o : if_python3.c $(INCL)
 $(OUTDIR)/%.o : %.c $(INCL)
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(OUTDIR)/vimres.res: vim.rc version.h gui_w32_rc.h
-	$(WINDRES) $(WINDRES_FLAGS) $(DEFINES) vim.rc $(OUTDIR)/vimres.res
-
-$(OUTDIR)/vimrc.o: $(OUTDIR)/vimres.res
-	$(WINDRES) $(WINDRES_FLAGS) $(OUTDIR)/vimres.res $(OUTDIR)/vimrc.o
+$(OUTDIR)/vimrc.o: vim.rc version.h gui_w32_rc.h
+	$(WINDRES) $(WINDRES_FLAGS) $(DEFINES) \
+	    --input-format=rc --output-format=coff -i vim.rc -o $@
 
 $(OUTDIR):
 	$(MKDIR) $(OUTDIR)

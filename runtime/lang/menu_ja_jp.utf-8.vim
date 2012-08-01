@@ -2,13 +2,18 @@
 "
 " Menu Translations:	Japanese (UTF-8)
 " Translated By:	MURAOKA Taro  <koron.kaoriya@gmail.com>
-" Last Change:		21-Mar-2011.
+" Last Change:		15-Jun-2012.
+"
+" Copyright (C) 2001-12 MURAOKA Taro <koron.kaoriya@gmail.com>
+" THIS FILE IS DISTRIBUTED UNDER THE VIM LICENSE.
 
 " Quit when menu translations have already been done.
 if exists("did_menu_trans")
   finish
 endif
 let did_menu_trans = 1
+let s:keepcpo= &cpo
+set cpo&vim
 
 scriptencoding utf-8
 
@@ -334,7 +339,8 @@ if has('iconv')
   an 10.396.120.130 &File.エンコード指定(&E)\.\.\..保存(&S)\.\.\..UTF-8(&8)<Tab>fenc=utf-8 :set fenc=utf-8 \| w<CR>
 endif
 
+let &cpo = s:keepcpo
+unlet s:keepcpo
+
 " filler to avoid the line above being recognized as a modeline
-" filler
-" filler
 " filler
