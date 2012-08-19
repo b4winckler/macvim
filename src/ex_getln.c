@@ -2792,6 +2792,11 @@ unputcmdline()
     msg_no_more = TRUE;
     if (ccline.cmdlen == ccline.cmdpos)
 	msg_putchar(' ');
+#ifdef FEAT_MBYTE
+    else if (has_mbyte)
+	draw_cmdline(ccline.cmdpos,
+			       (*mb_ptr2len)(ccline.cmdbuff + ccline.cmdpos));
+#endif
     else
 	draw_cmdline(ccline.cmdpos, 1);
     msg_no_more = FALSE;
@@ -3156,7 +3161,8 @@ cmdline_paste_str(s, literally)
 	    else
 #endif
 		c = *s++;
-	    if (cv == Ctrl_V || c == ESC || c == Ctrl_C || c == CAR || c == NL
+	    if (cv == Ctrl_V || c == ESC || c == Ctrl_C
+		    || c == CAR || c == NL || c == Ctrl_L
 #ifdef UNIX
 		    || c == intr_char
 #endif
@@ -4718,7 +4724,7 @@ ExpandFromContext(xp, pat, num_file, file, options)
 		if (tab[i].ic)
 		    regmatch.rm_ic = TRUE;
 		ret = ExpandGeneric(xp, &regmatch, num_file, file,
-                                                tab[i].func, tab[i].escaped);
+						tab[i].func, tab[i].escaped);
 		break;
 	    }
     }
@@ -5151,7 +5157,7 @@ ExpandRTDir(pat, num_file, file, dirnames)
 	vim_free(matches);
     }
     if (ga.ga_len == 0)
-        return FAIL;
+	return FAIL;
 
     /* Sort and remove duplicates which can happen when specifying multiple
      * directories in dirnames. */
@@ -5294,7 +5300,7 @@ get_history_arg(xp, idx)
 {
     static char_u compl[2] = { NUL, NUL };
     char *short_names = ":=@>?/";
-    int short_names_count = STRLEN(short_names);
+    int short_names_count = (int)STRLEN(short_names);
     int history_name_count = sizeof(history_names) / sizeof(char *) - 1;
 
     if (idx < short_names_count)

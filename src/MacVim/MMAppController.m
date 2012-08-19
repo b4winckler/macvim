@@ -209,8 +209,7 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         [NSNumber numberWithInt:0],     MMOpenInCurrentWindowKey,
         [NSNumber numberWithBool:NO],   MMNoFontSubstitutionKey,
         [NSNumber numberWithBool:YES],  MMLoginShellKey,
-        [NSNumber numberWithInt:MMRendererCoreText],
-                                        MMRendererKey,
+        [NSNumber numberWithInt:2],     MMRendererKey,
         [NSNumber numberWithInt:MMUntitledWindowAlways],
                                         MMUntitledWindowKey,
         [NSNumber numberWithBool:NO],   MMTexturedWindowKey,
@@ -1216,7 +1215,7 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
             kCFPreferencesCurrentApplication);
     CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication);
 
-    ASLogInfo(@"Use renderer=%d", renderer);
+    ASLogInfo(@"Use renderer=%ld", renderer);
 
     // This action is called when the user clicks the "use ATSUI renderer"
     // button in the advanced preferences pane.
@@ -1826,8 +1825,8 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
             [dict setObject:NSStringFromRange(range) forKey:@"selectionRange"];
         } else {
-            ASLogErr(@"Xcode selection range size mismatch! got=%d expected=%d",
-                    length, sizeof(MMXcodeSelectionRange));
+            ASLogErr(@"Xcode selection range size mismatch! got=%ld "
+                     "expected=%ld", length, sizeof(MMXcodeSelectionRange));
         }
     }
 
@@ -1873,6 +1872,21 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     preloadPid = [self launchVimProcessWithArguments:
                                     [NSArray arrayWithObject:@"--mmwaitforack"]
                                     workingDirectory:nil];
+
+    // This method is kicked off via FSEvents, so if MacVim is in the
+    // background, the runloop won't bother flushing the autorelease pool.
+    // Triggering an NSEvent works around this.
+    // http://www.mikeash.com/pyblog/more-fun-with-autorelease.html
+    NSEvent* event = [NSEvent otherEventWithType:NSApplicationDefined
+                                        location:NSZeroPoint
+                                   modifierFlags:0
+                                       timestamp:0
+                                    windowNumber:0
+                                         context:nil
+                                         subtype:0
+                                           data1:0
+                                           data2:0];
+    [NSApp postEvent:event atStart:NO];
 }
 
 - (int)maxPreloadCacheSize
@@ -2397,11 +2411,11 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         if (r.length > 0) {
             // Select given range of characters.
             // TODO: This only works for encodings where 1 byte == 1 character
-            [a addObject:[NSString stringWithFormat:@"norm %dgov%dgo",
+            [a addObject:[NSString stringWithFormat:@"norm %ldgov%ldgo",
                                                 r.location, NSMaxRange(r)-1]];
         } else {
             // Position cursor on line at start of range.
-            [a addObject:[NSString stringWithFormat:@"norm %dGz.0",
+            [a addObject:[NSString stringWithFormat:@"norm %ldGz.0",
                                                                 r.location]];
         }
 
