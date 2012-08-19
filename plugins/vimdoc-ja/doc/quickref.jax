@@ -19,7 +19,7 @@
 |Q_in|	挿入: 文字列の挿入		|Q_ra|	Exモード: 範囲指定
 |Q_ai|	挿入: キー			|Q_ex|	Exモード: 特殊文字
 |Q_ss|	挿入: 特殊キー			|Q_st|	Vim の起動方法
-|Q_di|	挿入: 合字(digraph)		|Q_ed|	ファイル編集
+|Q_di|	挿入: ダイグラフ		|Q_ed|	ファイル編集
 |Q_si|	挿入: 特殊な挿入		|Q_fl|	引数リストの使い方
 |Q_de|	変更: 文字の削除		|Q_wq|	書き出しと終了
 |Q_cm|	変更: コピーと移動		|Q_ac|	自動コマンド
@@ -30,30 +30,30 @@
 					|Q_fo|  折り畳みコマンド
 
 ------------------------------------------------------------------------------
-以下の説明中の N はコマンドの直前に回数指定ができることを示します。
+以下の説明中の N はコマンドの直前に回数指定ができることを示す。
 ------------------------------------------------------------------------------
 *Q_lr*		左右の移動
 
-|h|	N  h		左に N 桁移動 ( CTRL-H, <BS>, <Left> キーでも同じ)
-|l|	N  l		右に N 桁移動 ( <Space>,<Right> キーでも同じ)
-|0|	   0		行の先頭に移動 ( <Home> キーでも同じ)
+|h|	N  h		左に N 桁移動 (CTRL-H, <BS>, <Left> キーでも同じ)
+|l|	N  l		右に N 桁移動 (<Space>, <Right> キーでも同じ)
+|0|	   0		行の先頭に移動 (<Home> キーでも同じ)
 |^|	   ^		行の先頭(但し空白文字類以外)に移動
-|$|	N  $		行の末尾に移動。(N-1行、下に移動）
-			( <End> キーでも同じ)
-|g0|	   g0		画面上の行の先頭に移動。（複数行にまたがる時の
-			動きが"0"と違います)
-|g^|	   g^		画面上の行の先頭(但し空白文字類以外)に移動。
-			（複数行にまたがる時の動きが"^"と違います）
-|g$|	N  g$		行の末尾に移動。(複数行にまたがる時の動きが"$"と違
-			います)
+|$|	N  $		行の末尾に移動。(N-1行、下に移動)
+			(<End> キーでも同じ)
+|g0|	   g0		画面上の行の先頭に移動。(複数行にまたがる時の動きが
+			"0" と違う)
+|g^|	   g^		画面上の行の先頭(但し空白文字類以外)に移動。(複数行に
+			またがる時の動きが "^" と違う)
+|g$|	N  g$		行の末尾に移動。(複数行にまたがる時の動きが "$" と違
+			う)
 |gm|	   gm		現在行の中央(端末の横幅の半分の桁位置)に移動
 |bar|	N  |		N桁目に移動。(デフォルトは１)
 |f|	N  f{char}	現在位置から右方向にあるN個目の{char}に移動
 |F|	N  F{char}	現在位置から左方向にあるN個目の{char}に移動
 |t|	N  t{char}	現在位置から右方向にあるN個目の{char}の左側に移動
 |T|	N  T{char}	現在位置から左方向にあるN個目の{char}の右側に移動
-|;|	N  ;		直前の"f", "F", "t", "T"を N 回繰り返す。
-|,|	N  ,		直前の"f", "F", "t", "T"を逆方向に N 回繰り返す。
+|;|	N  ;		直前の "f", "F", "t", "T" を N 回繰り返す。
+|,|	N  ,		直前の "f", "F", "t", "T" を逆方向に N 回繰り返す。
 ------------------------------------------------------------------------------
 *Q_ud*		上下の移動
 
@@ -70,9 +70,9 @@
 |N%|	N  %		ファイルの N パーセント目に移動。このコマンドは N の
 			指定が必須。無指定の場合は|%|コマンド扱い。
 |gk|	N  gk		画面上で N 行上に移動。(複数行にまたがる行がある場合
-			の動きが"k"と異なる)
+			の動きが "k" と異なる)
 |gj|	N  gj		画面上で N 行下に移動。(複数行にまたがる行がある場合
-			の動きが"j"と異なる)
+			の動きが "j" と異なる)
 ------------------------------------------------------------------------------
 *Q_tm*		テキスト文脈単位の移動
 
@@ -93,16 +93,16 @@
 |[[|	N  [[		N セクション(章)分、前に戻り、その先頭に移動
 |][|	N  ][		N セクション(章)分、先に進み、その末尾に移動
 |[]|	N  []		N セクション(章)分、前に戻り、その末尾に移動
-|[(|	N  [(		N 個目の呼応していない'('まで戻る
-|[{|	N  [{		N 個目の呼応していない'{'まで戻る
+|[(|	N  [(		N 個目の呼応していない '(' まで戻る
+|[{|	N  [{		N 個目の呼応していない '{' まで戻る
 |[m|	N  [m		N 個前のメソッドの先頭まで戻る(Java用)
 |[M|	N  [M		N 個前のメソッドの末尾まで戻る(Java用)
-|])|	N  ])		N 個目の呼応していない')'まで進む
-|]}|	N  ]}		N 個目の呼応していない'}'まで進む
+|])|	N  ])		N 個目の呼応していない ')' まで進む
+|]}|	N  ]}		N 個目の呼応していない '}' まで進む
 |]m|	N  ]m		N 個先のメソッドの先頭まで進む(Java用)
 |]M|	N  ]M		N 個先のメソッドの末尾まで進む(Java用)
-|[#|	N  [#		N 個目の呼応していない"#if"や"#else"まで戻る
-|]#|	N  ]#		N 個目の呼応していない"#else"や"#endif"まで進む
+|[#|	N  [#		N 個目の呼応していない "#if" や "#else" まで戻る
+|]#|	N  ]#		N 個目の呼応していない "#else" や "#endif" まで進む
 |[star|	N  [*		N 個前のコメントの先頭まで戻る
 |]star|	N  ]*		N 個先のコメントの末尾まで進む
 ------------------------------------------------------------------------------
@@ -118,8 +118,8 @@
 |N|	N  N		直前の検索を逆方向に再実行
 |star|	N  *		カーソル位置にある単語を下方向に検索
 |#|	N  #		カーソル位置にある単語を上方向に検索
-|gstar|	N  g*		"*"と同じだが、部分的な一致を検索
-|g#|	N  g#		"#"と同じだが、部分的な一致を検索
+|gstar|	N  g*		"*" と同じだが、部分的な一致を検索
+|g#|	N  g#		"#" と同じだが、部分的な一致を検索
 |gd|	   gd		カーソル位置の識別子のローカル宣言に移動
 |gD|	   gD		カーソル位置の識別子のグローバル宣言に移動
 
@@ -192,8 +192,8 @@
 ------------------------------------------------------------------------------
 *Q_vm*		雑他な移動コマンド
 
-|%|	   %		呼応するカッコ類("(","[","{")や、コメント、"#if"/
-			"#else"/"#endif"のペアを検索して移動
+|%|	   %		呼応するカッコ類 ("(", "[", "{") や、コメント、"#if"/
+			"#else"/"#endif" のペアを検索して移動
 |H|	N  H		画面上で N 行目の最初の非空白文字に移動
 |M|	   M		画面上の真ん中の行の最初の非空白文字に移動
 |L|	N  L		画面上で下から N 行目の最初の非空白文字に移動
@@ -222,8 +222,8 @@
 
 |:ptag|	   :pt[ag] {tag}	{tag}タグを見るためのプレビュー画面を開く
 |CTRL-W_}|     CTRL-W }		CTRL-] と同様だがプレビュー画面にジャンプ
-|:pts|     :pts[elect]		":tselect"と同様だがプレビュー画面にジャンプ
-|:ptjump|  :ptj[ump]		":tjump"と同様だがプレビュー画面にジャンプ
+|:pts|     :pts[elect]		":tselect" と同様だがプレビュー画面にジャンプ
+|:ptjump|  :ptj[ump]		":tjump" と同様だがプレビュー画面にジャンプ
 |:pclose|  :pc[lose]		タグプレビュー画面を閉じる。
 |CTRL-W_z|     CTRL-W z		タグプレビュー画面を閉じる。
 ------------------------------------------------------------------------------
@@ -241,7 +241,7 @@
 |z.|		   z.	 or zz	現在行を画面の中央にして、再描画
 |z-|		   z-	 or zb	現在行を画面の最下行にして、再描画
 
-以下は'wrap'がoffになっている時のみ有効です。
+以下は 'wrap' がoffになっている時のみ有効である。
 |zh|		N  zh		画面を N 文字、右へスクロール
 |zl|		N  zl		画面を N 文字、左へスクロール
 |zH|		N  zH		画面桁数の半分だけ、右へスクロール
@@ -256,9 +256,9 @@
 |gI|		N  gI	現在行の先頭に文字列を(N回)追加
 |o|		N  o	現在行の下に新たな行を追加し、文字列を(N回)追加する。
 |O|		N  O	現在行に新たな行を挿入し、文字列を(N回)追加する。
-|:startinsert|  :star[tinsert][!] Insertモードを開始する。[!]を指定すると
-			Appendモードとなる。
-|:startreplace| :startr[eplace][!]  Replaceモードを開始する。[!]を指定すると
+|:startinsert|  :star[tinsert][!]  挿入モードを開始する。[!]を指定すると
+			追加モードとなる。
+|:startreplace| :startr[eplace][!]  置換モードを開始する。[!]を指定すると
 			行末から開始する。
 
 ビジュアルモード用:
@@ -270,7 +270,7 @@
 |insert-index|	挿入モードのアルファベット順目次
 
 挿入モードの終了:
-|i_<Esc>|	<Esc>		  挿入モードを終わって、通常モードへ復帰
+|i_<Esc>|	<Esc>		  挿入モードを終わって、ノーマルモードへ復帰
 |i_CTRL-C|	CTRL-C		  <Esc>と同様。ただし、短縮形は展開しない
 |i_CTRL-O|	CTRL-O {command}  {command}を実行し、挿入モードへ復帰
 
@@ -306,25 +306,26 @@
 |i_<Del>|	<Del>		  カーソル位置の１文字を削除
 |i_CTRL-W|	CTRL-W		  カーソル位置の１単語を削除
 |i_CTRL-U|	CTRL-U		  現在行で入力した全部の文字を削除
-|i_CTRL-T|	CTRL-T		  'shiftwidth'での指定分のインデントを現在行
+|i_CTRL-T|	CTRL-T		  'shiftwidth' での指定分のインデントを現在行
 				  の行頭に挿入
-|i_CTRL-D|	CTRL-D		  'shiftwidth'での指定分のインデントを現在行
+|i_CTRL-D|	CTRL-D		  'shiftwidth' での指定分のインデントを現在行
 				  の行頭から削除
 |i_0_CTRL-D|	0 CTRL-D	  現在行の全インデントを削除
 |i_^_CTRL-D|	^ CTRL-D	  現在行の全インデントを削除。但し、次の行の
 				  インデントには影響しない。
 ------------------------------------------------------------------------------
-*Q_di*		合字(Digraphs)
+*Q_di*		ダイグラフ
 
-|:dig|	   :dig[raphs]		現在の合字(ダイグラフ)情報を一覧表示
+|:dig|	   :dig[raphs]		現在のダイグラフ情報を一覧表示
 |:dig|	   :dig[raphs] {char1}{char2} {number} ...
-				合字情報をリストに追加
+				ダイグラフ情報をリストに追加
 
 挿入モード、又はコマンドラインモード:
 |i_CTRL-K|	CTRL-K {char1} {char2}
-				合字の入力
+				ダイグラフの入力
 |i_digraph|	{char1} <BS> {char2}
-				'digraph'オプションがONの場合、合字を入力
+				'digraph' オプションがONの場合、ダイグラフを入
+				力
 ------------------------------------------------------------------------------
 *Q_si*		特殊な挿入コマンド
 
@@ -343,8 +344,8 @@
 |D|	N  D		(N-1 行後の)行末まで削除
 |J|	N  J		N-1 行を結合して１行に(<EOL>を削除)
 |v_J|	{visual}J	ビジュアルモードで選択された文字列を結合
-|gJ|	N  gJ		"J"と同じだが、行の間にスペースを入れない
-|v_gJ|	{visual}gJ	"{visual}J"と同じだが、行の間にスペースを入れない
+|gJ|	N  gJ		"J" と同じだが、行の間にスペースを入れない
+|v_gJ|	{visual}gJ	"{visual}J" と同じだが、行の間にスペースを入れない
 |:d|	:[range]d [x]	[range]で指定した範囲の行を削除 [それをレジスタxに]
 ------------------------------------------------------------------------------
 *Q_cm*		文字列のコピーと移動
@@ -369,8 +370,8 @@
 
 |r|	  N  r{char}	N 文字を{char}に置換
 |gr|	  N  gr{char}	N 文字をレイアウトに影響を与えずに置換
-訳注: "あ"を"ra"で置換->"a"
-訳注: "あ"を"gra"で置換->"a "
+			{訳注: "あ" を "ra"  で置換 -> "a"
+			       "あ" を "gra" で置換 -> "a "}
 |R|	  N  R		置換モードへ (入力文字列を N 回繰り返す)
 |gR|	  N  gR		仮想置換モードへ。置換モードと同じだが、レイアウト
 			に影響しない。
@@ -385,9 +386,9 @@
 |S|	  N  S		N 行を変更
 |C|	  N  C		(N-1 行後の)行末までを変更
 |s|	  N  s		N 文字を変更
-|v_b_c|	     {visual}c	ビジュアルブロックモード用:選ばれている各行の内容を
+|v_b_c|	     {visual}c	矩形ビジュアルモード用:選ばれている各行の内容を
 			入力した文字列に置き換え
-|v_b_C|	     {visual}C	ビジュアルブロックモード用:選ばれている各行の行末ま
+|v_b_C|	     {visual}C	矩形ビジュアルモード用:選ばれている各行の行末ま
 			でを入力した文字列に置き換え
 
 |~|	  N  ~		N 文字分の英文字の大文字/小文字を変換し、カーソルを
@@ -400,19 +401,19 @@
 |gU|	     gU{motion} {motion}で指定した範囲を大文字に変換
 |v_g?|	     {visual}g? ビジュアルモードで選択した範囲をrot13でエンコードする。
 |g?|	     g?{motion} {motion}で指定した範囲をrot13でエンコードする。
-smz			※ rot13というのはA->N,B->Oという置き換えのシーザ暗
-smz			   号のこと。英語圏では昔から使われている。
+			{訳注: rot13というのはA->N,B->Oという置き換えのシーザ
+			       暗号のこと。英語圏では昔から使われている。}
 
 |CTRL-A|  N  CTRL-A	カーソル位置もしくは後ろにある数字にNを加算する
 |CTRL-X|  N  CTRL-X	カーソル位置もしくは後ろにある数字からNを減算する
 
-|<|	  N  <{motion}	{motion}で指定した範囲を'shiftwidth'分、インデントを
+|<|	  N  <{motion}	{motion}で指定した範囲を 'shiftwidth' 分、インデントを
 			減らす
 |<<|	  N  <<		カレント行から N 行分のインデントを減らす
-|>|	  N  >{motion}	{motion}で指定した範囲を'shiftwidth'分、インデントを
+|>|	  N  >{motion}	{motion}で指定した範囲を 'shiftwidth' 分、インデントを
 			増やす
 |>>|	  N  >>		カレント行から N 行分のインデントを増やす
-|gq|	  N  gq{motion}	{motion}で指定した範囲を'textwidth'で指定した長さに
+|gq|	  N  gq{motion}	{motion}で指定した範囲を 'textwidth' で指定した長さに
 			フォーマット
 |:ce|	  :[range]ce[nter] [width]
 			[range]の行範囲をセンタリング
@@ -443,10 +444,10 @@ smz			   号のこと。英語圏では昔から使われている。
 			[g]を指定すると、見つかった全{pattern}を置換。
 			[c]を指定すると、各置換を確認する。
 |:s|	   :[range]s[ubstitute] [g][c]
-			直前の":s"を新たな範囲とオプションで繰り返す
-|&|	      &		直前の":s"を現在行について繰り返す。(オプションなし)
+			直前の ":s" を新たな範囲とオプションで繰り返す
+|&|	      &		直前の ":s" を現在行について繰り返す。(オプションなし)
 |:ret|	   :[range]ret[ab][!] [tabstop]
-			'tabstop'の値を変更し、それに従って空白、TABの類を
+			'tabstop' の値を変更し、それに従って空白、TABの類を
 			適切な状態にする。
 ------------------------------------------------------------------------------
 *Q_vi*		ビジュアルモード
@@ -455,37 +456,37 @@ smz			   号のこと。英語圏では昔から使われている。
 
 |v|	   v		文字単位のビジュアルモードを開始 } カーソルを動かして
 |V|	   V		行単位のビジュアルモードを開始   } 選択した範囲に対し
-|CTRL-V|   CTRL-V	矩形単位のビジュアルモードを開始 } コマンドを実行
+|CTRL-V|   CTRL-V	矩形ビジュアルモードを開始 } コマンドを実行
 |v_o|	   o		カーソル位置と選択範囲の開始位置を入れ替え
 |gv|	   gv		直前の選択範囲を選んだ状態でビジュアルモードを開始
 |v_v|	   v		文字単位ビジュアルモードを開始、もしくは中断
 |v_V|	   V		行単位ビジュアルモードを開始、もしくは中断
-|v_CTRL-V| CTRL-V	単位ビジュアルモードを開始、もしくは中断
+|v_CTRL-V| CTRL-V	矩形ビジュアルモードを開始、もしくは中断
 ------------------------------------------------------------------------------
 *Q_to*		文字列オブジェクト (ビジュアルモードか、オペレータ指定後
 
-|v_aw|	N  aw		"a word"を選択(単語の前後の空白も削除)
-|v_iw|	N  iw		"inner word"を選択(正味の単語だけを削除)
-|v_aW|	N  aW		"a |WORD|"を選択
-|v_iW|	N  iW		"inner |WORD|"を選択
-|v_as|	N  as		"a sentence"を選択
-|v_is|	N  is		"inner sentence"を選択
-|v_ap|	N  ap		"a paragraph"を選択
-|v_ip|	N  ip		"inner paragraph"を選択
-|v_ab|	N  ab		"a block"( "[("～"])"の範囲)を選択
-|v_ib|	N  ib		"inner block" ( "[("～"])"の範囲)を選択
-|v_aB|	N  aB		"a Block" ( "[{"～"]}"の範囲)を選択
-|v_iB|	N  iB		"inner Block" ( "[{"～"]}"の範囲)を選択
-|v_a>|	   N  a>	"a <> block"を選択
-|v_i>|	   N  i>	"inner <> block"を選択
+|v_aw|	N  aw		"a word" を選択(単語の前後の空白も削除)
+|v_iw|	N  iw		"inner word" を選択(正味の単語だけを削除)
+|v_aW|	N  aW		"a |WORD|" を選択
+|v_iW|	N  iW		"inner |WORD|" を選択
+|v_as|	N  as		"a sentence" を選択
+|v_is|	N  is		"inner sentence" を選択
+|v_ap|	N  ap		"a paragraph" を選択
+|v_ip|	N  ip		"inner paragraph" を選択
+|v_ab|	N  ab		"a block" ("[(" ～ "])" の範囲) を選択
+|v_ib|	N  ib		"inner block" ("[(" ～ "])" の範囲) を選択
+|v_aB|	N  aB		"a Block" ("[{" ～ "]}" の範囲) を選択
+|v_iB|	N  iB		"inner Block" ("[{" ～ "]}" の範囲) を選択
+|v_a>|	   N  a>	"a <> block" を選択
+|v_i>|	   N  i>	"inner <> block" を選択
 |v_at|	   N  at	"a tag block" (<aaa> ～ </aaa>)を選択
 |v_it|	   N  it	"inner tag block" (<aaa> ～ </aaa>)を選択
-|v_a'|	   N  a'	"a single quoted string"を選択
-|v_i'|	   N  i'	"inner single quoted string"を選択
-|v_aquote| N  a"	"a double quoted string"を選択
-|v_iquote| N  i"	"inner double quoted string"を選択
-|v_a`|	   N  a`	"a backward quoted string"を選択
-|v_i`|	   N  i`	"inner backward quoted string"を選択
+|v_a'|	   N  a'	"a single quoted string" を選択
+|v_i'|	   N  i'	"inner single quoted string" を選択
+|v_aquote| N  a"	"a double quoted string" を選択
+|v_iquote| N  i"	"inner double quoted string" を選択
+|v_a`|	   N  a`	"a backward quoted string" を選択
+|v_i`|	   N  i`	"inner backward quoted string" を選択
 
 ------------------------------------------------------------------------------
 *Q_re*		繰り返しコマンド
@@ -500,10 +501,10 @@ smz			   号のこと。英語圏では昔から使われている。
 |:@@|	      :@@	直前の:@{a-z} を N 回実行
 |:g|	      :[range]g[lobal]/{pattern}/[cmd]
 			[range]の中で、指定の{pattern}に合致する各行に対して
-			[cmd]コマンド(デフォルトでは":p")を実行する。
+			[cmd]コマンド(デフォルトでは ":p")を実行する。
 |:g|	   :[range]g[lobal]!/{pattern}/[cmd]
 			[range]の中で、指定の{pattern}に合致**しない**各行に
-			対して[cmd]コマンド(デフォルトでは":p")を実行する。
+			対して[cmd]コマンド(デフォルトでは ":p")を実行する。
 |:so|	   :so[urce] {file}
 			{file}からExコマンドを読み出す。
 |:so|	   :so[urce]! {file}
@@ -514,19 +515,19 @@ smz			   号のこと。英語圏では昔から使われている。
 ------------------------------------------------------------------------------
 *Q_km*		キーマップ
 
-|:map|	     :ma[p] {lhs} {rhs}	  通常モード/ビジュアルモードで{lhs} を {rhs}
-				  に割り付け
+|:map|	     :ma[p] {lhs} {rhs}	  ノーマルモード/ビジュアルモードで{lhs} を
+				  {rhs} に割り付け
 |:map!|	     :ma[p]! {lhs} {rhs}  挿入モード/コマンドラインモードで{lhs} を
 				  {rhs} に割り付け
 |:noremap|   :no[remap][!] {lhs} {rhs}
-				  ":map"と同じだが、{rhs}の再割り付けしない
-|:unmap|     :unm[ap] {lhs}	  通常モード/ビジュアルモード用の{lhs} 定義を
-				  削除
-|:unmap!|    :unm[ap]! {lhs}	  挿入モード/コマンドラインモードの{lhs} 
+				  ":map" と同じだが、{rhs}の再割り付けしない
+|:unmap|     :unm[ap] {lhs}	  ノーマルモード/ビジュアルモード用の {lhs}
 				  定義を削除
-|:map_l|     :ma[p] [lhs]	  通常モード/ビジュアルモード用の([lhs]で
-				  始まる)マップを一覧表示
-|:map_l!|    :ma[p]! [lhs]	  挿入モード/コマンドラインモードの( [lhs]
+|:unmap!|    :unm[ap]! {lhs}	  挿入モード/コマンドラインモード用の {lhs}
+				  定義を削除
+|:map_l|     :ma[p] [lhs]	  ノーマルモード/ビジュアルモード用の( [lhs]
+				  で始まる) マップを一覧表示
+|:map_l!|    :ma[p]! [lhs]	  挿入モード/コマンドラインモード用の( [lhs]
 				  で始まる) マップを一覧表示
 |:cmap|	     :cmap/:cunmap/:cnoremap
 				  ":map!"/":unmap!"/":noremap!" と同じだが、
@@ -536,27 +537,28 @@ smz			   号のこと。英語圏では昔から使われている。
 				  挿入モードのみ対象となる。
 |:nmap|	     :nmap/:nunmap/:nnoremap
 				  ":map!"/":unmap!"/":noremap!" と同じだが、
-				  通常モードのみ対象となる。
+				  ノーマルモードのみ対象となる。
 |:vmap|	     :vmap/:vunmap/:vnoremap
 				  ":map!"/":unmap!"/":noremap!" と同じだが、
 				  ビジュアルモードのみ対象となる。
 |:omap|	     :omap/:ounmap/:onoremap
 				  ":map!"/":unmap!"/":noremap!" と同じだが、
 				  オペレータ待機モードのみ対象となる。
-|:mapc|      :mapc[lear]	  通常モード/ビジュアルモード用のマップを削除
+|:mapc|      :mapc[lear]	  ノーマルモード/ビジュアルモード用のマップを
+				  削除
 |:mapc|      :mapc[lear]!	  挿入モード/コマンドモード用のマップを削除
 |:imapc|     :imapc[lear]	  挿入モード用のマップを削除
 |:vmapc|     :vmapc[lear]	  ビジュアルモード用のマップを削除
 |:omapc|     :omapc[lear]	  オペレータ待機モード用のマップを削除
-|:nmapc|     :nmapc[lear]	  通常モード用のマップを削除
+|:nmapc|     :nmapc[lear]	  ノーマルモード用のマップを削除
 |:cmapc|     :cmapc[lear]	  コマンドラインモード用のマップを削除
 |:mkexrc|    :mk[exrc][!] [file]  現在のマップ、短縮形、設定を [file] に書き
 				  出す。(デフォルトは ".exrc" で、[!] をつけ
 				  ると上書きとなる)
 |:mkvimrc|   :mkv[imrc][!] [file]
-				  ":mkexrc"と同じ。但しデフォルトは".vimrc"
+				  ":mkexrc" と同じ。但しデフォルトは ".vimrc"
 |:mksession| :mks[ession][!] [file]
-				  ":mkvimrc"と同じ。ただし、現在のセッション
+				  ":mkvimrc" と同じ。ただし、現在のセッション
 				  を後で続けられるように、現在のファイル名、
 				  ウィンドウ情報などもいっしょに書き出す。
 ------------------------------------------------------------------------------
@@ -566,11 +568,11 @@ smz			   号のこと。英語圏では昔から使われている。
 |:abbreviate|	:ab[breviate] {lhs}	   {lhs}で始まる短縮形を一覧表示
 |:abbreviate|	:ab[breviate]		   全短縮形を一覧表示
 |:unabbreviate|	:una[bbreviate] {lhs}	   {lhs}の短縮形を削除
-|:noreabbrev|	:norea[bbrev] [lhs] [rhs]  ":ab"と同じだが、 [rhs]の再定義は
+|:noreabbrev|	:norea[bbrev] [lhs] [rhs]  ":ab" と同じだが、 [rhs]の再定義は
 					   しない
-|:iabbrev|	:iab/:iunab/:inoreab	   ":ab"と同じだが、挿入モード用のみ
+|:iabbrev|	:iab/:iunab/:inoreab	   ":ab" と同じだが、挿入モード用のみ
 					   が対象
-|:cabbrev|	:cab/:cunab/:cnoreab	   ":ab"と同じだが、コマンドライン
+|:cabbrev|	:cab/:cunab/:cnoreab	   ":ab" と同じだが、コマンドライン
 					   モード用のみが対象
 |:abclear|	:abc[lear]		   全短縮形を削除
 |:cabclear|	:cabc[lear]		   コマンドライン用の全短縮形を削除
@@ -596,12 +598,12 @@ smz			   号のこと。英語圏では昔から使われている。
 |:set|		:se[t] {option}?	  {option}の値を表示
 |:set|		:se[t] {option}&	  {option}の値をデフォルト値に
 
-|:setlocal|	:setl[ocal]		  ":set"と同じ、ただしローカル値を設定
-					  する。
-|:setglobal|	:setg[lobal]		  ":set"と同じ、ただしローカルオプショ
-					  ンのグローバル値を設定する。
+|:setlocal|	:setl[ocal]		  ":set" と同じ、ただしローカル値を設
+					  定する。
+|:setglobal|	:setg[lobal]		  ":set" と同じ、ただしローカルオプ
+					  ションのグローバル値を設定する。
 
-|:fix|		:fix[del]		  't_kb'の値に従って、't_kD'の値を
+|:fix|		:fix[del]		  't_kb' の値に従って、't_kD' の値を
 					  セットする。
 |:options|	:opt[ions]		  オプションの閲覧と設定を行うために
 					  新たなウィンドウを開く。一覧は機能
@@ -609,10 +611,10 @@ smz			   号のこと。英語圏では昔から使われている。
 					  説明とヘルプへのリンクをつけてある。
 
 各オプションの簡易説明:				*option-list*
-'aleph'		  'al'      Aleph文字(ヘブライ語)用のアスキーとする
+'aleph'		  'al'      Aleph文字(ヘブライ語)用のASCIIコードとする
 'allowrevins'	  'ari'     挿入モードとコマンドラインモードで、 CTRL-_ を
-			     使うことを認める。
-'altkeymap'	  'akm'     デフォルトの第２言語(Farsi/ヘブライ)
+			    使うことを認める。
+'altkeymap'	  'akm'     デフォルトの第２言語(ペルシア/ヘブライ)
 'ambiwidth'	  'ambw'    Unicode文字の不明瞭な文字幅を決定する
 'antialias'	  'anti'    Mac OS X: フォントを滑らかに表示する。
 'autochdir'	  'acd'     現在編集中のファイルのディレクトリに変更する
@@ -621,15 +623,15 @@ smz			   号のこと。英語圏では昔から使われている。
 'autoindent'	  'ai'      直前の行から新しい行のインデントを得る
 'autoread'	  'ar'      vim以外でファイル変更した時に自動再読み込みする
 'autowrite'	  'aw'      変更があったら、自動的に書き出す
-'autowriteall'	  'awa'     'autowrite'と同様だが、より多くのコマンドと連動
-'background'	  'bg'      "dark"/"light"：ハイライト色の指定に使用
+'autowriteall'	  'awa'     'autowritea' と同様だが、より多くのコマンドと連動
+'background'	  'bg'      "dark"/"light": ハイライト色の指定に使用
 'backspace'	  'bs'      行頭でのバックスペースの振る舞いをカスタマイズ
 'backup'	  'bk'      上書きした時にバックアップを作成する。
 'backupcopy'	  'bkc'     ファイルをリネームするのではなく、コピーする。
 'backupdir'	  'bdir'    バックアップファイル用のディレクトリを指定
 'backupext'	  'bex'     バックアップファイル用の拡張子
 'backupskip'	  'bsk'     指定のパターンに合致するファイルはバックアップ
-			     しない。
+			    しない。
 'balloondelay'	  'bdlay'   バルーンウィンドウが出るまでの遅延時間(ms)
 'ballooneval'	  'beval'   バルーン評価のON/OFF
 'balloonexpr'	  'bexpr'   バルーンウィンドウに表示する式
@@ -642,13 +644,13 @@ smz			   号のこと。英語圏では昔から使われている。
 'buflisted'	  'bl'      バッファリストにバッファを表示するかどうか
 'buftype'	  'bt'      バッファのタイプ
 'casemap'	  'cmp'     文字の大小の変換方法を決める
-'cdpath'	  'cd'      ":cd"コマンドで検索するディレクトリ
+'cdpath'	  'cd'      ":cd" コマンドで検索するディレクトリ
 'cedit'			    コマンドラインウィンドウを開くためのキー
 'charconvert'	  'ccv'     文字コードの変換に使用する式
-'cindent'	  'cin'     Ｃ言語用のインデントを行う
-'cinkeys'	  'cink'    'cindent'が有効な際に押すとインデントするキー
-'cinoptions'	  'cino'    'cindent'が有効な際のインデント方法
-'cinwords'	  'cinw'    'si'、'cin'によるインデントの開始文字
+'cindent'	  'cin'     C言語用のインデントを行う
+'cinkeys'	  'cink'    'cindent' が有効な際に押すとインデントするキー
+'cinoptions'	  'cino'    'cindent' が有効な際のインデント方法
+'cinwords'	  'cinw'    'si'、'cin' によるインデントの開始文字
 'clipboard'	  'cb'      無名レジスタ操作でクリップボードを使う
 'cmdheight'	  'ch'      コマンドラインの行数
 'cmdwinheight'	  'cwh'     コマンドラインウィンドウの行数
@@ -664,12 +666,12 @@ smz			   号のこと。英語圏では昔から使われている。
 'conceallevel'	  'cole'    Conceal テキストを表示するかどうか
 'confirm'	  'cf'      未保存ファイル、リードオンリファイルの確認方法
 'conskey'	  'consk'   コンソールからの直接キー検出(MS-DOSのみ)
-'copyindent'	  'ci'      'autoindent'がすでにあるインデントを参考にする
+'copyindent'	  'ci'      'autoindent' がすでにあるインデントを参考にする
 'cpoptions'	  'cpo'     vi互換な振る舞いのフラグ集
 'cryptmethod'	  'cm'	    ファイルの保存に使用する暗号化の種類
 'cscopepathcomp'  'cspc'    表示するファイルパスの深さ
 'cscopeprg'	  'csprg'   cscopeの実行ファイル
-'cscopequickfix'  'csqf'    cscopeの結果の表示にquickfixウインドウを使う
+'cscopequickfix'  'csqf'    cscopeの結果の表示にquickfixウィンドウを使う
 'cscoperelative'  'csre'    cscope.out のディレクトリパスをプレフィックスとし
 		            て使う
 'cscopetag'	  'cst'     タグコマンドでcscopeを使う
@@ -679,21 +681,21 @@ smz			   号のこと。英語圏では昔から使われている。
 		            ソルを移動させる
 'cursorcolumn'	  'cuc'     カーソルがある桁を強調表示する
 'cursorline'	  'cuc'	    カーソルがある行を強調表示する
-'debug'			    "msg"と設定すると全てのエラーが表示される
+'debug'			    "msg" と設定すると全てのエラーが表示される
 'define'	  'def'     マクロ定義検索パターン
 'delcombine'	  'deco'    合成文字の削除時に構成要素を全て消す
 'dictionary'	  'dict'    キーワード補完に使うファイルのリスト
-'diff'			    そのウインドウでdiffモードを使う
+'diff'			    そのウィンドウで差分モードを使う
 'diffexpr'	  'dex'     差分取得に使う式
-'diffopt'	  'dip'     diffモードに使うオプション
-'digraph'	  'dg'      挿入モードで二重字の入力を有効にする
+'diffopt'	  'dip'     差分モードに使うオプション
+'digraph'	  'dg'      挿入モードでダイグラフの入力を有効にする
 'directory'	  'dir'     スワップファイル用のディレクトリのリスト
 'display'	  'dy'      テキストの表示方法を指定する
-'eadirection'	  'ead'     'equalalways'の適用方向を決める
+'eadirection'	  'ead'     'equalalways' の適用方向を決める
 'edcompatible'	  'ed'      |:substitute|のフラグを切替える
 'encoding'	  'enc'     内部で使用する文字コード
 'endofline'	  'eol'     ファイル末尾に<EOL>を書く
-'equalalways'	  'ea'      ウインドウを自動で同じ大きさに調整する
+'equalalways'	  'ea'      ウィンドウを自動で同じ大きさに調整する
 'equalprg'	  'ep'      |=|で使用する外部プログラム
 'errorbells'	  'eb'      エラー表示時にベルを鳴らす
 'errorfile'	  'ef'      QuickFixモードで使うファイルの名前
@@ -703,20 +705,20 @@ smz			   号のこと。英語圏では昔から使われている。
 'expandtab'	  'et'      <Tab>入力でスペースを入力する
 'exrc'		  'ex'      カレントディレクトリの.vimrcと.exrcを読み込む
 'fileencoding'	  'fenc'    ファイルの文字コード指定
-'fileencodings'	  'fencs'   自動認識する'fileencoding'のリスト
+'fileencodings'	  'fencs'   自動認識する 'fileencoding' のリスト
 'fileformat'	  'ff'      ファイル入出力時のファイルのフォーマット
-'fileformats'	  'ffs'     自動認識する'fileformat'のリスト
+'fileformats'	  'ffs'     自動認識する 'fileformat' のリスト
 'filetype'	  'ft'      オートコマンドで使うファイルタイプ名
 'fillchars'	  'fcs'     特殊な表示に使う文字
 'fkmap'		  'fk'      ペルシア語のキーボードマッピング
 'foldclose'	  'fcl'     カーソル下以外の折畳みを閉じる
 'foldcolumn'	  'fdc'     折畳みを示すのに使う列幅
 'foldenable'	  'fen'     全ての折畳みの開閉を設定する
-'foldexpr'	  'fde'     'foldmethod'が"expr"の時に使う式
-'foldignore'	  'fdi'     'foldmethod'が"indent"の時に無視する行
+'foldexpr'	  'fde'     'foldmethod' が "expr" の時に使う式
+'foldignore'	  'fdi'     'foldmethod' が "indent" の時に無視する行
 'foldlevel'	  'fdl'     この値より高いレベルの折畳みを閉じる
-'foldlevelstart'  'fdls'    'foldlevel'の初期値
-'foldmarker'	  'fmr'     'foldmethod'が"marker"の時に使うマーカー
+'foldlevelstart'  'fdls'    'foldlevel' の初期値
+'foldmarker'	  'fmr'     'foldmethod' が "marker" の時に使うマーカー
 'foldmethod'	  'fdm'     折畳みの種類
 'foldminlines'	  'fml'     閉じることのできる折畳みの最小行数
 'foldnestmax'	  'fdn'     折畳みの深さの制限
@@ -727,20 +729,20 @@ smz			   号のこと。英語圏では昔から使われている。
 'formatprg'	  'fp'      |gq|で使う外部プログラム
 'formatexpr'	  'fex'     |gq|で使う式
 'fsync'		  'fs'      ファイルを書き込んだ後に fsync() を呼ぶかどうか
-'gdefault'	  'gd'      |:substitute|で"g"を既定で有効にする
-'grepformat'	  'gfm'     'grepprg'の出力の書式
+'gdefault'	  'gd'      |:substitute|で "g" を既定で有効にする
+'grepformat'	  'gfm'     'grepprg' の出力の書式
 'grepprg'	  'gp'      |:grep|で使う外部プログラム
 'guicursor'	  'gcr'     GUI: カーソルの形と点滅を設定する
 'guifont'	  'gfn'     GUI: 使用するフォント(複数可)
 'guifontset'	  'gfs'     GUI: マルチバイト用のフォント
 'guifontwide'	  'gfw'     全角文字用のフォントのリスト
-'guiheadroom'	  'ghr'     GUI: ウインドウ装飾用の余地。ピクセル単位
+'guiheadroom'	  'ghr'     GUI: ウィンドウ装飾用の余地。ピクセル単位
 'guioptions'	  'go'      GUI: GUIに特化したオプション
 'guipty'		    GUI: |:!|でpseudo-ttyの使用を試みる
 'guitablabel'	  'gtl'	    GUI: タブページのラベル設定
 'guitabtooltip'	  'gtt'	    GUI: タブページのツールチップ設定
 'helpfile'	  'hf'      メインのヘルプファイルのフルパス指定
-'helpheight'	  'hh'      ヘルプウインドウの最小高さ
+'helpheight'	  'hh'      ヘルプウィンドウの最小高さ
 'helplang'	  'hlg'     優先するヘルプ用の言語
 'hidden'	  'hid'     バッファが|abandon|(捨て)られても破棄しない
 'highlight'	  'hl'      様々な対象に対する強調表示モードの設定
@@ -760,7 +762,7 @@ smz			   号のこと。英語圏では昔から使われている。
 'includeexpr'	  'inex'    インクルード行を処理する式
 'incsearch'	  'is'      検索パターン入力中にその文字を強調表示する
 'indentexpr'	  'inde'    行をインデントする式
-'indentkeys'	  'indk'    'indentexpr'でインデントを開始するキー
+'indentkeys'	  'indk'    'indentexpr' でインデントを開始するキー
 'infercase'	  'inf'     キーワード補完で大文字小文字を調整する
 'insertmode'	  'im'      挿入モードで編集を開始する
 'isfname'	  'isf'     ファイル名、パス名に含まれる文字
@@ -774,7 +776,7 @@ smz			   号のこと。英語圏では昔から使われている。
 'keywordprg'	  'kp'      |K|で使う外部プログラム
 'langmap'	  'lmap'    他の言語モードでの文字
 'langmenu'	  'lm'      メニュー表示用言語
-'laststatus'	  'ls'      最下ウインドウにいつステータス行を表示するか
+'laststatus'	  'ls'      最下ウィンドウにいつステータス行を表示するか
 'lazyredraw'	  'lz'      マクロ実行中に表示を更新しない
 'linebreak'	  'lbr'     長い行を空白で折り返す
 'lines'			    表示行数
@@ -782,14 +784,14 @@ smz			   号のこと。英語圏では昔から使われている。
 'lisp'			    Lisp用自動インデント
 'lispwords'	  'lw'      Lisp用インデントの動作定義
 'list'			    <Tab>や<EOL>を表示する
-'listchars'	  'lcs'     'list'オン時に使う文字
+'listchars'	  'lcs'     'list' オン時に使う文字
 'loadplugins'	  'lpl'     起動時にプラグインスクリプトを読み込む
 'macatsui'		    Mac GUI: ATSUI テキスト描画を使う
 'magic'			    検索パターン内の特殊文字を変更する
 'makeef'	  'mef'     |:make|用のエラーファイル
 'makeprg'	  'mp'      |:make|で使う外部プログラム
 'matchpairs'	  'mps'     |%|で探す文字ペア
-'matchtime'	  'mat'     'showmatch'で対応カッコを表示する時間。0.1秒単位
+'matchtime'	  'mat'     'showmatch' で対応カッコを表示する時間。0.1秒単位
 'maxcombine'	  'mco'     表示できる文字の組合せの最大数
 'maxfuncdepth'	  'mfd'     ユーザ定義関数の再帰呼び出しの最大数
 'maxmapdepth'	  'mmd'     マッピングの再帰定義の最大数
@@ -819,13 +821,13 @@ smz			   号のこと。英語圏では昔から使われている。
 'osfiletype' 	  'oft'     サポートされていない
 'paragraphs'	  'para'    段落を分けるためのnroffのマクロ
 'paste'			    Pasteモードに移行
-'pastetoggle'	  'pt'      'paste'を切替えるキー
+'pastetoggle'	  'pt'      'paste' を切替えるキー
 'patchexpr'	  'pex'     パッチを適用するための式
 'patchmode'	  'pm'      最初のバージョンを保全する
 'path'		  'pa'      |gf|などでファイルを検索するディレクトリのリスト
 'preserveindent'  'pi'      再インデント時にインデントの構造を保つ
-'previewheight'	  'pvh'     プレビューウインドウの高さ
-'previewwindow'	  'pvw'     プレビューウインドウかどうか
+'previewheight'	  'pvh'     プレビューウィンドウの高さ
+'previewwindow'	  'pvw'     プレビューウィンドウかどうか
 'printdevice'	  'pdev'    |:hardcopy|で使うプリンタの名前
 'printencoding'	  'penc'    印刷で使う文字コード
 'printexpr'	  'pexpr'   |:hardcopy|でPostScriptを印刷するための式
@@ -843,20 +845,20 @@ smz			   号のこと。英語圏では昔から使われている。
 'report'		    変更された行の数の方向が出る最小値
 'restorescreen'	  'rs'      Win32: 終了時スクリーンを更新する
 'revins'	  'ri'      挿入モードで入力方向が逆になる
-'rightleft'	  'rl'      "右から左"指向のウインドウ
-'rightleftcmd'	  'rlc'     "右から左"に入力するコマンド
+'rightleft'	  'rl'      "右から左" 指向のウィンドウ
+'rightleftcmd'	  'rlc'     "右から左" に入力するコマンド
 'ruler'		  'ru'      ステータスラインにカーソルが位置する場所を表示する
-'rulerformat'	  'ruf'     'ruler'用のフォーマット
+'rulerformat'	  'ruf'     'ruler' 用のフォーマット
 'runtimepath'	  'rtp'     ランタイムファイル用のディレクトリのリスト
 'scroll'	  'scr'     CTRL-UやCTRL-Dでスクロールする行数
-'scrollbind'	  'scb'     他のウインドウと同期してスクロールする
+'scrollbind'	  'scb'     他のウィンドウと同期してスクロールする
 'scrolljump'	  'sj'      スクロールする行数の最小値
 'scrolloff'	  'so'      カーソルの上下に確保する表示行
-'scrollopt'	  'sbo'     'scrollbind'がどのように振舞うか
+'scrollopt'	  'sbo'     'scrollbind' がどのように振舞うか
 'sections'	  'sect'    節を分けるためのnroffのマクロ
-'secure'		     カレントディレクトリの.vimrcを安全に読む
+'secure'		    カレントディレクトリの.vimrcを安全に読む
 'selection'	  'sel'     選択時の動作を設定する
-'selectmode'	  'slm'     ビジュアルモードでなくセレクトモードを開始する条件
+'selectmode'	  'slm'     ビジュアルモードでなく選択モードを開始する条件
 'sessionoptions'  'ssop'    |:mksession|用のオプション
 'shell'		  'sh'      外部プログラム使用時のシェル
 'shellcmdflag'	  'shcf'    シェル実行時のフラグ
@@ -867,9 +869,9 @@ smz			   号のこと。英語圏では昔から使われている。
 'shelltemp'	  'stmp'    シェルコマンドに一時ファイルを使うかどうか
 'shelltype'	  'st'      Amiga: シェルの使い方に影響する
 'shellxescape'	  'sxe'     'shellxquote' が '(' のときにエスケープする文字
-'shellxquote'	  'sxq'     'shellquote'に似ているがリダイレクションを含む
-'shiftround'	  'sr'      インデントを'shiftwidth'の倍数に丸める
-'shiftwidth'	  'sw'      (自動的な)インデントにつかうシフト幅
+'shellxquote'	  'sxq'     'shellquote' に似ているがリダイレクションを含む
+'shiftround'	  'sr'      インデントを 'shiftwidth' の倍数に丸める
+'shiftwidth'	  'sw'      (自動的な)インデントに使うシフト幅
 'shortmess'	  'shm'     メッセージを短縮するフラグのリスト
 'shortname'	  'sn'      MS-DOS以外: ファイル名が8.3形式であると仮定する
 'showbreak'	  'sbr'     折り返し表示された行の最初に表示する文字
@@ -882,15 +884,15 @@ smz			   号のこと。英語圏では昔から使われている。
 'sidescrolloff'	  'siso'    カーソルの左右に確保する表示幅
 'smartcase'	  'scs'     パターンが大文字を含むときは文字の大小を区別する
 'smartindent'	  'si'      C言語用の高度な自動インデント
-'smarttab'	  'sta'     <Tab>入力時に'shiftwidth'を使う
+'smarttab'	  'sta'     <Tab>入力時に 'shiftwidth' を使う
 'softtabstop'	  'sts'     <Tab>で入力する空白の数
 'spell'			    スペルチェッキングを有効にする
 'spellcapcheck'	  'spc'	    スペルチェッキングを有効にする
-'spellfile'	  'spf'     zg|と|zw|が単語を保存するファイル
+'spellfile'	  'spf'     |zg|と|zw|が単語を保存するファイル
 'spelllang'	  'spl'     スペルチェックをする言語
 'spellsuggest'	  'sps'     スペリング訂正をするのに使われるメソッド
-'splitbelow'	  'sb'      ウインドウの横分割で新規ウィンドウを下に作る
-'splitright'	  'spr'     ウインドウの縦分割で新規ウィンドウを右に作る
+'splitbelow'	  'sb'      ウィンドウの横分割で新規ウィンドウを下に作る
+'splitright'	  'spr'     ウィンドウの縦分割で新規ウィンドウを右に作る
 'startofline'	  'sol'     カーソル移動コマンドで行の最初の非空白へ移動する
 'statusline'	  'stl'     ステータスラインの表示内容を設定する
 'suffixes'	  'su'      ファイルが複数マッチした時に無視する拡張子
@@ -902,7 +904,7 @@ smz			   号のこと。英語圏では昔から使われている。
 'syntax'	  'syn'     カレントバッファの構文強調表示の定義
 'tabstop'	  'ts'      <Tab>の表示幅
 'tabline'	  'tal'     コンソールのタブページラインのカスタムフォーマット
-'tabpagemax'	  'tpm'     タブページの最大数。|-p|と"tab all"に使われる。
+'tabpagemax'	  'tpm'     タブページの最大数。|-p|と "tab all" に使われる。
 'tagbsearch'	  'tbs'     タグファイル内の検索にバイナリサーチを使う
 'taglength'	  'tl'      タグ名はこの文字数までしか意味を持たない
 'tagrelative'	  'tr'      タグファイル内のファイル名が相対的になる
@@ -912,17 +914,17 @@ smz			   号のこと。英語圏では昔から使われている。
 'termbidi'	  'tbidi'   ターミナルが双方向性を持っている
 'termencoding'	  'tenc'    ターミナルが使用する文字コード
 'terse'			    いくつかのメッセージを省略する
-'textauto'	  'ta'      廃止。今は'fileformats'を使う
-'textmode'	  'tx'      廃止。今は'fileformat'を使う
+'textauto'	  'ta'      廃止。今は 'fileformats' を使う
+'textmode'	  'tx'      廃止。今は 'fileformat' を使う
 'textwidth'	  'tw'      入力されているテキストの最大幅
 'thesaurus'	  'tsr'     キーワード補完に使う thesaurus ファイルのリスト
 'tildeop'	  'top'     "~" がオペレータのように振舞う
 'timeout'	  'to'      マッピングやキーコード入力の時間制限
 'timeoutlen'	  'tm'      入力をタイムアウトにするミリ秒単位の時間
-'title'			    ウインドウのタイトルを変更するようにする
-'titlelen'		    ウインドウのタイトルの'columns'(列幅)の割合
+'title'			    ウィンドウのタイトルを変更するようにする
+'titlelen'		    ウィンドウのタイトルの 'columns' (列幅)の割合
 'titleold'		    終了時に戻す古いタイトル
-'titlestring'		    ウインドウのタイトル
+'titlestring'		    ウィンドウのタイトル
 'toolbar'	  'tb'	    GUI: ツールバーに表示する内容
 'toolbariconsize' 'tbis'    ツールバーアイコンのサイズ(GTK2だけ)
 'ttimeout'		    マッピング入力の時間制限
@@ -931,7 +933,7 @@ smz			   号のこと。英語圏では昔から使われている。
 'ttyfast'	  'tf'      高速ターミナル接続を行う
 'ttymouse'	  'ttym'    マウスコードの種類
 'ttyscroll'	  'tsl'     画面をスクロールする行数の最大値
-'ttytype'	  'tty'     'term'の別名
+'ttytype'	  'tty'     'term' の別名
 'undodir'	  'udir'    アンドゥファイルの保存場所
 'undofile'	  'udf'	    アンドゥ情報をファイルに保存する
 'undolevels'	  'ul'      アンドゥ可能な回数の最大値
@@ -950,11 +952,11 @@ smz			   号のこと。英語圏では昔から使われている。
 'weirdinvert'	  'wiv'     変な強調表示方法を持つターミナル用
 'whichwrap'	  'ww'      行を越えて機能するキーを設定する
 'wildchar'	  'wc'      コマンドラインでワイルドカードの展開に使うキー
-'wildcharm'	  'wcm'     'wildchar'に似た、マッピング内で使うもの
+'wildcharm'	  'wcm'     'wildchar' に似た、マッピング内で使うもの
 'wildignore'	  'wig'     リスト内のどれかにマッチしたファイル名は補完しない
 'wildignorecase'  'wic'     ファイル名を補完するときに大文字と小文字を無視する
 'wildmenu'	  'wmnu'    コマンドラインで補完候補をメニュー表示する
-'wildmode'	  'wim'     'wildchar'の補完モード
+'wildmode'	  'wim'     'wildchar' の補完モード
 'wildoptions'	  'wop'     コマンドライン補完をどう行うか指定する
 'winaltkeys'	  'wak'     GUIでのALTキーの使い方
 'window'	  'wi'	    CTRL-F と CTRL-B でスクロールする行数
@@ -968,7 +970,7 @@ smz			   号のこと。英語圏では昔から使われている。
 'wrapmargin'	  'wm'      折り返しを開始する右端からの文字数
 'wrapscan'	  'ws'      検索がファイル末尾まで進んだら先頭から再検索
 'write'			    ファイルへの保存を許可する
-'writeany'	  'wa'	    ファイルへの保存時は"!"がなくても上書きする。
+'writeany'	  'wa'	    ファイルへの保存時は "!" がなくても上書きする。
 'writebackup'	  'wb'	    上書きする時にはバックアップを作る。
 'writedelay'	  'wd'	    入力の延滞時間を1/1000秒単位で指定(デバッグ用)
 ------------------------------------------------------------------------------
@@ -982,8 +984,8 @@ smz			   号のこと。英語圏では昔から使われている。
 
 |:shell|	:sh[ell]	シェルを起動する
 |:!|		:!{command}	{command}をシェルで起動する
-|K|		   K		カーソル下にある単語を'keywordprg' 外部コマン
-				ドで調べる。(デフォルトは"man")
+|K|		   K		カーソル下にある単語を 'keywordprg' 外部コマン
+				ドで調べる。(デフォルトは "man")
 ------------------------------------------------------------------------------
 *Q_qf*		Quickfix コマンド
 
@@ -991,7 +993,7 @@ smz			   号のこと。英語圏では昔から使われている。
 |:cnext|	:cn		次のエラーを表示
 |:cprevious|	:cp		１つ前のエラーを表示
 |:clist|	:cl		全エラーの一覧を表示
-|:cfile|	:cf		'errorfile'からエラーを読み込む
+|:cfile|	:cf		'errorfile' からエラーを読み込む
 |:cgetbuffer|	:cgetb		:cbufferと同様だが最初のエラーにジャンプしない
 |:cgetfile|	:cg		:cfileと同様だが最初のエラーにジャンプしない
 |:cgetexpr|	:cgete		:cexprと同様だが最初のエラーにジャンプしない
@@ -1004,7 +1006,7 @@ smz			   号のこと。英語圏では昔から使われている。
 				ドを戻して終了する
 |:make|		:make [args]	makeする。エラーを開き最初のコンパイルエラー
 				にジャンプ
-|:grep|		:gr[ep] [args]	'grepprg'を実行し、合致する最初の行にジャンプ
+|:grep|		:gr[ep] [args]	'grepprg' を実行し、合致する最初の行にジャンプ
 ------------------------------------------------------------------------------
 *Q_vc*		さまざまなコマンド
 
@@ -1013,19 +1015,19 @@ smz			   号のこと。英語圏では昔から使われている。
 				表示
 |ga|		   ga		カーソル位置のASCII文字コードを10進、16進、
 				8進で表示
-|g8|		   g8		utf-8エンコーディング用：カーソル下の文字のバ
+|g8|		   g8		utf-8エンコーディング用: カーソル下の文字のバ
 				イト列を16進で表示する。
 |g_CTRL-G|	   g CTRL-G	カーソル桁数、行数、単語数、文字数を表示
-|CTRL-C|	   CTRL-C	検索中：検索を中止
-|dos-CTRL-Break|   CTRL-Break	MS-DOS: 検索中：検索を中止
+|CTRL-C|	   CTRL-C	検索中: 検索を中止
+|dos-CTRL-Break|   CTRL-Break	MS-DOS: 検索中: 検索を中止
 |<Del>|		   <Del>	回数指定中: 最後の文字を削除
 |:version|	:ve[rsion]	バージョン情報を表示
 |:mode|		:mode N		MS-DOS: 画面モードを N (数字,C80,C4350,など)
 				に 
 
 |:normal|	:norm[al][!] {commands}
-				通常モードコマンドを実行
-|Q|		Q		"Ex"モードに移行
+				ノーマルモードコマンドを実行
+|Q|		Q		"Ex" モードに移行
 
 |:redir|	:redir >{file}		メッセージを{file}にリダイレクト
 |:silent|	:silent[!] {command}	{command} を寡黙に実行
@@ -1036,13 +1038,13 @@ smz			   号のこと。英語圏では昔から使われている。
 ------------------------------------------------------------------------------
 *Q_ce*		コマンドラインの編集
 
-|c_<Esc>|	<Esc>		   コマンドラインを破棄する('wildchar'が<Esc>
+|c_<Esc>|	<Esc>		   コマンドラインを破棄する('wildchar' が<Esc>
 				   の場合は２回押す)
 
 |c_CTRL-V|	CTRL-V {char}	   {char}を文字として挿入する(CTRL文字など)
 |c_CTRL-V|	CTRL-V {number}    文字コードを10進数入力する(最大３桁まで)
 |c_CTRL-K|	CTRL-K {char1} {char2}
-				   合字を入力する(|Q_di|参照)
+				   ダイグラフを入力する(|Q_di|参照)
 |c_CTRL-R|	CTRL-R {0-9a-z"%#:-=}
 				   レジスタの内容を挿入する
 
@@ -1065,7 +1067,7 @@ smz			   号のこと。英語圏では昔から使われている。
 |c_wildchar|	'wildchar'	(デフォルト: <Tab>)
 				カーソルの直前のパターンに合せた補完を実施
 				合致するものが複数ある場合は、ビープを鳴らし
-				最初に合致したものを表示。さらに'wildchar'を
+				最初に合致したものを表示。さらに 'wildchar' を
 				押すと次に合致したものを表示。
 |c_CTRL-D|	CTRL-D		現在のカーソルの直前のパターンに合致する全
 				ての名前の一覧を表示
@@ -1073,8 +1075,8 @@ smz			   号のこと。英語圏では昔から使われている。
 				ての名前を挿入
 |c_CTRL-L|	CTRL-L		現在のカーソルの直前のパターンに合致するも
 				ののうち、共通部分を挿入
-|c_CTRL-N|	CTRL-N		'wildchar'にて複数候補があるとき次の候補へ
-|c_CTRL-P|	CTRL-P		'wildchar'にて複数候補があるとき前の候補へ
+|c_CTRL-N|	CTRL-N		'wildchar' にて複数候補があるとき次の候補へ
+|c_CTRL-P|	CTRL-P		'wildchar' にて複数候補があるとき前の候補へ
 ------------------------------------------------------------------------------
 *Q_ra*		Exコマンドの範囲
 
@@ -1084,8 +1086,8 @@ smz			   号のこと。英語圏では昔から使われている。
 |:range|	{number}	ファイル中の行番号
 |:range|	.		現在行
 |:range|	$		ファイルの最終行
-|:range|	%		1,$と同じ(＝ファイル全体)
-|:range|	*		'<,'>と同じ(＝ビジュアルモードの選択範囲)
+|:range|	%		1,$ と同じ(＝ファイル全体)
+|:range|	*		'<,'> と同じ(＝ビジュアルモードの選択範囲)
 |:range|	't		マーク t の行
 |:range|	/{pattern}[/]	{pattern} に合致する行の次の行
 |:range|	?{pattern}[?]	{pattern} に合致する行の前の行
@@ -1097,7 +1099,7 @@ smz			   号のこと。英語圏では昔から使われている。
 ------------------------------------------------------------------------------
 *Q_ex*		特殊な Ex 文字
 
-|:bar|	    |		コマンドを２つに分割 (":global"と":!"では使用不可)
+|:bar|	    |		コマンドを２つに分割 (":global" と ":!" では使用不可)
 |:quote|    "		コメントの開始
 
 |:_%|	    %		現在のファイル名(ファイル名を使うべき場所でのみ可)
@@ -1116,7 +1118,7 @@ smz			   号のこと。英語圏では昔から使われている。
 			※ 大単語については|WORD|を参照)
 |:<cfile>|  <cfile>	カーソルのあるファイルの名前(ファイル名を使うべき場
 			所でのみ使用可)
-|:<sfile>|  <sfile>	そのファイルで ":source"を使ったファイルの名前(ファ
+|:<sfile>|  <sfile>	そのファイルで ":source" を使ったファイルの名前(ファ
 			イル名を使うべき場所でのみ使用可)
 
 		"%", "#", "<cfile>", "<sfile>" , "<afile>" の後に以下の指定
@@ -1147,16 +1149,16 @@ smz			   号のこと。英語圏では昔から使われている。
 |-v|	-v		    Viモード。exをノーマルモードで起動する
 |-e|	-e		    Exモード。VimをExモードで起動する
 |-R|	-R		    読み込み専用モード。-nもセットする
-|-m|	-m		    修正不可能にする。(オプション'write'をオフにする)
-|-d|	-d		    diffモード |diff|
+|-m|	-m		    修正不可能にする。(オプション 'write' をオフにする)
+|-d|	-d		    差分モード |diff|
 |-b|	-b		    バイナリモード
 |-l|	-l		    lispモード
-|-A|	-A		    アラビア語モード ('arabic'がセットされる)
-|-F|	-F		    ペルシア語モード ('fkmap'と'rightleft'をセット)
-|-H|	-H		    ヘブライ語モード ('hkmap'と'rightleft'をセット)
+|-A|	-A		    アラビア語モード ('arabic' がセットされる)
+|-F|	-F		    ペルシア語モード ('fkmap' と 'rightleft' をセット)
+|-H|	-H		    ヘブライ語モード ('hkmap' と 'rightleft' をセット)
 |-V|	-V		    冗長。役に立つメッセージを表示する
-|-C|	-C		    互換。'compatible'をセットする
-|-N|	-N		    非互換。'compatible'をオフにする
+|-C|	-C		    互換。'compatible' をセットする
+|-N|	-N		    非互換。'compatible' をオフにする
 |-r|	-r		    スワップファイルの一覧を表示する
 |-r|	-r {file} ..	    破棄された編集セッションを復元する
 |-n|	-n		    スワップファイルを作らない
@@ -1185,9 +1187,9 @@ smz			   号のこと。英語圏では昔から使われている。
 |:edit_f|  :e[dit][!] {file}	{file}を編集
 |:edit|	   :e[dit][!]		現在のバッファ内容を再読み込み
 |:enew|	   :ene[w][!]		新たな名前なしバッファを編集
-|:find|    :fin[d][!] {file}	{file} を'path' から探し、編集
+|:find|    :fin[d][!] {file}	{file} を 'path' から探し、編集
 
-|CTRL-^|   N   CTRL-^		別ファイル N を編集(":e #N"と同じ)
+|CTRL-^|   N   CTRL-^		別ファイル N を編集(":e #N" と同じ)
 |gf|	       gf  or ]f	カーソル下にある名前のファイルを編集
 |:pwd|	   :pwd			カレントディレクトリを表示
 |:cd|	   :cd [path]		カレントディレクトリを [path] に変更
@@ -1202,7 +1204,7 @@ smz			   号のこと。英語圏では昔から使われている。
 |:all|	   :all  or :sall	引数一覧にある全ファイルをウィンドウで表示
 |:wn|	   :wn[ext][!]		現在のファイルを保存し、次のファイルを編集
 |:wn|	   :wn[ext][!] {file}	{file}がなければ、現在のバッファを{file}に
-				保存し、次のファイルを編集。"!"を使えば、
+				保存し、次のファイルを編集。"!" を使えば、
 				既存ファイルを上書き保存
 |:wN|	   :wN[ext][!] [file]	現在のファイルを保存し、１つ前のファイルを
 				編集
@@ -1238,17 +1240,17 @@ smz			   号のこと。英語圏では昔から使われている。
 
 |:wq|	  :wq[!]		現ファイルを保存して終了
 |:wq|	  :wq[!] {file}		{file}に保存して終了
-|:xit|	  :x[it][!] [file]	":wq"と同様だが、変更が加わっている場合のみ
+|:xit|	  :x[it][!] [file]	":wq" と同様だが、変更が加わっている場合のみ
 				保存
-|ZZ|	     ZZ			":x"と同じ
-|ZQ|	     ZQ			":q!"と同じ
+|ZZ|	     ZZ			":x" と同じ
+|ZQ|	     ZQ			":q!" と同じ
 |:xall|	  :xa[ll][!]  or :wqall[!]
 				変更のある全バッファを保存して終了
 
 |:stop|	  :st[op][!]		vimをサスペンドし、新たなシェルを起動。'aw'
 				オプションがONで、[!]も指定していない場合は
 				バッファを保存
-|CTRL-Z|     CTRL-Z		":stop"と同じ。
+|CTRL-Z|     CTRL-Z		":stop" と同じ。
 ------------------------------------------------------------------------------
 *Q_ac*		自動コマンド
 
@@ -1262,8 +1264,8 @@ smz			   号のこと。英語圏では昔から使われている。
 |modeline|	ファイルを編集する時に自動的にオプションを設定
 
 |modeline|	vim:{set-arg}: ..	ファイルの最初か最後の行にあれば、
-					('ml'オプションを参照) {set-arg}の
-					内容を":set"への引数として与える。
+					('ml' オプションを参照) {set-arg}の
+					内容を ":set" への引数として与える。
 
 |autocommand|	特定のイベントで自動的にコマンドを実行
 
@@ -1287,9 +1289,9 @@ smz			   号のこと。英語圏では昔から使われている。
 |CTRL-W_s|	CTRL-W s  or  :split	ウィンドウを２つに分割
 |:split_f|	:split {file}		ウィンドウを２つに分割し、片方で
 					{file}を開く
-|:vsplit|	:vsplit {file}		同上。ウインドウは縦分割。
+|:vsplit|	:vsplit {file}		同上。ウィンドウは縦分割。
 |:vertical|	:vertical {cmd}		{cmd}が縦分割するようにする
-|:sfind|	:sf[ind] {file}		ウィンドウを分割し、{file}を'path'
+|:sfind|	:sf[ind] {file}		ウィンドウを分割し、{file}を 'path'
 					中で探し、それを編集
 |CTRL-W_]|	CTRL-W ]		ウィンドウを分割し、カーソル下のタグ
 					にジャンプ
@@ -1391,9 +1393,9 @@ smz			   号のこと。英語圏では昔から使われている。
 
 |'foldmethod'|	set foldmethod=manual	手動で折畳み
 		set foldmethod=indent	インデントで折畳み
-		set foldmethod=expr	'foldexpr'で折畳み
+		set foldmethod=expr	'foldexpr' で折畳み
 		set foldmethod=syntax	シンタックスのリージョンで折畳み
-		set foldmethod=marker	'foldmarker'で折畳み
+		set foldmethod=marker	'foldmarker' で折畳み
 
 |zf|		zf{motion}		手動で折畳みを定義する
 |:fold|		:{range}fold		{range}範囲の行を折畳む
@@ -1405,13 +1407,13 @@ smz			   号のこと。英語圏では昔から使われている。
 |zc|		zc			カーソル下の折畳みを1段閉じる
 |zC|		zC			カーソル下の折畳みを全段閉じる
 
-|zm|		zm			'foldlevel'を減らし、折畳みを増やす
-|zM|		zM			'foldlevel'を0にし、全て折畳む
-|zr|		zr			'foldlevel'を増やし、折畳を減らす
-|zR|		zR			'foldlevel'を最大にし、全て開く
+|zm|		zm			'foldlevel' を減らし、折畳みを増やす
+|zM|		zM			'foldlevel' を0にし、全て折畳む
+|zr|		zr			'foldlevel' を増やし、折畳を減らす
+|zR|		zR			'foldlevel' を最大にし、全て開く
 
-|zn|		zn			'foldenable'を無効にし、折畳み無し
-|zN|		zN			'foldenable'を有効にし、折畳む
-|zi|		zi			'foldenable'を反転させる
+|zn|		zn			'foldenable' を無効にし、折畳み無し
+|zN|		zN			'foldenable' を有効にし、折畳む
+|zi|		zi			'foldenable' を反転させる
 
  vim:tw=78:ts=8:ft=help:norl:

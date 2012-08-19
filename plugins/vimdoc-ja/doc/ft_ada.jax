@@ -8,8 +8,8 @@ ADA								      *ada.vim*
 1.  構文強調				    |ft-ada-syntax|
 2.  ファイルタイププラグイン		    |ft-ada-plugin|
 3.  オムニ補完				    |ft-ada-omni|
-    3.1 "gnat xref"を使ったオムニ補完		|gnat-xref|
-    3.2 "ctags"を使ったオムニ補完		|ada-ctags|
+    3.1 "gnat xref" を使ったオムニ補完		|gnat-xref|
+    3.2 "ctags" を使ったオムニ補完		|ada-ctags|
 4.  コンパイラへの対応			    |ada-compiler|
     4.1 GNAT					|compiler-gnat|
     4.2 Dec Ada					|compiler-decada|
@@ -34,15 +34,15 @@ ADA								      *ada.vim*
 
 Adaモードは多くの状況を綺麗に取り扱う。
 
-例えば、"-5"のなかの"-"は数字の一部として認識するが、"A-5"という表記の中の同じ
-文字は演算子として認識される。通常、他のコンパイルユニットを参照する"with"や
-"use"節は、Cにおける"#include"と同じ強調色で表示される。"Conditional"や
-"Repeat"グループを異なる強調色に設定すれば、"end if"と"end loop"はそれぞれのグ
-ループの強調色で表示される。
+例えば、"-5" のなかの "-" は数字の一部として認識するが、"A-5" という表記の中の
+同じ文字は演算子として認識される。通常、他のコンパイルユニットを参照する
+"with" や "use" 節は、Cにおける "#include" と同じ強調色で表示される。
+"Conditional" や "Repeat" グループを異なる強調色に設定すれば、"end if" と
+"end loop" はそれぞれのグループの強調色で表示される。
 
-これらにはコマンド"highlight"を使って異なる強調色を設定することができる。(例:
-ループの色を変えるには":hi Repeat"に続けて強調色指定を続ける; 単純な端末上では
-ctermfg=Whiteと指定すると見やすいことが多い)
+これらにはコマンド "highlight" を使って異なる強調色を設定することができる。
+(例: ループの色を変えるには ":hi Repeat" に続けて強調色指定を続ける; 単純な端
+末上ではctermfg=Whiteと指定すると見やすいことが多い)
 
 Adaモードではユーザが設定できるオプションがいくつか存在する。その完全なリスト
 は|ft-ada-options|を参照。
@@ -52,12 +52,12 @@ Adaモードではユーザが設定できるオプションがいくつか存�
 >
    let ada_standard_types = 1
 >
-無効化するには":unlet"を使用する。例: >
+無効化するには ":unlet" を使用する。例: >
    unlet ada_standard_types = 1
 
-Adaファイルを読込む前に、コマンドラインで":"とこれらのコマンドをキー入力するこ
-とで、設定することができる。ファイル"~/.vimrc"に、コロン(":")を除いて"let"コマ
-ンドを追加すれば、これらのオプション設定を永続化することができる。
+Adaファイルを読込む前に、コマンドラインで ":" とこれらのコマンドをキー入力する
+ことで、設定することができる。ファイル "~/.vimrc" に、コロン (":") を除いて
+"let" コマンドを追加すれば、これらのオプション設定を永続化することができる。
 
 このモードは遅いコンピュータ(90MHz)上でも高速に動作するが、もしもパフォーマン
 スが受け入れられないほど低いようならば、|g:ada_withuse_ordinary|を有効化する。
@@ -91,7 +91,7 @@ Adaオムニ補完(|i_CTRL-X_CTRL-O|)は、"gnat xref -v" または "exuberant C
 完関数は、tagsファイルがどちらのツールを使って作られたのかを自動的に判定する。
 
 ------------------------------------------------------------------------------
-3.1 "gnat xref"を使ったオムニ補完 ~
+3.1 "gnat xref" を使ったオムニ補完 ~
 								   *gnat-xref*
 
 GNAT XREFはコンパイラの内部情報(aliファイル)を使ってtagsファイルを生成する。こ
@@ -100,29 +100,29 @@ GNAT XREFはコンパイラの内部情報(aliファイル)を使ってtagsフ�
 ファイルは各項目に対して基本的なCtags情報しか持たない。これではVimの高度なコー
 ドブラウザプラグインに対しては十分ではない。
 
-NOTE: "gnat xref -v"はとてもトリッキーで診断情報をほとんど出力しない。もし何も
-      表示されなかったら、たいていパラメータが間違っている。
+NOTE: "gnat xref -v" はとてもトリッキーで診断情報をほとんど出力しない。もし何
+      も表示されなかったら、たいていパラメータが間違っている。
       いくつか重要なtips:
 
-1) 最初にコードをコンパイルし、"-aO"オプションを使って.aliファイルの位置を示さ
-   ねばならない。
-2) "gnat xref -v ../Include/adacl.ads" はうまく動かないので、代わりに"gnat
-   xref -v -aI../Include adacl.ads"を使うこと。
-3) "gnat xref -v -aI../Include *.ad?"はうまく動かないので、代わりに"cd
-   ../Include"と"gnat xref -v *.ad?"を使うこと。
-4) プロジェクトマネージャ対応は完全に壊れている。"gnat xref -Padacl.gpr"と試
+1) 最初にコードをコンパイルし、"-aO" オプションを使って.aliファイルの位置を示
+   さねばならない。
+2) "gnat xref -v ../Include/adacl.ads" はうまく動かないので、代わりに "gnat
+   xref -v -aI../Include adacl.ads" を使うこと。
+3) "gnat xref -v -aI../Include *.ad?" はうまく動かないので、代わりに "cd
+   ../Include" と "gnat xref -v *.ad?" を使うこと。
+4) プロジェクトマネージャ対応は完全に壊れている。"gnat xref -Padacl.gpr" と試
    してみるのもいけない。
 5) タグファイルがソートされているとVimは高速に検索できるので、"sort --unique
-   --ignore-case --output=tags tags"とすること。
-6) タグファイルがソートされていることを示すために、1行目に"!_TAG_FILE_SORTED
-   2 %sort ui"と入れるのを忘れないこと。
+   --ignore-case --output=tags tags" とすること。
+6) タグファイルがソートされていることを示すために、1行目に "!_TAG_FILE_SORTED
+   2 %sort ui" と入れるのを忘れないこと。
 
 ------------------------------------------------------------------------------
-3.2 "ctags"を使ったオムニ補完~
+3.2 "ctags" を使ったオムニ補完~
 								   *ada-ctags*
 
 Exuberant Ctagsは内蔵の多言語コードパーサを使う。このパーサはとても高速で、大
-量の付加情報を生成する(それゆえ"Exuberant Ctags"という名前がつけられている)。
+量の付加情報を生成する(それゆえ "Exuberant Ctags" という名前がつけられている)。
 また、コンパイルが通らないファイルに対しても実行できる。
 
 Exuberant Ctagsを利用するVimのツールはたくさんある。
@@ -194,7 +194,7 @@ g:gnat.Project_File	文字列
 
 							 *g:gnat.Make_Command*
 g:gnat.Make_Command	文字列
-		|g:gnat.Make()|に使われる外部プログラム (|'makeprg'|).
+		|g:gnat.Make()|に使われる外部プログラム (|'makeprg'|)。
 
 						       *g:gnat.Pretty_Program*
 g:gnat.Pretty_Program	文字列
@@ -223,7 +223,7 @@ Dec Ada (歴代の名前は VAX Ada, Dec Ada, Compaq Ada, HP Ada)は相当古い
 
 Dec Adaは引数としてファイル名でなくパッケージ名が渡されることを期待する。コン
 パイラプラグインは普通のファイル名の慣習に対応しており、ファイル名をユニット名
-に変換する。区切り文字として'-'と'__'の両方に対応している。
+に変換する。区切り文字として '-' と '__' の両方に対応している。
 
 							      *decada_members*
 DEC ADA オブジェクト ~
@@ -277,8 +277,8 @@ g:ada_line_errors	  切替 (存在するなら真)
 
 							 *g:ada_rainbow_color*
 g:ada_rainbow_color	  切替 (存在するなら真)
-		'('と')'にレインボーカラーを使う。rainbow_parenthesisを使わな
-		いとこれは意味がない。
+		'(' と ')' にレインボーカラーを使う。rainbow_parenthesisを使わ
+		ないとこれは意味がない。
 
 							       *g:ada_folding*
 g:ada_folding		  集合 ('sigpft')
@@ -312,9 +312,9 @@ g:ada_abbrev		  切替 (存在するなら真)
 
 						      *g:ada_withuse_ordinary*
 g:ada_withuse_ordinary	  切替 (存在するなら真)
-		"with"と"use"を通常のキーワードとして表示する(これらが他のコン
-		パイルユニットへの参照として使われた場合には、特別に通常の強調
-		として表示する)。
+		"with" と "use" を通常のキーワードとして表示する(これらが他の
+		コンパイルユニットへの参照として使われた場合には、特別に通常の
+		強調として表示する)。
 
 							 *g:ada_begin_preproc*
 g:ada_begin_preproc	  切替 (存在するなら真)
@@ -339,7 +339,7 @@ g:ada_extended_tagging	  列挙 ('jump', 'list')
 						   *g:ada_extended_completion*
 g:ada_extended_completion
 		<C-N>と<C-R>補完(|i_CTRL-N|)に拡張補完を使う。このモードでは
-		'.'が識別子の一部となり、'Object.Method'や'Package.Procedure'
+		'.' が識別子の一部となり、'Object.Method' や 'Package.Procedure'
 		の全体が補完される。
 
 						       *g:ada_gnat_extensions*
@@ -352,8 +352,8 @@ g:ada_with_gnat_project_files	 切替 (存在するなら真)
 
 						      *g:ada_default_compiler*
 g:ada_default_compiler	  文字列
-		デフォルトのコンパイラを設定する。現在対応しているのは'gnat'と
-		'decada'である。
+		デフォルトのコンパイラを設定する。現在対応しているのは 'gnat'
+		と 'decada' である。
 
 「存在するなら真」の変数は、その変数が定義されているときは真で、定義されていな
 いときは偽となる。その変数がどんな値であろうとも、違いはない。
@@ -363,7 +363,7 @@ g:ada_default_compiler	  文字列
 							     *ft-ada-commands*
 
 :AdaRainbow							 *:AdaRainbow*
-		'('と')'に対するレインボーカラーモード(|g:ada_rainbow_color|)
+		'(' と ')' に対するレインボーカラーモード(|g:ada_rainbow_color|)
 		をトグルする。
 
 :AdaLines							   *:AdaLines*
@@ -398,15 +398,15 @@ g:ada_default_compiler	  文字列
 g:gnat			    オブジェクト
 		GNATコンパイラを管理するコントロールオブジェクト。このオブジェ
 		クトは最初にAdaのソースコードが読み込まれたときに、
-		|g:ada_default_compiler|が'gnat'に設定されているならば作成され
-		る。詳しくは|gnat_members|を参照。
+		|g:ada_default_compiler|が 'gnat' に設定されているならば作成さ
+		れる。詳しくは|gnat_members|を参照。
 
 								    *g:decada*
 g:decada		      オブジェクト
 		Dec Adaコンパイラを管理するコントロールオブジェクト。このオブ
 		ジェクトは最初にAdaのソースコードが読み込まれたときに、
-		|g:ada_default_compiler|が'decada'に設定されているならば作成さ
-		れる。詳しくは|decada_members|を参照。
+		|g:ada_default_compiler|が 'decada' に設定されているならば作成
+		される。詳しくは|decada_members|を参照。
 
 ------------------------------------------------------------------------------
 5.4 定数 ~
@@ -450,12 +450,12 @@ ada#List_Tag([{line}, {col}])				      *ada#Listtags()*
 ada#Jump_Tag ({ident}, {mode})				      *ada#Jump_Tag()*
 		カーソル下(または指定の行・桁)のAda要素の全ての出現位置を
 		タグジャンプリスト内にリストする。引数{mode}は
-		'tjump'、'stjump'のどちらかとする。
+		'tjump'、'stjump' のどちらかとする。
 
 ada#Create_Tags ({option})				   *ada#Create_Tags()*
-		Ctagsを使ってtagsファイルを作成する。引数{option}が'file'なら
-		現在のファイル、'dir'なら現在のファイルのディレクトリ、または
-		ファイル名とする。
+		Ctagsを使ってtagsファイルを作成する。引数{option}が 'file' な
+		ら現在のファイル、'dir' なら現在のファイルのディレクトリ、また
+		はファイル名とする。
 
 gnat#Insert_Tags_Header()			   *gnat#Insert_Tags_Header()*
 		GNAT XREFの出力に欠けているタグファイルヘッダ(!_TAG_)の情報を
@@ -483,7 +483,7 @@ backup.vim
 
 rainbow_parenthsis.vim
 	http://www.vim.org/scripts/script.php?script_id=1561
-	Adaは'('と')'しか使わないのでとても助かる。
+	Adaは '(' と ')' しか使わないのでとても助かる。
 
 nerd_comments.vim
 	http://www.vim.org/scripts/script.php?script_id=1218
@@ -491,8 +491,8 @@ nerd_comments.vim
 
 matchit.vim
 	http://www.vim.org/scripts/script.php?script_id=39
-	ほとんどの言語に対応する'%'でのジャンプ。通常の'%'は'{}'形式の言語に対
-	してだけ役に立つ。Adaモードはこれに必要な検索パターンを設定する。
+	ほとんどの言語に対応する '%' でのジャンプ。通常の '%' は '{}' 形式の言
+	語に対してだけ役に立つ。Adaモードはこれに必要な検索パターンを設定する。
 
 taglist.vim
 	http://www.vim.org/scripts/script.php?script_id=273

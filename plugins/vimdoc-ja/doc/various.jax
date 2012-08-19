@@ -32,11 +32,11 @@ CTRL-L			画面を消去して再描画します。すでに入力されてい�
 							*N<Del>*
 <Del>			ノーマルモードで数値 (|count|) を入力しているときは、
 			数字の最後の桁を削除します。
-			Note: 同じことをするにの <BS> を使いたい場合は、次の
+			Note: 同じことをするのに <BS> を使いたい場合は、次の
 			マップを .vimrc に追加してください: >
 				:map CTRL-V <BS>   CTRL-V <Del>
 <			<Del> が望みどおりに機能しない場合には|:fixdel|を参照。
-訳注: "CTRL-V <BS>"はCTRL-Vを押してから<BS>を押す。
+{訳注: "CTRL-V <BS>"はCTRL-Vを押してから<BS>を押す。}
 
 :as[cii]						*ga* *:as* *:ascii*
 ga			カーソル位置の文字の文字コードを、10/16/8 進数で表示し
@@ -55,7 +55,7 @@ ga			カーソル位置の文字の文字コードを、10/16/8 進数で表示�
 				<^@>  0,  Hex 00,  Octal 000 ~
 			合成文字も表示されます。'maxcombine' の設定は影響しま
 			せん。
-			覚え方: Get Ascii value (アスキーコードを取得)
+			覚え方: Get Ascii value (ASCIIコードを取得)
 			{Vi にはない}
 
 							*g8*
@@ -156,8 +156,8 @@ g8			カーソル位置の文字のバイト列を 16 進数で表示します�
 
 :{range}z#[+-^.=]{count}				*:z#*
 			":z" と同じですが、行番号も表示します。
-			{この機能が使えない Vi クローンもあります。引数が違う
-			場合もあります}
+			{Vi クローンによってはこの機能が使えないことがありま
+			す。引数が違う場合もあります}
 
 							*:=*
 := [flags]		最終行の行番号を表示します。
@@ -311,7 +311,7 @@ N  *+diff*		|vimdiff|と'diff'
 N  *+digraphs*		|digraphs|
    *+dnd*		"~レジスタ |quote_~|を使ったDnDのサポート
 B  *+emacs_tags*	|emacs-tags| ファイル
-N  *+eval*		式評価(訳注:Vimスクリプト) |eval.txt|
+N  *+eval*		式評価 {訳注: Vimスクリプト} |eval.txt|
 N  *+ex_extra*		Vimの拡張Exコマンド: |:center|, |:left|、
 			|:normal|、|:retab| 及び |:right|
 N  *+extra_search*	|'hlsearch'| と |'incsearch'| オプション

@@ -18,17 +18,17 @@ Sun Visual WorkShop との連携機能		*workshop* *workshop-support*
 ==============================================================================
 1. 機能紹介						*workshop-intro*
 
-Sun Visual WorkShopではデバッグに使用するエディタを"Editor of Choice" (訳注:エ
-ディタの選択)によってユーザの好みのものに変更できる。バージョン6.0のリリースに
-あたりgvimはこれに対応した。WorkShopのデバッグセッションにはデバッグウィンドウ
-とエディタウィンドウが表示される(同じように他のウィンドウが表示される可能性も
-ある)。ウィンドウを切換える必要は最低限で良く、ユーザはエディタウィンドウから
-多くのデバッグ操作を行なうことができる。
+Sun Visual WorkShopではデバッグに使用するエディタを "Editor of Choice" {訳注:
+エディタの選択}によってユーザの好みのものに変更できる。バージョン6.0のリリース
+にあたりgvimはこれに対応した。WorkShopのデバッグセッションにはデバッグウィンド
+ウとエディタウィンドウが表示される(同じように他のウィンドウが表示される可能性
+もある)。ウィンドウを切換える必要は最低限で良く、ユーザはエディタウィンドウか
+ら多くのデバッグ操作を行うことができる。
 
 Sun Visual WorkShop 6 (Forte Developer6とも呼ばれる)に付属するVimのバージョン
-は5.3である。このリリース(訳注:Vim 6)の機能はVisual WorkShopに付属するvim/gvim
-よりもかなり頼りになる。vimをエディタとして選択しているVWS(訳注:Visual
-WorkShopの略)のユーザは、(訳注: Vim 6の)ソースをコンパイルしWorkShopのリリース
+は5.3である。このリリース{訳注:Vim 6}の機能はVisual WorkShopに付属するvim/gvim
+よりもかなり頼りになる。vimをエディタとして選択しているVWS{訳注:Visual
+WorkShopの略}のユーザは、{訳注: Vim 6の}ソースをコンパイルしWorkShopのリリース
 ツリーへインストールするべきだ。
 
 ==============================================================================
@@ -78,7 +78,7 @@ VimをSun Visual WorkShop 6と供に使えるようにするためには、幾�
 指定する。デフォルトでは/opt/SUNWsproである。通常Vimをインストールするには管理
 者権限が必要になる。<VWS-install-dir>/bin/gvimが新しくインストールしたgvimを指
 すようにsymlinkを変更する必要もある。<vim-version>にはバージョンを示す文字列を
-指定する。著者は"vim"にversion.hの中のVIM_VERSION_SHORTと同じ物を付加して使っ
+指定する。著者は "vim" にversion.hの中のVIM_VERSION_SHORTと同じ物を付加して使っ
 ている。
 
 ==============================================================================
@@ -88,7 +88,7 @@ XPMライブラリはVimで(MotifかAthenaを使って)画像を表示するた�
 それ無しではツールバーと目印が利用できなくなる。
 
 XPMライブラリは French National Institute for Research in Computer Science and
-Control(訳注:フランス国立コンピュータ科学/制御研究所---通称INRIA) の Arnaud Le
+Control{訳注:フランス国立コンピュータ科学/制御研究所---通称INRIA} の Arnaud Le
 Hors によって提供されている。http://cgit.freedesktop.org/xorg/lib/libXpm より
 ダウンロードできる。これを書いている時点での最新版はxpm-3.4k-solaris.tgzでgzip
 されたtarファイルである。ディレクトリ /usr/local/xpmを作成してそこにファイルを

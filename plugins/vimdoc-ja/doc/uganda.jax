@@ -1,4 +1,4 @@
-*uganda.txt*    For Vim バージョン 7.3.  Last change: 2010 Aug 07
+*uganda.txt*    For Vim バージョン 7.3.  Last change: 2012 May 28
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -106,8 +106,8 @@ IV)  It is not allowed to remove this license from the distribution of the Vim
 
 === ライセンス日本語訳 ここから ===
 
-訳注: この日本語訳は参考のために示すものであり、法的効力を持ちません。
-訳注: 必ず上記の原文を参照してください。
+{訳注: この日本語訳は参考のために示すものであり、法的効力を持ちません。
+       必ず上記の原文を参照してください。}
 
 VIM ライセンス
 
@@ -189,8 +189,8 @@ Note:
 - Vimの開発に協力したいとお考えなら、スポンサーになることを検討してください
   |sponsor|。集めたお金はウガンダへ送金されます。
 
-- Richard Stallman にならってVimのライセンスは GNU GPL互換です。彼がそれを確認
-  してから多少の変更が加えられましたが、違いはないでしょう。
+- Richard Stallman によれば Vim のライセンスは GNU GPL 互換です。彼がそれを確
+  認してから多少の変更が加えられましたが、違いはないでしょう。
 
 - Vimに GNU GPL のライブラリをリンクした場合、配布形態が GNU GPL に制限されま
   す。あなたがVimに何の変更も加えていなくてもです。
@@ -199,7 +199,7 @@ Note:
   センスを使わなければいけません。
 
 - Vimに改良を加えたバージョンを配布するときは、configureの引数に
-  "--with-modified-by"を指定するかMODIFIED_BYを定義して、あなたの名前を連絡先
+  "--with-modified-by" を指定するかMODIFIED_BYを定義して、あなたの名前を連絡先
   に含めることができます。
 
 ==============================================================================
@@ -217,7 +217,7 @@ Kibaale Children's Centre (KCC) はウガンダの南部にある小さな町 Ki
 子供たちは多くの援助を必要としています。KCC は食料、医療、教育を彼らに提供する
 ために懸命に働いています。食料と医療は彼らの健康を保つために、そして教育は彼ら
 の将来を手助けするためです。KCC はキリスト教の教えに基づいて活動していますが、
-子供たちの宗教にかかわらず援助が行われています。
+子供たちの宗教に関わらず援助が行われています。
 
 この地域の問題を解決する鍵は教育です。過去数年にわたる Idi Amin 大統領の時代と
 それに続く市民戦争により、教育は軽視されてきました。今は政府が再び安定しました
@@ -313,7 +313,7 @@ Academy Outreach Society の監督下にあります。センターは約 1 年�
 		最新の情報は ICCF のウェブサイトを御覧下さい:
 			http://iccf-holland.org/germany.html
 
-ワールド:	郵便為替を使ってください。ほとんどの国で、たいていは郵便局か
+世界:		郵便為替を使ってください。ほとんどの国で、たいていは郵便局か
 		ら送れます。この名前を使ってください (これは私のパスポートの
 		ものです): "Abraham Moolenaar"。可能なら通貨はユーロにしてく
 		ださい。
@@ -336,7 +336,7 @@ Academy Outreach Society の監督下にあります。センターは約 1 年�
 その他:		可能であれば次のうちのどれかの口座に振り替えてください:
 		    Postbank, account 4548774
 				Swift code: INGB NL 2A
-				IBAN: NL47 PSTB 0004 5487 74
+				IBAN: NL95 INGB 0004 5487 74
 			under the name "stichting ICCF Holland", Lisse
 		    これがうまく行かなければ:
 		    Rabobank Lisse, account 3765.05.117
