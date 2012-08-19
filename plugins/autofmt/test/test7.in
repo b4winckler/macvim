@@ -1,0 +1,365 @@
+Test for indent.
+
+autoindent
+cindent
+lispindent
+smartindent
+indentexpr
+
+
+Results of test7:
+
+STARTTEST
+:set tw=10
+/^{/+1
+:set formatexpr=
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+ENDTEST
+
+case1
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+
+STARTTEST
+:set tw=10 autoindent
+/^{/+1
+:set formatexpr=
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+ENDTEST
+
+case2
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+
+STARTTEST
+:set tw=10 cindent
+/^{/+1
+:set formatexpr=
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+ENDTEST
+
+case3
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+
+STARTTEST
+:set tw=10 cindent
+/^{/+1
+:set formatexpr=
+gqgqjgqgqo
+aa bb cc dd ee ff;
+  aa bb cc dd ee ff;
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqo
+aa bb cc dd ee ff;
+  aa bb cc dd ee ff;
+ENDTEST
+
+case4
+{
+aa bb cc dd ee ff;
+  aa bb cc dd ee ff;
+}
+{
+aa bb cc dd ee ff;
+  aa bb cc dd ee ff;
+}
+
+STARTTEST
+:set tw=10 lisp
+/^{/+1
+:set formatexpr=
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+ENDTEST
+
+case5
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+
+STARTTEST
+:set tw=10 lisp
+/^{/+1
+:set formatexpr=
+gqgqjgqgqo
+(aa bb cc dd ee ff)
+  (aa bb cc dd ee ff)
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqo
+(aa bb cc dd ee ff)
+  (aa bb cc dd ee ff)
+ENDTEST
+
+case6
+{
+(aa bb cc dd ee ff)
+  (aa bb cc dd ee ff)
+}
+{
+(aa bb cc dd ee ff)
+  (aa bb cc dd ee ff)
+}
+
+STARTTEST
+:set tw=10 lisp autoindent
+/^{/+1
+:set formatexpr=
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+ENDTEST
+
+case7
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+
+STARTTEST
+:set tw=10 lisp autoindent
+/^{/+1
+:set formatexpr=
+gqgqjgqgqo
+(aa bb cc dd ee ff)
+  (aa bb cc dd ee ff)
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqo
+(aa bb cc dd ee ff)
+  (aa bb cc dd ee ff)
+ENDTEST
+
+case8
+{
+(aa bb cc dd ee ff)
+  (aa bb cc dd ee ff)
+}
+{
+(aa bb cc dd ee ff)
+  (aa bb cc dd ee ff)
+}
+
+STARTTEST
+:set tw=10 smartindent
+/^{/+1
+:set formatexpr=
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+ENDTEST
+
+case9
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+
+STARTTEST
+:set tw=10 sw=2 smartindent
+/^{/+1
+:set formatexpr=
+gqgqoi
+if aaa
+do bbb
+while ccc
+#if ddd
+eee
+#endif
+fff
+{
+aaa
+{
+bbb
+}
+}
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqoi
+if aaa
+do bbb
+while ccc
+#if ddd
+eee
+#endif
+fff
+{
+aaa
+{
+bbb
+}
+}
+ENDTEST
+
+case10
+{
+if aaa do bbb while ccc #if ddd #endif { aaa { bbb } }
+}
+{
+if aaa do bbb while ccc #if ddd #endif { aaa { bbb } }
+}
+
+STARTTEST
+:set tw=10 indentexpr=indent(v:lnum-1)+1
+/^{/+1
+:set formatexpr=
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqo
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+ENDTEST
+
+case11
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+{
+aa bb cc dd ee ff
+  aa bb cc dd ee ff
+}
+
+STARTTEST
+:set tw=10 cindent
+/^{/+1
+:set formatexpr=
+gqgqjo{
+
+}k  aa label:
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjo{
+
+}k  aa label:
+ENDTEST
+
+case12
+{
+  aa label:
+}
+{
+  aa label:
+}
+
+STARTTEST
+:set tw=10 cindent
+/^{/+1
+:set formatexpr=
+gqgqjo{
+
+}k  a; label:
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjo{
+
+}k  a; label:
+ENDTEST
+
+case13
+{
+  a; label:
+}
+{
+  a; label:
+}
+
+STARTTEST
+:set tw=10 cindent
+/^{/+1
+:set formatexpr=
+gqgqjo{
+
+}k  a; bbbbb;
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjo{
+
+}k  a; bbbbb;
+ENDTEST
+
+case14
+{
+  a; bbbbb;
+}
+{
+  a; bbbbb;
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST

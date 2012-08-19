@@ -157,9 +157,9 @@ TARGETOS = BOTH
 # interfaces.
 # If you change something else, do "make clean" first!
 !if "$(GUI)" == "yes"
-OBJDIR = .\ObjG
+OBJDIR = .\Obj\G
 !else
-OBJDIR = .\ObjC
+OBJDIR = .\Obj\C
 !endif
 !if "$(OLE)" == "yes"
 OBJDIR = $(OBJDIR)O
@@ -187,6 +187,9 @@ OBJDIR = $(OBJDIR)Z
 !endif
 !if "$(DEBUG)" == "yes"
 OBJDIR = $(OBJDIR)d
+!endif
+!ifdef PROCESSOR_ARCHITECTURE
+OBJDIR = $(OBJDIR)-$(PROCESSOR_ARCHITECTURE)
 !endif
 
 # Win32.mak requires that CPU be set appropriately.
@@ -286,9 +289,12 @@ NETBEANS_LIB	= WSock32.lib
 #   http://cgit.freedesktop.org/xorg/lib/libXpm
 # from which you must build xpm.lib yourself
 #   OR get and unpack: ftp://ftp.vim.org/pub/vim/pcextra/xpm.zip
+!ifndef XPM_ARCH
+XPM_ARCH=
+!endif
 XPM_OBJ   = $(OBJDIR)/xpm_w32.obj
 XPM_DEFS  = -DFEAT_XPM_W32
-XPM_LIB   = $(XPM)\lib\libXpm.lib
+XPM_LIB   = $(XPM)\lib$(XPM_ARCH)\libXpm.lib
 XPM_INC	  = -I $(XPM)\include
 !endif
 !endif
@@ -608,6 +614,14 @@ GETTEXT = yes
 CFLAGS = $(CFLAGS) -DDYNAMIC_GETTEXT
 !endif
 
+#
+# Support Migemo
+#
+!ifdef MIGEMO
+!message Migemo supported - will be dynamic linked.
+CFLAGS = $(CFLAGS) -DDYNAMIC_MIGEMO
+!endif
+
 # TCL interface
 !ifdef TCL
 !ifndef TCL_VER
@@ -918,6 +932,7 @@ $(VIM).exe: $(OUTDIR) $(OBJ) $(GUI_OBJ) $(OLE_OBJ) $(OLE_IDL) $(MZSCHEME_OBJ) \
 		$(LUA_OBJ) $(MZSCHEME_OBJ) $(PERL_OBJ) $(PYTHON_OBJ) $(PYTHON3_OBJ) $(RUBY_OBJ) \
 		$(TCL_OBJ) $(SNIFF_OBJ) $(CSCOPE_OBJ) $(NETBEANS_OBJ) \
 		$(XPM_OBJ) $(OUTDIR)\version.obj $(LINKARGS2)
+	IF EXIST $@.manifest mt -nologo -manifest $@.manifest gvim.exe.mnf -outputresource:$@;1
 
 $(VIM): $(VIM).exe
 
@@ -932,14 +947,17 @@ install.exe: dosinst.c
 
 uninstal.exe: uninstal.c
 	$(CC) /nologo -DNDEBUG -DWIN32 uninstal.c shell32.lib advapi32.lib
+	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
 
 vimrun.exe: vimrun.c
 	$(CC) /nologo -DNDEBUG vimrun.c
+	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
 
 xxd/xxd.exe: xxd/xxd.c
 	cd xxd
 	$(MAKE) /NOLOGO -f Make_mvc.mak
 	cd ..
+	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
 
 GvimExt/gvimext.dll: GvimExt/gvimext.cpp GvimExt/gvimext.rc GvimExt/gvimext.h
 	cd GvimExt
@@ -957,6 +975,8 @@ clean:
 	- if exist $(OUTDIR)/nul $(DEL_TREE) $(OUTDIR)
 	- if exist *.obj del *.obj
 	- if exist $(VIM).exe del $(VIM).exe
+	- if exist $(VIM).exe.manifest del $(VIM).exe.manifest
+	- if exist $(VIM).lib del $(VIM).lib
 	- if exist $(VIM).ilk del $(VIM).ilk
 	- if exist $(VIM).pdb del $(VIM).pdb
 	- if exist $(VIM).map del $(VIM).map
@@ -1156,7 +1176,7 @@ $(OUTDIR)/xpm_w32.obj: $(OUTDIR) xpm_w32.c
 	$(CC) $(CFLAGS) $(XPM_INC) xpm_w32.c
 
 $(OUTDIR)/vim.res:	$(OUTDIR) vim.rc gvim.exe.mnf version.h tools.bmp \
-				tearoff.bmp vim.ico vim_error.ico \
+				tearoff.bmp vim2.ico vim_error.ico \
 				vim_alert.ico vim_info.ico vim_quest.ico
 	$(RC) /l 0x409 /Fo$(OUTDIR)/vim.res $(RCFLAGS) vim.rc
 

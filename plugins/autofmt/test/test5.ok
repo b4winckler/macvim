@@ -1,0 +1,34 @@
+Results of test5:
+
+
+case1
+{
+
+aa bb cc
+dd ee ff
+
+[cursor]
+
+}
+{
+
+aa bb cc
+dd ee ff
+
+[cursor]
+
+}
+
+
+case2
+{
+  aa bb cc
+  dd ee ff
+col=3
+}
+{
+  aa bb cc
+  dd ee ff
+col=3
+}
+

@@ -1,0 +1,71 @@
+Test for incompatible and/or improved behavior.
+
+Results of test2:
+
+STARTTEST
+:" don't split line at just after a listpat.
+:set tw=10 fo=tn formatlistpat=^\\s*\\d\\+[\\].)}\\t\ ]\\s*
+/^{/+1
+:set formatexpr=
+gqgqo
+    1. aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+    1. aaaaa bbbbb
+ENDTEST
+
+1254595216
+{
+    1. aaaaa bbbbb
+}
+{
+    1. aaaaa bbbbb
+}
+
+STARTTEST
+:" allow listpat in comment.
+:set tw=10 fo=cqn formatlistpat=^\\s*\\d\\+[\\].)}\\t\ ]\\s* comments=:#
+/^{/+1
+:set formatexpr=
+gqgqo
+# 1. aaa bbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+# 1. aaa bbb
+ENDTEST
+
+1254595217
+{
+# 1. aaa bbb
+}
+{
+# 1. aaa bbb
+}
+
+STARTTEST
+:" " * */" -> " */"
+:set tw=10 fo=cq comments=s1:/*,mb:*,ex:*/
+/^{/+1
+:set formatexpr=
+gqgqo
+/* aaaaa bbbbb ccccc */
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+/* aaaaa bbbbb ccccc */
+ENDTEST
+
+1254595219
+{
+/* aaaaa bbbbb ccccc */
+}
+{
+/* aaaaa bbbbb ccccc */
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST

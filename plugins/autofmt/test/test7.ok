@@ -1,0 +1,422 @@
+Results of test7:
+
+
+case1
+{
+aa bb cc
+dd ee ff
+  aa bb cc
+dd ee ff
+
+aa bb cc
+dd ee ff
+  aa bb cc
+dd ee ff
+}
+{
+aa bb cc
+dd ee ff
+  aa bb cc
+dd ee ff
+
+aa bb cc
+dd ee ff
+  aa bb cc
+dd ee ff
+}
+
+
+case2
+{
+aa bb cc
+dd ee ff
+  aa bb cc
+  dd ee ff
+
+  aa bb cc
+  dd ee ff
+    aa bb
+    cc dd
+    ee ff
+}
+{
+aa bb cc
+dd ee ff
+  aa bb cc
+  dd ee ff
+
+  aa bb cc
+  dd ee ff
+    aa bb
+    cc dd
+    ee ff
+}
+
+
+case3
+{
+aa bb cc
+	dd
+	ee
+	ff
+  aa bb cc
+  dd ee ff
+
+  aa bb cc
+  dd ee ff
+    aa bb
+    cc dd
+    ee ff
+}
+{
+aa bb cc
+	dd
+	ee
+	ff
+  aa bb cc
+  dd ee ff
+
+  aa bb cc
+  dd ee ff
+    aa bb
+    cc dd
+    ee ff
+}
+
+
+case4
+{
+aa bb cc
+	dd
+	ee
+	ff;
+  aa bb cc
+	  dd
+	  ee
+	  ff;
+
+  aa bb cc
+	  dd
+	  ee
+	  ff;
+    aa bb
+	    cc
+	    dd
+	    ee
+	    ff;
+}
+{
+aa bb cc
+	dd
+	ee
+	ff;
+  aa bb cc
+	  dd
+	  ee
+	  ff;
+
+  aa bb cc
+	  dd
+	  ee
+	  ff;
+    aa bb
+	    cc
+	    dd
+	    ee
+	    ff;
+}
+
+
+case5
+{
+aa bb cc
+dd ee ff
+  aa bb cc
+dd ee ff
+
+aa bb cc
+dd ee ff
+  aa bb cc
+dd ee ff
+}
+{
+aa bb cc
+dd ee ff
+  aa bb cc
+dd ee ff
+
+aa bb cc
+dd ee ff
+  aa bb cc
+dd ee ff
+}
+
+
+case6
+{
+(aa bb cc
+dd ee ff)
+  (aa bb
+cc dd ee
+ff)
+
+(aa bb cc
+dd ee ff)
+  (aa bb
+cc dd ee
+ff)
+}
+{
+(aa bb cc
+dd ee ff)
+  (aa bb
+cc dd ee
+ff)
+
+(aa bb cc
+dd ee ff)
+  (aa bb
+cc dd ee
+ff)
+}
+
+
+case7
+{
+aa bb cc
+dd ee ff
+  aa bb cc
+dd ee ff
+
+aa bb cc
+dd ee ff
+  aa bb cc
+dd ee ff
+}
+{
+aa bb cc
+dd ee ff
+  aa bb cc
+dd ee ff
+
+aa bb cc
+dd ee ff
+  aa bb cc
+dd ee ff
+}
+
+
+case8
+{
+(aa bb cc
+  dd ee
+  ff)
+  (aa bb
+      cc
+      dd
+      ee
+      ff)
+
+(aa bb cc
+  dd ee
+  ff)
+  (aa bb
+      cc
+      dd
+      ee
+      ff)
+}
+{
+(aa bb cc
+  dd ee
+  ff)
+  (aa bb
+      cc
+      dd
+      ee
+      ff)
+
+(aa bb cc
+  dd ee
+  ff)
+  (aa bb
+      cc
+      dd
+      ee
+      ff)
+}
+
+
+case9
+{
+aa bb cc
+dd ee ff
+  aa bb cc
+  dd ee ff
+
+  aa bb cc
+  dd ee ff
+    aa bb
+    cc dd
+    ee ff
+}
+{
+aa bb cc
+dd ee ff
+  aa bb cc
+  dd ee ff
+
+  aa bb cc
+  dd ee ff
+    aa bb
+    cc dd
+    ee ff
+}
+
+
+case10
+{
+if aaa do
+  bbb
+  while
+    ccc
+    #if
+    ddd
+    #endif
+    { aaa
+    { bbb
+    } }
+
+if aaa
+  do bbb
+    while
+      ccc
+#if ddd
+      eee
+#endif
+      fff
+      {
+	aaa
+	{
+	  bbb
+	}
+      }
+}
+{
+if aaa do
+  bbb
+  while
+    ccc
+    #if
+    ddd
+    #endif
+    { aaa
+    { bbb
+    } }
+
+if aaa
+  do bbb
+    while
+      ccc
+#if ddd
+      eee
+#endif
+      fff
+      {
+	aaa
+	{
+	  bbb
+	}
+      }
+}
+
+
+case11
+{
+aa bb cc
+ dd ee ff
+  aa bb cc
+   dd ee
+    ff
+
+ aa bb cc
+  dd ee ff
+     aa bb
+      cc
+       dd
+	ee
+	 ff
+}
+{
+aa bb cc
+ dd ee ff
+  aa bb cc
+   dd ee
+    ff
+
+ aa bb cc
+  dd ee ff
+     aa bb
+      cc
+       dd
+	ee
+	 ff
+}
+
+
+case12
+{
+  aa
+	  label:
+}
+{
+  aa
+	  label:
+}
+{
+  aa
+	  label:
+}
+{
+  aa
+	  label:
+}
+
+
+case13
+{
+  a;
+label:
+}
+{
+  a;
+label:
+}
+{
+  a;
+label:
+}
+{
+  a;
+label:
+}
+
+
+case14
+{
+  a;
+  bbbbb;
+}
+{
+  a;
+  bbbbb;
+}
+{
+  a;
+  bbbbb;
+}
+{
+  a;
+  bbbbb;
+}
+

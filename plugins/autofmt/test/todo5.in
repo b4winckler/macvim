@@ -1,0 +1,91 @@
+Test for mark.
+
+Results of todo5:
+
+STARTTEST
+:function! GetMarks(s)
+:  return map(split(a:s, '\zs'), 'getpos("''" . v:val)')
+:endfunction
+ENDTEST
+
+STARTTEST
+:set tw=10
+/^{/+1
+:set formatexpr=
+:normal! mawmbwmcwmdwmewmf
+:let before = GetMarks('abcdef')
+:normal! k2gqgq
+:let after = GetMarks('abcdef')
+:call append('.', [string(before), string(after), before == after ? "ok" : "ng"])
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+:normal! mawmbwmcwmdwmewmf
+:let before = GetMarks('abcdef')
+:normal! k2gqgq
+:let after = GetMarks('abcdef')
+:call append('.', [string(before), string(after), before == after ? "ok" : "ng"])
+:delmarks!
+ENDTEST
+
+case1
+{
+aa bb cc
+dd ee ff
+}
+{
+aa bb cc
+dd ee ff
+}
+
+STARTTEST
+:set tw=10
+/^{/+1
+:set formatexpr=
+:normal! mawmbwmcwmdwmewmf
+:normal! gqgq
+:let marks_vim = GetMarks('abcdef')
+:-1,.delete
+:delmarks!
+:set formatexpr=autofmt#compat#formatexpr()
+:normal! mawmbwmcwmdwmewmf
+:normal! gqgq
+:let marks_autofmt = GetMarks('abcdef')
+:call append('.', [string(marks_vim), string(marks_autofmt), marks_vim == marks_autofmt ? 'ok' : 'ng'])
+:delmarks!
+ENDTEST
+
+case2
+{
+aa bb cc dd ee ff
+aa bb cc dd ee ff
+}
+
+STARTTEST
+:set tw=20
+/^{/+1
+:set formatexpr=
+:normal! mawmbwmcwmdwmewmf
+:normal! k2gqgq
+:let marks_vim = GetMarks('abcdef')
+:delete
+:delmarks!
+:set formatexpr=autofmt#compat#formatexpr()
+:normal! mawmbwmcwmdwmewmf
+:normal! k2gqgq
+:let marks_autofmt = GetMarks('abcdef')
+:call append('.', [string(marks_vim), string(marks_autofmt), marks_vim == marks_autofmt ? 'ok' : 'ng'])
+:delmarks!
+ENDTEST
+
+case3
+{
+aa bb cc
+dd ee ff
+aa bb cc
+dd ee ff
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST
