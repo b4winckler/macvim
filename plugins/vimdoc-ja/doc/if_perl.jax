@@ -21,7 +21,7 @@ Perl インタフェイスは、Vim を |+perl| 機能付きでコンパイル�
 
 Vim の構文ハイライト(syntax highlighting)は Perl と POD のファイルもサポートし
 ています。Vim はファイルの拡張子が .pl か .pm であると、Perl のコードだと想定
-します。また、ファイルの拡張しによらず、Vim はファイルの1行目を調べてファイル
+します。また、ファイルの拡張子によらず、Vim はファイルの1行目を調べてファイル
 が Perl スクリプトであるかどうか確認します(Vim の syntax ディレクトリにある
 scripts.vim を参照してください)。ファイルの拡張子が .POD であると、Vim は POD
 テキストであると想定します。
@@ -29,7 +29,7 @@ scripts.vim を参照してください)。ファイルの拡張子が .POD で�
 Perl でタグを使うには、最近のctagsが必要です。ここを訪れてください。
 	http://ctags.sourceforge.net
 
-Perl スクリプトの"pltags.pl"を使うこともできます。これは $VIMRUNTIME/tools
+Perl スクリプトの "pltags.pl" を使うこともできます。これは $VIMRUNTIME/tools
 ディレクトリにあります。これは今のところ最新のctagsよりも高機能です。
 
 ==============================================================================
@@ -58,12 +58,12 @@ http://www/perl.com/CPAN/ports/nt/Standard/x86/
 :pe[rl] << {endpattern}
 {script}
 {endpattern}
-			Perlスクリプト {script} を実行します.
+			Perlスクリプト {script} を実行します。
 			{endpattern} の前に空白を置いてはいけません。
 			{endpattern} を省略した時は|:append|や|:insert|のよう
-			に'.'が使われます。これは関数の中で使う時に便利です。
-			なぜなら"$i;"は|:insert|コマンドの開始と紛らわしいから
-			です。
+			に '.' が使われます。これは関数の中で使う時に便利です。
+			なぜなら "$i;" は|:insert|コマンドの開始と紛らわしいか
+			らです。
 			この方法はVimスクリプトの中にPerlスクリプトを埋め込む
 			時に便利です。
 			Note: Perl のサポートを有効にしてコンパイルされていな
@@ -101,8 +101,8 @@ Vimスクリプトの例: >
    :perl $line = $curbuf->Get(42)
 <
 							*E299*
-|sandbox|の中のPerlコマンドの実行は制限されています。":perldo"は常に使えませ
-ん。":perl"は安全な環境の中で、可能なら評価されます。
+|sandbox|の中のPerlコマンドの実行は制限されています。":perldo" は常に使えませ
+ん。":perl" は安全な環境の中で、可能なら評価されます。
 
 							*perl-overview*
 Perl で使える関数の一覧です: >
@@ -111,24 +111,24 @@ Perl で使える関数の一覧です: >
    :perl VIM::Msg("Error", "ErrorMsg")	# エラーメッセージを表示します
    :perl VIM::Msg("remark", "Comment")	# ハイライトされたメッセージを表示します
    :perl VIM::SetOption("ai")		# Vim のオプションをセットします
-   :perl $nbuf = VIM::Buffers()		# 全てのバッファー数を返す
-   :perl @buflist = VIM::Buffers()	# 全てのバッファーの配列を返す
-   :perl $mybuf = (VIM::Buffers('qq.c'))[0] # 'qq.c' のバッファー・オブジェク
-					    # トを返す
-   :perl @winlist = VIM::Windows()	# 全てのウインドウの配列を返す
-   :perl $nwin = VIM::Windows()		# ウインドウ数を返す
+   :perl $nbuf = VIM::Buffers()		# 全てのバッファ数を返す
+   :perl @buflist = VIM::Buffers()	# 全てのバッファの配列を返す
+   :perl $mybuf = (VIM::Buffers('qq.c'))[0] # 'qq.c' のバッファ・オブジェクト
+					    # を返す
+   :perl @winlist = VIM::Windows()	# 全てのウィンドウの配列を返す
+   :perl $nwin = VIM::Windows()		# ウィンドウ数を返す
    :perl ($success, $v) = VIM::Eval('&path') # $v: 'path' オプション、
 					     # $success: 1
    :perl ($success, $v) = VIM::Eval('&xyz')  # $v: '' $sucess: 0
    :perl $v = VIM::Eval('expand("<cfile>")') # <cfile> を展開
-   :perl $curwin->SetHeight(10)		# ウインドーの高さを設定します
+   :perl $curwin->SetHeight(10)		# ウィンドウの高さを設定します
    :perl @pos = $curwin->Cursor()	# (行, 列) 配列を返します
    :perl @pos = (10, 10)
    :perl $curwin->Cursor(@pos)		# カーソルを @pos にセットします
    :perl $curwin->Cursor(10,10)		# カーソルを10行10列目にセットします
-   :perl $mybuf = $curwin->Buffer()	# ウインドウのバッファー・オブジェクト
-					# を返す
-   :perl $curbuf->Name()		# バッファー名を返します
+   :perl $mybuf = $curwin->Buffer()	# ウィンドウのバッファ・オブジェクトを
+					# 返す
+   :perl $curbuf->Name()		# バッファ名を返します
    :perl $curbuf->Number()		# returns buffer number
    :perl $curbuf->Count()		# 行数を返します
    :perl $l = $curbuf->Get(10)		# 10 行目を返します
@@ -156,21 +156,21 @@ VIM::SetOption({arg})	Vim のオプションをセットします。{arg} は ":
 			味しますので、注意してください。参照: |:set|
 
 							*perl-Buffers*
-VIM::Buffers([{bn}...])	引数なしだと、配列コンテキストではすべてのバッファーの
-			リストを、スカラーコンテキストではバッファーの数を返し
-			ます。バッファー名 {bn} もしくは、バッファー番号 {bn}
-			のリストが与えられた場合は、{bn} にマッチするバッ
-			ファーのリストを返します。ここでは Vim の内蔵関
-			数 |bufname()| と同じルールが用いられます。
+VIM::Buffers([{bn}...])	引数なしだと、配列コンテキストではすべてのバッファのリ
+			ストを、スカラーコンテキストではバッファの数を返しま
+			す。バッファ名 {bn} もしくは、バッファ番号 {bn} のリス
+			トが与えられた場合は、{bn} にマッチするバッファのリス
+			トを返します。ここでは Vim の内蔵関数 |bufname()| と同
+			じルールが用いられます。
 			警告: |:bwipe| が使われると、このリストは無効になりま
 			す。それを使おうとすると Vim がクラッシュすることがあ
 			ります。
 
 							*perl-Windows*
-VIM::Windows([{wn}...])	引数なしだと、配列コンテキストではすべてのウインドーの
-			リストを返し、スカラーコンテキストではウインドーの数を
-			返します。ウインドー数 {wn} にリストが与えられた場合は、
-			それらの番号のウインドーのリストを返します。
+VIM::Windows([{wn}...])	引数なしだと、配列コンテキストではすべてのウィンドウの
+			リストを返し、スカラーコンテキストではウィンドウの数を
+			返します。ウィンドウ数 {wn} にリストが与えられた場合は、
+			それらの番号のウィンドウのリストを返します。
 			警告: |:bwipe| が使われると、このリストは無効になりま
 			す。それを使おうとすると Vim がクラッシュすることがあ
 			ります。
@@ -181,9 +181,9 @@ VIM::DoCommand({cmd})	Ex コマンド {cmd} を実行します。
 							*perl-Eval*
 VIM::Eval({expr})	{expr} を評価して (success, val) を返します。success=1
 			だと、val は {expr} の値を含みます; success=0 だと、式
-			の評価に失敗したことを示しています。'@x' はレジスター
-			x の内容を返し、'&x' はオプション x の値を返します。
-			'x' は内部変数 |variables| x を返し、'$x' は Perl の
+			の評価に失敗したことを示しています。'@x' はレジスタ x
+			の内容を返し、'&x' はオプション x の値を返します。'x'
+			は内部変数 |variables| x を返し、'$x' は Perl の
 			$ENV{x} と同じです。コマンドラインからアクセスできるす
 			べての |functions| は {expr} に使うことができます。
 			リスト |List| は文字列に変換されます。そのとき各要素の
@@ -191,60 +191,60 @@ VIM::Eval({expr})	{expr} を評価して (success, val) を返します。succes
 
 							*perl-SetHeight*
 Window->SetHeight({height})
-			ウインドーの高さをスクリーンの上限以内で {height} に
+			ウィンドウの高さをスクリーンの上限以内で {height} に
 			セットします。
 
 							*perl-GetCursor*
 Window->Cursor({row}?, {col}?)
-			引数なしだと、ウインドーの現在のカーソル位置の
+			引数なしだと、ウィンドウの現在のカーソル位置の
 			(row, col) 配列を返します。{row} と {col} 引数をつけて
-			よばれると、ウインドーのカーソル位置を {row} と {col}
+			よばれると、ウィンドウのカーソル位置を {row} と {col}
 			にセットします。{col} は Perl のように0から数えられま
 			すので、Vim のルーラーの値より1つ小さくなるということ
 			に注意してください。
 
 Window->Buffer()					*perl-Buffer*
-			与えられたウインドーに対応するバッファーオブジェクトを
-			返します。
+			与えられたウィンドウに対応するバッファオブジェクトを返
+			します。
 
 							*perl-Name*
-Buffer->Name()		バッファーのファイル名を返します。
+Buffer->Name()		バッファのファイル名を返します。
 
 							*perl-Number*
-Buffer->Number()	バッファーの番号を返します。
+Buffer->Number()	バッファの番号を返します。
 
 							*perl-Count*
-Buffer->Count()		バッファーの行数を返します。
+Buffer->Count()		バッファの行数を返します。
 
 							*perl-Get*
 Buffer->Get({lnum}, {lnum}?, ...)
-			バッファーの {lnum} 行目のテキストを、指定されているそ
-			れぞれの {lnum} に関して返します。{lnum} のリストとし
-			て配列を渡すこともできます。
+			バッファの {lnum} 行目のテキストを、指定されているそれ
+			ぞれの {lnum} に関して返します。{lnum} のリストとして
+			配列を渡すこともできます。
 
 							*perl-Delete*
 Buffer->Delete({lnum}, {lnum}?)
-			バッファーの {lnum} 行目を削除します。二つ目の {lnum}
-			が指定されていると、始めの {lnum} から二つ目の {lnum}
-			までの範囲の行が削除されます。
+			バッファの {lnum} 行目を削除します。二つ目の {lnum} が
+			指定されていると、始めの {lnum} から二つ目の {lnum} ま
+			での範囲の行が削除されます。
 
 							*perl-Append*
 Buffer->Append({lnum}, {line}, {line}?, ...)
-			それぞれの {line} をバッファーの {lnum} 行目の後に挿入
-			します。{line} のリストは配列でもよいです。
+			それぞれの {line} をバッファの {lnum} 行目の後に挿入し
+			ます。{line} のリストは配列でもよいです。
 
 							*perl-Set*
 Buffer->Set({lnum}, {line}, {line}?, ...)
-			バッファーの行を1行以上 {line} で指定される行で置き換
-			えます。置き換えは、{lnum} から始まり、{line} は配列で
-			もよいです。引数が有効でないものであれば、置き換えは起
-			こりません。
+			バッファの行を1行以上 {line} で指定される行で置き換え
+			ます。置き換えは、{lnum} から始まり、{line} は配列でも
+			よいです。引数が有効でないものであれば、置き換えは起こ
+			りません。
 
 $main::curwin
-			現在のウインドーオブジェクト
+			現在のウィンドウオブジェクト
 
 $main::curbuf
-			現在のバッファーオブジェクト
+			現在のバッファオブジェクト
 
 
 							*script-here*
@@ -266,32 +266,32 @@ Vimスクリプトにその他のスクリプトを埋め込むときに、そ�
       endfunction
       call DefPerl()
     endif
-注意:"EOF"は行頭になければなりません。
+Note: "EOF" は行頭になければなりません。
 
 ==============================================================================
 4. 動的ローディング					*perl-dynamic*
 
-MS-Windows と Unix では Perl ライブラリを動的に読み込むことが可能である。これ
-を行うと |:version| の出力に |+perl/dyn| が含まれるようになる。
+MS-Windows と Unix では Perl ライブラリを動的に読み込むことが可能です。これを
+行うと |:version| の出力に |+perl/dyn| が含まれるようになります。
 
-この場合、Vimは必要になったときだけPerlのDLLや共有ライブラリのファイルを検索す
-る。Perlインターフェイスを使わないときはDLLを必要としないので、DLLなしでVimを
-使うことができる。
+この場合、Vimは必要になったときだけPerlのDLLや共有ライブラリのファイルを検索し
+ます。Perlインターフェイスを使わないときはDLLを必要としないので、DLLなしでVim
+を使うことができます。
 
 MS-Windows ~
 
-http://www.perl.org から Perl をダウンロードできる。Vim のビルドには
-ActiveState のものが使われた。
+http://www.perl.org から Perl をダウンロードできます。Vim のビルドには
+ActiveState のものが使われました。
 
 Perl インターフェイスを使うには Perl の DLL が検索パス内に存在しなければなりま
 せん。perl512.dll が見つからないというようなメッセージが表示された場合は、
 $PATH に適切なディレクトリが含まれているかどうか確認してください。通常は Perl
-のインストーラーによって設定されるでしょう。コンソールウィンドウで "path" とタ
-イプすると、どのディレクトリが検索パスになっているか確認できます。
+のインストーラによって設定されるでしょう。コンソールウィンドウで "path" とタイ
+プすると、どのディレクトリが検索パスになっているか確認できます。
 
-DLLの名前はVimをコンパイルした時のPerlのバージョンに一致しなければならない。
-現在その名前は"perl512.dll"である。これはPerl5.12用である。これを確かめるに
-は、"gvim.exe"を開き、"perl\d*.dll\c"を検索する。
+DLLの名前はVimをコンパイルした時のPerlのバージョンに一致しなければなりません。
+現在その名前は "perl512.dll" です。これはPerl5.12用です。これを確かめるには、
+"gvim.exe" を開き、"perl\d*.dll\c" を検索してください。
 
 ==============================================================================
 

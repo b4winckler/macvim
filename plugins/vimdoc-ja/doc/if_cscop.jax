@@ -55,7 +55,7 @@ ctagsの代わりとみなせる。Vimではタグにジャンプするように
        この関数はどのソースファイルのどこにあるのか?
        どの関数がこの関数を呼んでいるのか?
        どの関数がこの関数から呼ばれているか?
-       "メモリが足りない"というメッセージはどこから来たのか?
+       "メモリが足りない" というメッセージはどこから来たのか?
        このソースファイルはディレクトリのどこにあるのか?
        どんなファイルがこのヘッダーファイルをインクルードしているのか?
 
@@ -75,7 +75,7 @@ ctagsの代わりとみなせる。Vimではタグにジャンプするように
 
 Vimのcscopeインターフェースはcscopeの行指向インターフェースを利用することでこ
 れを行い、実クエリに対する出力を解釈する。cscopeのクエリの結果は最終的に通常の
-tagsのようになるので、普通のタグのようなジャンプ操作(Ctrl-]や:tag)を行なうこと
+tagsのようになるので、普通のタグのようなジャンプ操作 (Ctrl-]や:tag) を行うこと
 ができ、タグスタックをCtrl-Tで逆に辿ることも可能になる。(しかしキーマップの再
 定義やコマンドやオプションの設定をしないで、まったく単純にCtrl-]や:tagと同じよ
 うにジャンプできるわけではないことに注意して欲しい。cscopeインターフェースがど
@@ -87,9 +87,9 @@ tagsのようになるので、普通のタグのようなジャンプ操作(Ctr
 2. Cscopeに関係するコマンド				*cscope-commands*
 
 		*:cscope* *:cs* *:scs* *:scscope* *E259* *E262* *E561* *E560*
-全てのcscopeのコマンドはメインコマンド":cscope"のサブコマンドとしてアクセスす
-ることができる。最も短い省略形は":cs"である。":scscope"コマンドはウィンドウ分
-割を伴って同じ事を行なう(省略形: "scs")。
+全てのcscopeのコマンドはメインコマンド ":cscope" のサブコマンドとしてアクセス
+することができる。最も短い省略形は ":cs" である。":scscope" コマンドはウィンド
+ウ分割を伴って同じ事を行う (省略形: "scs")。
 
 利用可能なサブコマンドは:
 
@@ -145,8 +145,8 @@ tagsのようになるので、普通のタグのようなジャンプ操作(Ctr
 
 	    :cscope find 0 DEFAULT_TERM
 <
-	    この例を Vim 5.1 のソースコードに対して行なうと、以下の出力を生成
-	    する。
+	    この例を Vim 5.1 のソースコードに対して行うと、以下の出力を生成す
+	    る。
 
 
 	    Cscope tag: DEFAULT_TERM
@@ -220,13 +220,13 @@ tagsのようになるので、普通のタグのようなジャンプ操作(Ctr
 cscope の結果を表示する。
 
 						*:cstag* *E257* *E562*
-ctagsとcscopeを同じように使うのならば、両方を順に検索してジャンプを行なうのに
+ctagsとcscopeを同じように使うのならば、両方を順に検索してジャンプを行うのに
 |:cstag|が利用できる。例えば、最初にcscopeデータベースを検索し、見つからなかっ
 た時には、tagsファイルを検索することができる。どちらを先に検索するかは|csto|の
 値で決まる。詳細は|cscope-options|を参照。
 
-|:cstag|がcscopeデータベースを検索する時には、識別子に対して":cs find g"と同じ
-ように働く。
+|:cstag|がcscopeデータベースを検索する時には、識別子に対して ":cs find g" と同
+じように働く。
 
 |:cstag|がtagsファイルを検索する時には、識別子に対して|:tjump|と同じように働
 く。
@@ -236,54 +236,54 @@ ctagsとcscopeを同じように使うのならば、両方を順に検索して
 3. Cscopeオプション					*cscope-options*
 
 全てのcscopeのオプションは|:set|コマンドによって設定できる。理想的には起動ファ
-イルのどれか1つ(例: .vimrc)で行なうであろう。cscopeに関係する幾つかの変数は
+イルのどれか1つ (例: .vimrc) で行うであろう。cscopeに関係する幾つかの変数は
 |.vimrc|の中だけで有効である。Vimが起動した後にそれらの変数を変更しても効果が
 無い!
 
 							*cscopeprg* *csprg*
-'cscopeprg'にはcscopeを実行するコマンドを指定する。省略値は"cscope"。例: >
+'cscopeprg' にはcscopeを実行するコマンドを指定する。省略値は "cscope"。例: >
 	:set csprg=/usr/local/bin/cscope
 <
 					    *cscopequickfix* *csqf* *E469*
 {|+quickfix|付きでコンパイルしないと利用できない}
-'cscopequickfix'はcscopeの結果を表示するためにクイックフィックスウインドウを
+'cscopequickfix' はcscopeの結果を表示するためにクイックフィックスウィンドウを
 使うかどうかを決める。これはコンマ区切りのリストである。要素は|cscope-find|
 コマンド(s, g, d, c, t, e, f or i)とフラグ(+, - or 0)から成っている。
-'+' は結果がクイックフィックスウインドウに追加されることを示す。
-'-' はそれ以前の結果を消すことを意味する。'0'や何も指定していないコマンドは
-クイックフィックスウインドウを使わない。探索は始まりから最初のコマンドを見つ
+'+' は結果がクイックフィックスウィンドウに追加されることを示す。
+'-' はそれ以前の結果を消すことを意味する。'0' や何も指定していないコマンドは
+クイックフィックスウィンドウを使わない。探索は始まりから最初のコマンドを見つ
 けるまで実行される。
-デフォルトの値は ""(クイックフィックスを使わない)。次の値が便利だろう: >
+デフォルトの値は "" (クイックフィックスを使わない)。次の値が便利だろう: >
 	:set cscopequickfix=s-,c-,d-,i-,t-,e-
 <
 
 							*cscopetag* *cst*
-'cscopetag'が設定されていると、コマンド":tags"、CTRL-]、そして"vim -t"はデフォ
-ルトの:tagの変わりに、常に":cstag"を使うようになる。事実上、tagファイルと同じ
-ようにcscopeデータベースを検索することができるようになるだろう。省略した場合は
-オフ。例: >
+'cscopetag' が設定されていると、コマンド ":tags"、CTRL-]、そして "vim -t" はデ
+フォルトの:tagの代わりに、常に ":cstag" を使うようになる。事実上、tagファイル
+と同じようにcscopeデータベースを検索することができるようになるだろう。省略した
+場合はオフ。例: >
 	:set cst
 	:set nocst
 <
 							*cscoperelative* *csre*
 'cscoperelative' が設定されていて、cscope にプレフィックスが与えられていない場
-合 (プレフィックスは cscope の -P オプションの引数です)、絶対パスを得るため
+合 (プレフィックスは cscope の -P オプションの引数である)、絶対パスを得るため
 に、cscope.out が保存されているディレクトリ (通常はプロジェクトのルート) が使
-われます。初期設定はオフです。Note: このオプションは cscope (cscopeprg) がプレ
-フィックスパス (-P) なしで初期化されている場合のみ効果があります。例: >
+われる。初期設定はオフである。Note: このオプションは cscope (cscopeprg) がプレ
+フィックスパス (-P) なしで初期化されている場合のみ効果がある。例: >
 	:set csre
 	:set nocsre
 <
 							*cscopetagorder* *csto*
-'csto'の値は|:cstag|が検索を実行する順序を決定する。'csto'が0に設定されている
-ならば、先にcscopeデータベースが検索され、cscopeでは見つからなかった時にだけ
-tagファイルが検索される。'csto'が1ならば、cscopeデータベースの前にtagsファイル
-が検索される。省略値は0。例: >
+'csto' の値は|:cstag|が検索を実行する順序を決定する。'csto' が0に設定されてい
+るならば、先にcscopeデータベースが検索され、cscopeでは見つからなかった時にだけ
+tagファイルが検索される。'csto' が1ならば、cscopeデータベースの前にtagsファイ
+ルが検索される。省略値は0。例: >
 	:set csto=0
 	:set csto=1
 <
 						*cscopeverbose* *csverb*
-'cscopeverbose'が設定されていないと(デフォルト)、cscopeデータベースを追加した
+'cscopeverbose' が設定されていないと(デフォルト)、cscopeデータベースを追加した
 際の成否結果のメッセージが表示されない。理想的には、|.vimrc|の中でcscopeデータ
 ベースを追加する前にリセットし、追加し終わった後で設定すべきである。設定してお
 けば、Vim使用中にデータベースの追加に失敗した時、(望むらくは原因を特定するの
@@ -292,9 +292,9 @@ tagファイルが検索される。'csto'が1ならば、cscopeデータベー�
 	:set nocsverb
 <
 						      *cscopepathcomp* *cspc*
-'cspc'の値はファイルパスのうち幾つの構成要素を表示するか決定する。省略値である
-0を設定した時には完全なパスが表示される。値として1を設定すればファイル名だけが
-表示される。その他の値であれば、その数だけ構成要素を表示する。例: >
+'cspc' の値はファイルパスのうち幾つの構成要素を表示するか決定する。省略値であ
+る0を設定した時には完全なパスが表示される。値として1を設定すればファイル名だけ
+が表示される。その他の値であれば、その数だけ構成要素を表示する。例: >
 	:set cspc=3
 ファイルパスのうち最後の3つ(ファイル名と2段上までのディレクトリ名)を表示する。
 
@@ -302,18 +302,18 @@ tagファイルが検索される。'csto'が1ならば、cscopeデータベー�
 4. Vimでのcscopeの使い方				*cscope-howtouse*
 
 最初にやらなければならないことは、ソースコードに対してcscopeデータベースを構築
-することである。最も基本的なケースでは、単純に"cscope -b"とする。詳細について
-はcscopeのマニュアル(manページ)を参照して欲しい。
+することである。最も基本的なケースでは、単純に "cscope -b" とする。詳細につい
+てはcscopeのマニュアル(manページ)を参照して欲しい。
 
-cscopeデータベースがあるならば、次にそのデータベースをVimへ"add"しなければなら
-ない。これはcscopeとの"接続"を確立し、それをVimが使えるような状態にする。これ
-は.vimrcや、vim起動後に手動で行うことができる。例えば、cscopeデータベース
-"cscope.out"を追加するには、次のようにする: >
+cscopeデータベースがあるならば、次にそのデータベースをVimへ "add" しなければな
+らない。これはcscopeとの "接続" を確立し、それをVimが使えるような状態にする。
+これは.vimrcや、vim起動後に手動で行うことができる。例えば、cscopeデータベース
+"cscope.out" を追加するには、次のようにする: >
 
 	:cs add cscope.out
 <
-この結果は":cs show"を実行することでもう一度チェックすることができる。これは次
-のような出力を生成する: >
+この結果は ":cs show" を実行することでもう一度チェックすることができる。これは
+次のような出力を生成する: >
 
  # pid	  database name			      prepend path
  0 28806  cscope.out			      <none>
@@ -323,7 +323,7 @@ Microsoftのランタイムライブラリの制限により、Win32バージョ
 IDではなく0が表示される。
 
 一旦cscope接続が確立されれば、cscopeへクエリを送信でき、その結果を表示すること
-ができる。クエリは":cs find"コマンドにより生成される。例: >
+ができる。クエリは ":cs find" コマンドにより生成される。例: >
 
 	:cs find g ALIGN_SIZE
 <
@@ -344,7 +344,7 @@ Vimのcscope機能は4つのシステムコール:fork(), pipe(), execl(), waitp
 られることを意味している。
 
 加えて、CscopeはWin32でも動く。Win32で動くcscopeについて詳しくは次のサイトを見
-てください。
+ること。
 
 	http://iamphet.nm.ru/cscope/index.html
 
@@ -375,10 +375,10 @@ http://cscope.sourceforge.net でダウンロードできる、 DJGPP でビル�
 		set csverb
 	endif
 
-'cscopetag'を設定することで、:tagコマンドの実体を:cstagで効率的に置き換えてい
-る。これには:tags, CTRL-], そして"vim -t"も含まれる。こうすることで、通常のtag
-コマンドはctagsが生成したtagファイルだけでなく、cscopeデータベースも検索するよ
-うになる。
+'cscopetag' を設定することで、:tag コマンドの実体を :cstag で効率的に置き換え
+ている。これには :tags, CTRL-], そして "vim -t" も含まれる。こうすることで、通
+常のtagコマンドはctagsが生成したtagファイルだけでなく、cscopeデータベースも検
+索するようになる。
 
 あるユーザは通常のtagの振る舞いはそのままに、:cstagへアクセスする異なった
 ショートカットを望むかもしれない。例えば次のコマンドでCTRL-_(アンダースコア)
@@ -386,9 +386,9 @@ http://cscope.sourceforge.net でダウンロードできる、 DJGPP でビル�
 
 	map <C-_> :cstag <C-R>=expand("<cword>")<CR><CR>
 
-良く使われる2つのcscopeのクエリ(":cs find"を使う)は、ある関数を読んでいる全て
+良く使われる2つのcscopeのクエリ(":cs find" を使う)は、ある関数を読んでいる全て
 の関数を探すのと、あるCのシンボルを使用している箇所全てを探すものである。これ
-を行なうには、例としてこのようなマップを使うことができる: >
+を行うには、例としてこのようなマップを使うことができる: >
 
 	map g<C-]> :cs find 3 <C-R>=expand("<cword>")<CR><CR>
 	map g<C-\> :cs find 0 <C-R>=expand("<cword>")<CR><CR>
@@ -409,7 +409,7 @@ http://cscope.sourceforge.net でダウンロードできる、 DJGPP でビル�
 	nmap <C-_>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
 	nmap <C-_>d :cs find d <C-R>=expand("<cword>")<CR><CR>
 
-	" 'CTRL-spacebar' を使うと結果を新しいウインドウで表示する。
+	" 'CTRL-spacebar' を使うと結果を新しいウィンドウで表示する。
 
 	nmap <C-Space>s :scs find s <C-R>=expand("<cword>")<CR><CR>
 	nmap <C-Space>g :scs find g <C-R>=expand("<cword>")<CR><CR>
@@ -420,7 +420,7 @@ http://cscope.sourceforge.net でダウンロードできる、 DJGPP でビル�
 	nmap <C-Space>i :scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
 	nmap <C-Space>d :scs find d <C-R>=expand("<cword>")<CR><CR>
 
-	" CTRL-space を２回連続して押すとウインドウを縦に開く
+	" CTRL-space を２回連続して押すとウィンドウを縦に開く
 
 	nmap <C-Space><C-Space>s
 		\:vert scs find s <C-R>=expand("<cword>")<CR><CR>
@@ -460,24 +460,24 @@ lex, yacc, breakpoint listing, Ingres, and SDL をサポートしている) を�
 Solaris 2.xでは、Cコンパイラのライセンスを入手していれば、cscopeも入手している
 だろう。どちらも通常は/opt/SUNWspro/binに格納される。
 
-SGIの開発者もまた入手可能である。このページからCscopeを検索してください
+SGIの開発者もまた入手可能である。このページからCscopeを検索すること
 	http://freeware.sgi.com/index-by-alpha.html
 	https://toolbox.sgi.com/toolbox/utilities/cscope/
 2番目のアドレスはSGIツールボックスのパスワードを持っているユーザ用である。
 
-古いcscopeのクローン("cs"という名)のソースコードがネットで入手可能である。ただ
-し様々な理由で、これはVimではサポートされない。
+古いcscopeのクローン("cs" という名)のソースコードがネットで入手可能である。た
+だし様々な理由で、これはVimではサポートされない。
 
 オリジナルのcscopeインターフェース/サポートはAndy Kahn <ackahn@netapp.com>に
 よって書かれた。元となった構造(かなり小さいコードだった)はnviのcscopeインター
 フェースから改作された。問題、提案、パッチそのほか何でも、Vimでcscopeを使うの
 に何か持っているものがあれば彼に送って欲しい。
-(訳注:もちろん日本語では送らないで下さい)
+{訳注: もちろん日本語では送らないで下さい}
 							*cscope-win32*
-Win32バージョンのcscopeについてはこのサイトをご覧ください
+Win32バージョンのcscopeについてはこのサイトを参照すること
 	http://code.google.com/p/cscope-win32/
 
-Win32への対応は Sergey Khorev <khorev@softlab.ru> してくれました。Win32に固有
-の問題については彼に問い合わせてください。
+Win32への対応は Sergey Khorev <khorev@softlab.ru> がしてくれた。Win32に固有の
+問題については彼に問い合わせていただきたい。
 
  vim:tw=78:ts=8:ft=help:norl:

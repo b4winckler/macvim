@@ -1565,11 +1565,12 @@ eval_expr(arg, nextcmd)
  * Returns OK or FAIL.
  */
     int
-call_vim_function(func, argc, argv, safe, rettv)
+call_vim_function(func, argc, argv, safe, str_arg_only, rettv)
     char_u      *func;
     int		argc;
     char_u      **argv;
     int		safe;		/* use the sandbox */
+    int		str_arg_only;	/* all arguments are strings */
     typval_T	*rettv;
 {
     typval_T	*argvars;
@@ -1594,8 +1595,11 @@ call_vim_function(func, argc, argv, safe, rettv)
 	    continue;
 	}
 
-	/* Recognize a number argument, the others must be strings. */
-	vim_str2nr(argv[i], NULL, &len, TRUE, TRUE, &n, NULL);
+	if (str_arg_only)
+	    len = 0;
+	else
+	    /* Recognize a number argument, the others must be strings. */
+	    vim_str2nr(argv[i], NULL, &len, TRUE, TRUE, &n, NULL);
 	if (len != 0 && len == (int)STRLEN(argv[i]))
 	{
 	    argvars[i].v_type = VAR_NUMBER;
@@ -1647,7 +1651,8 @@ call_func_retstr(func, argc, argv, safe)
     typval_T	rettv;
     char_u	*retval;
 
-    if (call_vim_function(func, argc, argv, safe, &rettv) == FAIL)
+    /* All arguments are passed as strings, no conversion to number. */
+    if (call_vim_function(func, argc, argv, safe, TRUE, &rettv) == FAIL)
 	return NULL;
 
     retval = vim_strsave(get_tv_string(&rettv));
@@ -1672,7 +1677,8 @@ call_func_retnr(func, argc, argv, safe)
     typval_T	rettv;
     long	retval;
 
-    if (call_vim_function(func, argc, argv, safe, &rettv) == FAIL)
+    /* All arguments are passed as strings, no conversion to number. */
+    if (call_vim_function(func, argc, argv, safe, TRUE, &rettv) == FAIL)
 	return -1;
 
     retval = get_tv_number_chk(&rettv, NULL);
@@ -1695,7 +1701,8 @@ call_func_retlist(func, argc, argv, safe)
 {
     typval_T	rettv;
 
-    if (call_vim_function(func, argc, argv, safe, &rettv) == FAIL)
+    /* All arguments are passed as strings, no conversion to number. */
+    if (call_vim_function(func, argc, argv, safe, TRUE, &rettv) == FAIL)
 	return NULL;
 
     if (rettv.v_type != VAR_LIST)
@@ -12992,7 +12999,7 @@ get_user_input(argvars, rettv, inputdialog)
 	    rettv->vval.v_string =
 		getcmdline_prompt(inputsecret_flag ? NUL : '@', p, echo_attr,
 				  xp_type, xp_arg);
-	if (rettv->vval.v_string == NULL
+	if (inputdialog && rettv->vval.v_string == NULL
 		&& argvars[1].v_type != VAR_UNKNOWN
 		&& argvars[2].v_type != VAR_UNKNOWN)
 	    rettv->vval.v_string = vim_strsave(get_tv_string_buf(
@@ -18660,6 +18667,10 @@ f_winrestview(argvars, rettv)
 	curwin->w_skipcol = get_dict_number(dict, (char_u *)"skipcol");
 
 	check_cursor();
+	win_new_height(curwin, curwin->w_height);
+# ifdef FEAT_VERTSPLIT
+	win_new_width(curwin, W_WIDTH(curwin));
+# endif
 	changed_window_setting();
 
 	if (curwin->w_topline == 0)

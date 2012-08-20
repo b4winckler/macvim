@@ -137,8 +137,8 @@ vim.exeがドキュメントやファイル形式や構文等のファイルを�
 	define/nolog VIMRUNTIME device:[path.vim.vim60]
 	define/nolog TMP	device:[path.tmp]
 
-このようにしなければならない。Vimに付属の"runtime"サブディレクトリはvimruntime
-にコピーする。
+このようにしなければならない。Vimに付属の "runtime" サブディレクトリは
+vimruntimeにコピーする。
 
 論理名$VIMRUNTIMEと$TMPはオプションになるが、推奨される。
 
@@ -181,11 +181,11 @@ $TMPが設定されていない時は、CTAGSやXXDや印刷などの一時デ�
 いちばん簡単な方法は設定例のファイルをリネームして利用することである。元の$VIM
 ディレクトリにメニューファイル(MENU.VIM)やvimrcやgvimrcを置いても良いだろう。
 それらは全てのユーザにとってデフォルト設定として機能するので、ホームディレクト
-リのファイル.vimrcと.gvimrcではユーザ独自の追加設定だけを行なえば充分となる。
+リのファイル.vimrcと.gvimrcではユーザ独自の追加設定だけを行えば充分となる。
 それらは問題なく動作する。
 
-NOTE: システム設定ファイル(全てのユーザにとってのデフォルト)には先頭に"."が付
-かない。だからそれらの名前は: >
+NOTE: システム設定ファイル(全てのユーザにとってのデフォルト)には先頭に "." が
+付かない。だからそれらの名前は: >
 
 	VIM$:vimrc
 	VIM$:gvimrc
@@ -244,8 +244,8 @@ SYS$STARTUP:SYLOGIN.COM にも追加する >
 例:
  >
 	vim -R  filename  ! -r と解釈され、スワップファイルを表示して終了する
-	vim -/r filename  ! -R と解釈され、読み込み専用モードになる("view"と同
-			    じ)
+	vim -/r filename  ! -R と解釈され、読み込み専用モードになる("view" と
+			    同じ)
 	vim -u	<vimrc>   ! -u と解釈され、.vimrc の代わりに <vimrc> を使う
 	vim -/u <gvimrc>  ! -U と解釈され、.gvimrc の代わりに <gvimrc> を使う
 
@@ -272,10 +272,10 @@ LIBGTK は http://www.polarhome.com/vim/ からダウンロードできる。
 
 	$ mc device:<path>VIM.EXE -g
 <
-   もしくはVimコマンドプロンプトで :guiを キー入力する。詳細は:help gui。
+   もしくはVimコマンドプロンプトで :gui をキー入力する。詳細は :help gui。
 
 2) UNIXやリモートX VMSのコンソールなど他のXウィンドウ環境を利用しているならば
-   ホストの表示設定を行なう: >
+   ホストの表示設定を行う: >
 
 	$ set disp/create/node=<your IP address>/trans=<transport-name>
 <
@@ -319,7 +319,7 @@ NOTE: これらのうちからどれか1つを選ぶ必要がある。もっと�
 8.9 Vimからの印刷
 8.10 シンボルの設定
 8.11 diff と その他の GNU プログラム
-8.12 diff モード
+8.12 差分モード
 8.13 C 言語のキーワードに '$' を認める
 8.14 初心者のための VIMTUTOR
 8.15 コンソールモードで起動が遅い問題について
@@ -355,8 +355,8 @@ Vimはファイルを1つ上のバージョン番号のファイルとして保�
 	:set nobackup	     " バックアップファイル *.*_ backup を作らない
 	:set nowritebackup   " VMSでは意味をなさない。デフォルト値。
 
-を行なうと良い。クラッシュからのリカバリはデフォルトのスワップファイルを使って
-いる時よりも完全に動作する。詳細は :help swapfile を参照。
+を行うと良い。クラッシュからのリカバリはデフォルトのスワップファイルを使ってい
+る時よりも完全に動作する。詳細は :help swapfile を参照。
 
 (Claude Marinier <ClaudeMarinier@xwavesolutions.com> Vim 5.5, Zoltan Arpadffy
 Vim 5.6 )
@@ -412,9 +412,9 @@ NOTE: 構文が非常に重要で、間違えるとVMSは複数パラメータ�
 	$ write sys$output " Example: @SETVIM.COM username passwd"
 	$ end:
 
-	(訳注: 例中のコマンドで表示されるメッセージは翻訳していない)
+	{訳注: 例中のコマンドで表示されるメッセージは翻訳していない}
 
-NOTE: これをクラスタ環境では使わない(その必要もない)。これを行なうと非常に遅く
+NOTE: これをクラスタ環境では使わない (その必要もない)。これを行うと非常に遅く
 なるが、それでもローカルで実行するEmacsよりは速いだろう。 :-)
 
 (Zoltan Arpadffy, <arpadffy@altavista.net> Vim 5.6)
@@ -442,8 +442,8 @@ Terminal entry not found in termcap
     builtin_dumb
 defaulting to 'vt320'
 ---
-(訳注: メッセージの翻訳は省略します。実際には翻訳されて表示される可能性があり
-ます。)
+{訳注: メッセージの翻訳は省略します。実際には翻訳されて表示される可能性があり
+ます。}
 
 解決法はデフォルトの端末名を設定することである: >
 
@@ -518,7 +518,7 @@ CTAGSの文章を読むこと。
 
 1つのトリックとしては他のプラットホーム上でファイルを圧縮し(例: zip)VMS上で伸
 長する方法がある。それでも同じ現象になるならばファイルをコピー&ペーストで作成
-することを試みる(この両操作を行なうためには、両方のシステムが1つのマシンから使
+することを試みる (この両操作を行うためには、両方のシステムが1つのマシンから使
 えなければならない。例えばWindowsでXtermを使用するか、VMSからWindowsにtelnetす
 るかのように)。
 
@@ -559,26 +559,26 @@ VMSで(GUIモードの)Vimからの印刷を可能にするには論理名$TMP�
 Vim 6.0 から diff 用の機能が実装された。しかし OpenVMS の組込みの diff は
 GNU/UNIX 互換ではないので機能しない。
 好ましくないが簡単な解決法としては、Unix 互換の diff をインストールすること
-である。そうすれば Vim は diff モードでも完全に機能するだろう。それには diff
+である。そうすれば Vim は差分モードでも完全に機能するだろう。それには diff
 プログラムを次のように再定義しなければならない: >
 
 	define /nolog diff <GNU_PATH>diff.exe
 
-もう 1 つの面倒な方法は以下の (8.12 diff モード) で説明する。
+もう 1 つの面倒な方法は以下の (8.12 差分モード) で説明する。
 他に問題の起こりそうなプログラムとして、patch や make などがある。
 www.polarhome.com では OpenVMS 上での GNU プログラムに関する問題を解決するた
 めに、Alpha や VAX 向けの GNU パッケージを配布している。
 (Zoltan Arpadffy, Vim 6.1)
 
 
-8.12 diff モード
+8.12 差分モード
 
-Vim 6.0 以降では diff モードがサポートされている (|new-diff-mode|、
+Vim 6.0 以降では差分モードがサポートされている (|new-diff-mode|、
 |diff-mode|、|08.7|を参照)。これは 'diff' で指定した外部プログラムを使用し、
 その出力が Unix 互換であると想定している。しかし VMS 標準の diff はそれとは
-違った書式で出力する。VMS で vim の diff モードを使うには、次のようにする:
+違った書式で出力する。VMS で vim の差分モードを使うには、次のようにする:
     1 Unix 互換の diff をインストールする。例えば GNU diff。
-    2 vim に diff モードで Unix 互換の diff を使うことを教える。
+    2 vim に差分モードで Unix 互換の diff を使うことを教える。
 
 GNU diff は VIM-VMS のウェブサイトからダウンロードできる。これは
 http://www.polarhome.com/vim/files/gnu_tools.zip に含まれている GNU ツールの
@@ -612,7 +612,7 @@ GNU: をそのディレクトリを指すよう作成するといいだろう。
 	endfunction
       endif
 
-これで vim の diff モードを使うことができる。例えば 2 つのファイルを読み込み
+これで vim の差分モードを使うことができる。例えば 2 つのファイルを読み込み
 専用で開いて比較する: >
 
     $ VIM -D/R <FILE1> <FILE2>
@@ -791,7 +791,7 @@ Version 7 (2006 May 8)
 - プラグインのバグを修正
 - CTAGS 5.6 を含めた
 
-(訳注: 翻訳対象から除外)
+{訳注: 翻訳対象から除外}
 
 Version 6.4 (2005 Oct 15)
 - GTKLIB and Vim build on IA64

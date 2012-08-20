@@ -1,4 +1,4 @@
-*helphelp.txt*	For Vim バージョン 7.3.  Last change: 2010 Sep 14
+*helphelp.txt*	For Vim バージョン 7.3.  Last change: 2012 May 18
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -26,14 +26,14 @@
 			{Vi にはない}
 
 						*{subject}* *E149* *E661*
-:h[elp] {subject}	":help"と同じですが、加えて、{subject} へタブジャンプ
+:h[elp] {subject}	":help" と同じですが、加えて、{subject} へタグジャンプ
 			します。
 			{subject} には "*", "?"、"[a-z]" といったワイルドカー
 			ドも指定できます。
 			   :help z?	"z" コマンドのいずれかのヘルプを開く
 			   :help z.	"z." のヘルプを開く
 			パターンに完全に一致する項目が無かった場合、または、複
-			数の項目が一致した場合には、"最善"の一致が選択されま
+			数の項目が一致した場合には、"最善" の一致が選択されま
 			す。洗練されたアルゴリズムで最善な項目が決定されます。
 			次のような優先順位が使われます:
 			- 大小文字が一致したほうが、しない時よりも良い
@@ -61,15 +61,15 @@
 <			例えば CTRL-V のヘルプを引くときに ":help CTRL-V" とタ
 			イプする代わりに次のようにすることもできます: >
 				:help ^V
-<			これは他の文字付きでも機能します。例えば インサート
-			モードの CTRL-V の動作を調べるには次のようにします: >
+<			これは他の文字付きでも機能します。例えば挿入モードの
+			CTRL-V の動作を調べるには次のようにします: >
 				:help i^V
 <
-			正規表現 (|pattern|) を使うには、まず":help"を実行し、
+			正規表現 (|pattern|) を使うには、まず ":help" を実行し、
 			ヘルプウィンドウで ":tag {pattern}" を実行します。
-			":tnext"コマンドでその他の項目へ移動することができ、
-			":tselect"でマッチした候補の一覧から選択することができ
-			ます。 >
+			":tnext" コマンドでその他の項目へ移動することができ、
+			":tselect" でマッチした候補の一覧から選択することがで
+			きます。 >
 				:help index| :tse z.
 
 <			引数が指定されていない場合は "help" にマッチするものが
@@ -218,11 +218,12 @@ $VIMRUNTIME/docにあるファイルは対象外です。
 {|+multi_lang|が有効な場合のみ利用できます}
 
 今のところ、以下の翻訳が利用可能です:
-	Chinese - 共同翻訳
-	French  - 翻訳者 David Blanchet
-	Italian - 翻訳者 Antonio Colombo
-	Polish  - 翻訳者 Mikolaj Machowski
-	Russian - 翻訳者 Vassily Ragosin
+	Chinese  - 共同翻訳
+	French   - 翻訳者 David Blanchet
+	Italian  - 翻訳者 Antonio Colombo
+	Japanese - 共同翻訳
+	Polish   - 翻訳者 Mikolaj Machowski
+	Russian  - 翻訳者 Vassily Ragosin
 詳しくは Vim のウェブサイトを参照してください:
 	http://www.vim.org/translations.php
 
@@ -241,7 +242,7 @@ $VIMRUNTIME/docにあるファイルは対象外です。
 	...
 	tags-it
 
-訳注: 日本語の言語コードは ja です。help.jax
+{訳注: 日本語の言語コードは ja です。help.jax}
 
 オプション 'helplang' に言語の優先順位を指定できます。初期設定は環境から自動的
 に設定されます。ヘルプを検索するときはまず、優先の高い言語からタグが検索されま

@@ -3,7 +3,7 @@
 " An example for a Japanese version vimrc file.
 " 日本語版のデフォルト設定ファイル(vimrc) - Vim7用試作
 "
-" Last Change: 07-Nov-2011.
+" Last Change: 05-Aug-2012.
 " Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 "
 " 解説:
@@ -46,7 +46,7 @@ endif
 " ユーザ優先設定($HOME/.vimrc_first.vim)があれば読み込む。読み込んだ後に変数
 " g:vimrc_first_finishに非0な値が設定されていた場合には、それ以上の設定ファ
 " イルの読込を中止する。
-if 0 && exists('$HOME') && filereadable($HOME . '/.vimrc_first.vim')
+if 1 && exists('$HOME') && filereadable($HOME . '/.vimrc_first.vim')
   unlet! g:vimrc_first_finish
   source $HOME/.vimrc_first.vim
   if exists('g:vimrc_first_finish') && g:vimrc_first_finish != 0
@@ -55,9 +55,12 @@ if 0 && exists('$HOME') && filereadable($HOME . '/.vimrc_first.vim')
 endif
 
 " plugins下のディレクトリをruntimepathへ追加する。
-for path in split(glob($VIM.'/plugins/*'), '\n')
-  if isdirectory(path) | let &runtimepath = &runtimepath.','.path | end
+for s:path in split(glob($VIM.'/plugins/*'), '\n')
+  if s:path !~# '\~$' && isdirectory(s:path)
+    let &runtimepath = &runtimepath.','.s:path
+  end
 endfor
+unlet s:path
 
 "---------------------------------------------------------------------------
 " 日本語対応のための設定:
@@ -187,17 +190,17 @@ endif
 "---------------------------------------------------------------------------
 " コンソールでのカラー表示のための設定(暫定的にUNIX専用)
 if has('unix') && !has('gui_running')
-  let uname = system('uname')
-  if uname =~? "linux"
+  let s:uname = system('uname')
+  if s:uname =~? "linux"
     set term=builtin_linux
-  elseif uname =~? "freebsd"
+  elseif s:uname =~? "freebsd"
     set term=builtin_cons25
-  elseif uname =~? "Darwin"
+  elseif s:uname =~? "Darwin"
     set term=beos-ansi
   else
     set term=builtin_xterm
   endif
-  unlet uname
+  unlet s:uname
 endif
 
 "---------------------------------------------------------------------------
@@ -230,4 +233,4 @@ if kaoriya#switch#enabled('disable-vimdoc-ja')
   let &rtp = join(filter(split(&rtp, ','), 'v:val !~ "vimdoc-ja"'), ',')
 endif
 
-" Copyright (C) 2011 KaoriYa/MURAOKA Taro
+" Copyright (C) 2009-2012 KaoriYa/MURAOKA Taro

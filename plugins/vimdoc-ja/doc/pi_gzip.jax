@@ -1,4 +1,4 @@
-*pi_gzip.txt*   For Vim バージョン 7.3.  Last change: 2002 Oct 29
+*pi_gzip.txt*   For Vim バージョン 7.3.  Last change: 2012 Jul 19
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -8,7 +8,7 @@
 
 1. 自動実行コマンド		|gzip-autocmd|
 
-ここで説明されているのは |standard-plugin| (訳注: 標準プラグイン) です。
+ここで説明されているのは |standard-plugin| {訳注: 標準プラグイン} です。
 このプラグインは 'compatible' がオフのときだけ利用できます。
 変数 "loaded_gzip" を設定することでプラグインが読み込まれないようにできます: >
 	:let loaded_gzip = 1
@@ -25,6 +25,8 @@
 	*.Z		compress (Lempel-Ziv)
 	*.gz		gzip
 	*.bz2		bzip2
+	*.lzma		lzma
+	*.xz		xz
 
 あなたが知るべきことはこれだけです。オプションはありません。
 

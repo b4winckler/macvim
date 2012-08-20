@@ -10,9 +10,9 @@ Vim を Unix でコンパイルするには src ディレクトリにある "INS
 "Makefile" をご覧下さい。
 
 デフォルトのヘルプファイルの名前は "/usr/local/lib/vim/help.txt" です。
-"s:.vimrc" と "s:.exrc" のかわりに "$HOME/.vimrc" と "$HOME/.exrc" が使われま
+"s:.vimrc" と "s:.exrc" の代わりに "$HOME/.vimrc" と "$HOME/.exrc" が使われま
 す。さらに "/usr/local/etc/vimrc" が初めに使われます。もし "/usr/local/share"
- があれば "/usr/local/lib" のかわりにそちらが使われます。
+ があれば "/usr/local/lib" の代わりにそちらが使われます。
 
 (フィルターを実行するときに使われる)一時的なファイルは "/tmp" に置かれます。も
 しほかの場所におきたければ $TMPDIR 環境変数を自分の好みの場所に設定してくださ
@@ -29,7 +29,7 @@ system() が使われる場合は |+system()| が ":version" コマンドの出�
 (GUI バージョンのフォークに関しては |gui-fork| をご覧下さい)
 
 Unix では端末の更新がしばしば遅いので(例: シリアルライン端末、suntools でのシェ
-ルウインドー)、'showcmd' と 'ruler' オプションはデフォルトでオフにしてあります。
+ルウィンドウ)、'showcmd' と 'ruler' オプションはデフォルトでオフにしてあります。
 もし速い端末を使っているのであればこれらをオンにしてみてください。それと
 'ttyfast' オプションもオンにしておきたいかもしれません。
 

@@ -136,7 +136,7 @@ http://gnuwin32.sourceforge.net (MinGW 用)
 ---------------------
 
 Vim と NetBeans プロトコルのデバッグを有効化するには、"NBDEBUG" マクロを定義
-する必要があります。お使いのプラットフォーム用の Makefile の中から"NBDEBUG"
+する必要があります。お使いのプラットフォーム用の Makefile の中から "NBDEBUG"
 を検索し、どの行のコメントを解除すればよいかを調べてください。そうすればコン
 パイルコマンドに "-DNBDEBUG" が追加されます。|netbeans-debugging| も参照して
 ください。
@@ -927,7 +927,7 @@ Sun Microsystems, Inc から Sun ONE Studio の 30 日間無料試用版をダ�
 Vim は NetBeans コマンドを実行するキーバインドを理解します。これらは普通、
 ファンクションキーの組み合わせです。NetBeans コマンドを実行するには、Pause
 キーに続けて NetBeans のキーバインドをタイプします。たとえば、Javaファイルを
-コンパイルする NetBeans のキーバインドは "F9" です。なので、Vim で"Pause F9"
+コンパイルする NetBeans のキーバインドは "F9" です。なので、Vim で "Pause F9"
 と押すと Java ファイルをコンパイルできます。カレント行のブレークポイントをト
 グルするには "Pause Shift F8" を押します。
 
@@ -978,7 +978,7 @@ NetBeans External Editor モジュールを読み込み、有効化できたら�
 
 Tools->Options を開き、Editing カテゴリを表示します。External Editor を選択し
 ます。右側のペインに Properties タブと Expert タブがあるはずです。Properties
-タブで "Editor Type" を "Vim" にします。Expert タブで "Vim Command"を正しく設
+タブで "Editor Type" を "Vim" にします。Expert タブで "Vim Command" を正しく設
 定してください。
 
 "Vim Command" を変更するときは注意してください。接続するためには、いくつかの
