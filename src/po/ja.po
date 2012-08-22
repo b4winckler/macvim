@@ -6482,11 +6482,6 @@ msgstr "保存されていないドキュメントがあります。"
 "\"%s\"を保存しますか?"
 ""
 
-msgid "Your changes will be lost if you don't save "
-"them."
-msgstr "保存しない場合、変更は失われます。"
-""
-
 msgid "&Save\n&Don't Save\nS&ave All\nD&iscard All\n"
 "&Cancel"
 msgstr "保存(&S)\n保存しない(&D)\n全て保存(&a)\n全て破棄(&i)\n"
