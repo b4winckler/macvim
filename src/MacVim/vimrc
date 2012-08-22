@@ -193,7 +193,7 @@ endif
 
 "---------------------------------------------------------------------------
 " コンソールでのカラー表示のための設定(暫定的にUNIX専用)
-if has('unix') && !has('gui_running')
+if has('unix') && !has('gui_running') && !has('gui_macvim')
   let s:uname = system('uname')
   if s:uname =~? "linux"
     set term=builtin_linux
