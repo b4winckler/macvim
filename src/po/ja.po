@@ -6458,3 +6458,36 @@ msgstr "E446: カーソルの下にファイル名がありません"
 #, c-format
 msgid "E447: Can't find file \"%s\" in path"
 msgstr "E447: pathには \"%s\" というファイルがありません"
+
+msgid "Do you want to save the changes you made in the "
+"document \"%s\"?"
+msgstr "\"%s\"を保存しますか?"
+""
+
+msgid "Your changes will be lost if you don't save "
+"them."
+msgstr "保存しない場合、変更は失われます。"
+""
+
+msgid "&Save\n&Cancel\n&Don't Save"
+msgstr "保存(&S)\nキャンセル(&C)\n保存しない(&D)"
+
+msgid "&Save...\n&Cancel\n&Don't Save"
+msgstr "保存...(&S)\nキャンセル(&C)\n保存しない(&D)"
+
+msgid "There are several documents with unsaved changes. "
+"Do you want to save the changes you made in the "
+"document \"%s\"?"
+msgstr "保存されていないドキュメントがあります。"
+"\"%s\"を保存しますか?"
+""
+
+msgid "Your changes will be lost if you don't save "
+"them."
+msgstr "保存しない場合、変更は失われます。"
+""
+
+msgid "&Save\n&Don't Save\nS&ave All\nD&iscard All\n"
+"&Cancel"
+msgstr "保存(&S)\n保存しない(&D)\n全て保存(&a)\n全て破棄(&i)\n"
+"キャンセル(&C)"
