@@ -1160,12 +1160,11 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
             CFStringRef strRef = CFStringCreateWithCharactersNoCopy(
                     NULL, chars, count, kCFAllocatorNull);
             CTFontRef newFontRef = CTFontCreateForString(fontRef, strRef, r);
+            CFRelease(strRef);
             if (!newFontRef) {
-                ASLogNotice(@"Cannot find font to draw chars: %@", strRef);
                 CGFontRelease(cgFontRef);
                 return;
             }
-            CFRelease(strRef);
 
             recurseDraw(chars, glyphs, advances, count, context, newFontRef,
                         x0, y);
@@ -1368,6 +1367,9 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
 {
     CGContextRef context = [[NSGraphicsContext currentContext] graphicsPort];
     NSRect rect = [self rectForRow:row column:col numRows:1 numColumns:1];
+    CGRect clipRect = *(CGRect *)&rect;
+
+    CGContextSaveGState(context);
 
     if (MMInsertionPointHorizontal == shape) {
         int frac = (cellSize.height * percent + 99)/100;
@@ -1386,6 +1388,12 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
     // over into adjacent display cells and it may look ugly.
     CGContextSetShouldAntialias(context, NO);
 
+    // Even though antialiasing is disabled and we adjust the rect to fit
+    // inside the display cell it still happens on Retina displays (only) that
+    // the cursor bleeds over into the neighboring cells.  To work around this
+    // issue we enable clipping.
+    CGContextClipToRect(context, clipRect);
+
     if (MMInsertionPointHollow == shape) {
         // When stroking a rect its size is effectively 1 pixel wider/higher
         // than we want so make it smaller to avoid having it bleed over into
@@ -1402,7 +1410,7 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
         CGContextFillRect(context, *(CGRect*)&rect);
     }
 
-    CGContextSetShouldAntialias(context, antialias);
+    CGContextRestoreGState(context);
 }
 
 - (void)drawInvertedRectAtRow:(int)row column:(int)col numRows:(int)nrows
