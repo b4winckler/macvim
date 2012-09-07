@@ -86,7 +86,7 @@ static NSMutableArray *leafNode = nil;
     valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
     if (valid && isDir) {
       // Create a dummy array, which is replaced by -[MMFileBrowserFSItem reloadRecursive]
-      children = [NSArray new];
+      children = [NSMutableArray new];
       [self reloadRecursive:NO];
     } else {
       children = leafNode;
@@ -377,16 +377,14 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)sendSelectionChangedNotification {
-  // These methods aren't really included in the NSOutlineViewDelegate protocol (the docs say
-  // it's because of some error), so use performSelector to get rid of warnings.
-  [self.delegate performSelector:@selector(outlineViewSelectionIsChanging:) withObject:self];
-  [self.delegate performSelector:@selector(outlineViewSelectionDidChange:) withObject:self];
+  [(id<MMFileBrowserDelegate>)self.delegate outlineViewSelectionIsChanging:nil];
+  [(id<MMFileBrowserDelegate>)self.delegate outlineViewSelectionDidChange:nil];
 }
 
 - (void)keyDown:(NSEvent *)event {
   if (event.keyCode == ENTER_KEY_CODE) {
     if (event.modifierFlags & NSControlKeyMask) {
-      NSMenu *menu = [(MMFileBrowserController *)[self delegate] menuForRow:self.selectedRow];
+      NSMenu *menu = [(id<MMFileBrowserDelegate>)self.delegate menuForRow:self.selectedRow];
       NSPoint location = [self rectOfRow:self.selectedRow].origin;
       location.x -= menu.size.width;
       [menu popUpMenuPositioningItem:[menu itemAtIndex:0]
@@ -401,31 +399,31 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
       && event.keyCode != DOWN_KEY_CODE && event.keyCode != UP_KEY_CODE) {
     switch ([[event.characters uppercaseString] characterAtIndex:0]) {
     case 'H':
-      LEFT_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf702];
+      LEFT_KEY_CHAR = [NSString stringWithFormat:@"%C", (unichar)0xf702];
       event = [self keyEventWithEvent:event character:LEFT_KEY_CHAR code:LEFT_KEY_CODE];
       break;
     case 'L':
-      RIGHT_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf703];
+      RIGHT_KEY_CHAR = [NSString stringWithFormat:@"%C", (unichar)0xf703];
       event = [self keyEventWithEvent:event character:RIGHT_KEY_CHAR code:RIGHT_KEY_CODE];
       break;
     case 'J':
-      DOWN_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf701];
+      DOWN_KEY_CHAR = [NSString stringWithFormat:@"%C", (unichar)0xf701];
       event = [self keyEventWithEvent:event character:DOWN_KEY_CHAR code:DOWN_KEY_CODE];
       break;
     case 'K':
-      UP_KEY_CHAR = [NSString stringWithFormat:@"%C", 0xf700];
+      UP_KEY_CHAR = [NSString stringWithFormat:@"%C", (unichar)0xf700];
       event = [self keyEventWithEvent:event character:UP_KEY_CHAR code:UP_KEY_CODE];
       break;
     case 'T':
-      [(MMFileBrowserController *)[self delegate] openSelectedFilesInCurrentWindowWithLayout:MMLayoutTabs];
+      [(id<MMFileBrowserDelegate>)self.delegate openSelectedFilesInCurrentWindowWithLayout:MMLayoutTabs];
       event = nil;
       break;
     case 'I':
-      [(MMFileBrowserController *)[self delegate] openSelectedFilesInCurrentWindowWithLayout:MMLayoutHorizontalSplit];
+      [(id<MMFileBrowserDelegate>)self.delegate openSelectedFilesInCurrentWindowWithLayout:MMLayoutHorizontalSplit];
       event = nil;
       break;
     case 'S':
-      [(MMFileBrowserController *)[self delegate] openSelectedFilesInCurrentWindowWithLayout:MMLayoutVerticalSplit];
+      [(id<MMFileBrowserDelegate>)self.delegate openSelectedFilesInCurrentWindowWithLayout:MMLayoutVerticalSplit];
       event = nil;
       break;
     default:
@@ -444,7 +442,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   if ([self numberOfSelectedRows] <= 1) {
     [self selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
   }
-  return [(MMFileBrowserController *)[self delegate] menuForRow:row];
+  return [(id<MMFileBrowserDelegate>)self.delegate menuForRow:row];
 }
 
 - (void)expandParentsOfItem:(id)item {
@@ -857,7 +855,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 // TODO is this the proper way to differentiate between selection changes because the user selected a file
 // and a programmatic selection change?
-- (void)outlineViewSelectionIsChanging:(NSNotification *)aNotification {
+- (void)outlineViewSelectionIsChanging:(NSNotification *)notification {
   userHasChangedSelection = YES;
 }
 

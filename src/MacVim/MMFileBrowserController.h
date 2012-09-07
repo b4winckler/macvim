@@ -4,7 +4,14 @@
 @class MMFileBrowserFSItem;
 @class MMFileBrowser;
 
-@interface MMFileBrowserController : NSViewController <NSOutlineViewDataSource, NSOutlineViewDelegate> {
+@protocol MMFileBrowserDelegate <NSObject, NSOutlineViewDataSource, NSOutlineViewDelegate>
+- (void)outlineViewSelectionIsChanging:(NSNotification *)notification;
+- (void)outlineViewSelectionDidChange:(NSNotification *)notification;
+- (NSMenu *)menuForRow:(NSInteger)row;
+- (void)openSelectedFilesInCurrentWindowWithLayout:(int)layout;
+@end
+
+@interface MMFileBrowserController : NSViewController <MMFileBrowserDelegate> {
   MMWindowController *windowController;
   MMFileBrowser *fileBrowser;
   NSPathControl *pathControl;
