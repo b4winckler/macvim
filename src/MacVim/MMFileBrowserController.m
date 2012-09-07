@@ -16,20 +16,24 @@
 // The MMFileBrowserFSItem class is an adaptation of Apple's example in the
 // Outline View Programming Topics document.
 
+#include <fts.h>
+
 @interface MMFileBrowserFSItem : NSObject {
-  NSString *path;
+  char *cpath;
+  BOOL isDir;
   MMFileBrowserFSItem *parent;
-  NSMutableArray *children;
+  // NSMutableArray *children;
   MMVimController *vim;
-  NSImage *icon;
   BOOL includesHiddenFiles;
   BOOL ignoreNextReload;
+  NSImage *icon;
 }
 
 @property (nonatomic, assign) BOOL includesHiddenFiles, ignoreNextReload;
 @property (readonly) MMFileBrowserFSItem *parent;
+@property (nonatomic, retain) NSMutableArray *children;
 
-- (id)initWithPath:(NSString *)path parent:(MMFileBrowserFSItem *)parentItem vim:(MMVimController *)vim;
+- (id)initWithPath:(NSString *)thePath vim:(MMVimController *)vimInstance;
 - (NSInteger)numberOfChildren; // Returns -1 for leaf nodes
 - (MMFileBrowserFSItem *)childAtIndex:(NSUInteger)n; // Invalid to call on leaf nodes
 - (NSString *)fullPath;
@@ -43,29 +47,51 @@
 @end
 
 @interface MMFileBrowserFSItem (Private)
+- (id)initWithPath:(char *)thePath parent:(MMFileBrowserFSItem *)parentItem isDir:(BOOL)dir vim:(MMVimController *)vimInstance;
 - (MMFileBrowserFSItem *)_itemAtPath:(NSArray *)components;
-- (BOOL)_ignoreFile:(NSString *)filename;
 @end
 
 
 @implementation MMFileBrowserFSItem
 
-static NSMutableArray *leafNode = nil;
+// TODO use NSCache
+static NSMutableDictionary *iconCache = nil;
 
+// TODO use dispatch_once
 + (void)initialize {
   if (self == [MMFileBrowserFSItem class]) {
-    leafNode = [[NSMutableArray alloc] init];
+    iconCache = [NSMutableDictionary new];
   }
 }
 
-@synthesize parent, includesHiddenFiles, ignoreNextReload;
+//@synthesize parent, includesHiddenFiles, ignoreNextReload, icon;
+@synthesize parent, includesHiddenFiles, ignoreNextReload, children;
 
-- (id)initWithPath:(NSString *)thePath parent:(MMFileBrowserFSItem *)parentItem vim:(MMVimController *)vimInstance {
+- (void)dealloc {
+  [children release];
+  free(cpath);
+  [icon release];
+  vim = nil;
+  [super dealloc];
+}
+
+- (id)initWithPath:(NSString *)thePath vim:(MMVimController *)vimInstance;
+{
+  return [self initWithPath:(char *)[thePath UTF8String] parent:nil isDir:YES vim:vimInstance];
+  //return [self initWithPath:thePath parent:nil isDir:YES vim:vimInstance];
+}
+
+- (id)initWithPath:(char *)thePath parent:(MMFileBrowserFSItem *)parentItem isDir:(BOOL)dir vim:(MMVimController *)vimInstance;
+// - (id)initWithPath:(NSString *)thePath parent:(MMFileBrowserFSItem *)parentItem isDir:(BOOL)dir vim:(MMVimController *)vimInstance;
+{
   if ((self = [super init])) {
     icon = nil;
-    path = [thePath retain];
     parent = parentItem;
     vim = vimInstance;
+    isDir = dir;
+
+    cpath = strdup(thePath);
+
     if (parent) {
       includesHiddenFiles = parent.includesHiddenFiles;
     } else {
@@ -76,78 +102,184 @@ static NSMutableArray *leafNode = nil;
   return self;
 }
 
+- (NSString *)description;
+{
+  return [NSString stringWithFormat:@"<MMFileBrowserFSItem type:%s path:%s>", (isDir ? "dir " : "file"), cpath];
+}
+
 // * Creates, caches, and returns the array of children
 // * Loads children incrementally
 - (NSArray *)children {
-  if (children == nil) {
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-
-    BOOL isDir, valid;
-    valid = [fileManager fileExistsAtPath:path isDirectory:&isDir];
-    if (valid && isDir) {
-      // Create a dummy array, which is replaced by -[MMFileBrowserFSItem reloadRecursive]
-      children = [NSMutableArray new];
-      [self reloadRecursive:NO];
-    } else {
-      children = leafNode;
-    }
+  if (children == nil && isDir) {
+    // Create a dummy array, which is replaced by -[MMFileBrowserFSItem reloadRecursive]
+    children = [NSMutableArray new];
+    [self reloadRecursive:NO];
   }
   return children;
+}
+
+static void
+printItems(MMFileBrowserFSItem *item, int indent)
+{
+  for (int i = 0; i < indent; i++) {
+    printf("  ");
+  }
+  printf("%s\n", [[item description] UTF8String]);
+  if (item->children != nil) {
+    for (MMFileBrowserFSItem *i in item.children) {
+      printItems(i, indent+1);
+    }
+  }
+}
+
+static BOOL
+MMFileBrowserFSItemIgnoreFile(const char *filename, BOOL includesHiddenFiles)
+{
+  BOOL isHiddenFile = filename[0] == '.';
+  if (isHiddenFile && !includesHiddenFiles) {
+    // It's a hidden file which are currently not visible.
+    return YES;
+  } else {
+    size_t len = strlen(filename);
+    if (isHiddenFile && len >= 4) {
+      // Does include hidden files, but never add Vim swap files to browser.
+      //
+      // Vim swap files have names of type
+      //   .original-file-name.sXY
+      // where XY can be anything from "aa" to "wp".
+      // NSString *last4 = [filename substringFromIndex:[filename length]-4];
+      const char *last4 = &filename[len-4];
+      // if ([last4 compare:@".saa"] >= 0 && [last4 compare:@".swp"] <= 0) {
+      if (strcmp(last4, ".saa") >= 0 && strcmp(last4, ".swp") <= 0) {
+        // It's a swap file, ignore it.
+        return YES;
+      }
+    // TODO THIS IS SLOW!
+    //} else if (!includesHiddenFiles) {
+      //NSString *eval = [NSString stringWithFormat:@"empty(expand(fnameescape('%@')))", filename];
+      //NSString *result = [vim evaluateVimExpression:eval];
+      //return [result isEqualToString:@"1"];
+    }
+  }
+  return NO;
+}
+
+// TODO when recursive is NO: for a directory item preload the entry count, so
+// that we don't have to load children for every dir for the outline view.
+static void
+MMFileBrowserFSItemReload(MMFileBrowserFSItem *item, BOOL recursive)
+{
+  // Only reload items that have been loaded before
+  // NSLog(@"Reload: %@", path);
+  if (item->parent) {
+    item->includesHiddenFiles = item->parent->includesHiddenFiles;
+  }
+  BOOL includesHiddenFiles = item->includesHiddenFiles;
+
+  char *path = (char *)[[item fullPath] UTF8String];
+  NSLog(@"Open dir: %s, recursive: %s", path, (recursive ? "YES" : "NO"));
+  char *paths[2] = { path, NULL };
+  // TODO we can sort with the third arg
+  FTS *root = fts_open(paths, FTS_LOGICAL | FTS_COMFOLLOW | FTS_NOCHDIR, NULL);
+  assert(root != NULL && @"Failed to open dir.");
+
+  MMFileBrowserFSItem *currentItem = item;
+  NSMutableArray *currentChildren = [NSMutableArray new];
+  NSArray *currentItemAndChildren = [[NSArray alloc] initWithObjects:currentItem, currentChildren, nil];
+  [currentChildren release];
+  NSMutableArray *stack = [[NSMutableArray alloc] initWithObjects:currentItemAndChildren, nil];
+  [currentItemAndChildren release];
+
+  NSMutableArray *rootChildren = currentChildren;
+
+  // Begin at one because we ignore FTS_ROOTLEVEL.
+  short childrenStackLevel = 1;
+  FTSENT *node;
+  while ((node = fts_read(root)) != NULL) {
+    if (node->fts_info == FTS_D || node->fts_info == FTS_F) {
+      // Skip the root node, which is the path represented by the root item.
+      if (node->fts_level != FTS_ROOTLEVEL) {
+        BOOL dir = node->fts_info == FTS_D;
+        if (dir && !recursive) {
+          fts_set(root, node, FTS_SKIP);
+        }
+
+        // Gone back to lower level, restore state
+        if (node->fts_level < childrenStackLevel) {
+          // Keep the current level on the stack!
+          for (short i = childrenStackLevel; i > node->fts_level; i--) {
+            [stack removeObjectAtIndex:i-1];
+          }
+          childrenStackLevel = node->fts_level;
+          currentItemAndChildren = [stack objectAtIndex:childrenStackLevel-1];
+          currentItem = [currentItemAndChildren objectAtIndex:0];
+          currentChildren = [currentItemAndChildren objectAtIndex:1];
+        }
+
+        if (MMFileBrowserFSItemIgnoreFile(node->fts_name, includesHiddenFiles)) {
+          if (dir) fts_set(root, node, FTS_SKIP);
+          continue;
+        }
+
+      // TODO
+      //
+      //MMFileBrowserFSItem *child = nil;
+      //// Check if we already have an item for the child path
+      //for (MMFileBrowserFSItem *item in children) {
+        //if ([[item relativePath] isEqualToString:childName]) {
+          //child = item;
+          //break;
+        //}
+      //}
+      //if (child) {
+        //// NSLog(@"Already have item for child: %@", childName);
+        //// If an item already existed use it and reload its children
+        //[reloaded addObject:child];
+        //if (recursive && ![child isLeaf]) {
+          //[child reloadRecursive:YES];
+        //}
+        //[children removeObject:child];
+      //} else {
+
+        MMFileBrowserFSItem *child = [[MMFileBrowserFSItem alloc] initWithPath:node->fts_name
+                                                                        parent:currentItem
+                                                                         isDir:dir
+                                                                           vim:item->vim];
+        [currentChildren addObject:child];
+        [child release];
+
+        // Set the new child as the current item and give it a new children array.
+        if (dir) {
+          currentItem = child;
+          currentChildren = [NSMutableArray new];
+          currentItem.children = currentChildren;
+          currentItemAndChildren = [[NSArray alloc] initWithObjects:currentItem, currentChildren, nil];
+          [currentChildren release];
+          [stack addObject:currentItemAndChildren];
+          [currentItemAndChildren release];
+          childrenStackLevel++;
+        }
+      }
+    } else if (node->fts_info == FTS_DNR || node->fts_info == FTS_ERR) {
+      NSLog(@"%s: %s", node->fts_name, strerror(node->fts_errno));
+    } else {
+      // TODO so what is it??
+      // NSLog(@"SOMETHING ELSE!");
+    }
+  }
+  fts_close(root);
+
+  item.children = rootChildren;
+  [stack release];
+  //printItems(item, 0);
 }
 
 // Returns YES if the children have been reloaded, otherwise it returns NO.
 //
 // This is really only so the controller knows whether or not to reload the view.
 - (BOOL)reloadRecursive:(BOOL)recursive {
-  if (children) {
-    // Only reload items that have been loaded before
-    // NSLog(@"Reload: %@", path);
-    if (parent) {
-      includesHiddenFiles = parent.includesHiddenFiles;
-    }
-
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSMutableArray *reloaded;
-
-    NSArray *entries = [[fileManager contentsOfDirectoryAtPath:path error:NULL]
-                         sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
-    reloaded = [[NSMutableArray alloc] initWithCapacity:[entries count]];
-
-    for (NSString *childName in entries) {
-      if ([self _ignoreFile:childName]) {
-        continue;
-      }
-
-      MMFileBrowserFSItem *child = nil;
-      // Check if we already have an item for the child path
-      for (MMFileBrowserFSItem *item in children) {
-        if ([[item relativePath] isEqualToString:childName]) {
-          child = item;
-          break;
-        }
-      }
-      if (child) {
-        // NSLog(@"Already have item for child: %@", childName);
-        // If an item already existed use it and reload its children
-        [reloaded addObject:child];
-        if (recursive && ![child isLeaf]) {
-          [child reloadRecursive:YES];
-        }
-        [children removeObject:child];
-      } else {
-        // New child, so create a new item
-        child = [[MMFileBrowserFSItem alloc] initWithPath:[path stringByAppendingPathComponent:childName]
-                                              parent:self
-                                                 vim:vim];
-        [reloaded addObject:child];
-        [child release];
-      }
-    }
-
-    if (children != leafNode) {
-      [children release];
-    }
-    children = reloaded;
+  if (isDir && children) {
+    MMFileBrowserFSItemReload(self, recursive);
     return YES;
   } else {
     // NSLog(@"Not loaded yet, so don't reload: %@", path);
@@ -155,51 +287,21 @@ static NSMutableArray *leafNode = nil;
   return NO;
 }
 
-- (BOOL)_ignoreFile:(NSString *)filename {
-  BOOL isHiddenFile = [filename characterAtIndex:0] == '.';
-  if (isHiddenFile && !includesHiddenFiles) {
-    // It's a hidden file which are currently not visible.
-    return YES;
-  } else if (isHiddenFile && [filename length] >= 4) {
-    // Does include hidden files, but never add Vim swap files to browser.
-    //
-    // Vim swap files have names of type
-    //   .original-file-name.sXY
-    // where XY can be anything from "aa" to "wp".
-    NSString *last4 = [filename substringFromIndex:[filename length]-4];
-    if ([last4 compare:@".saa"] >= 0 && [last4 compare:@".swp"] <= 0) {
-      // It's a swap file, ignore it.
-      return YES;
-    }
-  } else if (!includesHiddenFiles) {
-    NSString *eval = [NSString stringWithFormat:@"empty(expand(fnameescape('%@')))", filename];
-    NSString *result = [vim evaluateVimExpression:eval];
-    return [result isEqualToString:@"1"];
-  }
-  return NO;
-}
-
 - (BOOL)isLeaf {
-  if (children) {
-    return children == leafNode;
-  } else {
-    BOOL isDir;
-    [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir];
-    return !isDir;
-  }
+  return !isDir;
 }
 
 // Returns `self' if it's a directory item, otherwise it returns the parent item.
 - (MMFileBrowserFSItem *)dirItem {
-  return [self isLeaf] ? parent : self;
+  return isDir ? self : parent;
 }
 
 - (NSString *)relativePath {
-  return [path lastPathComponent];
+  return [NSString stringWithUTF8String:cpath];
 }
 
 - (NSString *)fullPath {
-  return path;
+  return parent ? [[parent fullPath] stringByAppendingPathComponent:[self relativePath]] : [self relativePath];
 }
 
 - (MMFileBrowserFSItem *)childAtIndex:(NSUInteger)n {
@@ -210,6 +312,7 @@ static NSMutableArray *leafNode = nil;
   if ([self isLeaf]) {
     return -1;
   } else {
+    // NSLog(@"LOAD CHILDREN FOR COUNT!");
     return [[self children] count];
   }
 }
@@ -217,9 +320,27 @@ static NSMutableArray *leafNode = nil;
 // TODO for now we don't really resize
 - (NSImage *)icon {
   if (icon == nil) {
-    icon = [[NSWorkspace sharedWorkspace] iconForFiles:[NSArray arrayWithObject:path]];
+    NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+    NSString *type;
+    if (isDir) {
+      type = @"MMFileBrowserFolder";
+    } else {
+      if (![ws getInfoForFile:[self fullPath] application:NULL type:&type]) {
+        NSLog(@"FAILED TO FIND INFO FOR %@", [self fullPath]);
+        type = @"";
+      }
+    }
+    icon = [iconCache valueForKey:type];
+    if (icon == nil) {
+      if (isDir) {
+        icon = [ws iconForFile:[self fullPath]];
+      } else {
+        icon = [ws iconForFileType:type];
+      }
+      [icon setSize:NSMakeSize(16, 16)];
+      [iconCache setValue:icon forKey:type];
+    }
     [icon retain];
-    [icon setSize:NSMakeSize(16, 16)];
   }
   return icon;
 }
@@ -228,7 +349,7 @@ static NSMutableArray *leafNode = nil;
   if ([itemPath hasSuffix:@"/"])
     itemPath = [itemPath stringByStandardizingPath];
   NSArray *components = [itemPath pathComponents];
-  NSArray *root = [path pathComponents];
+  NSArray *root = [[self fullPath] pathComponents];
 
   // check if itemPath is enclosed into the current directory
   if([components count] < [root count])
@@ -253,10 +374,14 @@ static NSMutableArray *leafNode = nil;
   return nil;
 }
 
+// Return nil if the children have not been loaded yet, which means that no
+// item for the path can be shown yet.
 - (MMFileBrowserFSItem *)itemWithName:(NSString *)name {
-  for (MMFileBrowserFSItem *child in [self children]) {
-    if ([[child relativePath] isEqualToString:name]) {
-      return child;
+  if (children != nil) {
+    for (MMFileBrowserFSItem *child in [self children]) {
+      if ([[child relativePath] isEqualToString:name]) {
+        return child;
+      }
     }
   }
   return nil;
@@ -272,15 +397,6 @@ static NSMutableArray *leafNode = nil;
   return result;
 }
 
-- (void)dealloc {
-  if (children != leafNode) {
-    [children release];
-  }
-  [path release];
-  [icon release];
-  vim = nil;
-  [super dealloc];
-}
 
 @end
 
@@ -353,6 +469,14 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
 - (void)mouseDown:(NSEvent *)event {
   NSInteger before = self.selectedRow;
+  if (event.modifierFlags & NSAlternateKeyMask) {
+    NSInteger row = [self rowAtPoint:[self convertPoint:event.locationInWindow fromView:nil]];
+    MMFileBrowserFSItem *item = [self itemAtRow:row];
+    if (![item isLeaf] && ![self isItemExpanded:item]) {
+      NSLog(@"EXPAND ALL, PRELOAD RECURSIVELY: %@", item);
+      [item reloadRecursive:YES];
+    }
+  }
   [super mouseDown:event];
   // In case the item is not a directory and was already selected, then force
   // send the selection did change delegate messagges.
@@ -600,8 +724,7 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   }
 
   rootItem = [[MMFileBrowserFSItem alloc] initWithPath:root
-                                           parent:nil
-                                              vim:[windowController vimController]];
+                                                   vim:[windowController vimController]];
   [fileBrowser reloadData];
   [fileBrowser expandItem:rootItem];
   [pathControl setURL:[NSURL fileURLWithPath:root]];
@@ -889,8 +1012,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   userHasChangedSelection = NO;
 }
 
-- (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell *)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
-  [(ImageAndTextCell *)cell setImage:[item icon]];
+- (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(ImageAndTextCell *)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
+  cell.image = [item icon];
 }
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView
