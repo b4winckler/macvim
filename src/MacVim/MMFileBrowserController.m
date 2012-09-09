@@ -22,7 +22,6 @@
   char *cpath;
   BOOL isDir;
   MMFileBrowserFSItem *parent;
-  // NSMutableArray *children;
   MMVimController *vim;
   BOOL includesHiddenFiles;
   BOOL ignoreNextReload;
@@ -54,7 +53,6 @@
 
 @implementation MMFileBrowserFSItem
 
-// TODO use NSCache
 static NSMutableDictionary *iconCache = nil;
 
 // TODO use dispatch_once
@@ -64,7 +62,6 @@ static NSMutableDictionary *iconCache = nil;
   }
 }
 
-//@synthesize parent, includesHiddenFiles, ignoreNextReload, icon;
 @synthesize parent, includesHiddenFiles, ignoreNextReload, children;
 
 - (void)dealloc {
@@ -78,11 +75,12 @@ static NSMutableDictionary *iconCache = nil;
 - (id)initWithPath:(NSString *)thePath vim:(MMVimController *)vimInstance;
 {
   return [self initWithPath:(char *)[thePath UTF8String] parent:nil isDir:YES vim:vimInstance];
-  //return [self initWithPath:thePath parent:nil isDir:YES vim:vimInstance];
 }
 
-- (id)initWithPath:(char *)thePath parent:(MMFileBrowserFSItem *)parentItem isDir:(BOOL)dir vim:(MMVimController *)vimInstance;
-// - (id)initWithPath:(NSString *)thePath parent:(MMFileBrowserFSItem *)parentItem isDir:(BOOL)dir vim:(MMVimController *)vimInstance;
+- (id)initWithPath:(char *)thePath
+            parent:(MMFileBrowserFSItem *)parentItem
+             isDir:(BOOL)dir
+               vim:(MMVimController *)vimInstance;
 {
   if ((self = [super init])) {
     icon = nil;
@@ -147,7 +145,6 @@ MMFileBrowserFSItemIgnoreFile(const char *filename, BOOL includesHiddenFiles)
       // Vim swap files have names of type
       //   .original-file-name.sXY
       // where XY can be anything from "aa" to "wp".
-      // NSString *last4 = [filename substringFromIndex:[filename length]-4];
       const char *last4 = &filename[len-4];
       // if ([last4 compare:@".saa"] >= 0 && [last4 compare:@".swp"] <= 0) {
       if (strcmp(last4, ".saa") >= 0 && strcmp(last4, ".swp") <= 0) {
