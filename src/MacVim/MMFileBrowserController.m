@@ -53,9 +53,8 @@
 
 @implementation MMFileBrowserFSItem
 
+// TODO remove this from the global namespace, have one instance shared by all fs items for one file browser instance
 static NSMutableDictionary *iconCache = nil;
-
-// TODO use dispatch_once
 + (void)initialize {
   if (self == [MMFileBrowserFSItem class]) {
     iconCache = [NSMutableDictionary new];
@@ -319,8 +318,17 @@ MMFileBrowserFSItemReload(MMFileBrowserFSItem *item, BOOL recursive)
   if (icon == nil) {
     NSWorkspace *ws = [NSWorkspace sharedWorkspace];
     NSString *type;
+    NSString *path = nil;
     if (isDir) {
-      type = @"MMFileBrowserFolder";
+      type = [[self relativePath] pathExtension];
+      if (type.length > 0) {
+        // This is possibly a 'bundle' dir (e.g. Foo.xcodeproj).
+        path = [self fullPath];
+      } else {
+        // It's not a 'bundle' dir, so use a normal folder icon.
+        type = @"MMFileBrowserFolder";
+        path = @"/var"; // Just pick a dir that's guaranteed to have a normal folder icon.
+      }
     } else {
       if (![ws getInfoForFile:[self fullPath] application:NULL type:&type]) {
         NSLog(@"FAILED TO FIND INFO FOR %@", [self fullPath]);
@@ -330,7 +338,7 @@ MMFileBrowserFSItemReload(MMFileBrowserFSItem *item, BOOL recursive)
     icon = [iconCache valueForKey:type];
     if (icon == nil) {
       if (isDir) {
-        icon = [ws iconForFile:[self fullPath]];
+        icon = [ws iconForFile:path];
       } else {
         icon = [ws iconForFileType:type];
       }
