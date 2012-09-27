@@ -159,15 +159,15 @@ MMFileBrowserFSItemStackIncrease(NSArray *stack,
   // Use an existing children list if this dir has been loaded before.
   if (newItem.children) {
     check = YES;
-    newChildren = newItem.children;
+    *newChildren = newItem.children;
   } else {
-    newChildren = [NSMutableArray new];
-    newItem.children = newChildren;
-    [newChildren release];
+    *newChildren = [NSMutableArray new];
+    newItem.children = *newChildren;
+    [*newChildren release];
   }
   *checkChildrenForExistingItem = check;
   NSArray *stackEntry = [[NSArray alloc] initWithObjects:newItem,
-                                                         newChildren,
+                                                         *newChildren,
                                                          [NSNumber numberWithBool:check],
                                                          nil];
   [stack addObject:stackEntry];
@@ -244,7 +244,6 @@ MMFileBrowserFSItemStackIncrease(NSArray *stack,
         if (checkChildrenForExistingItem) {
           for (MMFileBrowserFSItem *c in currentChildren) {
             if (strcmp(c->cpath, node->fts_name) == 0) {
-              NSLog(@"FOUND EXISTING ITEM: %@", c);
               child = c;
               break;
             }
@@ -254,7 +253,6 @@ MMFileBrowserFSItemStackIncrease(NSArray *stack,
           // If this is *not* a previously loaded dir and expandedChildrenOnly
           // is `YES` then skip it.
           if (dir && expandedChildrenOnly && child.children == nil) {
-            NSLog(@"SKIP NOT EXPANDED ITEM: %@", child);
             fts_set(root, node, FTS_SKIP);
             continue;
           }
@@ -270,7 +268,7 @@ MMFileBrowserFSItemStackIncrease(NSArray *stack,
         }
 
         // Set the new child as the current item and the current children.
-        if (dir) {
+        if (dir && recursive) {
           currentItem = child;
           MMFileBrowserFSItemStackIncrease(stack,
                                            currentItem,
@@ -495,7 +493,10 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
       // Recursive to any depth.
       [item loadChildrenRecursive:YES expandedChildrenOnly:NO];
     } else {
-      [item loadChildrenRecursive:NO expandedChildrenOnly:YES];
+      // Only needed if the item has not been loaded before.
+      if (item.children == nil) {
+        [item loadChildrenRecursive:NO expandedChildrenOnly:YES];
+      }
     }
   }
 
