@@ -2,6 +2,77 @@
 #import "MMVimController.h"
 #include <fts.h>
 
+@interface MMFileBrowserFSItemStack : NSObject
+
+@property (readonly) NSMutableArray *stack;
+@property (readonly) short level;
+@property (readonly) BOOL checkChildrenForExistingItem;
+@property (readonly) MMFileBrowserFSItem *currentItem;
+@property (readonly) NSMutableArray *currentChildren;
+
+- (void)push:(MMFileBrowserFSItem *)item;
+- (void)popTo:(short)toLevel;
+
+@end
+
+@implementation MMFileBrowserFSItemStack
+
+- (void)dealloc;
+{
+  [_stack release];
+  [super dealloc];
+}
+
+- (id)init;
+{
+  if ((self = [super init])) {
+    _stack = [NSMutableArray new];
+    _level = FTS_ROOTLEVEL;
+    _checkChildrenForExistingItem = NO;
+    _currentItem = nil;
+    _currentChildren = nil;
+  }
+  return self;
+}
+
+- (void)push:(MMFileBrowserFSItem *)item;
+{
+  _currentItem = item;
+  // Use an existing children list if this dir has been loaded before.
+  if (_currentItem.children) {
+    _checkChildrenForExistingItem = YES;
+    _currentChildren = _currentItem.children;
+  } else {
+    _currentChildren = [NSMutableArray new];
+    _currentItem.children = _currentChildren;
+    [_currentChildren release];
+  }
+  NSNumber *check = [NSNumber numberWithBool:_checkChildrenForExistingItem];
+  NSArray *stackEntry = [[NSArray alloc] initWithObjects:_currentItem,
+                                                         _currentChildren,
+                                                         check,
+                                                         nil];
+  [_stack addObject:stackEntry];
+  [stackEntry release];
+  _level++;
+}
+
+- (void)popTo:(short)toLevel;
+{
+  // Keep the current level on the stack!
+  for (short i = _level; i > toLevel; i--) {
+    [_stack removeLastObject];
+  }
+  _level = toLevel;
+  NSArray *stackEntry = [_stack lastObject];
+  _currentItem = [stackEntry objectAtIndex:0];
+  _currentChildren = [stackEntry objectAtIndex:1];
+  _checkChildrenForExistingItem = [[stackEntry objectAtIndex:2] boolValue];
+}
+
+@end
+
+
 @interface MMFileBrowserFSItem ()
 - (id)initWithPath:(char *)thePath
             parent:(MMFileBrowserFSItem *)parentItem
@@ -109,55 +180,27 @@ MMFileBrowserFSItemIgnoreFile(const char *filename, BOOL includesHiddenFiles)
   //}
 //}
 
-static void
-MMFileBrowserFSItemStackIncrease(NSMutableArray *stack,
-                                 MMFileBrowserFSItem *newItem,
-                                 NSMutableArray **newChildren,
-                                 BOOL *checkChildrenForExistingItem)
-{
-  BOOL check = NO;
-  // Use an existing children list if this dir has been loaded before.
-  if (newItem.children) {
-    check = YES;
-    *newChildren = newItem.children;
-  } else {
-    *newChildren = [NSMutableArray new];
-    newItem.children = *newChildren;
-    [*newChildren release];
-  }
-  *checkChildrenForExistingItem = check;
-  NSArray *stackEntry = [[NSArray alloc] initWithObjects:newItem,
-                                                         *newChildren,
-                                                         [NSNumber numberWithBool:check],
-                                                         nil];
-  [stack addObject:stackEntry];
-  [stackEntry release];
-}
-
 - (BOOL)loadChildrenRecursive:(BOOL)recursive expandedChildrenOnly:(BOOL)expandedChildrenOnly;
 {
+  BOOL newItemsCreated = NO;
+
   // Only reload items that have been loaded before
   // NSLog(@"Reload: %@", path);
   if (parent) {
     includesHiddenFiles = parent.includesHiddenFiles;
   }
 
-  BOOL newItemsCreated = NO;
-
   char *path = (char *)[[self fullPath] UTF8String];
-  NSLog(@"Open dir: %s, recursive: %s", path, (recursive ? "YES" : "NO"));
   char *paths[2] = { path, NULL };
+
+  NSLog(@"Open dir: %s, recursive: %s", path, (recursive ? "YES" : "NO"));
   // TODO we can sort with the third arg
   FTS *root = fts_open(paths, FTS_LOGICAL | FTS_COMFOLLOW | FTS_NOCHDIR, NULL);
   assert(root != NULL && @"Failed to open dir.");
 
   // Setup the stack for recursive search
-  MMFileBrowserFSItem *currentItem = self;
-  NSMutableArray *currentChildren;
-  BOOL checkChildrenForExistingItem;
-  NSMutableArray *stack = [NSMutableArray new];
-  MMFileBrowserFSItemStackIncrease(stack, currentItem, &currentChildren, &checkChildrenForExistingItem);
-  short childrenStackLevel = FTS_ROOTLEVEL;
+  MMFileBrowserFSItemStack *stack = [MMFileBrowserFSItemStack new];
+  [stack push:self];
 
   FTSENT *node;
   while ((node = fts_read(root)) != NULL) {
@@ -170,16 +213,8 @@ MMFileBrowserFSItemStackIncrease(NSMutableArray *stack,
         }
 
         // Gone back to lower level, restore state
-        if (node->fts_level < childrenStackLevel) {
-          // Keep the current level on the stack!
-          for (short i = childrenStackLevel; i > node->fts_level; i--) {
-            [stack removeObjectAtIndex:i-1];
-          }
-          childrenStackLevel = node->fts_level;
-          NSArray *stackEntry = [stack objectAtIndex:childrenStackLevel-1];
-          currentItem = [stackEntry objectAtIndex:0];
-          currentChildren = [stackEntry objectAtIndex:1];
-          checkChildrenForExistingItem = [[stackEntry objectAtIndex:2] boolValue];
+        if (node->fts_level < stack.level) {
+          [stack popTo:node->fts_level];
         }
 
         if (MMFileBrowserFSItemIgnoreFile(node->fts_name, includesHiddenFiles)) {
@@ -191,8 +226,8 @@ MMFileBrowserFSItemStackIncrease(NSMutableArray *stack,
 
         MMFileBrowserFSItem *child = nil;
         // First check if the item already exists.
-        if (checkChildrenForExistingItem) {
-          for (MMFileBrowserFSItem *c in currentChildren) {
+        if (stack.checkChildrenForExistingItem) {
+          for (MMFileBrowserFSItem *c in stack.currentChildren) {
             if (strcmp(c->cpath, node->fts_name) == 0) {
               child = c;
               break;
@@ -210,21 +245,16 @@ MMFileBrowserFSItemStackIncrease(NSMutableArray *stack,
           // No item exists yet.
           newItemsCreated = YES;
           child = [[MMFileBrowserFSItem alloc] initWithPath:node->fts_name
-                                                     parent:currentItem
+                                                     parent:stack.currentItem
                                                       isDir:dir
                                                         vim:vim];
-          [currentChildren addObject:child];
+          [stack.currentChildren addObject:child];
           [child release];
         }
 
         // Set the new child as the current item and the current children.
         if (dir && recursive) {
-          currentItem = child;
-          MMFileBrowserFSItemStackIncrease(stack,
-                                           currentItem,
-                                           &currentChildren,
-                                           &checkChildrenForExistingItem);
-          childrenStackLevel++;
+          [stack push:child];
         }
       }
     } else if (node->fts_info == FTS_DNR || node->fts_info == FTS_ERR) {
