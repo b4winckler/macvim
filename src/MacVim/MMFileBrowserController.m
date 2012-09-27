@@ -150,7 +150,7 @@ MMFileBrowserFSItemIgnoreFile(const char *filename, BOOL includesHiddenFiles)
 //}
 
 static void
-MMFileBrowserFSItemStackIncrease(NSArray *stack,
+MMFileBrowserFSItemStackIncrease(NSMutableArray *stack,
                                  MMFileBrowserFSItem *newItem,
                                  NSMutableArray **newChildren,
                                  BOOL *checkChildrenForExistingItem)
@@ -477,8 +477,8 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
   NSInteger row = [self rowAtPoint:[self convertPoint:event.locationInWindow fromView:nil]];
   MMFileBrowserFSItem *item = [self itemAtRow:row];
 
+  // TODO check if this can be done from the ‘will expand’ delegate method
   if (![item isLeaf] && ![self isItemExpanded:item]) {
-    // We load directory contents, recursive or not recursive, just-in-time.
     if (event.modifierFlags & NSAlternateKeyMask) {
       // Recursive to any depth.
       [item loadChildrenRecursive:YES expandedChildrenOnly:NO];
@@ -1131,6 +1131,13 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
     dragItems = nil;
     return YES;
   }
+}
+
+- (void)outlineViewItemDidCollapse:(NSNotification *)notification;
+{
+  MMFileBrowserFSItem *item = [notification.userInfo objectForKey:@"NSObject"];
+  // Free memory
+  item.children = nil;
 }
 
 
