@@ -9,6 +9,9 @@
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification;
 - (NSMenu *)menuForRow:(NSInteger)row;
 - (void)openSelectedFilesInCurrentWindowWithLayout:(int)layout;
+- (void)fileBrowserWillExpand:(MMFileBrowser *)fileBrowser
+                         item:(MMFileBrowserFSItem *)item
+                    recursive:(BOOL)recursive;
 @end
 
 @interface MMFileBrowserController : NSViewController <MMFileBrowserDelegate> {

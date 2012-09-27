@@ -307,7 +307,6 @@ MMFileBrowserFSItemStackIncrease(NSMutableArray *stack,
   if ([self isLeaf]) {
     return -1;
   } else {
-    // NSLog(@"LOAD CHILDREN FOR COUNT!");
     return [[self children] count];
   }
 }
@@ -472,23 +471,17 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 }
 
 - (void)mouseDown:(NSEvent *)event {
-  NSInteger before = self.selectedRow;
-
   NSInteger row = [self rowAtPoint:[self convertPoint:event.locationInWindow fromView:nil]];
   MMFileBrowserFSItem *item = [self itemAtRow:row];
 
-  // TODO check if this can be done from the ‘will expand’ delegate method
   if (![item isLeaf] && ![self isItemExpanded:item]) {
-    if (event.modifierFlags & NSAlternateKeyMask) {
-      // Recursive to any depth.
-      [item loadChildrenRecursive:YES expandedChildrenOnly:NO];
-    } else {
-      // Only needed if the item has not been loaded before.
-      if (item.children == nil) {
-        [item loadChildrenRecursive:NO expandedChildrenOnly:YES];
-      }
-    }
+    BOOL recursive = (event.modifierFlags & NSAlternateKeyMask) == NSAlternateKeyMask;
+    [(id<MMFileBrowserDelegate>)self.delegate fileBrowserWillExpand:self
+                                                               item:item
+                                                          recursive:recursive];
   }
+
+  NSInteger before = self.selectedRow;
 
   [super mouseDown:event];
 
@@ -1130,6 +1123,21 @@ static NSString *LEFT_KEY_CHAR, *RIGHT_KEY_CHAR, *DOWN_KEY_CHAR, *UP_KEY_CHAR;
 
     dragItems = nil;
     return YES;
+  }
+}
+
+- (void)fileBrowserWillExpand:(MMFileBrowser *)fileBrowser
+                         item:(MMFileBrowserFSItem *)item
+                    recursive:(BOOL)recursive;
+{
+  if (recursive) {
+    // Recursive to any depth.
+    [item loadChildrenRecursive:YES expandedChildrenOnly:NO];
+  } else {
+    // Only needed if the item has not been loaded before.
+    if (item.children == nil) {
+      [item loadChildrenRecursive:NO expandedChildrenOnly:YES];
+    }
   }
 }
 
