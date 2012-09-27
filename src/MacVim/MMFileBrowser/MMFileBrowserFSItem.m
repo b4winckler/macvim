@@ -2,6 +2,19 @@
 #import "MMVimController.h"
 #include <fts.h>
 
+
+@interface MMFileBrowserFSItem ()
+
+@property (readonly) const char *cpath;
+
+- (id)initWithPath:(char *)thePath
+            parent:(MMFileBrowserFSItem *)parentItem
+             isDir:(BOOL)dir
+               vim:(MMVimController *)vimInstance;
+- (MMFileBrowserFSItem *)_itemAtPath:(NSArray *)components;
+@end
+
+
 @interface MMFileBrowserFSItemStack : NSObject
 
 @property (readonly) NSMutableArray *stack;
@@ -9,6 +22,7 @@
 @property (readonly) BOOL checkChildrenForExistingItem;
 @property (readonly) MMFileBrowserFSItem *currentItem;
 @property (readonly) NSMutableArray *currentChildren;
+@property (readonly) NSMutableArray *removeFromCurrentChildren;
 
 - (void)push:(MMFileBrowserFSItem *)item;
 - (void)popTo:(short)toLevel;
@@ -17,68 +31,101 @@
 
 @implementation MMFileBrowserFSItemStack
 
+@synthesize stack, level, checkChildrenForExistingItem;
+@synthesize currentItem, currentChildren, removeFromCurrentChildren;
+
 - (void)dealloc;
 {
-  [_stack release];
+  [stack release];
   [super dealloc];
 }
 
 - (id)init;
 {
   if ((self = [super init])) {
-    _stack = [NSMutableArray new];
-    _level = FTS_ROOTLEVEL;
-    _checkChildrenForExistingItem = NO;
-    _currentItem = nil;
-    _currentChildren = nil;
+    stack = [NSMutableArray new];
+    level = FTS_ROOTLEVEL;
+    checkChildrenForExistingItem = NO;
+    currentItem = nil;
+    currentChildren = nil;
+    removeFromCurrentChildren = nil;
   }
   return self;
 }
 
 - (void)push:(MMFileBrowserFSItem *)item;
 {
-  _currentItem = item;
+  currentItem = item;
   // Use an existing children list if this dir has been loaded before.
-  if (_currentItem.children) {
-    _checkChildrenForExistingItem = YES;
-    _currentChildren = _currentItem.children;
+  if (currentItem.children) {
+    checkChildrenForExistingItem = YES;
+    currentChildren = currentItem.children;
+    removeFromCurrentChildren = [currentChildren mutableCopy];
   } else {
-    _currentChildren = [NSMutableArray new];
-    _currentItem.children = _currentChildren;
-    [_currentChildren release];
+    currentChildren = [NSMutableArray new];
+    currentItem.children = currentChildren;
+    [currentChildren release];
+    removeFromCurrentChildren = nil;
   }
-  NSNumber *check = [NSNumber numberWithBool:_checkChildrenForExistingItem];
-  NSArray *stackEntry = [[NSArray alloc] initWithObjects:_currentItem,
-                                                         _currentChildren,
+  NSNumber *check = [NSNumber numberWithBool:checkChildrenForExistingItem];
+  NSArray *stackEntry = [[NSArray alloc] initWithObjects:currentItem,
+                                                         currentChildren,
                                                          check,
+                                                         removeFromCurrentChildren,
                                                          nil];
-  [_stack addObject:stackEntry];
+  [stack addObject:stackEntry];
   [stackEntry release];
-  _level++;
+  level++;
+}
+
+// Ensure all items that need to be removed are removed.
+- (void)flush;
+{
+  [self popTo:FTS_ROOTLEVEL];
 }
 
 - (void)popTo:(short)toLevel;
 {
+  NSArray *stackEntry;
   // Keep the current level on the stack!
-  for (short i = _level; i > toLevel; i--) {
-    [_stack removeLastObject];
+  for (short i = level; i > toLevel; i--) {
+    stackEntry = [stack lastObject];
+    if ([stackEntry count] > 3) {
+      NSMutableArray *children = [stackEntry objectAtIndex:1];
+      NSArray *remove = [stackEntry objectAtIndex:3];
+      for (MMFileBrowserFSItem *item in remove) {
+        NSLog(@"REMOVE: %@", item);
+        [children removeObject:item];
+      }
+    }
+    [stack removeLastObject];
   }
-  _level = toLevel;
-  NSArray *stackEntry = [_stack lastObject];
-  _currentItem = [stackEntry objectAtIndex:0];
-  _currentChildren = [stackEntry objectAtIndex:1];
-  _checkChildrenForExistingItem = [[stackEntry objectAtIndex:2] boolValue];
+  level = toLevel;
+  stackEntry = [stack lastObject];
+  currentItem = [stackEntry objectAtIndex:0];
+  currentChildren = [stackEntry objectAtIndex:1];
+  if ([stackEntry count] > 3) {
+    removeFromCurrentChildren = [stackEntry objectAtIndex:3];
+  } else {
+    removeFromCurrentChildren = nil;
+  }
+  checkChildrenForExistingItem = [[stackEntry objectAtIndex:2] boolValue];
 }
 
-@end
+// Also marks the child as not needing removal.
+- (MMFileBrowserFSItem *)existingChild:(const char *)filename;
+{
+  if (checkChildrenForExistingItem) {
+    for (MMFileBrowserFSItem *c in currentChildren) {
+      if (strcmp(c.cpath, filename) == 0) {
+        if (removeFromCurrentChildren) [removeFromCurrentChildren removeObject:c];
+        return c;
+      }
+    }
+  }
+  return nil;
+}
 
-
-@interface MMFileBrowserFSItem ()
-- (id)initWithPath:(char *)thePath
-            parent:(MMFileBrowserFSItem *)parentItem
-             isDir:(BOOL)dir
-               vim:(MMVimController *)vimInstance;
-- (MMFileBrowserFSItem *)_itemAtPath:(NSArray *)components;
 @end
 
 
@@ -92,7 +139,7 @@ static NSMutableDictionary *iconCache = nil;
   }
 }
 
-@synthesize parent, includesHiddenFiles, ignoreNextReload, children;
+@synthesize parent, cpath, includesHiddenFiles, ignoreNextReload, children;
 
 - (void)dealloc {
   [children release];
@@ -224,16 +271,8 @@ MMFileBrowserFSItemIgnoreFile(const char *filename, BOOL includesHiddenFiles)
 
         // TODO remove deleted files
 
-        MMFileBrowserFSItem *child = nil;
         // First check if the item already exists.
-        if (stack.checkChildrenForExistingItem) {
-          for (MMFileBrowserFSItem *c in stack.currentChildren) {
-            if (strcmp(c->cpath, node->fts_name) == 0) {
-              child = c;
-              break;
-            }
-          }
-        }
+        MMFileBrowserFSItem *child = [stack existingChild:node->fts_name];
         if (child) {
           // If this is *not* a previously loaded dir and expandedChildrenOnly
           // is `YES` then skip it.
@@ -266,6 +305,7 @@ MMFileBrowserFSItemIgnoreFile(const char *filename, BOOL includesHiddenFiles)
   }
   fts_close(root);
 
+  [stack flush];
   [stack release];
   //printItems(item, 0);
 
