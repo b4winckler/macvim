@@ -149,6 +149,31 @@ MMFileBrowserFSItemIgnoreFile(const char *filename, BOOL includesHiddenFiles)
   //}
 //}
 
+static void
+MMFileBrowserFSItemStackIncrease(NSArray *stack,
+                                 MMFileBrowserFSItem *newItem,
+                                 NSMutableArray **newChildren,
+                                 BOOL *checkChildrenForExistingItem)
+{
+  BOOL check = NO;
+  // Use an existing children list if this dir has been loaded before.
+  if (newItem.children) {
+    check = YES;
+    newChildren = newItem.children;
+  } else {
+    newChildren = [NSMutableArray new];
+    newItem.children = newChildren;
+    [newChildren release];
+  }
+  *checkChildrenForExistingItem = check;
+  NSArray *stackEntry = [[NSArray alloc] initWithObjects:newItem,
+                                                         newChildren,
+                                                         [NSNumber numberWithBool:check],
+                                                         nil];
+  [stack addObject:stackEntry];
+  [stackEntry release];
+}
+
 - (BOOL)loadChildrenRecursive:(BOOL)recursive expandedChildrenOnly:(BOOL)expandedChildrenOnly;
 {
   // Only reload items that have been loaded before
@@ -244,22 +269,13 @@ MMFileBrowserFSItemIgnoreFile(const char *filename, BOOL includesHiddenFiles)
           [child release];
         }
 
-        // Set the new child as the current item and give it a new children array.
+        // Set the new child as the current item and the current children.
         if (dir) {
           currentItem = child;
-          // Use an existing children list if this dir has been loaded before.
-          if (currentItem.children) {
-            checkChildrenForExistingItem = YES;
-            currentChildren = currentItem.children;
-          } else {
-            checkChildrenForExistingItem = NO;
-            currentChildren = [NSMutableArray new];
-            currentItem.children = currentChildren;
-            [currentChildren release];
-          }
-          currentItemAndChildren = [[NSArray alloc] initWithObjects:currentItem, currentChildren, [NSNumber numberWithBool:checkChildrenForExistingItem], nil];
-          [stack addObject:currentItemAndChildren];
-          [currentItemAndChildren release];
+          MMFileBrowserFSItemStackIncrease(stack,
+                                           currentItem,
+                                           &currentChildren,
+                                           &checkChildrenForExistingItem);
           childrenStackLevel++;
         }
       }
