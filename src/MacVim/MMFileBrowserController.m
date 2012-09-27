@@ -191,24 +191,14 @@ MMFileBrowserFSItemStackIncrease(NSArray *stack,
   FTS *root = fts_open(paths, FTS_LOGICAL | FTS_COMFOLLOW | FTS_NOCHDIR, NULL);
   assert(root != NULL && @"Failed to open dir.");
 
+  // Setup the stack for recursive search
   MMFileBrowserFSItem *currentItem = self;
   NSMutableArray *currentChildren;
   BOOL checkChildrenForExistingItem;
-  if (children) {
-    checkChildrenForExistingItem = YES;
-    currentChildren = children;
-  } else {
-    checkChildrenForExistingItem = NO;
-    // Don't release it!
-    children = [NSMutableArray new];
-    currentChildren = children;
-  }
-  NSArray *currentItemAndChildren = [[NSArray alloc] initWithObjects:currentItem, currentChildren, [NSNumber numberWithBool:checkChildrenForExistingItem], nil];
-  NSMutableArray *stack = [[NSMutableArray alloc] initWithObjects:currentItemAndChildren, nil];
-  [currentItemAndChildren release];
+  NSMutableArray *stack = [NSMutableArray new];
+  MMFileBrowserFSItemStackIncrease(stack, currentItem, &currentChildren, &checkChildrenForExistingItem);
+  short childrenStackLevel = FTS_ROOTLEVEL;
 
-  // Begin at one because we ignore FTS_ROOTLEVEL.
-  short childrenStackLevel = 1;
   FTSENT *node;
   while ((node = fts_read(root)) != NULL) {
     if (node->fts_info == FTS_D || node->fts_info == FTS_F) {
@@ -226,10 +216,10 @@ MMFileBrowserFSItemStackIncrease(NSArray *stack,
             [stack removeObjectAtIndex:i-1];
           }
           childrenStackLevel = node->fts_level;
-          currentItemAndChildren = [stack objectAtIndex:childrenStackLevel-1];
-          currentItem = [currentItemAndChildren objectAtIndex:0];
-          currentChildren = [currentItemAndChildren objectAtIndex:1];
-          checkChildrenForExistingItem = [[currentItemAndChildren objectAtIndex:2] boolValue];
+          NSArray *stackEntry = [stack objectAtIndex:childrenStackLevel-1];
+          currentItem = [stackEntry objectAtIndex:0];
+          currentChildren = [stackEntry objectAtIndex:1];
+          checkChildrenForExistingItem = [[stackEntry objectAtIndex:2] boolValue];
         }
 
         if (MMFileBrowserFSItemIgnoreFile(node->fts_name, includesHiddenFiles)) {
