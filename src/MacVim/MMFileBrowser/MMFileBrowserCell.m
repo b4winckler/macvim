@@ -46,10 +46,10 @@
 */
 
 
-#import "ImageAndTextCell.h"
+#import "MMFileBrowserCell.h"
 #import <AppKit/NSCell.h>
 
-@implementation ImageAndTextCell
+@implementation MMFileBrowserCell
 
 - (id)init {
     if ((self = [super init])) {
@@ -65,7 +65,7 @@
 }
 
 - (id)copyWithZone:(NSZone *)zone {
-    ImageAndTextCell *cell = (ImageAndTextCell *)[super copyWithZone:zone];
+    MMFileBrowserCell *cell = (MMFileBrowserCell *)[super copyWithZone:zone];
     cell->image = [self.image retain];
     return cell;
 }

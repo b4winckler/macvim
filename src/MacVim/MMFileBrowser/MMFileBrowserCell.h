@@ -48,7 +48,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-@interface ImageAndTextCell : NSTextFieldCell {
+@interface MMFileBrowserCell : NSTextFieldCell {
 @private
     NSImage *image;
 }

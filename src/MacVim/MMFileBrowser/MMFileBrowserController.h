@@ -1,18 +1,9 @@
 #import <Cocoa/Cocoa.h>
 
+#import "MMFileBrowser.h"
+
 @class MMWindowController;
 @class MMFileBrowserFSItem;
-@class MMFileBrowser;
-
-@protocol MMFileBrowserDelegate <NSObject, NSOutlineViewDataSource, NSOutlineViewDelegate>
-- (void)outlineViewSelectionIsChanging:(NSNotification *)notification;
-- (void)outlineViewSelectionDidChange:(NSNotification *)notification;
-- (NSMenu *)menuForRow:(NSInteger)row;
-- (void)openSelectedFilesInCurrentWindowWithLayout:(int)layout;
-- (void)fileBrowserWillExpand:(MMFileBrowser *)fileBrowser
-                         item:(MMFileBrowserFSItem *)item
-                    recursive:(BOOL)recursive;
-@end
 
 @interface MMFileBrowserController : NSViewController <MMFileBrowserDelegate> {
   MMWindowController *windowController;
