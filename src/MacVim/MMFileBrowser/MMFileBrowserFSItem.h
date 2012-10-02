@@ -2,17 +2,10 @@
 
 @class MMVimController;
 
-@interface MMFileBrowserFSItem : NSObject {
-  char *cpath;
-  BOOL isDir;
-  MMFileBrowserFSItem *parent;
-  MMVimController *vim;
-  BOOL includesHiddenFiles;
-  BOOL ignoreNextReload;
-  NSImage *icon;
-}
+@interface MMFileBrowserFSItem : NSObject
 
 @property (nonatomic, assign) BOOL includesHiddenFiles, ignoreNextReload;
+@property (readonly) BOOL isDir;
 @property (readonly) MMFileBrowserFSItem *parent;
 @property (nonatomic, retain) NSMutableArray *children;
 

@@ -147,7 +147,6 @@
   rootItem = [[MMFileBrowserFSItem alloc] initWithPath:root
                                                    vim:[windowController vimController]];
   [rootItem loadChildrenRecursive:NO expandedChildrenOnly:YES];
-  NSLog(@"ROOT ITEM: %@", rootItem);
   [fileBrowser reloadData];
   [fileBrowser expandItem:rootItem];
   [pathControl setURL:[NSURL fileURLWithPath:root]];

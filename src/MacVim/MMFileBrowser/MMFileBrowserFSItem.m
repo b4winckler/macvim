@@ -2,17 +2,29 @@
 #import "MMVimController.h"
 #include <fts.h>
 
+@class MMFileBrowserFSItemIconCache;
 
-@interface MMFileBrowserFSItem ()
+@interface MMFileBrowserFSItem () {
+  char *cpath;
+  MMFileBrowserFSItem *parent;
+  MMVimController *vim;
+  BOOL includesHiddenFiles;
+  BOOL ignoreNextReload;
+  NSImage *icon;
+  MMFileBrowserFSItemIconCache *iconCache;
+}
 
 @property (readonly) const char *cpath;
 
 - (id)initWithPath:(char *)thePath
             parent:(MMFileBrowserFSItem *)parentItem
              isDir:(BOOL)dir
+         iconCache:(MMFileBrowserFSItemIconCache *)theIconCache
                vim:(MMVimController *)vimInstance;
 - (MMFileBrowserFSItem *)_itemAtPath:(NSArray *)components;
+
 @end
+
 
 
 @interface MMFileBrowserFSItemStack : NSObject
@@ -129,34 +141,97 @@
 @end
 
 
-@implementation MMFileBrowserFSItem
+@interface MMFileBrowserFSItemIconCache : NSObject {
+  NSMutableDictionary *cache;
+}
+@end
 
-// TODO remove this from the global namespace, have one instance shared by all fs items for one file browser instance
-static NSMutableDictionary *iconCache = nil;
-+ (void)initialize {
-  if (self == [MMFileBrowserFSItem class]) {
-    iconCache = [NSMutableDictionary new];
-  }
+@implementation MMFileBrowserFSItemIconCache
+
+- (void)dealloc;
+{
+  [cache release];
+  [super dealloc];
 }
 
-@synthesize parent, cpath, includesHiddenFiles, ignoreNextReload, children;
+- (id)init;
+{
+  if ((self = [super init])) {
+    cache = [NSMutableDictionary new];
+  }
+  return self;
+}
+
+- (NSImage *)iconForItem:(MMFileBrowserFSItem *)item;
+{
+  NSString *type = nil;
+  NSString *path = nil;
+  if (item.isDir) {
+    type = [[item relativePath] pathExtension];
+    if (type.length > 0) {
+      // This is possibly a 'bundle' dir (e.g. Foo.xcodeproj).
+      path = [item fullPath];
+    } else {
+      // It's not a 'bundle' dir, so use a normal folder icon.
+      type = @"MMFileBrowserFolder";
+      path = @"/var"; // Just pick a dir that's guaranteed to have a normal folder icon.
+    }
+  } else {
+    NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+    if (![ws getInfoForFile:[item fullPath] application:NULL type:&type]) {
+      NSLog(@"FAILED TO FIND INFO FOR %@", [item fullPath]);
+      type = @"";
+    }
+  }
+  return [self iconForFileType:type isDir:item.isDir path:path];
+}
+
+- (NSImage *)iconForFileType:(NSString *)type isDir:(BOOL)isDir path:(NSString *)path;
+{
+  NSImage *icon = [cache valueForKey:type];
+  if (icon == nil) {
+    if (isDir) {
+      icon = [[NSWorkspace sharedWorkspace] iconForFile:path];
+    } else {
+      icon = [[NSWorkspace sharedWorkspace] iconForFileType:type];
+    }
+    [icon setSize:NSMakeSize(16, 16)];
+    [cache setValue:icon forKey:type];
+  }
+  return icon;
+}
+
+@end
+
+
+
+@implementation MMFileBrowserFSItem
+
+@synthesize parent, isDir, cpath, includesHiddenFiles, ignoreNextReload, children;
 
 - (void)dealloc {
   [children release];
   free(cpath);
-  [icon release];
+  if (!parent) {
+    [iconCache release];
+  }
   vim = nil;
   [super dealloc];
 }
 
 - (id)initWithPath:(NSString *)thePath vim:(MMVimController *)vimInstance;
 {
-  return [self initWithPath:(char *)[thePath UTF8String] parent:nil isDir:YES vim:vimInstance];
+  return [self initWithPath:(char *)[thePath UTF8String]
+                     parent:nil
+                      isDir:YES
+                  iconCache:nil
+                        vim:vimInstance];
 }
 
 - (id)initWithPath:(char *)thePath
             parent:(MMFileBrowserFSItem *)parentItem
              isDir:(BOOL)dir
+         iconCache:(MMFileBrowserFSItemIconCache *)theIconCache
                vim:(MMVimController *)vimInstance;
 {
   if ((self = [super init])) {
@@ -169,8 +244,10 @@ static NSMutableDictionary *iconCache = nil;
 
     if (parent) {
       includesHiddenFiles = parent.includesHiddenFiles;
+      iconCache = theIconCache;
     } else {
       includesHiddenFiles = NO;
+      iconCache = [MMFileBrowserFSItemIconCache new];
     }
     ignoreNextReload = NO;
   }
@@ -286,6 +363,7 @@ MMFileBrowserFSItemIgnoreFile(const char *filename, BOOL includesHiddenFiles)
           child = [[MMFileBrowserFSItem alloc] initWithPath:node->fts_name
                                                      parent:stack.currentItem
                                                       isDir:dir
+                                                  iconCache:iconCache
                                                         vim:vim];
           [stack.currentChildren addObject:child];
           [child release];
@@ -344,36 +422,7 @@ MMFileBrowserFSItemIgnoreFile(const char *filename, BOOL includesHiddenFiles)
 // TODO for now we don't really resize
 - (NSImage *)icon {
   if (icon == nil) {
-    NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-    NSString *type;
-    NSString *path = nil;
-    if (isDir) {
-      type = [[self relativePath] pathExtension];
-      if (type.length > 0) {
-        // This is possibly a 'bundle' dir (e.g. Foo.xcodeproj).
-        path = [self fullPath];
-      } else {
-        // It's not a 'bundle' dir, so use a normal folder icon.
-        type = @"MMFileBrowserFolder";
-        path = @"/var"; // Just pick a dir that's guaranteed to have a normal folder icon.
-      }
-    } else {
-      if (![ws getInfoForFile:[self fullPath] application:NULL type:&type]) {
-        NSLog(@"FAILED TO FIND INFO FOR %@", [self fullPath]);
-        type = @"";
-      }
-    }
-    icon = [iconCache valueForKey:type];
-    if (icon == nil) {
-      if (isDir) {
-        icon = [ws iconForFile:path];
-      } else {
-        icon = [ws iconForFileType:type];
-      }
-      [icon setSize:NSMakeSize(16, 16)];
-      [iconCache setValue:icon forKey:type];
-    }
-    [icon retain];
+    icon = [iconCache iconForItem:self];
   }
   return icon;
 }
