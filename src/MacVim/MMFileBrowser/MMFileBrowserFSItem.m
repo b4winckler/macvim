@@ -106,7 +106,7 @@
       NSMutableArray *children = [stackEntry objectAtIndex:1];
       NSArray *remove = [stackEntry objectAtIndex:3];
       for (MMFileBrowserFSItem *item in remove) {
-        NSLog(@"REMOVE: %@", item);
+        // NSLog(@"REMOVE: %@", item);
         [children removeObject:item];
       }
     }
@@ -317,7 +317,7 @@ MMFileBrowserFSItemIgnoreFile(const char *filename, BOOL includesHiddenFiles)
   char *path = (char *)[[self fullPath] UTF8String];
   char *paths[2] = { path, NULL };
 
-  NSLog(@"Open dir: %s, recursive: %s", path, (recursive ? "YES" : "NO"));
+  // NSLog(@"Open dir: %s, recursive: %s", path, (recursive ? "YES" : "NO"));
   // TODO we can sort with the third arg
   FTS *root = fts_open(paths, FTS_LOGICAL | FTS_COMFOLLOW | FTS_NOCHDIR, NULL);
   assert(root != NULL && @"Failed to open dir.");
