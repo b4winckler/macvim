@@ -1,0 +1,104 @@
+Test for paste.
+
+
+Results of test8:
+
+STARTTEST
+:set paste autoindent tw=10
+/^{/+1
+gqgqo
+i  aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+i  aaaaa bbbbb
+ENDTEST
+
+case1
+{
+  aaaaa bbbbb
+}
+{
+  aaaaa bbbbb
+}
+
+STARTTEST
+:set paste cindent tw=10
+/^{/+1
+gqgqo
+i  aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+i  aaaaa bbbbb
+ENDTEST
+
+case2
+{
+  aaaaa bbbbb
+}
+{
+  aaaaa bbbbb
+}
+
+STARTTEST
+:set paste lisp autoindent tw=10
+/^{/+1
+gqgqo
+i(aaaaa bbbbb)
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+i(aaaaa bbbbb)
+ENDTEST
+
+case3
+{
+(aaaaa bbbbb)
+}
+{
+(aaaaa bbbbb)
+}
+
+STARTTEST
+:set paste smartindent tw=10
+/^{/+1
+gqgqo
+i  if aa bbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+i  if aa bbb
+ENDTEST
+
+case4
+{
+  if aa bbb
+}
+{
+  if aa bbb
+}
+
+STARTTEST
+:set paste indentexpr=indent(v:lnum-1)+1 tw=10
+/^{/+1
+gqgqo
+aa bb cc dd ee ff
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+aa bb cc dd ee ff
+ENDTEST
+
+case5
+{
+aa bb cc dd ee ff
+}
+{
+aa bb cc dd ee ff
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST

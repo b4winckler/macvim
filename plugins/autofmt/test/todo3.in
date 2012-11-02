@@ -1,0 +1,43 @@
+Quotation mark may require special handling.
+
+line break class
+QU 	Quotation 	Quotation marks 	Act like they are both opening and closing
+
+1.
+odd: handle as opening
+even: handle as closing
+
+2.
+...
+
+
+Results of todo3:
+
+STARTTEST
+:set fo=tm tw=10
+/^{/+1
+:set formatexpr=
+gqgqjgqgqo
+あいうえu3002'abcd'
+"あいうu3002"abcd
+/^{/+1
+:set formatexpr=autofmt#japanese#formatexpr()
+gqgqjgqgqo
+あいうえu3002'abcd'
+"あいうu3002"abcd
+ENDTEST
+
+case1
+{
+あいうえ。'abcd'
+"あいう。"abcd
+}
+{
+あいうえ。'abcd'
+"あいう。"abcd
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST

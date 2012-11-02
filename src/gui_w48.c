@@ -132,6 +132,7 @@ typedef int LONG;
 static void _OnPaint( HWND hwnd);
 static void clear_rect(RECT *rcp);
 static int gui_mswin_get_menu_height(int fix_window);
+static int get_caption_height(void);
 
 static WORD		s_dlgfntheight;		/* height of the dialog font */
 static WORD		s_dlgfntwidth;		/* width of the dialog font */
@@ -1295,7 +1296,7 @@ GetFontSize(GuiFont font)
     TEXTMETRIC tm;
 
     GetTextMetrics(hdc, &tm);
-    gui.char_width = tm.tmAveCharWidth + tm.tmOverhang;
+    gui.char_width = tm.tmAveCharWidth + tm.tmOverhang + p_charspace;
 
     gui.char_height = tm.tmHeight
 #ifndef MSWIN16_FASTTEXT
@@ -2892,7 +2893,7 @@ gui_mswin_get_valid_dimensions(
 	+ GetSystemMetrics(SM_CXFRAME) * 2;
     base_height = gui_get_base_height()
 	+ GetSystemMetrics(SM_CYFRAME) * 2
-	+ GetSystemMetrics(SM_CYCAPTION)
+	+ get_caption_height()
 #ifdef FEAT_MENU
 	+ gui_mswin_get_menu_height(FALSE)
 #endif
@@ -3188,7 +3189,7 @@ gui_mch_newfont()
 			- GetSystemMetrics(SM_CXFRAME) * 2,
 		     rect.bottom - rect.top
 			- GetSystemMetrics(SM_CYFRAME) * 2
-			- GetSystemMetrics(SM_CYCAPTION)
+			- get_caption_height()
 #ifdef FEAT_MENU
 			- gui_mswin_get_menu_height(FALSE)
 #endif

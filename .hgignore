@@ -38,6 +38,9 @@ src/Obj*/pathdef.c
 gvimext.dll
 gvimext.lib
 
+# Android
+*.o.d
+
 # All platforms
 *.rej
 *.orig
@@ -54,3 +57,9 @@ src/testdir/lua.vim
 src/testdir/small.vim 
 src/testdir/tiny.vim 
 src/testdir/test*.out
+
+# KaoriYa
+src/*.lib
+src/Obj/*/pathdef.c
+src/if_perl.c
+src/po/vim.pot
