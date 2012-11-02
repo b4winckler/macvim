@@ -89,6 +89,8 @@
 #       Netbeans Support: NETBEANS=[yes or no] (default is yes if GUI is yes)
 #
 #       XPM Image Support: XPM=[path to XPM directory]
+#       Default is "xpm", using the files included in the distribution.
+#       Use "no" to disable this feature.
 #
 #       Optimization: OPTIMIZE=[SPACE, SPEED, MAXSPEED] (default is MAXSPEED)
 #
@@ -282,20 +284,24 @@ NBDEBUG_SRC	= nbdebug.c
 NETBEANS_LIB	= WSock32.lib
 !endif
 
-!ifdef XPM
+!ifndef XPM
+# XPM is not set, use the included xpm files, depending on the architecture.
+!if ("$(CPU)" == "AMD64") || ("$(CPU)" == "IA64")
+XPM = xpm\x64
+!else
+XPM = xpm\x86
+!endif
+!endif
+!if "$(XPM)" != "no"
 # XPM - Include support for XPM signs
-# You need to download or build  xpm.lib somehow.
-# You can get the most recent version of libXpm-*.zip from
-#   http://cgit.freedesktop.org/xorg/lib/libXpm
-# from which you must build xpm.lib yourself
-#   OR get and unpack: ftp://ftp.vim.org/pub/vim/pcextra/xpm.zip
+# See the xpm directory for more information.
 !ifndef XPM_ARCH
 XPM_ARCH=
 !endif
 XPM_OBJ   = $(OBJDIR)/xpm_w32.obj
 XPM_DEFS  = -DFEAT_XPM_W32
 XPM_LIB   = $(XPM)\lib$(XPM_ARCH)\libXpm.lib
-XPM_INC	  = -I $(XPM)\include
+XPM_INC	  = -I $(XPM)\include -I $(XPM)\..\include
 !endif
 !endif
 
