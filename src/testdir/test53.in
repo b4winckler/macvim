@@ -34,7 +34,17 @@ gncsearchmatch/one\_s*two\_s
 gnd
 /[a]bcdx
 :1
-2gnd
+2gnd/join
+/$
+0gnd
+/\>\zs
+0gnd/^
+gnd$h/\zs
+gnd/[u]niquepattern/s
+vlgnd
+/mother
+:set selection=exclusive
+$cgNmongoose
 :/^start:/,/^end:/wq! test.out
 ENDTEST
 
@@ -57,4 +67,10 @@ foobar
 one
 two
 abcdx | abcdx | abcdx
+join 
+lines
+zero width pattern
+delete first and last chars
+uniquepattern uniquepattern
+my very excellent mother just served us nachos
 end:

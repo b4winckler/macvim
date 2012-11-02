@@ -3,7 +3,7 @@
                                                          Version: 1.6.6
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 11-Jan-2012.
+                                                     Last Change: 20-Sep-2012.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -64,7 +64,7 @@ Vimの拡張機能について
   Perl(ActivePerl)との連携
     注意: PerlをインストールしなくてもVimは使用できます。
 
-    ActiveState社により公開されているActivePerl 5.14をインストールすることで、
+    ActiveState社により公開されているActivePerl 5.16をインストールすることで、
     Perlインターフェースを使用することができます。ActivePerlをインストールして
     いない場合は、Perlインターフェースは自動的に無効となります。Perlインター
     フェースの詳細については":help perl"としてVim付属のマニュアルを参照してく
@@ -109,13 +109,15 @@ Vimの拡張機能について
   Luaとの連携
     注意: LuaをインストールしなくてもVimは利用できます。
 
-    LuaBinariesにより公開されているLua 5.1をインストールすることで、Luaイン
+    LuaBinariesにより公開されているLua 5.2.1をインストールすることで、Luaイン
     ターフェースを利用できます。Luaをインストールしていない場合は、Luaインター
     フェースは自動的に無効となります。Luaインターフェースの詳細については
     ":help lua"としてVim付属のマニュアルを参照してください。
 
     - LuaBinaries
         http://luabinaries.sourceforge.net/
+        http://goo.gl/3eqvS (32bit版 DLL)
+        http://goo.gl/ZTgGV (64bit版 DLL)
 
   Rubyとの連携
     注意: RubyをインストールしなくてもVimは使用できます。

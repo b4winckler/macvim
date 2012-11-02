@@ -5332,8 +5332,9 @@ char_needs_redraw(off_from, off_to, cols)
 		    && (ScreenLinesUC[off_from] != ScreenLinesUC[off_to]
 			|| (ScreenLinesUC[off_from] != 0
 			    && comp_char_differs(off_from, off_to))
-			|| (cols > 1 && ScreenLines[off_from + 1]
-						 != ScreenLines[off_to + 1])))
+			|| ((*mb_off2cells)(off_from, off_from + cols) > 1
+			    && ScreenLines[off_from + 1]
+						  != ScreenLines[off_to + 1])))
 #endif
 	       ))
 	return TRUE;
@@ -9875,7 +9876,7 @@ get_trans_bufname(buf)
     buf_T	*buf;
 {
     if (buf_spname(buf) != NULL)
-	STRCPY(NameBuff, buf_spname(buf));
+	vim_strncpy(NameBuff, buf_spname(buf), MAXPATHL - 1);
     else
 	home_replace(buf, buf->b_fname, NameBuff, MAXPATHL, TRUE);
     trans_characters(NameBuff, MAXPATHL);
