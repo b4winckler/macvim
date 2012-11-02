@@ -4511,15 +4511,18 @@ case `uname` in
 		  echo ""
 		  echo "------------------------------------------"
 		  echo " On z/OS Unix, the environment variable"
-		  echo " __CC_${ccn}MODE must be set to \"1\"!"
+		  echo " _CC_${ccn}MODE must be set to \"1\"!"
 		  echo " Do:"
 		  echo "    export _CC_${ccn}MODE=1"
 		  echo " and then call configure again."
 		  echo "------------------------------------------"
 		  exit 1
 		fi
-		CFLAGS="$CFLAGS -D_ALL_SOURCE -Wc,float\\(IEEE\\)";
-                LDFLAGS="$LDFLAGS -Wl,EDIT=NO"
+		# Set CFLAGS for configure process.
+		# This will be reset later for config.mk.
+		# Use haltonmsg to force error for missing H files.
+		CFLAGS="$CFLAGS -D_ALL_SOURCE -Wc,float(ieee),haltonmsg(3296)";
+		LDFLAGS="$LDFLAGS -Wl,EDIT=NO"
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 		;;
@@ -4730,15 +4733,7 @@ $as_echo "not set, default to /usr" >&6; }
 
   LUA_INC=
   if test "X$vi_cv_path_lua_pfx" != "X"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if lua.h can be found in $vi_cv_path_lua_pfx/include" >&5
-$as_echo_n "checking if lua.h can be found in $vi_cv_path_lua_pfx/include... " >&6; }
-    if test -f $vi_cv_path_lua_pfx/include/lua.h; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-            # Extract the first word of "lua", so it can be a program name with args.
+        # Extract the first word of "lua", so it can be a program name with args.
 set dummy lua; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -4778,8 +4773,8 @@ $as_echo "no" >&6; }
 fi
 
 
-      if test "X$vi_cv_path_lua" != "X"; then
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking Lua version" >&5
+    if test "X$vi_cv_path_lua" != "X"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking Lua version" >&5
 $as_echo_n "checking Lua version... " >&6; }
 if ${vi_cv_version_lua+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -4788,23 +4783,31 @@ else
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_version_lua" >&5
 $as_echo "$vi_cv_version_lua" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if lua.h can be found in $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua" >&5
-$as_echo_n "checking if lua.h can be found in $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua... " >&6; }
-        if test -f $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua/lua.h; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if lua.h can be found in $vi_cv_path_lua_pfx/include" >&5
+$as_echo_n "checking if lua.h can be found in $vi_cv_path_lua_pfx/include... " >&6; }
+    if test -f $vi_cv_path_lua_pfx/include/lua.h; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-          LUA_INC=/lua$vi_cv_version_lua
-        else
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-          vi_cv_path_lua_pfx=
-        fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if lua.h can be found in $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua" >&5
+$as_echo_n "checking if lua.h can be found in $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua... " >&6; }
+      if test -f $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua/lua.h; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        LUA_INC=/lua$vi_cv_version_lua
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        vi_cv_path_lua_pfx=
       fi
     fi
   fi
 
   if test "X$vi_cv_path_lua_pfx" != "X"; then
-    if test "X$vi_cv_version_lua" != "X"; then
+    if test "X$LUA_INC" != "X"; then
             LUA_LIBS="-L${vi_cv_path_lua_pfx}/lib -llua$vi_cv_version_lua"
     else
       LUA_LIBS="-L${vi_cv_path_lua_pfx}/lib -llua"
@@ -4816,16 +4819,21 @@ $as_echo "no" >&6; }
     $as_echo "#define FEAT_LUA 1" >>confdefs.h
 
     if test "$enable_luainterp" = "dynamic"; then
-                  for i in 0 1 2 3 4 5 6 7 8 9; do
-	if test -f "${vi_cv_path_lua_pfx}/lib/liblua${vi_cv_version_lua}.so.$i"; then
-	  LUA_SONAME=".$i"
-	  break
-	fi
-      done
+      if test -f "${vi_cv_path_lua_pfx}/bin/cyglua-${vi_cv_version_lua}.dll"; then
+	vi_cv_dll_name_lua="cyglua-${vi_cv_version_lua}.dll"
+      else
+			for i in 0 1 2 3 4 5 6 7 8 9; do
+	  if test -f "${vi_cv_path_lua_pfx}/lib/liblua${vi_cv_version_lua}.so.$i"; then
+	    LUA_SONAME=".$i"
+	    break
+	  fi
+	done
+	vi_cv_dll_name_lua="liblua${vi_cv_version_lua}.so$LUA_SONAME"
+      fi
       $as_echo "#define DYNAMIC_LUA 1" >>confdefs.h
 
       LUA_LIBS=""
-      LUA_CFLAGS="-DDYNAMIC_LUA_DLL=\\\"liblua${vi_cv_version_lua}.so$LUA_SONAME\\\" $LUA_CFLAGS"
+      LUA_CFLAGS="-DDYNAMIC_LUA_DLL=\\\"${vi_cv_dll_name_lua}\\\" $LUA_CFLAGS"
     fi
   fi
   if test "$fail_if_missing" = "yes" -a -z "$LUA_SRC"; then
@@ -5419,7 +5427,8 @@ __:
 	@echo "python_LIBS='$(LIBS)'"
 	@echo "python_SYSLIBS='$(SYSLIBS)'"
 	@echo "python_LINKFORSHARED='$(LINKFORSHARED)'"
-	@echo "python_INSTSONAME='$(PYTHONFRAMEWORKPREFIX)/$(INSTSONAME)'"
+	@echo "python_DLLLIBRARY='$(DLLLIBRARY)'"
+	@echo "python_INSTSONAME='$(INSTSONAME)'"
 eof
 	    	    eval "`cd ${PYTHON_CONFDIR} && make -f "${tmp_mkf}" __ | sed '/ directory /d'`"
 	    rm -f -- "${tmp_mkf}"
@@ -5439,6 +5448,9 @@ eof
 fi
 
 
+	if test "X$python_DLLLIBRARY" != "X"; then
+	  python_INSTSONAME="$python_DLLLIBRARY"
+	fi
 	PYTHON_LIBS="${vi_cv_path_python_plibs}"
 	if test "${vi_cv_path_python_pfx}" = "${vi_cv_path_python_epfx}"; then
 	  PYTHON_CFLAGS="-I${vi_cv_path_python_pfx}/include/python${vi_cv_var_python_version} -DPYTHON_HOME=\\\"${vi_cv_path_python_pfx}\\\""
@@ -5729,7 +5741,8 @@ __:
 	@echo "python3_BASEMODLIBS='$(BASEMODLIBS)'"
 	@echo "python3_LIBS='$(LIBS)'"
 	@echo "python3_SYSLIBS='$(SYSLIBS)'"
-	@echo "python3_INSTSONAME='$(PYTHONFRAMEWORKPREFIX)/$(INSTSONAME)'"
+	@echo "python3_DLLLIBRARY='$(DLLLIBRARY)'"
+	@echo "python3_INSTSONAME='$(INSTSONAME)'"
 eof
                     eval "`cd ${PYTHON3_CONFDIR} && make -f "${tmp_mkf}" __ | sed '/ directory /d'`"
           rm -f -- "${tmp_mkf}"
@@ -5741,6 +5754,9 @@ eof
 fi
 
 
+      if test "X$python3_DLLLIBRARY" != "X"; then
+	python3_INSTSONAME="$python3_DLLLIBRARY"
+      fi
       PYTHON3_LIBS="${vi_cv_path_python3_plibs}"
       if test "${vi_cv_path_python3_pfx}" = "${vi_cv_path_python3_epfx}"; then
         PYTHON3_CFLAGS="-I${vi_cv_path_python3_pfx}/include/python${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags} -DPYTHON3_HOME=L\\\"${vi_cv_path_python3_pfx}\\\""
@@ -6415,26 +6431,34 @@ $as_echo_n "checking Ruby version... " >&6; }
     if $vi_cv_path_ruby -e '(VERSION rescue RUBY_VERSION) >= "1.6.0" or exit 1' >/dev/null 2>/dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: OK" >&5
 $as_echo "OK" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking Ruby rbconfig" >&5
+$as_echo_n "checking Ruby rbconfig... " >&6; }
+      ruby_rbconfig="RbConfig"
+      if ! $vi_cv_path_ruby -r rbconfig -e 'RbConfig' >/dev/null 2>/dev/null; then
+	ruby_rbconfig="Config"
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ruby_rbconfig" >&5
+$as_echo "$ruby_rbconfig" >&6; }
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking Ruby header files" >&5
 $as_echo_n "checking Ruby header files... " >&6; }
-      rubyhdrdir=`$vi_cv_path_ruby -r mkmf -e 'print Config::CONFIG["rubyhdrdir"] || Config::CONFIG["archdir"] || $hdrdir' 2>/dev/null`
+      rubyhdrdir=`$vi_cv_path_ruby -r mkmf -e "print $ruby_rbconfig::CONFIG['rubyhdrdir'] || $ruby_rbconfig::CONFIG['archdir'] || \\$hdrdir" 2>/dev/null`
       if test "X$rubyhdrdir" != "X"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $rubyhdrdir" >&5
 $as_echo "$rubyhdrdir" >&6; }
 	RUBY_CFLAGS="-I$rubyhdrdir"
-        rubyarch=`$vi_cv_path_ruby -r rbconfig -e 'print Config::CONFIG["arch"]'`
+        rubyarch=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig::CONFIG['arch']"`
         if test -d "$rubyhdrdir/$rubyarch"; then
           RUBY_CFLAGS="$RUBY_CFLAGS -I$rubyhdrdir/$rubyarch"
         fi
-        rubyversion=`$vi_cv_path_ruby -r rbconfig -e 'print Config::CONFIG["ruby_version"].gsub(/\./, "")[0,2]'`
+        rubyversion=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig::CONFIG['ruby_version'].gsub(/\./, '')[0,2]"`
         RUBY_CFLAGS="$RUBY_CFLAGS -DRUBY_VERSION=$rubyversion"
-	rubylibs=`$vi_cv_path_ruby -r rbconfig -e 'print Config::CONFIG["LIBS"]'`
+	rubylibs=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig::CONFIG['LIBS']"`
 	if test "X$rubylibs" != "X"; then
 	  RUBY_LIBS="$rubylibs"
 	fi
-	librubyarg=`$vi_cv_path_ruby -r rbconfig -e 'print Config.expand(Config::CONFIG["LIBRUBYARG"])'`
-	librubya=`$vi_cv_path_ruby -r rbconfig -e 'print Config.expand(Config::CONFIG["LIBRUBY_A"])'`
-	rubylibdir=`$vi_cv_path_ruby -r rbconfig -e 'print Config.expand(Config::CONFIG["libdir"])'`
+	librubyarg=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig.expand($ruby_rbconfig::CONFIG['LIBRUBYARG'])"`
+	librubya=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig.expand($ruby_rbconfig::CONFIG['LIBRUBY_A'])"`
+  rubylibdir=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig.expand($ruby_rbconfig::CONFIG['libdir'])"`
 	if test -f "$rubylibdir/$librubya"; then
 	  librubyarg="$librubyarg"
 	  RUBY_LIBS="$RUBY_LIBS -L$rubylibdir"
@@ -6447,7 +6471,7 @@ $as_echo "$rubyhdrdir" >&6; }
 	if test "X$librubyarg" != "X"; then
 	  RUBY_LIBS="$librubyarg $RUBY_LIBS"
 	fi
-	rubyldflags=`$vi_cv_path_ruby -r rbconfig -e 'print Config::CONFIG["LDFLAGS"]'`
+	rubyldflags=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig::CONFIG['LDFLAGS']"`
 	if test "X$rubyldflags" != "X"; then
 	  	  	  	  rubyldflags=`echo "$rubyldflags" | sed -e 's/-arch\ ppc//' -e 's/-arch\ i386//' -e 's/-arch\ x86_64//'`
 	  if test "X$rubyldflags" != "X"; then
@@ -6464,7 +6488,7 @@ $as_echo "$rubyhdrdir" >&6; }
 	$as_echo "#define FEAT_RUBY 1" >>confdefs.h
 
 	if test "$enable_rubyinterp" = "dynamic"; then
-	  libruby=`$vi_cv_path_ruby -r rbconfig -e 'puts Config::CONFIG["LIBRUBY_SO"]'`
+	  libruby=`$vi_cv_path_ruby -r rbconfig -e "puts $ruby_rbconfig::CONFIG['LIBRUBY_SO']"`
 	  $as_echo "#define DYNAMIC_RUBY 1" >>confdefs.h
 
 	  RUBY_CFLAGS="-DDYNAMIC_RUBY_DLL=\\\"$libruby\\\" -DDYNAMIC_RUBY_VER=$rubyversion $RUBY_CFLAGS"
@@ -8967,8 +8991,13 @@ fi
 if test -z "$SKIP_MOTIF"; then
   cppflags_save=$CPPFLAGS
   CPPFLAGS="$CPPFLAGS $X_CFLAGS"
-  for ac_header in Xm/Xm.h Xm/XpmP.h Xm/JoinSideT.h Xm/TraitP.h Xm/Manager.h \
-		   Xm/UnhighlightT.h Xm/Notebook.h
+  if test "$zOSUnix" = "yes"; then
+	xmheader="Xm/Xm.h"
+  else
+	xmheader="Xm/Xm.h Xm/XpmP.h Xm/JoinSideT.h Xm/TraitP.h Xm/Manager.h
+  	   Xm/UnhighlightT.h Xm/Notebook.h"
+  fi
+  for ac_header in $xmheader
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -8982,7 +9011,7 @@ fi
 done
 
 
-  if test $ac_cv_header_Xm_XpmP_h = yes; then
+  if test "x$ac_cv_header_Xm_XpmP_h" = "xyes"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XpmAttributes_21 in Xm/XpmP.h" >&5
 $as_echo_n "checking for XpmAttributes_21 in Xm/XpmP.h... " >&6; }
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -12947,6 +12976,11 @@ else
 $as_echo "no" >&6; }
 fi
 
+
+# IBM z/OS reset CFLAGS for config.mk
+if test "$zOSUnix" = "yes"; then
+	CFLAGS="-D_ALL_SOURCE -Wc,float\(ieee\),dll"
+fi
 
 ac_config_files="$ac_config_files auto/config.mk:config.mk.in"
 
