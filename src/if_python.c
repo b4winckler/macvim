@@ -53,8 +53,6 @@ typedef void *FARPROC;
 # undef _XOPEN_SOURCE	/* pyconfig.h defines it as well. */
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #ifdef FEAT_GUI_MACVIM
 # include <Python/Python.h>
 #else
