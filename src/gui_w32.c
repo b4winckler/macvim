@@ -417,6 +417,19 @@ static HANDLE		    user32_lib = NULL;
 #ifdef FEAT_NETBEANS_INTG
 int WSInitialized = FALSE; /* WinSock is initialized */
 #endif
+
+/*
+ * For Transparent Window (for only Windows 2000)
+ */
+#define USE_LAYERED_WINDOW 1
+#if USE_LAYERED_WINDOW
+# define WS_EX_LAYERED 0x80000
+# define LWA_ALPHA 2
+typedef DWORD (WINAPI *FWINLAYER)(HWND hwnd, DWORD crKey, BYTE bAlpha,
+	DWORD dwFlags);
+static void w32_set_transparency(HWND hwnd, BYTE bAlpha);
+#endif /* USE_LAYERED_WINDOW */
+
 /*
  * Return TRUE when running under Windows NT 3.x or Win32s, both of which have
  * less fancy GUI APIs.
@@ -436,6 +449,38 @@ is_winnt_3(void)
 gui_is_win32s(void)
 {
     return (os_version.dwPlatformId == VER_PLATFORM_WIN32s);
+}
+
+    static int
+get_caption_height(void)
+{
+    /*
+     * A window's caption includes extra 1 dot margin.  When caption is
+     * removed the margin also be removed.  So we must return -1 when
+     * caption is diabled.
+     */
+    return GetWindowLong(s_hwnd, GWL_STYLE) & WS_CAPTION ?
+	GetSystemMetrics(SM_CYCAPTION) : -1;
+}
+
+    void
+gui_mch_show_caption(int show)
+{
+    LONG style, newstyle;
+
+    /* Remove caption when title is null. */
+    style = newstyle = GetWindowLong(s_hwnd, GWL_STYLE);
+    if (show && !(style & WS_CAPTION))
+	newstyle = style | WS_CAPTION;
+    else if (!show && (style & WS_CAPTION))
+	newstyle = style & ~WS_CAPTION;
+    if (newstyle != style)
+    {
+	SetWindowLong(s_hwnd, GWL_STYLE, newstyle);
+	SetWindowPos(s_hwnd, NULL, 0, 0, 0, 0,
+		SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
+	gui_set_shellsize(FALSE, FALSE, RESIZE_BOTH);
+    }
 }
 
 #ifdef FEAT_MENU
@@ -469,7 +514,7 @@ gui_mswin_get_menu_height(
 	    {
 		RECT r1, r2;
 		int frameht = GetSystemMetrics(SM_CYFRAME);
-		int capht = GetSystemMetrics(SM_CYCAPTION);
+ 		int capht = get_caption_height();
 
 		/* get window rect of s_hwnd
 		 * get client rect of s_hwnd
@@ -1270,6 +1315,16 @@ gui_mch_prepare(int *argc, char **argv)
 		argv[*argc] = NULL;
 		break;	/* enough? */
 	    }
+
+	{
+	    WSADATA wsaData;
+	    int wsaerr;
+
+	    /* Init WinSock */
+	    wsaerr = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	    if (wsaerr == 0)
+		WSInitialized = TRUE;
+	}
     }
 #endif
 
@@ -1466,6 +1521,8 @@ gui_mch_init(void)
 
     if (s_hwnd == NULL)
 	return FAIL;
+
+    w32_set_transparency(s_hwnd, 255);
 
 #ifdef GLOBAL_IME
     global_ime_init(atom, s_hwnd);
@@ -1694,7 +1751,7 @@ gui_mch_set_shellsize(int width, int height,
     /* compute the size of the outside of the window */
     win_width = width + GetSystemMetrics(SM_CXFRAME) * 2;
     win_height = height + GetSystemMetrics(SM_CYFRAME) * 2
-			+ GetSystemMetrics(SM_CYCAPTION)
+			+ get_caption_height()
 #ifdef FEAT_MENU
 			+ gui_mswin_get_menu_height(FALSE)
 #endif
@@ -1809,6 +1866,46 @@ gui_mch_set_sp_color(guicolor_T color)
 {
     gui.currSpColor = color;
 }
+
+#if USE_LAYERED_WINDOW
+    void
+w32_set_transparency(HWND hwnd, BYTE bAlpha)
+{
+    FWINLAYER pfLayer;
+    HANDLE hDll;
+
+    if (!hwnd)
+	hwnd = s_hwnd;
+
+    /* Turn off transpareny */
+    if (bAlpha == 255)
+    {
+	SetWindowLong(hwnd, GWL_EXSTYLE, ~WS_EX_LAYERED &
+		GetWindowLong(hwnd, GWL_EXSTYLE));
+	return;
+    }
+
+    /* Obtain pointer to function set transparecy rate */
+    if (!(hDll = LoadLibrary("user32.dll")))
+	return;
+    pfLayer = (FWINLAYER)GetProcAddress(hDll, "SetLayeredWindowAttributes");
+
+    if (pfLayer)
+    {
+	SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED |
+		GetWindowLong(hwnd, GWL_EXSTYLE));
+	pfLayer(hwnd, 0, bAlpha, LWA_ALPHA);
+    }
+
+    FreeLibrary(hDll);
+}
+
+    void
+gui_mch_set_transparency(int alpha)
+{
+    w32_set_transparency(NULL, (BYTE)alpha);
+}
+#endif /* USE_LAYERED_WINDOW */
 
 #if defined(FEAT_MBYTE) && defined(FEAT_MBYTE_IME)
 /*
@@ -2551,7 +2648,7 @@ gui_mch_get_screen_dimensions(int *screen_w, int *screen_h)
      * the window size can be made to fit on the screen. */
     *screen_h = workarea_rect.bottom - workarea_rect.top
 		- GetSystemMetrics(SM_CYFRAME) * 2
-		- GetSystemMetrics(SM_CYCAPTION)
+		- get_caption_height()
 #ifdef FEAT_MENU
 		- gui_mswin_get_menu_height(FALSE)
 #endif
@@ -4835,5 +4932,56 @@ netbeans_init_winsock()
     wsaerr = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (wsaerr == 0)
 	WSInitialized = TRUE;
+}
+#endif
+
+#ifdef USE_AMBIWIDTH_AUTO
+#define CHARWIDE_CACHESIZE 65536
+static GuiFont last_font = 0;
+
+    int
+gui_mch_get_charwidth(int c)
+{
+    static char cache[CHARWIDE_CACHESIZE];
+    GuiFont usingfont = gui.wide_font ? gui.wide_font : gui.norm_font;
+
+    /* Check validity of charwide cache */
+    if (last_font != usingfont)
+    {
+	/* Update cache. -1 is mark for uninitialized cell */
+	TRACE("Charwide cache will be updated (base=%d)\n", gui.char_width);
+	last_font = usingfont;
+	memset(cache, -1, sizeof(cache));
+    }
+    if (usingfont && 0 <= c && c < CHARWIDE_CACHESIZE)
+    {
+	if (cache[c] >= 0)
+	    return cache[c]; /* Use cached value */
+	else
+	{
+	    /* 
+	     * Get true character width in dot, convert to cells and save
+	     * it.
+	     */
+	    int	    len;
+	    ABC	    fontABC;
+	    HFONT   hfntOld = SelectFont(s_hdc, usingfont);
+
+	    if (!GetCharABCWidthsW(s_hdc, c, c, &fontABC) ||
+		    (len = fontABC.abcA + fontABC.abcB + fontABC.abcC) <= 0)
+	    {
+		TRACE("GetCharABCWidthsW() failed for %08X\n", c);
+		cache[c] = 0;
+	    }
+	    else
+		cache[c] = (char)((len + (gui.char_width >> 1))
+			/ gui.char_width);
+	    SelectFont(s_hdc, hfntOld);
+
+	    return cache[c];
+	}
+    }
+    else
+	return 0;
 }
 #endif

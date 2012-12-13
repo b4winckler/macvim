@@ -1002,6 +1002,9 @@ gui_get_wide_font()
     else
 #endif
 	gui.wide_font = font;
+#ifdef FEAT_GUI_MSWIN
+    gui_mch_wide_font_changed();
+#endif
     return OK;
 }
 #endif
@@ -3302,6 +3305,8 @@ gui_init_which_components(oldval)
     static int	prev_tearoff = -1;
     int		using_tearoff = FALSE;
 #endif
+    static int	prev_nocaption = -1;
+    int		using_caption = TRUE;
 
     char_u	*p;
     int		i;
@@ -3378,6 +3383,9 @@ gui_init_which_components(oldval)
 #if defined(FEAT_MENU) && !defined(WIN16)
 		using_tearoff = TRUE;
 #endif
+		break;
+	    case GO_NOCAPTION:
+		using_caption = FALSE;
 		break;
 	    default:
 		/* Ignore options that are not supported */
@@ -3489,6 +3497,14 @@ gui_init_which_components(oldval)
 	    prev_tearoff = using_tearoff;
 	}
 #endif
+	if (using_caption != prev_nocaption)
+	{
+#if defined(WIN3264)
+	    gui_mch_show_caption(using_caption);
+#endif
+	    prev_nocaption = using_caption;
+	    need_set_size = TRUE;
+	}
 	if (need_set_size != 0)
 	{
 #ifdef FEAT_GUI_GTK

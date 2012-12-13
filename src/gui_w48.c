@@ -138,6 +138,7 @@ typedef int LONG;
 static void _OnPaint( HWND hwnd);
 static void clear_rect(RECT *rcp);
 static int gui_mswin_get_menu_height(int fix_window);
+static int get_caption_height(void);
 
 static WORD		s_dlgfntheight;		/* height of the dialog font */
 static WORD		s_dlgfntwidth;		/* width of the dialog font */
@@ -323,10 +324,15 @@ static void TrackUserActivity __ARGS((UINT uMsg));
 
 /*
  * For control IME.
+ *
+ * These LOGFONT used for IME.
  */
 #ifdef FEAT_MBYTE
 # ifdef USE_IM_CONTROL
+/* holds LOGFONT for 'guifontwide' if available, otherwise 'guifont' */
 static LOGFONT norm_logfont;
+/* holds LOGFONT for 'guifont' always. */
+static LOGFONT sub_logfont;
 # endif
 #endif
 
@@ -1301,7 +1307,7 @@ GetFontSize(GuiFont font)
     TEXTMETRIC tm;
 
     GetTextMetrics(hdc, &tm);
-    gui.char_width = tm.tmAveCharWidth + tm.tmOverhang;
+    gui.char_width = tm.tmAveCharWidth + tm.tmOverhang + p_charspace;
 
     gui.char_height = tm.tmHeight
 #ifndef MSWIN16_FASTTEXT
@@ -2898,7 +2904,7 @@ gui_mswin_get_valid_dimensions(
 	+ GetSystemMetrics(SM_CXFRAME) * 2;
     base_height = gui_get_base_height()
 	+ GetSystemMetrics(SM_CYFRAME) * 2
-	+ GetSystemMetrics(SM_CYCAPTION)
+	+ get_caption_height()
 #ifdef FEAT_MENU
 	+ gui_mswin_get_menu_height(FALSE)
 #endif
@@ -3083,6 +3089,39 @@ logfont2name(LOGFONT lf)
     return res;
 }
 
+
+#ifdef FEAT_MBYTE_IME 
+/*
+ * Set correct LOGFONT to IME.  Use 'guifontwide' if available, otherwise use
+ * 'guifont'
+ */
+    static void
+update_im_font()
+{
+    LOGFONT	lf_wide;
+
+    if (p_guifontwide != NULL && *p_guifontwide != NUL
+	    && get_logfont(&lf_wide, p_guifontwide, NULL, TRUE) == OK)
+	norm_logfont = lf_wide;
+    else
+	norm_logfont = sub_logfont;
+    im_set_font(&norm_logfont);
+}
+#endif
+
+#ifdef FEAT_MBYTE
+/*
+ * Handler of gui.wide_font (p_guifontwide) changed notification.
+ */
+    void
+gui_mch_wide_font_changed()
+{
+#ifdef FEAT_MBYTE_IME
+    update_im_font();
+#endif
+}
+#endif
+
 /*
  * Initialise vim to use the font with the given name.
  * Return FAIL if the font could not be loaded, OK otherwise.
@@ -3105,9 +3144,10 @@ gui_mch_init_font(char_u *font_name, int fontset)
 	font_name = lf.lfFaceName;
 #if defined(FEAT_MBYTE_IME) || defined(GLOBAL_IME)
     norm_logfont = lf;
+    sub_logfont = lf;
 #endif
 #ifdef FEAT_MBYTE_IME
-    im_set_font(&lf);
+    update_im_font();
 #endif
     gui_mch_free_font(gui.norm_font);
     gui.norm_font = font;
@@ -3194,7 +3234,7 @@ gui_mch_newfont()
 			- GetSystemMetrics(SM_CXFRAME) * 2,
 		     rect.bottom - rect.top
 			- GetSystemMetrics(SM_CYFRAME) * 2
-			- GetSystemMetrics(SM_CYCAPTION)
+			- get_caption_height()
 #ifdef FEAT_MENU
 			- gui_mswin_get_menu_height(FALSE)
 #endif

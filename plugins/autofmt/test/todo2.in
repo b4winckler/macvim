@@ -1,0 +1,41 @@
+When using gq{motion}, we can't set cursor position to correct place.
+v:lnum=1 and v:count=5 for both "gq/xx<CR>" and "V/yy<CR>gq".
+
+Results of todo2:
+
+STARTTEST
+:set tw=10
+/^{/+1
+:set formatexpr=
+gq/xx
+:call setline('.', '[cursor]')
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gq/xx
+:call setline('.', '[cursor]')
+ENDTEST
+
+case1
+{
+
+aa bb cc
+dd ee ff
+
+yy
+xx
+
+}
+{
+
+aa bb cc
+dd ee ff
+
+yy
+xx
+
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST

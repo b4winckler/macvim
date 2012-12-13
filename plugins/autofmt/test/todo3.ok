@@ -1,0 +1,27 @@
+Results of todo3:
+
+
+case1
+{
+あいうえ。
+'abcd'
+"あいう。
+"abcd
+
+あいうえ。
+'abcd'
+"あいう。
+"abcd
+}
+{
+あいう
+え。'abcd'
+"あい
+う。"abcd
+
+あいう
+え。'abcd'
+"あい
+う。"abcd
+}
+
