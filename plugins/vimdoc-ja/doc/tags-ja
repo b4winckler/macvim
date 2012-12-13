@@ -1181,6 +1181,7 @@ $VIMRUNTIME	starting.jax	/*$VIMRUNTIME*
 +mouse_gpm	various.jax	/*+mouse_gpm*
 +mouse_netterm	various.jax	/*+mouse_netterm*
 +mouse_pterm	various.jax	/*+mouse_pterm*
++mouse_sgr	various.jax	/*+mouse_sgr*
 +mouse_sysmouse	various.jax	/*+mouse_sysmouse*
 +mouse_urxvt	various.jax	/*+mouse_urxvt*
 +mouse_xterm	various.jax	/*+mouse_xterm*
@@ -1828,6 +1829,7 @@ $VIMRUNTIME	starting.jax	/*$VIMRUNTIME*
 :X	editing.jax	/*:X*
 :XMLent	insert.jax	/*:XMLent*
 :XMLns	insert.jax	/*:XMLns*
+:[range]	motion.jax	/*:[range]*
 :\bar	cmdline.jax	/*:\\bar*
 :_!	cmdline.jax	/*:_!*
 :_#	cmdline.jax	/*:_#*
@@ -7279,6 +7281,7 @@ setuid	change.jax	/*setuid*
 setwinvar()	eval.jax	/*setwinvar()*
 sftp	pi_netrw.jax	/*sftp*
 sgml.vim	syntax.jax	/*sgml.vim*
+sgr-mouse	options.jax	/*sgr-mouse*
 sh-awk	syntax.jax	/*sh-awk*
 sh-embed	syntax.jax	/*sh-embed*
 sh.vim	syntax.jax	/*sh.vim*
@@ -8108,6 +8111,7 @@ vt100-cursor-keys	term.jax	/*vt100-cursor-keys*
 vt100-function-keys	term.jax	/*vt100-function-keys*
 w	motion.jax	/*w*
 w32-clientserver	remote.jax	/*w32-clientserver*
+w32-xpm-support	gui_w32.jax	/*w32-xpm-support*
 w:current_syntax	syntax.jax	/*w:current_syntax*
 w:quickfix_title	quickfix.jax	/*w:quickfix_title*
 w:var	eval.jax	/*w:var*

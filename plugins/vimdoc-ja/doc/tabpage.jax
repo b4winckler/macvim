@@ -1,4 +1,4 @@
-*tabpage.txt*   For Vim バージョン 7.3.  Last change: 2010 Jul 31
+*tabpage.txt*   For Vim バージョン 7.3.  Last change: 2012 Aug 08
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -106,7 +106,7 @@ CTRL-W gF	カーソル下のファイル名のファイルを新しいタブペ�
 		ません。このコマンドは安全なコマンドです。
 
 :tabc[lose][!] {count}
-		{count} 番目のタブページを閉じます。|:tabclose| と同じ理由で失
+		{count} 番目のタブページを閉じます。`:tabclose` と同じ理由で失
 		敗することがあります。
 
 							*:tabo* *:tabonly*

@@ -3,7 +3,7 @@
 " cmdex.vim - Extra coomands
 "
 " Maintainer:	Muraoka Taro <koron.kaoriya@gmail.com>
-" Last Change:	18-Dec-2010.
+" Last Change:	24-Nov-2012.
 " Commands:
 "		:MenuLang {language}
 "		    (language: none/ja/zh...etc.)
@@ -57,7 +57,13 @@ function! s:StartTutorial()
   endif
   " Japan special
   if $LANG =~ '^ja'
-    let tutor = tutor . '.'. (&encoding ==# 'cp932' ? 'sjis' : 'euc')
+    let enc = 'utf-8'
+    if &encoding ==# 'cp932'
+      let enc='sjis'
+    else if &encoding =~ 'euc'
+      let enc = 'euc'
+    endif
+    let tutor = tutor . '.' . enc
   endif
   execute "edit! $VIMRUNTIME/tutor/" . tutor
   execute "file TUTORCOPY"

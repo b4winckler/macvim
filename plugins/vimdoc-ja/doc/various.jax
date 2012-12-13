@@ -1,4 +1,4 @@
-*various.txt*   For Vim バージョン 7.3.  Last change: 2012 Jan 15
+*various.txt*   For Vim バージョン 7.3.  Last change: 2012 Aug 03
 
 
 		VIM リファレンスマニュアル    by Bram Moolenaar
@@ -354,6 +354,7 @@ N  *+mouse_gpm*		Unix のみ: Linuxコンソールマウス操作 |gpm-mouse|
 B  *+mouse_netterm*	Unix のみ: nettermマウス操作 |netterm-mouse|
 N  *+mouse_pterm*		QNX  のみ: ptermマウス操作 |qnx-terminal|
 N  *+mouse_sysmouse*	Unix のみ: *BSD コンソールマウス操作 |sysmouse|
+B  *+mouse_sgr*		Unix のみ: sgrマウス操作 |sgr-mouse|
 N  *+mouse_urxvt*		Unix のみ: urxvtマウス操作 |urxvt-mouse|
 N  *+mouse_xterm*		Unix のみ: xtermマウス操作 |xterm-mouse|
 B  *+multi_byte*		16ビット、32 ビット文字 |multibyte|
@@ -414,7 +415,7 @@ S  *+windows*		複数ウィンドウ
 m  *+writebackup*		|'writebackup'|がデフォルトで有効
 m  *+xim*			Xインプットメソッド |xim|
    *+xfontset*		Xフォントセットサポート |xfontset|
-m  *+xpm_w32*		Win32 GUI のみ: pixmap サポート |:sign-define|
+m  *+xpm_w32*		Win32 GUI のみ: pixmap サポート |w32-xpm-support|
    *+xsmp*		XSMP(X session management)サポート
    *+xsmp_interact*	対話型XSMP(X session management)サポート
 N  *+xterm_clipboard*	Unix のみ: xtermクリップボード操作

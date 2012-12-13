@@ -3,7 +3,7 @@
                                                          Version: 1.6.6
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 20-Sep-2012.
+                                                     Last Change: 01-Dec-2012.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -168,6 +168,22 @@ Vimの拡張機能について
     patchフォルダ内にhg diffによって取得した差分を同梱しています。差分の使い方
     や内容に関する質問やコメントなどありましたら香り屋版メンテナまで連絡くださ
     い。ソース1行1行に至るまでの検証も大歓迎します。
+
+  Mercurial レポジトリ
+    bitbucket.orgにて3つのレポジトリを公開しています。
+
+    - vim-kaoriya: ビルド要スクリプト他
+      https://bitbucket.org/koron/vim-kaoriya
+    - vim-kaoriya-vim: vim+kaoriyaパッチなclone
+      https://bitbucket.org/koron/vim-kaoriya-vim
+    - vim-kaoriya-vim-mq-ex: 実験的なパッチ集(Mercurial MQ用)
+      https://bitbucket.org/koron/vim-kaoriya-vim-mq-ex
+
+    vim-kaoriya は vim-kaoriya-vim を hgsub にて参照していますので、通常は
+    vim-kaoriya だけを clone すると良いでしょう。
+
+    vim-kaoriya-vim-mq は vim-kaoriya-vim の .hg/patches をレポジトリ化したも
+    のです。興味のある方だけ御覧ください。
 
 既知の問題点
   * qkcの-njフラグでコンバートしたJISファイルは開けない(iconv.dll)

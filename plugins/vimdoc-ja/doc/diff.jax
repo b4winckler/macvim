@@ -1,4 +1,4 @@
-*diff.txt*      For Vim バージョン 7.3.  Last change: 2012 May 18
+*diff.txt*      For Vim バージョン 7.3.  Last change: 2012 Sep 05
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -84,16 +84,16 @@ Vimが各ファイルについてウィンドウを開く時に起こること�
 既にVimを利用している時には、3つの方法で差分モードへ移行することができる。
 
 							*E98*
-:diffsplit {filename}					*:diffs* *:diffsplit*
+:diff[split] {filename}					*:diffs* *:diffsplit*
 		ファイル{filename}の新しいウィンドウを開く。現在と新しく開く
 		ウィンドウについて "vimdiff" と同様のオプションをセットする。
 		'diffexpr' も参照。
 
 							*:difft* *:diffthis*
-:diffthis	現在のウィンドウを差分ウィンドウの1つにする。これにより
+:difft[his]	現在のウィンドウを差分ウィンドウの1つにする。これにより
 		"vimdiff" と同じオプションが設定される。
 
-:diffpatch {patchfile}				 *E816* *:diffp* *:diffpatch*
+:diffp[atch] {patchfile}				 *E816* *:diffp* *:diffpatch*
 		{patchfile}内の差分情報を現在のバッファへ適用し、結果を新しく
 		作成したバッファへ出力する。オプションは "vimdiff" と同様に設
 		定される。
@@ -122,9 +122,9 @@ Vimが各ファイルについてウィンドウを開く時に起こること�
 また同じファイルへ戻って再び差分モードを継続することができる。
 
 							*:diffo* *:diffoff*
-:diffoff	カレントウィンドウの差分モードを終了する。
+:diffo[ff]	カレントウィンドウの差分モードを終了する。
 
-:diffoff!	カレントウィンドウとカレントタブページのカレントタブページのす
+:diffo[ff]!	カレントウィンドウとカレントタブページのカレントタブページのす
 		べてのウィンドウの差分モードを終了する
 
 コマンド ":diffoff" は関連するオプションをデフォルト値に戻す。
