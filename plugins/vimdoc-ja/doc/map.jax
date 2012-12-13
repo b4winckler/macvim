@@ -1223,6 +1223,7 @@ script2.vimを実行すると "None" が表示されます。期待した結果�
 	-complete=syntax	シンタックスファイル名 |'syntax'|
 	-complete=tag		タグ
 	-complete=tag_listfiles	CTRL-D を押した時にタグ、ファイル名を表示
+	-complete=user		ユーザ名
 	-complete=var		ユーザ変数
 	-complete=custom,{func} {func}によるユーザ定義の補完
 	-complete=customlist,{func} {func}によるユーザ定義の補完

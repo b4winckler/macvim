@@ -3194,6 +3194,7 @@ getfperm({fname})					*getfperm()*
 		す。許可属性が与えられていないフラグは "-" で置き換えられる。
 		例: >
 			:echo getfperm("/etc/passwd")
+			:echo getfperm(expand("~/.vimrc"))
 <		この例は、(セキュリティの観点から望ましい設定がされているなら
 		ば) "rw-r--r--" あるいは "rw-------" と表示する。
 
@@ -4465,8 +4466,8 @@ pyeval({expr})						*pyeval()*
 		す。
 		数値と文字列はそのまま返る (ただし文字列はコピーされる)。
 		リストは Vim の |List| 型に変換される。
-		辞書は Vim の |Dictionary| 型に変換される。辞書のキーは文字列
-		に変換される。
+		辞書は Vim の |Dictionary| 型に変換される。文字列ではない辞書
+		のキーはエラーになる。
 		{|+python| 機能付きでコンパイルされたときのみ利用可能}
 
 							*E726* *E727*
@@ -5052,8 +5053,9 @@ setreg({regname}, {value} [,{options}])
 
 		{options}にレジスタの設定が何も含まれていないとき、{value}が
 		<NL>で終わっていない限り、デフォルトの文字指向モードが使われる。
-		レジスタ '=' の値を設定することはできない。
-		成功なら0、失敗なら非0を返す。
+		レジスタ '=' の値を設定することはできないが、これが使える: >
+			:let @= = var_expr
+<		成功なら0、失敗なら非0を返す。
 
 		例: >
 			:call setreg(v:register, @*)
@@ -6096,7 +6098,8 @@ mouse_gpm		gpmをサポート (Linuxのコンソールマウス)
 mouse_netterm		nettermのマウスをサポート
 mouse_pterm		qnx ptermのマウスをサポート
 mouse_sysmouse		sysmouse (*BSD コンソールマウス)をサポート
-mouse_urxvt		urxvt のマウスをサポート
+mouse_sgr		sgrのマウスをサポート
+mouse_urxvt		urxvtのマウスをサポート
 mouse_xterm		xtermのマウスをサポート
 mouseshape		'mouseshape' をサポート
 multi_byte		'encoding' をサポート

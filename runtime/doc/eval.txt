@@ -2299,8 +2299,8 @@ char2nr({expr})						*char2nr()*
 			char2nr(" ")		returns 32
 			char2nr("ABC")		returns 65
 <		The current 'encoding' is used.  Example for "utf-8": >
-			char2nr("แ")		returns 225
-			char2nr("แ"[0])		returns 195
+			char2nr("รก")		returns 225
+			char2nr("รก"[0])		returns 195
 <		A combining character is a separate character.
 		|nr2char()| does the opposite.
 

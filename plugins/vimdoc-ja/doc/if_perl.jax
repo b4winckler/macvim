@@ -1,4 +1,4 @@
-*if_perl.txt*   For Vim バージョン 7.3.  Last change: 2010 Jul 21
+*if_perl.txt*   For Vim バージョン 7.3.  Last change: 2012 Aug 02
 
 
 		  VIM REFERENCE MANUAL    by Sven Verdoolaege
@@ -46,14 +46,16 @@ Vim への Perl パッチは、次の方によって作成されました:
 	Matt Gerassimof
 
 Perl for MS-Windows は、次の場所で見つけることができます:
-http://www/perl.com/CPAN/ports/nt/Standard/x86/
+http://www/perl.com/
+ActiveState のものも動作するでしょう。
 
 ==============================================================================
 3. Perl インタフェイスを使う				*perl-using*
 
 							*:perl* *:pe*
 :pe[rl] {cmd}		Perl コマンド {cmd} を実行します。現在のパッケージは
-			"main" です。
+			"main" です。`:perl` が動作するかを確認する単純な例は: >
+				:perl VIM::Msg("Hello")
 
 :pe[rl] << {endpattern}
 {script}
