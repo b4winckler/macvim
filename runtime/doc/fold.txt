@@ -540,16 +540,17 @@ fold column:
 
 OTHER OPTIONS
 
-'foldenable'  'fen':	Open all folds while not set.
-'foldexpr'    'fde':	Expression used for "expr" folding.
-'foldignore'  'fdi':	Characters used for "indent" folding.
-'foldmarker'  'fmr':	Defined markers used for "marker" folding.
-'foldmethod'  'fdm':	Name of the current folding method.
-'foldminlines' 'fml':	Minimum number of screen lines for a fold to be
-			displayed closed.
-'foldnestmax' 'fdn':	Maximum nesting for "indent" and "syntax" folding.
-'foldopen'    'fdo':	Which kinds of commands open closed folds.
-'foldclose'   'fcl':	When the folds not under the cursor are closed.
+'foldcolshowlvl'  'fsl':	Show a number representing the fold level.
+'foldenable'      'fen':	Open all folds while not set.
+'foldexpr'        'fde':	Expression used for "expr" folding.
+'foldignore'      'fdi':	Characters used for "indent" folding.
+'foldmarker'      'fmr':	Defined markers used for "marker" folding.
+'foldmethod'      'fdm':	Name of the current folding method.
+'foldminlines'    'fml':	Minimum number of screen lines for a fold to be
+				displayed closed.
+'foldnestmax'     'fdn':	Maximum nesting for "indent" and "syntax" folding.
+'foldopen'        'fdo':	Which kinds of commands open closed folds.
+'foldclose'       'fcl':	When the folds not under the cursor are closed.
 
 ==============================================================================
 4. Behavior of folds					*fold-behavior*

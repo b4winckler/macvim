@@ -194,6 +194,7 @@
 # define PV_DIFF	OPT_WIN(WV_DIFF)
 #endif
 #ifdef FEAT_FOLDING
+# define PV_FSL		OPT_WIN(WV_FSL)
 # define PV_FDC		OPT_WIN(WV_FDC)
 # define PV_FEN		OPT_WIN(WV_FEN)
 # define PV_FDI		OPT_WIN(WV_FDI)
@@ -1149,6 +1150,9 @@ static struct vimoption
     {"foldclose",   "fcl",  P_STRING|P_VI_DEF|P_COMMA|P_NODUP|P_RWIN,
 			    (char_u *)&p_fcl, PV_NONE,
 			    {(char_u *)"", (char_u *)0L} SCRIPTID_INIT},
+    {"foldcolshowlvl","fsl",P_BOOL|P_VI_DEF|P_RWIN,
+			    (char_u *)VAR_WIN, PV_FSL,
+			    {(char_u *)TRUE, (char_u *)0L} SCRIPTID_INIT},
     {"foldcolumn",  "fdc",  P_NUM|P_VI_DEF|P_RWIN,
 			    (char_u *)VAR_WIN, PV_FDC,
 			    {(char_u *)FALSE, (char_u *)0L} SCRIPTID_INIT},
@@ -9795,6 +9799,7 @@ get_varp(p)
 #endif
 #ifdef FEAT_FOLDING
 	case PV_FDC:	return (char_u *)&(curwin->w_p_fdc);
+	case PV_FSL:	return (char_u *)&(curwin->w_p_fsl);
 	case PV_FEN:	return (char_u *)&(curwin->w_p_fen);
 	case PV_FDI:	return (char_u *)&(curwin->w_p_fdi);
 	case PV_FDL:	return (char_u *)&(curwin->w_p_fdl);
@@ -10041,6 +10046,7 @@ copy_winopt(from, to)
     to->wo_cole = from->wo_cole;
 #endif
 #ifdef FEAT_FOLDING
+    to->wo_fsl = from->wo_fsl;
     to->wo_fdc = from->wo_fdc;
     to->wo_fen = from->wo_fen;
     to->wo_fdi = vim_strsave(from->wo_fdi);

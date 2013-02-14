@@ -140,6 +140,8 @@ typedef struct
 #ifdef FEAT_FOLDING
     long	wo_fdc;
 # define w_p_fdc w_onebuf_opt.wo_fdc	/* 'foldcolumn' */
+    int		wo_fsl;
+# define w_p_fsl w_onebuf_opt.wo_fsl	/* 'foldcolshowlvl' */
     int		wo_fen;
 # define w_p_fen w_onebuf_opt.wo_fen	/* 'foldenable' */
     char_u	*wo_fdi;

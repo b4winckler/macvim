@@ -3033,6 +3033,16 @@ A jump table for the options with a short description can be found at |Q_op|.
 	value is 12.
 	See |folding|.
 
+						*'foldcolshowlvl'* *'fsl'*
+'foldcolshowlvl' 'fsl'	boolean (default on)
+			local to window
+			{not in Vi}
+			{not available when compiled without the |+folding|
+			feature}
+        When off, the fold column will not show the number representing the
+        fold level when your |foldcolumn| option is set to a value lower than
+        the amount of fold levels.
+
 			*'foldenable'* *'fen'* *'nofoldenable'* *'nofen'*
 'foldenable' 'fen'	boolean (default on)
 			local to window

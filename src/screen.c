@@ -2659,12 +2659,12 @@ fill_foldcolumn(p, wp, closed, lnum)
 	    if (win_foldinfo.fi_lnum == lnum
 			      && first_level + i >= win_foldinfo.fi_low_level)
 		p[i] = '-';
-	    else if (first_level == 1)
-		p[i] = '|';
-	    else if (first_level + i <= 9)
-		p[i] = '0' + first_level + i;
-	    else
-		p[i] = '>';
+            else if (first_level == 1 || !wp->w_p_fsl)
+                p[i] = '|';
+            else if (first_level + i <= 9)
+                p[i] = '0' + first_level + i;
+            else
+                p[i] = '>';
 	    if (first_level + i == level)
 		break;
 	}
