@@ -1159,6 +1159,12 @@ EXTERN int	lcs_trail INIT(= NUL);
 EXTERN int	lcs_conceal INIT(= '-');
 #endif
 
+#ifdef FEAT_FOLDING
+EXTERN int	fds_fo INIT(= '-');
+EXTERN int	fds_fc INIT(= '+');
+EXTERN int	fds_fa INIT(= '|');
+#endif
+
 #if defined(FEAT_WINDOWS) || defined(FEAT_WILDMENU) || defined(FEAT_STL_OPT) \
 	|| defined(FEAT_FOLDING)
 /* Characters from 'fillchars' option */
