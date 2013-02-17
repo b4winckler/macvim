@@ -120,7 +120,8 @@ static void win_update __ARGS((win_T *wp));
 static void win_draw_end __ARGS((win_T *wp, int c1, int c2, int row, int endrow, hlf_T hl));
 #ifdef FEAT_FOLDING
 static void fold_line __ARGS((win_T *wp, long fold_count, foldinfo_T *foldinfo, linenr_T lnum, int row));
-static void fill_foldcolumn __ARGS((char_u *p, win_T *wp, int closed, linenr_T lnum));
+static int fill_foldcolumn __ARGS((char_u *p, win_T *wp, int closed, linenr_T lnum));
+static void copy_mbyte_text __ARGS((win_T *wp, int off, int *col, char_u *text));
 static void copy_text_attr __ARGS((int off, char_u *buf, int len, int attr));
 #endif
 static int win_line __ARGS((win_T *, linenr_T, int, int, int nochange));
@@ -2253,22 +2254,32 @@ fold_line(wp, fold_count, foldinfo, lnum, row)
 	fdc = W_WIDTH(wp) - col;
     if (fdc > 0)
     {
-	fill_foldcolumn(buf, wp, TRUE, lnum);
-#ifdef FEAT_RIGHTLEFT
-	if (wp->w_p_rl)
-	{
-	    int		i;
-
-	    copy_text_attr(off + W_WIDTH(wp) - fdc - col, buf, fdc,
-							     hl_attr(HLF_FC));
-	    /* reverse the fold column */
-	    for (i = 0; i < fdc; ++i)
-		ScreenLines[off + W_WIDTH(wp) - i - 1 - col] = buf[i];
-	}
-	else
+	len = fill_foldcolumn(buf, wp, TRUE, lnum);
+        buf[len] = NUL;
+#ifdef FEAT_MBYTE
+        if (has_mbyte)
+        {
+            copy_mbyte_text(wp, off, &col, buf);
+        }
+        else
 #endif
-	    copy_text_attr(off + col, buf, fdc, hl_attr(HLF_FC));
-	col += fdc;
+        {
+#ifdef FEAT_RIGHTLEFT
+            if (wp->w_p_rl)
+            {
+                int		i;
+
+                copy_text_attr(off + W_WIDTH(wp) - len - col, buf, len,
+                                                                 hl_attr(HLF_FC));
+                /* reverse the fold column */
+                for (i = 0; i < len; ++i)
+                    ScreenLines[off + W_WIDTH(wp) - i - 1 - col] = buf[i];
+            }
+            else
+#endif
+                copy_text_attr(off + col, buf, len, hl_attr(HLF_FC));
+            col += len;
+        }
     }
 
 #ifdef FEAT_RIGHTLEFT
@@ -2366,107 +2377,7 @@ fold_line(wp, fold_count, foldinfo, lnum, row)
 #ifdef FEAT_MBYTE
     if (has_mbyte)
     {
-	int	cells;
-	int	u8c, u8cc[MAX_MCO];
-	int	i;
-	int	idx;
-	int	c_len;
-	char_u	*p;
-# ifdef FEAT_ARABIC
-	int	prev_c = 0;		/* previous Arabic character */
-	int	prev_c1 = 0;		/* first composing char for prev_c */
-# endif
-
-# ifdef FEAT_RIGHTLEFT
-	if (wp->w_p_rl)
-	    idx = off;
-	else
-# endif
-	    idx = off + col;
-
-	/* Store multibyte characters in ScreenLines[] et al. correctly. */
-	for (p = text; *p != NUL; )
-	{
-	    cells = (*mb_ptr2cells)(p);
-	    c_len = (*mb_ptr2len)(p);
-	    if (col + cells > W_WIDTH(wp)
-# ifdef FEAT_RIGHTLEFT
-		    - (wp->w_p_rl ? col : 0)
-# endif
-		    )
-		break;
-	    ScreenLines[idx] = *p;
-	    if (enc_utf8)
-	    {
-		u8c = utfc_ptr2char(p, u8cc);
-		if (*p < 0x80 && u8cc[0] == 0)
-		{
-		    ScreenLinesUC[idx] = 0;
-#ifdef FEAT_ARABIC
-		    prev_c = u8c;
-#endif
-		}
-		else
-		{
-#ifdef FEAT_ARABIC
-		    if (p_arshape && !p_tbidi && ARABIC_CHAR(u8c))
-		    {
-			/* Do Arabic shaping. */
-			int	pc, pc1, nc;
-			int	pcc[MAX_MCO];
-			int	firstbyte = *p;
-
-			/* The idea of what is the previous and next
-			 * character depends on 'rightleft'. */
-			if (wp->w_p_rl)
-			{
-			    pc = prev_c;
-			    pc1 = prev_c1;
-			    nc = utf_ptr2char(p + c_len);
-			    prev_c1 = u8cc[0];
-			}
-			else
-			{
-			    pc = utfc_ptr2char(p + c_len, pcc);
-			    nc = prev_c;
-			    pc1 = pcc[0];
-			}
-			prev_c = u8c;
-
-			u8c = arabic_shape(u8c, &firstbyte, &u8cc[0],
-								 pc, pc1, nc);
-			ScreenLines[idx] = firstbyte;
-		    }
-		    else
-			prev_c = u8c;
-#endif
-		    /* Non-BMP character: display as ? or fullwidth ?. */
-#ifdef UNICODE16
-		    if (u8c >= 0x10000)
-			ScreenLinesUC[idx] = (cells == 2) ? 0xff1f : (int)'?';
-		    else
-#endif
-			ScreenLinesUC[idx] = u8c;
-		    for (i = 0; i < Screen_mco; ++i)
-		    {
-			ScreenLinesC[i][idx] = u8cc[i];
-			if (u8cc[i] == 0)
-			    break;
-		    }
-		}
-		if (cells > 1)
-		    ScreenLines[idx + 1] = 0;
-	    }
-	    else if (enc_dbcs == DBCS_JPNU && *p == 0x8e)
-		/* double-byte single width character */
-		ScreenLines2[idx] = p[1];
-	    else if (cells > 1)
-		/* double-width character */
-		ScreenLines[idx + 1] = p[1];
-	    col += cells;
-	    idx += cells;
-	    p += c_len;
-	}
+        copy_mbyte_text(wp, off, &col, text);
     }
     else
 #endif
@@ -2603,6 +2514,120 @@ fold_line(wp, fold_count, foldinfo, lnum, row)
 }
 
 /*
+ * Copy a multi-byte "text" to ScreenLines["off"]. Notice that text is expected
+ * to have a NUL terminator.
+ */
+    static void
+copy_mbyte_text(wp, off, col, text)
+    win_T   *wp;
+    int     off;
+    int     *col;
+    char_u  *text;
+{
+    int	    cells;
+    int	    u8c, u8cc[MAX_MCO];
+    int	    i;
+    int	    idx;
+    int	    c_len;
+    char_u  *p;
+# ifdef FEAT_ARABIC
+    int	    prev_c = 0;		/* previous Arabic character */
+    int	    prev_c1 = 0;	/* first composing char for prev_c */
+# endif
+
+# ifdef FEAT_RIGHTLEFT
+    if (wp->w_p_rl)
+        idx = off;
+    else
+# endif
+        idx = off + *col;
+
+    /* Store multibyte characters in ScreenLines[] et al. correctly. */
+    for (p = text; *p != NUL; )
+    {
+        cells = (*mb_ptr2cells)(p);
+        c_len = (*mb_ptr2len)(p);
+        if (*col + cells > W_WIDTH(wp)
+# ifdef FEAT_RIGHTLEFT
+                - (wp->w_p_rl ? *col : 0)
+# endif
+                )
+            break;
+        ScreenLines[idx] = *p;
+        if (enc_utf8)
+        {
+            u8c = utfc_ptr2char(p, u8cc);
+            if (*p < 0x80 && u8cc[0] == 0)
+            {
+                ScreenLinesUC[idx] = 0;
+#ifdef FEAT_ARABIC
+                prev_c = u8c;
+#endif
+            }
+            else
+            {
+#ifdef FEAT_ARABIC
+                if (p_arshape && !p_tbidi && ARABIC_CHAR(u8c))
+                {
+                    /* Do Arabic shaping. */
+                    int	pc, pc1, nc;
+                    int	pcc[MAX_MCO];
+                    int	firstbyte = *p;
+
+                    /* The idea of what is the previous and next
+                     * character depends on 'rightleft'. */
+                    if (wp->w_p_rl)
+                    {
+                        pc = prev_c;
+                        pc1 = prev_c1;
+                        nc = utf_ptr2char(p + c_len);
+                        prev_c1 = u8cc[0];
+                    }
+                    else
+                    {
+                        pc = utfc_ptr2char(p + c_len, pcc);
+                        nc = prev_c;
+                        pc1 = pcc[0];
+                    }
+                    prev_c = u8c;
+
+                    u8c = arabic_shape(u8c, &firstbyte, &u8cc[0],
+                                                             pc, pc1, nc);
+                    ScreenLines[idx] = firstbyte;
+                }
+                else
+                    prev_c = u8c;
+#endif
+                /* Non-BMP character: display as ? or fullwidth ?. */
+#ifdef UNICODE16
+                if (u8c >= 0x10000)
+                    ScreenLinesUC[idx] = (cells == 2) ? 0xff1f : (int)'?';
+                else
+#endif
+                    ScreenLinesUC[idx] = u8c;
+                for (i = 0; i < Screen_mco; ++i)
+                {
+                    ScreenLinesC[i][idx] = u8cc[i];
+                    if (u8cc[i] == 0)
+                        break;
+                }
+            }
+            if (cells > 1)
+                ScreenLines[idx + 1] = 0;
+        }
+        else if (enc_dbcs == DBCS_JPNU && *p == 0x8e)
+            /* double-byte single width character */
+            ScreenLines2[idx] = p[1];
+        else if (cells > 1)
+            /* double-width character */
+            ScreenLines[idx + 1] = p[1];
+        *col += cells;
+        idx += cells;
+        p += c_len;
+    }
+}
+
+/*
  * Copy "buf[len]" to ScreenLines["off"] and set attributes to "attr".
  */
     static void
@@ -2627,7 +2652,7 @@ copy_text_attr(off, buf, len, attr)
  * Fill the foldcolumn at "p" for window "wp".
  * Only to be called when 'foldcolumn' > 0.
  */
-    static void
+    static int
 fill_foldcolumn(p, wp, closed, lnum)
     char_u	*p;
     win_T	*wp;
@@ -2638,9 +2663,9 @@ fill_foldcolumn(p, wp, closed, lnum)
     int		level;
     int		first_level;
     int		empty;
-
-    /* Init to all spaces. */
-    copy_spaces(p, (size_t)wp->w_p_fdc);
+    int         charsLeft = wp->w_p_fdc;
+    int         bytesWritten = 0;
+    int         bytesPending = 0;
 
     level = win_foldinfo.fi_level;
     if (level > 0)
@@ -2656,21 +2681,57 @@ fill_foldcolumn(p, wp, closed, lnum)
 
 	for (i = 0; i + empty < wp->w_p_fdc; ++i)
 	{
+            bytesPending = 0;
 	    if (win_foldinfo.fi_lnum == lnum
 			      && first_level + i >= win_foldinfo.fi_low_level)
-		p[i] = '-';
+            {
+                bytesPending = (*mb_char2bytes)(fds_fo, p + bytesWritten);
+                --charsLeft;
+            }
             else if (first_level == 1 || !wp->w_p_fsl)
-                p[i] = '|';
+            {
+                bytesPending = (*mb_char2bytes)(fds_fa, p + bytesWritten);
+                --charsLeft;
+            }
             else if (first_level + i <= 9)
+            {
                 p[i] = '0' + first_level + i;
+                ++bytesPending;
+                --charsLeft;
+            }
             else
+            {
                 p[i] = '>';
+                ++bytesPending;
+                --charsLeft;
+            }
+
+            bytesWritten += bytesPending;
+
 	    if (first_level + i == level)
 		break;
 	}
     }
     if (closed)
-	p[i >= wp->w_p_fdc ? i - 1 : i] = '+';
+    {
+        if (bytesPending)
+        {
+           ++charsLeft;
+           bytesWritten -= bytesPending;
+        }
+        bytesWritten += (*mb_char2bytes)(fds_fc, p + bytesWritten);
+        --charsLeft;
+        //p[i >= wp->w_p_fdc ? i - 1 : i] = fds_fc;
+    }
+
+    /* Fill the rest of position on FDC with spaces */
+    if (charsLeft > 0)
+    {
+        copy_spaces(p + bytesWritten, (size_t)charsLeft);
+        bytesWritten += charsLeft;
+    }
+
+    return bytesWritten;
 }
 #endif /* FEAT_FOLDING */
 
@@ -3406,8 +3467,9 @@ win_line(wp, lnum, startrow, endrow, nochange)
 		if (wp->w_p_fdc > 0)
 		{
 		    /* Draw the 'foldcolumn'. */
-		    fill_foldcolumn(extra, wp, FALSE, lnum);
-		    n_extra = wp->w_p_fdc;
+                    n_extra = fill_foldcolumn(extra, wp, FALSE, lnum);
+                    if (n_extra < wp->w_p_fdc)
+                        n_extra = wp->w_p_fdc;
 		    p_extra = extra;
 		    p_extra[n_extra] = NUL;
 		    c_extra = NUL;

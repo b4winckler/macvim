@@ -540,6 +540,7 @@ fold column:
 
 OTHER OPTIONS
 
+'foldchars'       'fds':	Characters used to be used on the fold column.
 'foldcolshowlvl'  'fsl':	Show a number representing the fold level.
 'foldenable'      'fen':	Open all folds while not set.
 'foldexpr'        'fde':	Expression used for "expr" folding.

@@ -680,9 +680,9 @@ A jump table for the options with a short description can be found at |Q_op|.
 	"single":	Use the same width as characters in US-ASCII.  This is
 			expected by most users.
 	"double":	Use twice the width of ASCII characters.
-							*E834* *E835*
-	The value "double" cannot be used if 'listchars' or 'fillchars'
-	contains a character that would be double width.
+						*E834* *E835* *E836*
+	The value "double" cannot be used if 'listchars', 'fillchars' or
+	'foldchars' contains a character that would be double width.
 
 	There are a number of CJK fonts for which the width of glyphs for
 	those characters are solely based on how many octets they take in
@@ -3012,6 +3012,31 @@ A jump table for the options with a short description can be found at |Q_op|.
 	Normally you would set 'allowrevins' and use CTRL-_ in insert mode to
 	toggle this option |i_CTRL-_|.  See |farsi.txt|.
 
+						*'foldchars'* *'fds'*
+'foldchars' 'fds'	string	(default "fa:|,fo:-,fc:+")
+			global
+			{not in Vi}
+	Characters to use in 'fold column' when fold is enabled.  It is a
+	comma separated list of string settings.
+	  						*fds-fa*
+	  fa:c		Character to represent a fold area. This character is
+                        only used if the fold area is not the beginning of a
+                        fold and the line is not folded.
+	  						*fds-fc*
+	  fc:c		Character to represent the beginning of a fold when the
+                        given fold is closed.
+	  						*fds-fo*
+	  fo:c		Character to represent the beginning of a fold when the
+                        given fold is opened.
+
+	The characters ':' and ',' should not be used.  UTF-8 characters can
+	be used when 'encoding' is "utf-8", otherwise only printable
+	characters are allowed.  All characters must be single width.
+
+	Examples: >
+	    :set fds=fa:\|,fo:-,fc:+
+	    :set fds=fa:\ ,fo:-,fc:+
+	    :set fds=fa:\ ,fo:▾,fc:▸
 						*'foldclose'* *'fcl'*
 'foldclose' 'fcl'	string (default "")
 			global
