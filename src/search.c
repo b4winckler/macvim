@@ -2440,12 +2440,10 @@ showmatch(c)
     /* 'matchpairs' is "x:y,x:y" */
     for (p = curbuf->b_p_mps; *p != NUL; ++p)
     {
-	if (PTR2CHAR(p) == c
 #ifdef FEAT_RIGHTLEFT
-		    && (curwin->w_p_rl ^ p_ri)
-#endif
-	   )
+	if (PTR2CHAR(p) == c && (curwin->w_p_rl ^ p_ri))
 	    break;
+#endif
 	p += MB_PTR2LEN(p) + 1;
 	if (PTR2CHAR(p) == c
 #ifdef FEAT_RIGHTLEFT
@@ -2460,7 +2458,7 @@ showmatch(c)
 
     if ((lpos = findmatch(NULL, NUL)) == NULL)	    /* no match, so beep */
 	vim_beep();
-    else if (lpos->lnum >= curwin->w_topline)
+    else if (lpos->lnum >= curwin->w_topline && lpos->lnum < curwin->w_botline)
     {
 	if (!curwin->w_p_wrap)
 	    getvcol(curwin, lpos, NULL, &vcol, NULL);
