@@ -744,6 +744,8 @@ static char *(features[]) =
 static int included_patches[] =
 {   /* Add new patch number below this line */
 /**/
+    832,
+/**/
     831,
 /**/
     830,
@@ -2481,7 +2483,7 @@ list_features()
      * width */
     for (i = 0; features[i] != NULL; ++i)
     {
-	int l = STRLEN(features[i]);
+	int l = (int)STRLEN(features[i]);
 
 	if (l > width)
 	    width = l;
@@ -2533,6 +2535,7 @@ list_features()
 	    msg_putchar('\n');
     }
 }
+
     void
 list_version()
 {
