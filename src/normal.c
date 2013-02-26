@@ -4657,11 +4657,10 @@ nv_mousescroll(cap)
 # ifdef FEAT_GUI_SCROLL_WHEEL_FORCE
     int scroll_wheel_force = 0;
 # endif
-# if defined(FEAT_GUI) && defined(FEAT_WINDOWS)
+# ifdef FEAT_WINDOWS
     win_T *old_curwin = curwin;
 
-    /* Currently we only get the mouse coordinates in the GUI. */
-    if (gui.in_use && mouse_row >= 0 && mouse_col >= 0)
+    if (mouse_row >= 0 && mouse_col >= 0)
     {
 	int row, col;
 
@@ -4723,7 +4722,7 @@ nv_mousescroll(cap)
     }
 # endif
 
-# if defined(FEAT_GUI) && defined(FEAT_WINDOWS)
+# ifdef FEAT_WINDOWS
     curwin->w_redr_status = TRUE;
 
     curwin = old_curwin;
