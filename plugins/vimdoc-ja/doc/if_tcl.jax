@@ -1,4 +1,4 @@
-*if_tcl.txt*    For Vim バージョン 7.3.  Last change: 2008 Aug 16
+*if_tcl.txt*    For Vim バージョン 7.3.  Last change: 2012 Aug 02
 
 
 		  VIM REFERENCE MANUAL    by Ingo Wilken
@@ -27,7 +27,9 @@ Tclインターフェイスは、Vimが|+tcl|機能と共にコンパイルさ�
 1. コマンド				*tcl-ex-commands* *E571* *E572*
 
 							*:tcl* *:tc*
-:tc[l] {cmd}		Tclコマンド{cmd}を実行する。
+:tc[l] {cmd}		Tclコマンド{cmd}を実行する。`:tcl` コマンドが機能する
+			か簡単にチェックするには: >
+				:tcl puts "Hello"
 
 :[range]tc[l] << {endmarker}
 {script}

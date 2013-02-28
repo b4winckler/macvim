@@ -1,4 +1,4 @@
-*eval.txt*	For Vim version 7.3.  Last change: 2012 Dec 05
+*eval.txt*	For Vim version 7.3.  Last change: 2013 Feb 20
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -503,7 +503,7 @@ This removes all entries from "dict" with a value not matching 'x'.
 
 
 Dictionary function ~
-					*Dictionary-function* *self* *E725*
+				*Dictionary-function* *self* *E725* *E862*
 When a function is defined with the "dict" attribute it can be used in a
 special way with a dictionary.	Example: >
 	:function Mylen() dict
@@ -1716,7 +1716,7 @@ call( {func}, {arglist} [, {dict}])
 				any	call {func} with arguments {arglist}
 ceil( {expr})			Float	round {expr} up
 changenr()			Number	current change number
-char2nr( {expr})		Number	ASCII value of first char in {expr}
+char2nr( {expr}[, {utf8}])	Number	ASCII/UTF8 value of first char in {expr}
 cindent( {lnum})		Number	C indent for line {lnum}
 clearmatches()			none	clear all matches
 col( {expr})			Number	column nr of cursor or mark
@@ -1777,7 +1777,8 @@ get( {list}, {idx} [, {def}])	any	get item {idx} from {list} or {def}
 get( {dict}, {key} [, {def}])	any	get item {key} from {dict} or {def}
 getbufline( {expr}, {lnum} [, {end}])
 				List	lines {lnum} to {end} of buffer {expr}
-getbufvar( {expr}, {varname})	any	variable {varname} in buffer {expr}
+getbufvar( {expr}, {varname} [, {def}])
+				any	variable {varname} in buffer {expr}
 getchar( [expr])		Number	get one character from the user
 getcharmod( )			Number	modifiers for the last typed character
 getcmdline()			String	return the current command-line
@@ -1798,12 +1799,14 @@ getpos( {expr})			List	position of cursor, mark, etc.
 getqflist()			List	list of quickfix items
 getreg( [{regname} [, 1]])	String	contents of register
 getregtype( [{regname}])	String	type of register
-gettabvar( {nr}, {varname})	any	variable {varname} in tab {nr}
-gettabwinvar( {tabnr}, {winnr}, {name})
+gettabvar( {nr}, {varname} [, {def}])
+				any	variable {varname} in tab {nr} or {def}
+gettabwinvar( {tabnr}, {winnr}, {name} [, {def}])
 				any	{name} in {winnr} in tab page {tabnr}
 getwinposx()			Number	X coord in pixels of GUI Vim window
 getwinposy()			Number	Y coord in pixels of GUI Vim window
-getwinvar( {nr}, {varname})	any	variable {varname} in window {nr}
+getwinvar( {nr}, {varname} [, {def}])
+				any	variable {varname} in window {nr}
 glob( {expr} [, {nosuf} [, {list}]])
 				any	expand file wildcards in {expr}
 globpath( {path}, {expr} [, {flag}])
@@ -1873,7 +1876,7 @@ mkdir( {name} [, {path} [, {prot}]])
 mode( [expr])			String	current editing mode
 mzeval( {expr})			any	evaluate |MzScheme| expression
 nextnonblank( {lnum})		Number	line nr of non-blank line >= {lnum}
-nr2char( {expr})		String	single char with ASCII value {expr}
+nr2char( {expr}[, {utf8}])	String	single char with ASCII/UTF8 value {expr}
 or( {expr}, {expr})		Number  bitwise OR
 pathshorten( {expr})		String	shorten directory names in a path
 pow( {x}, {y})			Float	{x} to the power of {y}
@@ -1931,6 +1934,7 @@ settabvar( {nr}, {varname}, {val})	set {varname} in tab page {nr} to {val}
 settabwinvar( {tabnr}, {winnr}, {varname}, {val})    set {varname} in window
 					{winnr} in tab page {tabnr} to {val}
 setwinvar( {nr}, {varname}, {val})	set {varname} in window {nr} to {val}
+sha256( {string})		String	SHA256 checksum of {string}
 shellescape( {string} [, {special}])
 				String	escape {string} for use as shell
 					command argument
@@ -1992,6 +1996,7 @@ undotree()			List	undo file tree
 values( {dict})			List	values in {dict}
 virtcol( {expr})		Number	screen column of cursor or mark
 visualmode( [expr])		String	last visual mode used
+wildmenumode()			Number	whether 'wildmenu' mode is active
 winbufnr( {nr})			Number	buffer number of window {nr}
 wincol()			Number	window column of the cursor
 winheight( {nr})		Number	height of window {nr}
@@ -2294,14 +2299,16 @@ changenr()						*changenr()*
 		redo it is the number of the redone change.  After undo it is
 		one less than the number of the undone change.
 
-char2nr({expr})						*char2nr()*
+char2nr({expr}[, {utf8}])					*char2nr()*
 		Return number value of the first char in {expr}.  Examples: >
 			char2nr(" ")		returns 32
 			char2nr("ABC")		returns 65
-<		The current 'encoding' is used.  Example for "utf-8": >
+<		When {utf8} is omitted or zero, the current 'encoding' is used.
+		Example for "utf-8": >
 			char2nr("á")		returns 225
 			char2nr("á"[0])		returns 195
-<		A combining character is a separate character.
+<		With {utf8} set to 1, always treat as utf-8 characters.
+		A combining character is a separate character.
 		|nr2char()| does the opposite.
 
 cindent({lnum})						*cindent()*
@@ -3139,7 +3146,7 @@ getbufline({expr}, {lnum} [, {end}])
 		Example: >
 			:let lines = getbufline(bufnr("myfile"), 1, "$")
 
-getbufvar({expr}, {varname})				*getbufvar()*
+getbufvar({expr}, {varname} [, {def}])				*getbufvar()*
 		The result is the value of option or local buffer variable
 		{varname} in buffer {expr}.  Note that the name without "b:"
 		must be used.
@@ -3149,8 +3156,8 @@ getbufvar({expr}, {varname})				*getbufvar()*
 		doesn't work for a global variable, window-local variable or
 		window-local option.
 		For the use of {expr}, see |bufname()| above.
-		When the buffer or variable doesn't exist an empty string is
-		returned, there is no error message.
+		When the buffer or variable doesn't exist {def} or an empty
+		string is returned, there is no error message.
 		Examples: >
 			:let bufmodified = getbufvar(1, "&mod")
 			:echo "todo myvar = " . getbufvar("todo", "myvar")
@@ -3427,26 +3434,30 @@ getregtype([{regname}])					*getregtype()*
 		<CTRL-V> is one character with value 0x16.
 		If {regname} is not specified, |v:register| is used.
 
-gettabvar({tabnr}, {varname})				*gettabvar()*
+gettabvar({tabnr}, {varname} [, {def}])				*gettabvar()*
 		Get the value of a tab-local variable {varname} in tab page
 		{tabnr}. |t:var|
 		Tabs are numbered starting with one.
 		Note that the name without "t:" must be used.
+		When the tab or variable doesn't exist {def} or an empty
+		string is returned, there is no error message.
 
-gettabwinvar({tabnr}, {winnr}, {varname})		*gettabwinvar()*
+gettabwinvar({tabnr}, {winnr}, {varname} [, {def}])		*gettabwinvar()*
 		Get the value of window-local variable {varname} in window
 		{winnr} in tab page {tabnr}.
 		When {varname} starts with "&" get the value of a window-local
 		option.
+		When {varname} is empty a dictionary with all window-local
+		variables is returned.
+		Note that {varname} must be the name without "w:".
 		Tabs are numbered starting with one.  For the current tabpage
 		use |getwinvar()|.
 		When {winnr} is zero the current window is used.
 		This also works for a global option, buffer-local option and
 		window-local option, but it doesn't work for a global variable
 		or buffer-local variable.
-		When {varname} is empty a dictionary with all window-local
-		variables is returned.
-		Note that {varname} must be the name without "w:".
+		When the tab, window or variable doesn't exist {def} or an
+		empty string is returned, there is no error message.
 		Examples: >
 			:let list_is_on = gettabwinvar(1, 2, '&list')
 			:echo "myvar = " . gettabwinvar(3, 1, 'myvar')
@@ -3461,7 +3472,7 @@ getwinposy()	The result is a Number, which is the Y coordinate in pixels of
 		the top of the GUI Vim window.	The result will be -1 if the
 		information is not available.
 
-getwinvar({winnr}, {varname})				*getwinvar()*
+getwinvar({winnr}, {varname} [, {def}])				*getwinvar()*
 		Like |gettabwinvar()| for the current tabpage.
 		Examples: >
 			:let list_is_on = getwinvar(2, '&list')
@@ -4371,14 +4382,16 @@ nextnonblank({lnum})					*nextnonblank()*
 		below it, zero is returned.
 		See also |prevnonblank()|.
 
-nr2char({expr})						*nr2char()*
+nr2char({expr}[, {utf8}])				*nr2char()*
 		Return a string with a single character, which has the number
 		value {expr}.  Examples: >
 			nr2char(64)		returns "@"
 			nr2char(32)		returns " "
-<		The current 'encoding' is used.  Example for "utf-8": >
+<		When {utf8} is omitted or zero, the current 'encoding' is used.
+		Example for "utf-8": >
 			nr2char(300)		returns I with bow character
-<		Note that a NUL character in the file is specified with
+<		With {utf8} set to 1, always return utf-8 characters.
+		Note that a NUL character in the file is specified with
 		nr2char(10), because NULs are represented with newline
 		characters.  nr2char(0) is a real NUL and terminates the
 		string, thus results in an empty string.
@@ -5332,6 +5345,11 @@ setwinvar({nr}, {varname}, {val})			*setwinvar()*
 			:call setwinvar(1, "&list", 0)
 			:call setwinvar(2, "myvar", "foobar")
 
+sha256({string})						*sha256()*
+		Returns a String with 64 hex charactes, which is the SHA256
+		checksum of {string}.
+		{only available when compiled with the |+cryptv| feature}
+
 shellescape({string} [, {special}])			*shellescape()*
 		Escape {string} for use as a shell command argument.
 		On MS-Windows and MS-DOS, when 'shellslash' is not set, it
@@ -5939,8 +5957,9 @@ taglist({expr})							*taglist()*
 		If there are no matching tags, then an empty list is returned.
 
 		To get an exact tag match, the anchors '^' and '$' should be
-		used in {expr}.  Refer to |tag-regexp| for more information
-		about the tag search regular expression pattern.
+		used in {expr}.  This also make the function work faster.
+		Refer to |tag-regexp| for more information about the tag
+		search regular expression pattern.
 
 		Refer to |'tags'| for information about how the tags file is
 		located by Vim. Refer to |tags-file-format| for the format of
@@ -6150,6 +6169,18 @@ visualmode([expr])						*visualmode()*
 		non-empty strings, thus cause the mode to be cleared.  A List,
 		Dictionary or Float is not a Number or String, thus does not
 		cause the mode to be cleared.
+
+wildmenumode()					*wildmenumode()*
+		Returns non-zero when the wildmenu is active and zero
+		otherwise.  See 'wildmenu' and 'wildmode'.
+		This can be used in mappings to handle the 'wildcharm' option
+		gracefully. (Makes only sense with |mapmode-c| mappings).
+
+		For example to make <c-j> work like <down> in wildmode, use: >
+    :cnoremap <expr> <C-j> wildmenumode() ? "\<Down>\<Tab>" : "\<c-j>"
+<
+		(Note, this needs the 'wildcharm' option set appropriately).
+
 
 							*winbufnr()*
 winbufnr({nr})	The result is a Number, which is the number of the buffer

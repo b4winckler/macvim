@@ -1,4 +1,4 @@
-*options.txt*	For Vim version 7.3.  Last change: 2012 Oct 21
+*options.txt*	For Vim version 7.3.  Last change: 2013 Feb 20
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -1470,11 +1470,14 @@ A jump table for the options with a short description can be found at |Q_op|.
 			|gui-clipboard|.
 
 						*clipboard-unnamedplus*
-	unnamedplus	A variant of "unnamed" flag which uses the clipboard
-			register '+' (|quoteplus|) instead of register '*' for
-			all operations except yank.  Yank shall copy the text
-			into register '+' and also into '*' when "unnamed" is
-			included.
+	unnamedplus	A variant of the "unnamed" flag which uses the
+			clipboard register '+' (|quoteplus|) instead of
+			register '*' for all yank, delete, change and put
+			operations which would normally go to the unnamed
+			register.  When "unnamed" is also included to the
+			option, yank operations (but not delete, change or
+			put) will additionally copy the text into register
+			'*'.
 			Only available with the |+X11| feature.
 			Availability can be checked with: >
 				if has('unnamedplus')
@@ -3569,7 +3572,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 
 	Windows +multibyte only:		*guifontwide_win_mbyte*
 
-	If set and vaild, 'guifontwide' is used for IME instead of 'guifont'.
+	If set and valid, 'guifontwide' is used for IME instead of 'guifont'.
 
 						*'guiheadroom'* *'ghr'*
 'guiheadroom' 'ghr'	number	(default 50)
@@ -3834,7 +3837,8 @@ A jump table for the options with a short description can be found at |Q_op|.
 	|hl-ModeMsg|	 M  Mode (e.g., "-- INSERT --")
 	|hl-LineNr|	 n  line number for ":number" and ":#" commands, and
 			    when 'number' or 'relativenumber' option is set.
-	|hl-CursorLineNr|  N like n for when 'cursorline' is set.
+	|hl-CursorLineNr|  N like n for when 'cursorline' or 'relativenumber' is
+			    set.
 	|hl-Question|	 r  |hit-enter| prompt and yes/no questions
 	|hl-StatusLine|	 s  status line of current window |status-line|
 	|hl-StatusLineNC| S  status lines of not-current windows
@@ -4727,8 +4731,10 @@ A jump table for the options with a short description can be found at |Q_op|.
 			local to buffer
 			{not in Vi}
 	Characters that form pairs.  The |%| command jumps from one to the
-	other.  Currently only single byte character pairs are allowed, and
-	they must be different.  The characters must be separated by a colon.
+	other.
+	Only character pairs are allowed that are different, thus you cannot
+	jump between two double quotes.
+	The characters must be separated by a colon.
 	The pairs must be separated by a comma.  Example for including '<' and
 	'>' (HTML): >
 		:set mps+=<:>
@@ -7922,6 +7928,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 	CTRL-P/CTRL-N, cause the highlight to move to the appropriate match.
 	When 'wildmode' is used, "wildmenu" mode is used where "full" is
 	specified.  "longest" and "list" do not start "wildmenu" mode.
+	You can check the current mode with |wildmenumode()|.
 	If there are more matches than can fit in the line, a ">" is shown on
 	the right and/or a "<" is shown on the left.  The status line scrolls
 	as needed.

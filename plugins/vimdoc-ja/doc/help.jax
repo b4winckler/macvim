@@ -1,4 +1,4 @@
-*help.txt*	For Vim バージョン 7.3.  Last change: 2010 Jul 20
+*help.txt*	For Vim バージョン 7.3.  Last change: 2012 Dec 06
 
 			   VIM - メインヘルプファイル
 									 k
@@ -10,7 +10,7 @@
     項目へジャンプ:  タグ (例: |bars|) にカーソルを合わせ、CTRL-] を押します。
   マウスでジャンプ:  ":set mouse=a" と入力してマウスを有効にしてください
 		     (xterm or GUI で利用可)。タグ (例: |bars|) をマウスの左ボ
-		     タンでダ ブルクリックすると、項目にジャンプできます。
+		     タンでダブルクリックすると、項目にジャンプできます。
     元の場所に戻る:  CTRL-T or CTRL-O を押す。
 
     項目を指定する:  |:help| コマンドに項目を指定することで、その項目を直ちに
@@ -196,12 +196,12 @@ GUI ~
 						*standard-plugin-list*
 標準プラグイン ~
 |pi_getscript.txt| Vim スクリプトの最新版をダウンロードする
-|pi_gzip.txt|	   圧縮ファイルの読み書き
-|pi_netrw.txt|	   ネットワークファイルの読み書き
-|pi_paren.txt|	   対括弧の強調表示
-|pi_tar.txt|	   Tar ファイルエクスプローラ
+|pi_gzip.txt|      圧縮ファイルの読み書き
+|pi_netrw.txt|     ネットワークファイルの読み書き
+|pi_paren.txt|     対括弧の強調表示
+|pi_tar.txt|       Tar ファイルエクスプローラ
 |pi_vimball.txt|   Vim スクリプトインストーラを作成する
-|pi_zip.txt|	   Zip アーカイブエクスプローラ
+|pi_zip.txt|       Zip アーカイブエクスプローラ
 
 その他 ~
 |vim_faq.txt|	FAQ

@@ -1,4 +1,4 @@
-*windows.txt*   For Vim バージョン 7.3.  Last change: 2012 Apr 13
+*windows.txt*   For Vim バージョン 7.3.  Last change: 2012 Nov 15
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -961,9 +961,9 @@ CTRL-W g }						*CTRL-W_g}*
 :buffers[!]					*:buffers* *:ls*
 :ls[!]		全バッファを表示。例:
 
-			1 #h  "/test/text"		line 1 ~
-			2u    "asdf"			line 0 ~
-			3 %a+ "version.c"		line 1 ~
+			1 #h   "/test/text"		line 1 ~
+			2u     "asdf"			line 0 ~
+			3 %a + "version.c"		line 1 ~
 
 		[!] が含まれているときは、バッファリストにないバッファも表示さ
                 れる。

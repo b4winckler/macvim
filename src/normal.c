@@ -2292,7 +2292,9 @@ op_function(oap)
 {
 #ifdef FEAT_EVAL
     char_u	*(argv[1]);
+# ifdef FEAT_VIRTUALEDIT
     int		save_virtual_op = virtual_op;
+# endif
 
     if (*p_opfunc == NUL)
 	EMSG(_("E774: 'operatorfunc' is empty"));
@@ -2312,13 +2314,17 @@ op_function(oap)
 	else
 	    argv[0] = (char_u *)"char";
 
+# ifdef FEAT_VIRTUALEDIT
 	/* Reset virtual_op so that 'virtualedit' can be changed in the
 	 * function. */
 	virtual_op = MAYBE;
+# endif
 
 	(void)call_func_retnr(p_opfunc, 1, argv, FALSE);
 
+# ifdef FEAT_VIRTUALEDIT
 	virtual_op = save_virtual_op;
+# endif
     }
 #else
     EMSG(_("E775: Eval feature not available"));
@@ -4643,11 +4649,10 @@ nv_screengo(oap, dir, dist)
 nv_mousescroll(cap)
     cmdarg_T	*cap;
 {
-# if defined(FEAT_GUI) && defined(FEAT_WINDOWS)
+# ifdef FEAT_WINDOWS
     win_T *old_curwin = curwin;
 
-    /* Currently we only get the mouse coordinates in the GUI. */
-    if (gui.in_use && mouse_row >= 0 && mouse_col >= 0)
+    if (mouse_row >= 0 && mouse_col >= 0)
     {
 	int row, col;
 
@@ -4692,7 +4697,7 @@ nv_mousescroll(cap)
     }
 # endif
 
-# if defined(FEAT_GUI) && defined(FEAT_WINDOWS)
+# ifdef FEAT_WINDOWS
     curwin->w_redr_status = TRUE;
 
     curwin = old_curwin;
@@ -7531,7 +7536,7 @@ nv_gomark(cap)
     pos_T	*pos;
     int		c;
 #ifdef FEAT_FOLDING
-    linenr_T	lnum = curwin->w_cursor.lnum;
+    pos_T	old_cursor = curwin->w_cursor;
     int		old_KeyTyped = KeyTyped;    /* getting file may reset it */
 #endif
 
@@ -7560,7 +7565,8 @@ nv_gomark(cap)
 #endif
 #ifdef FEAT_FOLDING
     if (cap->oap->op_type == OP_NOP
-	    && (pos == (pos_T *)-1 || lnum != curwin->w_cursor.lnum)
+	    && pos != NULL
+	    && (pos == (pos_T *)-1 || !equalpos(old_cursor, *pos))
 	    && (fdo_flags & FDO_MARK)
 	    && old_KeyTyped)
 	foldOpenCursor();
@@ -8657,7 +8663,9 @@ nv_lineop(cap)
     cap->oap->motion_type = MLINE;
     if (cursor_down(cap->count1 - 1L, cap->oap->op_type == OP_NOP) == FAIL)
 	clearopbeep(cap->oap);
-    else if (  cap->oap->op_type == OP_DELETE
+    else if (  (cap->oap->op_type == OP_DELETE /* only with linewise motions */
+		&& cap->oap->motion_force != 'v'
+		&& cap->oap->motion_force != Ctrl_V)
 	    || cap->oap->op_type == OP_LSHIFT
 	    || cap->oap->op_type == OP_RSHIFT)
 	beginline(BL_SOL | BL_FIX);
@@ -9439,14 +9447,15 @@ nv_put(cap)
 # ifdef FEAT_CLIPBOARD
 	    adjust_clip_reg(&regname);
 # endif
-	    if (regname == 0 || regname == '"' || VIM_ISDIGIT(regname)
+           if (regname == 0 || regname == '"'
+				     || VIM_ISDIGIT(regname) || regname == '-'
 # ifdef FEAT_CLIPBOARD
 		    || (clip_unnamed && (regname == '*' || regname == '+'))
 # endif
 
 		    )
 	    {
-		/* the delete is going to overwrite the register we want to
+		/* The delete is going to overwrite the register we want to
 		 * put, save it first. */
 		reg1 = get_register(regname, TRUE);
 	    }

@@ -61,6 +61,11 @@ static int selinux_enabled = -1;
 #  include <cygwin/version.h>
 #  include <sys/cygwin.h>	/* for cygwin_conv_to_posix_path() and/or
 				 * for cygwin_conv_path() */
+#  ifdef FEAT_CYGWIN_WIN32_CLIPBOARD
+#   define WIN32_LEAN_AND_MEAN
+#   include <windows.h>
+#   include "winclip.pro"
+#  endif
 # endif
 #endif
 
@@ -278,7 +283,8 @@ static struct signalinfo
 #ifdef SIGBUS
     {SIGBUS,	    "BUS",	TRUE},
 #endif
-#ifdef SIGSEGV
+#if defined(SIGSEGV) && !defined(FEAT_MZSCHEME)
+    /* MzScheme uses SEGV in its garbage collector */
     {SIGSEGV,	    "SEGV",	TRUE},
 #endif
 #ifdef SIGSYS
@@ -1221,6 +1227,9 @@ mch_init()
 
 #ifdef MACOS_CONVERT
     mac_conv_init();
+#endif
+#ifdef FEAT_CYGWIN_WIN32_CLIPBOARD
+    win_clip_init();
 #endif
 }
 
@@ -3778,7 +3787,7 @@ wait4pid(child, status)
 # endif
 	if (wait_pid == 0)
 	{
-	    /* Wait for 1/100 sec before trying again. */
+	    /* Wait for 10 msec before trying again. */
 	    mch_delay(10L, TRUE);
 	    continue;
 	}
@@ -4797,7 +4806,7 @@ finished:
 	    {
 		/* LINTED avoid "bitwise operation on signed value" */
 		retval = WEXITSTATUS(status);
-		if (retval && !emsg_silent)
+		if (retval != 0 && !emsg_silent)
 		{
 		    if (retval == EXEC_FAILED)
 		    {

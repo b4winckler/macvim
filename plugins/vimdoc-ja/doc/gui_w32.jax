@@ -17,7 +17,7 @@ Win32でのVimのグラフィカルユーザインターフェース	*gui-w32* *
 
 その他の関連した文章:
 |gui.txt|	GUIの一般的な要素。
-|os_win32.txt|  Win32特有の要素。
+|os_win32.txt|	Win32特有の要素。
 
 {Vi にはWindowsのGUIは無い}
 

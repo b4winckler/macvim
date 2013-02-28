@@ -122,6 +122,7 @@ static void init_structs(void);
 # define PyDict_SetItemString py3_PyDict_SetItemString
 # define PyErr_BadArgument py3_PyErr_BadArgument
 # define PyErr_Clear py3_PyErr_Clear
+# define PyErr_PrintEx py3_PyErr_PrintEx
 # define PyErr_NoMemory py3_PyErr_NoMemory
 # define PyErr_Occurred py3_PyErr_Occurred
 # define PyErr_SetNone py3_PyErr_SetNone
@@ -279,6 +280,7 @@ static int (*py3_PyMem_Free)(void *);
 static void* (*py3_PyMem_Malloc)(size_t);
 static int (*py3_Py_IsInitialized)(void);
 static void (*py3_PyErr_Clear)(void);
+static void (*py3_PyErr_PrintEx)(int);
 static PyObject*(*py3__PyObject_Init)(PyObject *, PyTypeObject *);
 static iternextfunc py3__PyObject_NextNotImplemented;
 static PyObject* py3__Py_NoneStruct;
@@ -403,6 +405,7 @@ static struct
     {"_Py_FalseStruct", (PYTHON_PROC*)&py3__Py_FalseStruct},
     {"_Py_TrueStruct", (PYTHON_PROC*)&py3__Py_TrueStruct},
     {"PyErr_Clear", (PYTHON_PROC*)&py3_PyErr_Clear},
+    {"PyErr_PrintEx", (PYTHON_PROC*)&py3_PyErr_PrintEx},
     {"PyObject_Init", (PYTHON_PROC*)&py3__PyObject_Init},
     {"PyModule_AddObject", (PYTHON_PROC*)&py3_PyModule_AddObject},
     {"PyImport_AppendInittab", (PYTHON_PROC*)&py3_PyImport_AppendInittab},
@@ -729,13 +732,11 @@ Python3_Init(void)
 #else
 	PyMac_Initialize();
 #endif
-	/* Initialise threads, and save the state using PyGILState_Ensure.
-	 * Without the call to PyGILState_Ensure, thread specific state (such
-	 * as the system trace hook), will be lost between invocations of
-	 * Python code. */
+	/* Initialise threads, and below save the state using
+	 * PyEval_SaveThread.  Without the call to PyEval_SaveThread, thread
+	 * specific state (such as the system trace hook), will be lost
+	 * between invocations of Python code. */
 	PyEval_InitThreads();
-	pygilstate = PyGILState_Ensure();
-
 #ifdef DYNAMIC_PYTHON3
 	get_py3_exceptions();
 #endif
@@ -754,13 +755,14 @@ Python3_Init(void)
 	 */
 	PyRun_SimpleString("import vim; import sys; sys.path = list(filter(lambda x: not x.endswith('must>not&exist'), sys.path))");
 
-	// lock is created and acquired in PyEval_InitThreads() and thread
-	// state is created in Py_Initialize()
-	// there _PyGILState_NoteThreadState() also sets gilcounter to 1
-	// (python must have threads enabled!)
-	// so the following does both: unlock GIL and save thread state in TLS
-	// without deleting thread state
-	PyGILState_Release(pygilstate);
+	/* lock is created and acquired in PyEval_InitThreads() and thread
+	 * state is created in Py_Initialize()
+	 * there _PyGILState_NoteThreadState() also sets gilcounter to 1
+	 * (python must have threads enabled!)
+	 * so the following does both: unlock GIL and save thread state in TLS
+	 * without deleting thread state
+	 */
+	PyEval_SaveThread();
 
 	py3initialised = 1;
     }
@@ -843,7 +845,11 @@ DoPy3Command(exarg_T *eap, const char *cmd, typval_T *rettv)
 	r = PyRun_String(PyBytes_AsString(cmdbytes), Py_eval_input,
 			 globals, globals);
 	if (r == NULL)
+	{
+	    if (PyErr_Occurred() && !msg_silent)
+		PyErr_PrintEx(0);
 	    EMSG(_("E860: Eval did not return a valid python 3 object"));
+	}
 	else
 	{
 	    if (ConvertFromPyObject(r, rettv) == -1)

@@ -1,4 +1,4 @@
-*syntax.txt*	For Vim バージョン 7.3.  Last change: 2012 Jul 16
+*syntax.txt*	For Vim バージョン 7.3.  Last change: 2013 Jan 30
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -1063,6 +1063,10 @@ DocBookファイルには2つの種類: SGMLとXMLがある。どちらのタイ
 	:set filetype=docbksgml
 または: >
 	:set filetype=docbkxml
+
+DocBook のバージョンを指定できる: >
+	:let docbk_ver = 3
+設定しない場合は 4 が使われる。
 
 
 DOSバッチファイル			*dosbatch.vim* *ft-dosbatch-syntax*
@@ -2388,6 +2392,12 @@ readlineライブラリは主としてBASHシェルで使われ、BASHはかな�
 
 こうするとBASH(バージョン2.05a以降。一部それ以前)が追加するコマンドもハイライ
 トするようになる。
+
+
+RESTRUCTURED TEXT			*rst.vim* *ft-rst-syntax*
+
+コードブロックで有効にしたい構文定義を定義できる。
+	let rst_syntax_code_list = ['vim', 'lisp', ...]
 
 
 REXX						*rexx.vim* *ft-rexx-syntax*
@@ -4390,8 +4400,8 @@ LineNr		":number" と ":#" コマンドの行番号。'number' オプション�
 		'relativenumber' オプションが設定されているときにはその表示に
 		も使われる。
 							*hl-CursorLineNr*
-CursorLineNr	LineNr と同じだが 'cursorline' が設定されているときに現在行に
-		使われる。
+CursorLineNr	LineNr と同じだが 'cursorline' か 'relativenumber' が設定され
+		ているときに現在行に使われる。
 							*hl-MatchParen*
 MatchParen	カーソル下の文字、または直後の文字が括弧であるとき、その文字と
 		対応する括弧に使われる。|pi_paren.txt|

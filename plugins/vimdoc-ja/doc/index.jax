@@ -135,13 +135,13 @@ Vim変数の一覧は|vim-variable|を参照。
 |i_<F1>|	<F1>		<Help> と同じ。
 |i_<Help>|	<Help>		挿入モードを終了し、ヘルプウィンドウを表示する。
 |i_<Insert>|	<Insert>	挿入/置換モードをトグルする。
-|i_<LeftMouse>| <LeftMouse>	カーソルをマウスクリックした位置へ移動。
+|i_<LeftMouse>|	<LeftMouse>	カーソルをマウスクリックした位置へ移動。
 |i_<ScrollWheelDown>|	<ScrollWheelDown>	ウィンドウを3行下へ
 |i_<S-ScrollWheelDown>|	<S-ScrollWheelDown>	ウィンドウを1画面下ヘ
 |i_<ScrollWheelUp>|	<ScrollWheelUp>		ウィンドウを3行上へ
 |i_<S-ScrollWheelUp>|	<S-ScrollWheelUp>	ウィンドウを1画面上へ
 |i_<ScrollWheelLeft>|	<ScrollWheelLeft>	ウィンドウを6列左へ
-|i_<S-ScrollWheelLeft>| <S-ScrollWheelLeft>	ウィンドウを1画面左へ
+|i_<S-ScrollWheelLeft>|	<S-ScrollWheelLeft>	ウィンドウを1画面左へ
 |i_<ScrollWheelRight>|	<ScrollWheelRight>	ウィンドウを6列右へ
 |i_<S-ScrollWheelRight>| <S-ScrollWheelRight>	ウィンドウを1画面右へ
 
@@ -215,8 +215,8 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 |CTRL-Y|	CTRL-Y		   ウィンドウを N 行下へスクロール。
 |CTRL-Z|	CTRL-Z		   Vim の実行を中断。(新しいシェルを開始する)
 		CTRL-[ <Esc>	   未使用
-|CTRL-\_CTRL-N| CTRL-\ CTRL-N	   ノーマルモードへ移行。(つまり何もしない)
-|CTRL-\_CTRL-G| CTRL-\ CTRL-G	   'insertmode' に合わせたモードへ移行。
+|CTRL-\_CTRL-N|	CTRL-\ CTRL-N	   ノーマルモードへ移行。(つまり何もしない)
+|CTRL-\_CTRL-G|	CTRL-\ CTRL-G	   'insertmode' に合わせたモードへ移行。
 		CTRL-\ a - z	   将来の拡張のために予約。
 		CTRL-\ others	   未使用
 |CTRL-]|	CTRL-]		   カーソル位置の単語を :ta で検索する。
@@ -410,7 +410,7 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 |<C-Left>|	<C-Left>	1  "b" と同じ。
 |<C-Home>|	<C-Home>	2  "gg" と同じ。
 |<C-Left>|	<C-Left>	2  "b" と同じ。
-|<C-LeftMouse>| <C-LeftMouse>	   マウスクリック位置のキーワードで ":ta" を実
+|<C-LeftMouse>|	<C-LeftMouse>	   マウスクリック位置のキーワードで ":ta" を実
 				   行する。
 |<C-Right>|	<C-Right>	1  "w" と同じ。
 |<C-RightMouse>| <C-RightMouse>	   "CTRL-T" と同じ。
@@ -424,7 +424,7 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 |<Insert>|	<Insert>	2  "i" と同じ。
 |<Left>|	<Left>		1  "h" と同じ。
 |<LeftMouse>|	<LeftMouse>	1  カーソルをマウスクリック位置へ移動。
-|<MiddleMouse>| <MiddleMouse>	2  マウスクリック位置で実行した "gP" と同じ。
+|<MiddleMouse>|	<MiddleMouse>	2  マウスクリック位置で実行した "gP" と同じ。
 |<PageDown>|	<PageDown>	   CTRL-F と同じ。
 |<PageUp>|	<PageUp>	   CTRL-B と同じ。
 |<Right>|	<Right>		1  "l" と同じ。
@@ -432,7 +432,7 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 				   リック位置へ移動。
 |<S-Down>|	<S-Down>	1  CTRL-F と同じ。
 |<S-Left>|	<S-Left>	1  "b" と同じ。
-|<S-LeftMouse>| <S-LeftMouse>	   マウスクリック位置で実行した "*" と同じ。
+|<S-LeftMouse>|	<S-LeftMouse>	   マウスクリック位置で実行した "*" と同じ。
 |<S-Right>|	<S-Right>	1  "w" と同じ。
 |<S-RightMouse>| <S-RightMouse>	   マウスクリック位置で実行した "#" と同じ。
 |<S-Up>|	<S-Up>		1  CTRL-B と同じ。
@@ -657,7 +657,7 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 |[z|		[z		1  開いている折畳の最初の行へ移動
 |[{|		[{		1  後方へ N 番目に現れた対応する括弧のない '{'
 				   へカーソルを移動。
-|[<MiddleMouse> [<MiddleMouse>	2  "[p" と同じ。
+|[<MiddleMouse>| [<MiddleMouse>	2  "[p" と同じ。
 
 |]_CTRL-D|	] CTRL-D	   カーソル位置の単語にマッチする単語の最初の
 				   定義(#define)をカレントファイルとインクルー
@@ -704,7 +704,7 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 |]z|		]z		1  開いている折畳の最後の行へ移動
 |]}|		]}		1  カーソルを N 先のマッチしていない '}' へ移
 				   動。
-|]<MiddleMouse> ]<MiddleMouse>	2  "]p" と同じ。
+|]<MiddleMouse>| ]<MiddleMouse>	2  "]p" と同じ。
 
 ==============================================================================
 2.4 'g' で始まるコマンド						*g*
@@ -789,7 +789,7 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 |g<Home>|	g<Home>		1  "g0" と同じ。
 |g<LeftMouse>|	g<LeftMouse>	   <C-LeftMouse> と同じ。
 		g<MiddleMouse>	   <C-MiddleMouse> と同じ。
-|g<RightMouse>| g<RightMouse>	   <C-RightMouse> と同じ。
+|g<RightMouse>|	g<RightMouse>	   <C-RightMouse> と同じ。
 |g<Up>|		g<Up>		1  "gk" と同じ。
 
 ==============================================================================
@@ -1058,7 +1058,7 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 |c_<PageDown>|	<PageDown>	<S-Down> と同じ。
 |c_<PageUp>|	<PageUp>	<S-Up> と同じ。
 |c_<Insert>|	<Insert>	挿入モード/置換モードを変更
-|c_<LeftMouse>| <LeftMouse>	カーソルをマウスクリック位置へ移動
+|c_<LeftMouse>|	<LeftMouse>	カーソルをマウスクリック位置へ移動
 
 You found it, Arthur!				*holy-grail*
 
@@ -1605,7 +1605,7 @@ You found it, Arthur!				*holy-grail*
 |:undo|		:u[ndo]		最後の変更を取り消す
 |:undojoin|	:undoj[oin]	次の変更を前のアンドゥブロックと連結する
 |:undolist|	:undol[ist]	アンドゥツリーのリーフを列挙する
-|:unabbreviate| :una[bbreviate] 短縮入力を削除
+|:unabbreviate|	:una[bbreviate] 短縮入力を削除
 |:unhide|	:unh[ide]	バッファリストのメモリにロードされているすべて
 				のバッファをウィンドウを作成して開く
 |:unlet|	:unl[et]	変数を削除

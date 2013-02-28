@@ -67,7 +67,7 @@ retrieve-all-projects	srP	全てのプロジェクトの symbol を集めます�
 retrieve-next		sR	現在の Retriever の設定を使って symbol を集め
 				ます。
 goto-symbol		sg	symbol の定義もしくは実装に飛びます。
-hierarchy		sh	回想ブラウザーに symbol を読み込みます。
+hierarchy		sh	階層ブラウザーに symbol を読み込みます。
 restr-hier		sH	上と同じですが、関連する class のみを表示しま
 				す。
 xref-to			sxt	symbol に関する refers-to クエリーを開始し、結

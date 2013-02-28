@@ -1,4 +1,4 @@
-*if_ruby.txt*   For Vim バージョン 7.3.  Last change: 2010 Oct 27
+*if_ruby.txt*   For Vim バージョン 7.3.  Last change: 2012 Aug 02
 
 
 		 VIM リファレンスマニュアル    by Shugo Maeda
@@ -26,7 +26,8 @@ Rubyのホームページは http://www.ruby-lang.org/ である。ここでRuby
 1. コマンド						*ruby-commands*
 
 							*:ruby* *:rub*
-:rub[y] {cmd}		Rubyのコマンド{cmd}を実行する。
+:rub[y] {cmd}		Rubyのコマンド{cmd}を実行する。次のようにして使う: >
+				:ruby print "Hello"
 
 :rub[y] << {endpattern}
 {script}
@@ -40,9 +41,6 @@ Rubyのホームページは http://www.ruby-lang.org/ である。ここでRuby
 			Note: このコマンドはRuby機能をコンパイル時に指定しな
 			かった時には動作しない。エラーを避けるには
 			|script-here|を参照。
-
-次のようにして使う: >
-	:ruby print "Hello"   # this is a comment
 
 Vimスクリプトの例: >
 
@@ -207,6 +205,8 @@ DLLの名前はVimをコンパイルした時のRubyのバージョンに一致�
 
 自分で Ruby 1.9.1 対応の Vim をビルドするには、config.h ファイルを編集して
 _MSC_VER のチェックをコメントアウトする必要があるだろう。
+また、インクルードディレクトリの名前をバージョンと同じ名前に変更する必要もある
+かもしれない。不思議なことに Ruby 1.9.3 のディレクトリは 1.9.1 となっている。
 
 ==============================================================================
  vim:tw=78:ts=8:ft=help:norl:

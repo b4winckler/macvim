@@ -1,7 +1,7 @@
 " Vim support file to detect file types
 "
 " Maintainer:	Bram Moolenaar <Bram@vim.org>
-" Last Change:	2012 Nov 28
+" Last Change:	2013 Feb 20
 
 " Listen very carefully, I will say this only once
 if exists("did_load_filetypes")
@@ -489,6 +489,9 @@ au BufNewFile,BufRead *.prg
 	\   setf clipper |
 	\ endif
 
+" Clojure
+au BufNewFile,BufRead *.clj,*.cljs		setf clojure
+
 " Cmake
 au BufNewFile,BufRead CMakeLists.txt,*.cmake,*.cmake.in		setf cmake
 
@@ -744,6 +747,7 @@ au BufNewFile,BufRead *.ged,lltxxxxx.txt	setf gedcom
 
 " Git
 au BufNewFile,BufRead *.git/COMMIT_EDITMSG 	setf gitcommit
+au BufNewFile,BufRead *.git/MERGE_MSG 		setf gitcommit
 au BufNewFile,BufRead *.git/config,.gitconfig,.gitmodules setf gitconfig
 au BufNewFile,BufRead *.git/modules/**/COMMIT_EDITMSG setf gitcommit
 au BufNewFile,BufRead *.git/modules/**/config 	setf gitconfig
@@ -1074,6 +1078,9 @@ au BufNewFile,BufRead *[mM]akefile,*.mk,*.mak,*.dsp setf make
 
 " MakeIndex
 au BufNewFile,BufRead *.ist,*.mst		setf ist
+
+" Mallard
+au BufNewFile,BufRead *.page			setf mallard
 
 " Manpage
 au BufNewFile,BufRead *.man			setf man
@@ -1624,6 +1631,9 @@ func! s:FTr()
     setf r
   endif
 endfunc
+
+" ReDIF
+au BufRead,BufNewFile *.rdf			setf redif
 
 " Remind
 au BufNewFile,BufRead .reminders,*.remind,*.rem		setf remind

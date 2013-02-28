@@ -1,4 +1,4 @@
-*autocmd.txt*   For Vim バージョン 7.3.  Last change: 2012 Jul 10
+*autocmd.txt*   For Vim バージョン 7.3.  Last change: 2012 Sep 05
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -271,8 +271,10 @@ Vimは以下のイベントを認識する。イベント名が大文字か小�
 	起動と終了
 |VimEnter|		全ての起動処理が終わった後
 |GUIEnter|		GUIの起動が成功した後
+|GUIFailed|		GUIの起動が失敗した後
 |TermResponse|		|t_RV|に対する端末の反応を受け取った後
 
+|QuitPre|		`:quit` を使ったとき、本当に閉じるか決定する前
 |VimLeavePre|		Vimを終了する前、viminfoファイルを書き出す前
 |VimLeave|		Vimを終了する前、viminfoファイルを書き出した後
 
@@ -321,8 +323,9 @@ Vimは以下のイベントを認識する。イベント名が大文字か小�
 |SessionLoadPost|	セッションファイルを読み込んだ後
 
 |MenuPopup|		ポップアップメニューを表示する直前
+|CompleteDone|		挿入モード補完が完了したとき
 
-|User|			":duautocmd"との組合せで使われる
+|User|			":doautocmd"との組合せで使われる
 
 自動コマンドイベントのアルファベット順リスト:		*autocmd-events-abc*
 

@@ -1,4 +1,4 @@
-*usr_22.txt*	For Vim バージョン 7.3.  Last change: 2010 Feb 21
+*usr_22.txt*	For Vim バージョン 7.3.  Last change: 2012 Nov 15
 
 		     VIM USER MANUAL - by Bram Moolenaar
 
@@ -320,9 +320,9 @@ one.txt は変更されているので ":edit two.txt" は使えません。し�
 
 コマンドの出力例:
 
-  1 #h	"help.txt"			line 62 ~
-  2 %a+	"usr_21.txt"			line 1 ~
-  3	"usr_toc.txt"			line 1 ~
+  1 #h   "help.txt"			line 62 ~
+  2 %a + "usr_21.txt"			line 1 ~
+  3      "usr_toc.txt"			line 1 ~
 
 行頭の数字はバッファ番号です。バッファを開くときに名前の代わりにバッファ番号を
 指定することもできます。下記参照。

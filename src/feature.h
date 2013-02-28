@@ -392,6 +392,13 @@
 #endif
 
 /*
+ * +python and +python3 require FEAT_EVAL.
+ */
+#if !defined(FEAT_EVAL) && (defined(FEAT_PYTHON3) || defined(FEAT_PYTHON))
+# define FEAT_EVAL
+#endif
+
+/*
  * +profile		Profiling for functions and scripts.
  */
 #if defined(FEAT_HUGE) \
@@ -792,6 +799,15 @@
 #endif
 
 /*
+ * On some systems, when we compile with the GUI, we always use it.  On Mac
+ * there is no terminal version, and on Windows we can't figure out how to
+ * fork one off with :gui.
+ */
+#if defined(FEAT_GUI_MSWIN) || (defined(FEAT_GUI_MAC) && !defined(MACOS_X_UNIX))
+# define ALWAYS_USE_GUI
+#endif
+
+/*
  * +dialog_gui		Use GUI dialog.
  * +dialog_con		May use Console dialog.
  *			When none of these defined there is no dialog support.
@@ -820,6 +836,9 @@
 	 || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MSWIN) \
 	 || defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MAC))
 # define FEAT_GUI_TEXTDIALOG
+# ifndef ALWAYS_USE_GUI
+#  define FEAT_CON_DIALOG
+# endif
 #endif
 
 /* Mac specific thing: Codewarrior interface. */
@@ -1110,6 +1129,11 @@
  * +xterm_clipboard	Unix only: Include code for handling the clipboard
  *			in an xterm like in the GUI.
  */
+
+#ifdef FEAT_CYGWIN_WIN32_CLIPBOARD
+# define FEAT_CLIPBOARD
+#endif
+
 #ifdef FEAT_GUI
 # ifndef FEAT_CLIPBOARD
 #  define FEAT_CLIPBOARD

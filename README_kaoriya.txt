@@ -3,7 +3,7 @@
                                                          Version: 1.6.6
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 01-Dec-2012.
+                                                     Last Change: 30-Jan-2013.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -94,7 +94,7 @@ Vimの拡張機能について
   Python3との連携
     注意: Python3をインストールしなくてもVimは使用できます。
 
-    Python.orgにより公開されているPython 3.2をインストールすることで、Pythonイ
+    Python.orgにより公開されているPython 3.3をインストールすることで、Pythonイ
     ンターフェースを使用することができます。Pythonをインストールしていない場合
     は、Pythonインターフェースは自動的に無効となります。Pythonインターフェース
     の詳細については":help python3"としてVim付属のマニュアルを参照してくださ
@@ -123,7 +123,7 @@ Vimの拡張機能について
     注意: RubyをインストールしなくてもVimは使用できます。
 
     Ruby-mswin32の1.9.2をインストールすることで、Rubyインターフェースを利用で
-    きます。Rubyをインストールしていない場合は、Rubyインターフェーエスは自動的
+    きます。Rubyをインストールしていない場合は、Rubyインターフェースは自動的
     に無効となります。Rubyインターフェースの詳細については":help ruby"として
     Vim付属のマニュアルを参照してください。
 
@@ -172,7 +172,7 @@ Vimの拡張機能について
   Mercurial レポジトリ
     bitbucket.orgにて3つのレポジトリを公開しています。
 
-    - vim-kaoriya: ビルド要スクリプト他
+    - vim-kaoriya: ビルド用スクリプト他
       https://bitbucket.org/koron/vim-kaoriya
     - vim-kaoriya-vim: vim+kaoriyaパッチなclone
       https://bitbucket.org/koron/vim-kaoriya-vim
@@ -210,10 +210,11 @@ Vimの拡張機能について
       http://www.vim.org/
   - Vimの日本コミュニティvim-jp
       http://vim-jp.org/
+      https://github.com/vim-jp/issues/issues (バグ報告、機能要望)
   - vim_jp Google グループ
       http://groups.google.com/group/vim_jp/?hl=ja
   - Vimドキュメント翻訳(vimdoc-ja)
-      http://code.google.com/p/vimdoc-ja/?hl=ja
+      https://github.com/vim-jp/vimdoc-ja/
   - 香り屋版メンテナ
       http://www.kaoriya.net/software/vim
       MURAOKA Taro <koron.kaoriya@gmail.com>

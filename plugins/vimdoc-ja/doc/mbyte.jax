@@ -1,4 +1,4 @@
-*mbyte.txt*     For Vim バージョン 7.3.  Last change: 2012 Jun 06
+*mbyte.txt*     For Vim バージョン 7.3.  Last change: 2012 Oct 06
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar et al.
 
@@ -1050,6 +1050,12 @@ IMEやXIMがオンのときのカーソルの色				*CursorIM*
 {訳注: > シングルクォートを入力できるようにするには...
        'timeout' も参照。}
 "accents" キーマップはこれを使用する。				*keymap-accents*
+
+最初の列は |<>| 表記で書くこともできる:
+	<C-c>		Ctrl-C
+	<A-c>		Alt-c
+	<A-C>		Alt-C
+Note: Alt マッピングは機能しないことがある。それはキーボードや端末に依存する。
 
 二番目の項目に複数の文字を指定することもできるが、一般的ではない。しか
 し、文字を指定するのにいろいろな方法を使用して構わない: >
