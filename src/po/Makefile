@@ -35,6 +35,16 @@ LANGUAGES = \
 		zh_TW \
 		zh_TW.UTF-8
 
+CONVERTED = \
+		cs.cp1250 \
+		ja.sjis \
+		pl.cp1250 \
+		pl.UTF-8 \
+		ru.cp1251 \
+		sk.cp1250 \
+		uk.cp1251 \
+		zh_CN.cp936
+
 MOFILES = \
 		af.mo \
 		ca.mo \
@@ -66,7 +76,7 @@ MOFILES = \
 		zh_TW.UTF-8.mo \
 		zh_TW.mo
 
-CONVERTED = \
+MOCONVERTED = \
 		cs.cp1250.mo \
 		ja.sjis.mo \
 		ja_JP.UTF-8.mo \
@@ -130,7 +140,7 @@ MSGMERGE = OLD_PO_FILE_INPUT=yes OLD_PO_FILE_OUTPUT=yes msgmerge
 
 .SUFFIXES:
 .SUFFIXES: .po .mo .pot .ck
-.PHONY: all install uninstall prefixcheck converted check clean checkclean distclean update-po $(LANGUAGES)
+.PHONY: all install uninstall prefixcheck converted check clean checkclean distclean update-po $(LANGUAGES) $(CONVERTED)
 
 .po.mo:
 	$(MSGFMT) -o $@ $<
@@ -139,13 +149,13 @@ MSGMERGE = OLD_PO_FILE_INPUT=yes OLD_PO_FILE_OUTPUT=yes msgmerge
 	$(VIM) -u NONE -e -X -S check.vim -c "if error == 0 | q | endif" -c cq $<
 	touch $@
 
-all: $(MOFILES)
+all: $(MOFILES) $(MOCONVERTED)
 
 check: $(CHECKFILES)
 
-install: $(MOFILES)
+install: $(MOFILES) $(MOCONVERTED)
 	@$(MAKE) prefixcheck
-	for lang in $(LANGUAGES); do \
+	for lang in $(LANGUAGES) $(CONVERTED); do \
 	  dir=$(LOCALEDIR)/$$lang/; \
 	  if test ! -x "$$dir"; then \
 	    mkdir $$dir; chmod 755 $$dir; \
@@ -162,13 +172,17 @@ install: $(MOFILES)
 
 uninstall:
 	@$(MAKE) prefixcheck
-	for cat in $(MOFILES); do \
+	for cat in $(MOFILES) $(MOCONVERTED); do \
 	  cat=`basename $$cat`; \
 	  lang=`echo $$cat | sed 's/\$(CATOBJEXT)$$//'`; \
 	  rm -f $(LOCALEDIR)/$$lang/LC_MESSAGES/$(PACKAGE).mo; \
 	done
 
-converted: $(CONVERTED)
+converted: $(MOCONVERTED)
+
+# nl.po was added later, if it does not exist use an empty file.
+nl.po:
+	touch nl.po
 
 # Norwegian/Bokmal: "nb" is an alias for "no".
 # Copying the file is not efficient, but I don't know of another way to make

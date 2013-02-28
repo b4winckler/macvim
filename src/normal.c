@@ -7565,7 +7565,7 @@ nv_gomark(cap)
     pos_T	*pos;
     int		c;
 #ifdef FEAT_FOLDING
-    linenr_T	lnum = curwin->w_cursor.lnum;
+    pos_T	old_cursor = curwin->w_cursor;
     int		old_KeyTyped = KeyTyped;    /* getting file may reset it */
 #endif
 
@@ -7594,7 +7594,8 @@ nv_gomark(cap)
 #endif
 #ifdef FEAT_FOLDING
     if (cap->oap->op_type == OP_NOP
-	    && (pos == (pos_T *)-1 || lnum != curwin->w_cursor.lnum)
+	    && pos != NULL
+	    && (pos == (pos_T *)-1 || !equalpos(old_cursor, *pos))
 	    && (fdo_flags & FDO_MARK)
 	    && old_KeyTyped)
 	foldOpenCursor();
@@ -8691,7 +8692,9 @@ nv_lineop(cap)
     cap->oap->motion_type = MLINE;
     if (cursor_down(cap->count1 - 1L, cap->oap->op_type == OP_NOP) == FAIL)
 	clearopbeep(cap->oap);
-    else if (  cap->oap->op_type == OP_DELETE
+    else if (  (cap->oap->op_type == OP_DELETE /* only with linewise motions */
+		&& cap->oap->motion_force != 'v'
+		&& cap->oap->motion_force != Ctrl_V)
 	    || cap->oap->op_type == OP_LSHIFT
 	    || cap->oap->op_type == OP_RSHIFT)
 	beginline(BL_SOL | BL_FIX);
@@ -9473,14 +9476,15 @@ nv_put(cap)
 # ifdef FEAT_CLIPBOARD
 	    adjust_clip_reg(&regname);
 # endif
-	    if (regname == 0 || regname == '"' || VIM_ISDIGIT(regname)
+           if (regname == 0 || regname == '"'
+				     || VIM_ISDIGIT(regname) || regname == '-'
 # ifdef FEAT_CLIPBOARD
 		    || (clip_unnamed && (regname == '*' || regname == '+'))
 # endif
 
 		    )
 	    {
-		/* the delete is going to overwrite the register we want to
+		/* The delete is going to overwrite the register we want to
 		 * put, save it first. */
 		reg1 = get_register(regname, TRUE);
 	    }
