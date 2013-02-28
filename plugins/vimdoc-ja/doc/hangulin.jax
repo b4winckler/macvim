@@ -1,0 +1,108 @@
+*hangulin.txt*  For Vim バージョン 7.3.  Last change: 2009 Jun 24
+
+
+		  VIM REFERENCE MANUAL    by Chi-Deok Hwang and Sung-Hyun Nam
+
+NOTE: |+hangul_input| 機能は削除されることが予定されています。これの存続を望む
+方は Vim ユーザーメーリングリストにメッセージを送ってください。
+
+
+イントロダクション				*hangul*
+------------------
+これは GUI version の Vim でハングル(韓国語)を入力するための説明です。XIM プロ
+グラムを持っている場合は、|+xim| 機能を使うことができます。基本的にこのファイ
+ルは XIM プログラムを持っていない方向けの説明です。
+
+コンパイル
+----------
+次のオプションは最低限の指定であり、他の configure オプションを追加することも
+できます。 >
+
+   ./configure -with-x --enable-multibyte --enable-fontset --enable-hangulinput
+
+そして、|+hangul_input| 機能が configure によって有効になっているかどうか、
+feature.h をチェックすべきです。そして、他のオプションも選択することができます。
+たとえば、2 bulsik か 3 bulsik のどちらのキーボード・タイプを使うかなど。次の
+ようなキーワードがファイルにはあります。
+>
+	#define HANGUL_DEFAULT_KEYBOARD 2
+	#define ESC_CHG_TO_ENG_MODE
+	/* #define X_LOCALE */
+	/* #define SLOW_XSERVER */
+
+環境変数
+--------
+LANG 変数を、ko や ko_KR.euc のような韓国語ロケールに指定する必要があります。
+LC_ALL 変数をセットしている場合は、それも韓国語ロケールである必要があります。
+
+VIM リソース
+------------
+次の行を vimrc ($HOME/.vimrc) に加えてください。 >
+
+	:set fileencoding=korea
+
+キーボード
+----------
+VIM_KEYBOARD か HANGUL_KEYBOARD_TYPE 環境変数を使うことによって、キーボード・
+タイプ(2 bulsk か 3 bulsik)を変更することができます。sh の場合で、2 bulsik に
+するには、次を実行してください: >
+
+    export VIM_KEYBOARD="2"
+もしくは: >
+    export HANGUL_KEYBOARD_TYPE="2"
+
+両方がセットされている場合は、VIM_KEYBOARD が優先されます。
+
+ハングル・フォント
+------------------
+$HOME/.Xdefaults か ユーザの.gvimrc でテキストのフォントを設定することができま
+す。しかし、ハングルを使うには、vimrc で 'guifontset' を設定する必要があります。
+
+$HOME/.Xdefaults: >
+    Vim.font: english_font
+
+    ! 次の行は Athena version でのハングル・メニューに使われます
+    *international: True
+    Vim*fontSet: english_font,hangul_font
+
+    ! 次の行は Motif version でのハングル・メニューに使われます
+    *international: True
+    Vim*fontList: english_font;hangul_font:
+
+$HOME/.gvimrc: >
+    set guifontset=english_font,hangul_font
+
+注意! , (コンマ) か ; (セミコロン)です。
+
+そして ':set guifont' が設定されていてはいけません。もし設定されていると GVim
+は ':set guifontset' を無視します。つまり、Vim がフォント・セットのサポートな
+しで動作することになり、英語の文字だけが見えることになり、ハングルは正しくは表
+示されなくなります。
+
+'fontset' 機能が有効にされた後では、Vim では 'font' は使えなくなります。例えば、
+もし .gvimrc で次のようにしている場合は: >
+   :set guifontset=eng_font,your_font
+構文ハイライトの指定では次のようにする必要があります: >
+   :hi Comment guifg=Cyan font=another_eng_font,another_your_font
+単に次のようにした場合は: >
+   :hi Comment font=another_eng_font
+たくさんのエラー・メッセージが表示されることになります。注意してください!
+
+ハングル・フォントの幅は、英語フォントの幅の2倍である必要があります。
+
+サポートされていない機能
+------------------------
+Johab フォントはサポートされていませんし、予定もありません。どうしても johab
+フォントが使いたい場合は、gau パッケージの hanguldraw.c を使うことができます。
+
+Hanja 入力はまだサポートされていませんし、予定もありません。どうしても Hanja
+を入力したい場合は、hanterm で Vim を使ってください。
+
+バグ・コメント
+--------------
+コメント、パッチ、提案などはこちらに:
+
+				    Chi-Deok Hwang <hwang@mizi.co.kr>
+				    SungHyun Nam <goweol@gmail.com>
+
+ vim:tw=78:ts=8:ft=help:norl:

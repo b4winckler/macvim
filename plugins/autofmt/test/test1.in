@@ -1,0 +1,934 @@
+Test for compatible behavior.
+
+Results of test1:
+
+STARTTEST
+:set tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqo
+aaaaa
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+aaaaa
+ENDTEST
+
+1254595097
+{
+aaaaa
+}
+{
+aaaaa
+}
+
+STARTTEST
+:set tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqo
+aaaaa bbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+aaaaa bbbb
+ENDTEST
+
+1254595115
+{
+aaaaa bbbb
+}
+{
+aaaaa bbbb
+}
+
+STARTTEST
+:set tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqo
+aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+aaaaa bbbbb
+ENDTEST
+
+1254595131
+{
+aaaaa bbbbb
+}
+{
+aaaaa bbbbb
+}
+
+STARTTEST
+:set tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqo
+aaaaa    bbbbb     
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+aaaaa    bbbbb     
+ENDTEST
+
+1254595132
+{
+aaaaa    bbbbb     
+}
+{
+aaaaa    bbbbb     
+}
+
+STARTTEST
+:set tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqo
+aaaaa bbbbb ccccc
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+aaaaa bbbbb ccccc
+ENDTEST
+
+1254595140
+{
+aaaaa bbbbb ccccc
+}
+{
+aaaaa bbbbb ccccc
+}
+
+STARTTEST
+:set tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqo
+aaaaaaaaaabbbbbbbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+aaaaaaaaaabbbbbbbbbb
+ENDTEST
+
+1254595141
+{
+aaaaaaaaaabbbbbbbbbb
+}
+{
+aaaaaaaaaabbbbbbbbbb
+}
+
+STARTTEST
+:set tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqo
+  aaaaaaaaaabbbbbbbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+  aaaaaaaaaabbbbbbbbbb
+ENDTEST
+
+1254595143
+{
+  aaaaaaaaaabbbbbbbbbb
+}
+{
+  aaaaaaaaaabbbbbbbbbb
+}
+
+STARTTEST
+:set tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gq/^}/
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gq/^}/
+ENDTEST
+
+1254595144
+{
+aaaa
+bbbb
+cccccccccccc
+dddd
+}
+{
+aaaa
+bbbb
+cccccccccccc
+dddd
+}
+
+STARTTEST
+:set tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqo
+aaaaa bbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+aaaaa bbb
+ENDTEST
+
+1254595145
+{
+aaaaa bbb
+}
+{
+aaaaa bbb
+}
+
+STARTTEST
+:set autoindent tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqo
+aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+aaaaa bbbbb
+ENDTEST
+
+1254595146
+{
+  aaaaa bbbbb
+}
+{
+  aaaaa bbbbb
+}
+
+STARTTEST
+:set noautoindent tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqo
+  aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+  aaaaa bbbbb
+ENDTEST
+
+1254595147
+{
+  aaaaa bbbbb
+}
+{
+  aaaaa bbbbb
+}
+
+STARTTEST
+:set tw=10 fo=2
+/^{/+1
+:set formatexpr=
+gq/^}/
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gq/^}/
+ENDTEST
+
+1254595148
+{
+  aaaaa bbbbb
+ccccc ddddd
+}
+{
+  aaaaa bbbbb
+ccccc ddddd
+}
+
+STARTTEST
+:set tw=10 fo=
+/^{/+1
+:set formatexpr=
+gqgqo
+aaaa bbbb cccc dddd eeee ffff
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+aaaa bbbb cccc dddd eeee ffff
+ENDTEST
+
+1254595150
+{
+aaaa bbbb cccc dddd eeee ffff
+}
+{
+aaaa bbbb cccc dddd eeee ffff
+}
+
+STARTTEST
+:set tw=10 fo= comments=:#
+/^{/+1
+:set formatexpr=
+gqgqo
+# aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+# aaaaa bbbbb
+ENDTEST
+
+1254595151
+{
+# aaaaa bbbbb
+}
+{
+# aaaaa bbbbb
+}
+
+STARTTEST
+:set tw=10 fo=q comments=:#
+/^{/+1
+:set formatexpr=
+gqgqo
+# aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+# aaaaa bbbbb
+ENDTEST
+
+1254595155
+{
+# aaaaa bbbbb
+}
+{
+# aaaaa bbbbb
+}
+
+STARTTEST
+:set tw=10 fo=c comments=:#
+/^{/+1
+gqgqo
+# aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+# aaaaa bbbbb
+ENDTEST
+
+1254595156
+{
+# aaaaa bbbbb
+}
+{
+# aaaaa bbbbb
+}
+
+STARTTEST
+:set tw=10 fo=cq comments=s1:/*,mb:*,ex:*/
+/^{/+1
+:set formatexpr=
+gqgqo
+/* aaaaa bbbbb ccccc
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+/* aaaaa bbbbb ccccc
+ENDTEST
+
+1254595157
+{
+/* aaaaa bbbbb ccccc
+}
+{
+/* aaaaa bbbbb ccccc
+}
+
+STARTTEST
+:set tw=10 fo=cq comments=s1:/*,mb:*,ex:*/
+/^{/+1
+:set formatexpr=
+gq/^}/
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gq/^}/
+ENDTEST
+
+1254595158
+{
+/* aaa
+ * bbb
+ * ccc
+ * ddd
+ */
+}
+{
+/* aaa
+ * bbb
+ * ccc
+ * ddd
+ */
+}
+
+STARTTEST
+:set tw=10 fo=cq comments=s1:/*,mb:*,ex:*/
+/^{/+1
+:set formatexpr=
+gq/^}/
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gq/^}/
+ENDTEST
+
+1254595159
+{
+
+
+aaa
+aaa
+
+/*
+ * bbb
+ * bbb
+ *
+ * ccc
+ */
+
+}
+{
+
+
+aaa
+aaa
+
+/*
+ * bbb
+ * bbb
+ *
+ * ccc
+ */
+
+}
+
+STARTTEST
+:set tw=10 fo=cq comments=s1:/*,mb:*,ex:*/
+/^{/+1
+:set formatexpr=
+gq/^}/
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gq/^}/
+ENDTEST
+
+1254595160
+{
+/*    aaaaa bbbbb
+}
+{
+/*    aaaaa bbbbb
+}
+
+STARTTEST
+:set autoindent tw=10 fo=cq comments=s1:/*,mb:*,ex:*/
+/^{/+1
+:set formatexpr=
+gqgqoi
+	/*    aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqoi
+	/*    aaaaa bbbbb
+ENDTEST
+
+1254595162
+{
+	/*    aaaaa bbbbb
+}
+{
+	/*    aaaaa bbbbb
+}
+
+STARTTEST
+:set noautoindent tw=10 fo=cq comments=s1:/*,mb:*,ex:*/
+/^{/+1
+:set formatexpr=
+gqgqoi
+	/*    aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqoi
+	/*    aaaaa bbbbb
+ENDTEST
+
+1254595163
+{
+	/*    aaaaa bbbbb
+}
+{
+	/*    aaaaa bbbbb
+}
+
+STARTTEST
+:set tw=10 fo=cq comments=s1:/*,mb:*,ex:*/
+/^{/+1
+:set formatexpr=
+gqgqjgqgqjgqgqoi
+/*	aaaaa bbbbb
+i/*  	aaaaa bbbbb
+i/*	  aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqjgqgqoi
+/*	aaaaa bbbbb
+i/*  	aaaaa bbbbb
+i/*	  aaaaa bbbbb
+ENDTEST
+
+1254595164
+{
+/*	aaaaa bbbbb
+/*  	aaaaa bbbbb
+/*	  aaaaa bbbbb
+}
+{
+/*	aaaaa bbbbb
+/*  	aaaaa bbbbb
+/*	  aaaaa bbbbb
+}
+
+STARTTEST
+:set tw=10 fo=cq comments=s1:/*,mb:*,ex:*/
+/^{/+1
+:set formatexpr=
+gqgqoi
+/** aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqoi
+/** aaaaa bbbbb
+ENDTEST
+
+1254596280
+{
+/** aaaaa bbbbb
+}
+{
+/** aaaaa bbbbb
+}
+
+STARTTEST
+:set tw=10 fo=tn formatlistpat=^\\s*\\d\\+[\\].)}\\t\ ]\\s*
+/^{/+1
+:set formatexpr=
+gqgqo
+1. aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+1. aaaaa bbbbb
+ENDTEST
+
+1254595165
+{
+1. aaaaa bbbbb
+}
+{
+1. aaaaa bbbbb
+}
+
+STARTTEST
+:set autoindent tw=10 fo=tn formatlistpat=^\\s*\\d\\+[\\].)}\\t\ ]\\s*
+/^{/+1
+:set formatexpr=
+gqgqoi
+  1. aaa bbb ccc
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqoi
+  1. aaa bbb ccc
+ENDTEST
+
+1254595166
+{
+  1. aaa bbb ccc
+}
+{
+  1. aaa bbb ccc
+}
+
+STARTTEST
+:set noautoindent tw=10 fo=tn formatlistpat=^\\s*\\d\\+[\\].)}\\t\ ]\\s*
+/^{/+1
+:set formatexpr=
+gqgqoi
+  1. aaa bbb ccc
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqoi
+  1. aaa bbb ccc
+ENDTEST
+
+1254595168
+{
+  1. aaa bbb ccc
+}
+{
+  1. aaa bbb ccc
+}
+
+STARTTEST
+:setl tw=10 fo=tm
+/^{/+1
+:set formatexpr=
+gqgqo
+ＡＢＣ
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+ＡＢＣ
+ENDTEST
+
+1254595169
+{
+ＡＢＣ
+}
+{
+ＡＢＣ
+}
+
+STARTTEST
+:setl tw=10 fo=tm
+/^{/+1
+:set formatexpr=
+gqgqo
+ＡＢＣＤＥ
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+ＡＢＣＤＥ
+ENDTEST
+
+1254595170
+{
+ＡＢＣＤＥ
+}
+{
+ＡＢＣＤＥ
+}
+
+STARTTEST
+:setl tw=10 fo=tm
+/^{/+1
+:set formatexpr=
+gqgqo
+ＡＢＣＤＥＦ
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+ＡＢＣＤＥＦ
+ENDTEST
+
+1254595171
+{
+ＡＢＣＤＥＦ
+}
+{
+ＡＢＣＤＥＦ
+}
+
+STARTTEST
+:setl tw=10 fo=tm
+/^{/+1
+:set formatexpr=
+gqgqo
+aaaaa bbbbＡ
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+aaaaa bbbbＡ
+ENDTEST
+
+1254595172
+{
+aaaaa bbbbＡ
+}
+{
+aaaaa bbbbＡ
+}
+
+STARTTEST
+:setl tw=10 fo=tm
+/^{/+1
+:set formatexpr=
+gqqgjgqgqo
+ＡＢＣＤＥa
+ＡＢＣＤabc
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqo
+ＡＢＣＤＥa
+ＡＢＣＤabc
+ENDTEST
+
+1254595173
+{
+ＡＢＣＤＥa
+ＡＢＣＤabc
+}
+{
+ＡＢＣＤＥa
+ＡＢＣＤabc
+}
+
+STARTTEST
+:set tw=10 fo=tm
+/^{/+1
+:set formatexpr=
+4liＸＸＸ
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+4liＸＸＸ
+ENDTEST
+
+1254595175
+{
+ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯ
+}
+{
+ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯ
+}
+
+STARTTEST
+:set autoindent noexpandtab tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqoi
+        aaa bbb ccc
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqoi
+        aaa bbb ccc
+ENDTEST
+
+1254595176
+{
+        aaa bbb ccc
+}
+{
+        aaa bbb ccc
+}
+
+STARTTEST
+:set autoindent expandtab tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqoi
+	aaa bbb ccc
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqoi
+	aaa bbb ccc
+ENDTEST
+
+1254595177
+{
+	aaa bbb ccc
+}
+{
+	aaa bbb ccc
+}
+
+STARTTEST
+:"MEMO: copyindent does not effect for gq operator.
+:set autoindent noexpandtab copyindent tw=10 fo=t
+/^{/+1
+:set formatexpr=
+gqgqjgqgqjgqgqoi
+	    aaa bbb
+i    	aaa bbb
+i    	    aaa bbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqjgqgqjgqgqoi
+	    aaa bbb
+i    	aaa bbb
+i    	    aaa bbb
+ENDTEST
+
+1254595178
+{
+	    aaa bbb
+    	aaa bbb
+    	    aaa bbb
+}
+{
+	    aaa bbb
+    	aaa bbb
+    	    aaa bbb
+}
+
+STARTTEST
+:set autoindent noexpandtab copyindent tw=10 fo=c comments=fb:-
+/^{/+1
+:set formatexpr=
+i    	        -       aaa bbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+i    	        -       aaa bbb
+ENDTEST
+
+1254595179
+{
+
+}
+{
+
+}
+
+STARTTEST
+:set autoindent tw=10 fo=c comments=fb3:-
+/^{/+1
+:set formatexpr=
+i- aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+i- aaaaa bbbbb
+ENDTEST
+
+1257457620
+{
+
+}
+{
+
+}
+
+STARTTEST
+:set autoindent tw=10 fo=c comments=fb-1:-
+/^{/+1
+:set formatexpr=
+i- aaaaa bbbbb
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+i- aaaaa bbbbb
+ENDTEST
+
+1257468164
+{
+
+}
+{
+
+}
+
+STARTTEST
+:set tw=10 fo=cqr comments=sr:/***,m:**,ex2:******/
+/^{/+1
+:set formatexpr=
+3gqgq
+/^{/+1
+4gqgq
+/^{/+1
+i/*** aaa bbb
+/
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+3gqgq
+/^{/+1
+4gqgq
+/^{/+1
+i/*** aaa bbb
+/
+ENDTEST
+
+1257500340
+{
+/*** aaa
+  ** bbb
+  ******/
+}
+{
+/***
+  ** aaa
+  ** bbb
+  ******/
+}
+{
+
+}
+{
+/*** aaa
+  ** bbb
+  ******/
+}
+{
+/***
+  ** aaa
+  ** bbb
+  ******/
+}
+{
+
+}
+
+STARTTEST
+:set tw=10 fo=q comments=:#
+/^{/+1
+:set formatexpr=
+2gqgq
+/^{/+1
+2gqgq
+/^{/+1
+2gqgq
+/^{/+1
+2gqgq
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+2gqgq
+/^{/+1
+2gqgq
+/^{/+1
+2gqgq
+/^{/+1
+2gqgq
+ENDTEST
+
+1257516766
+{
+# aaa
+#bbb
+}
+{
+#aaa
+# bbb
+}
+{
+# aaa
+## bbb
+}
+{
+## aaa
+# bbb
+}
+{
+# aaa
+#bbb
+}
+{
+#aaa
+# bbb
+}
+{
+# aaa
+## bbb
+}
+{
+## aaa
+# bbb
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST

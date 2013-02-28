@@ -1884,36 +1884,17 @@ vim_strchr(string, c)
 
     p = string;
 #ifdef FEAT_MBYTE
-    if (enc_utf8 && c >= 0x80)
-    {
-	while (*p != NUL)
-	{
-	    if (utf_ptr2char(p) == c)
-		return p;
-	    p += (*mb_ptr2len)(p);
-	}
-	return NULL;
-    }
-    if (enc_dbcs != 0 && c > 255)
-    {
-	int	n2 = c & 0xff;
-
-	c = ((unsigned)c >> 8) & 0xff;
-	while ((b = *p) != NUL)
-	{
-	    if (b == c && p[1] == n2)
-		return p;
-	    p += (*mb_ptr2len)(p);
-	}
-	return NULL;
-    }
     if (has_mbyte)
     {
-	while ((b = *p) != NUL)
+	char_u	bytes[MB_MAXBYTES];
+	int	len = (*mb_char2bytes)(c, bytes);
+
+	while (*p != NUL)
 	{
-	    if (b == c)
+	    if (p[0] == bytes[0]
+		    && (len <= 1 || vim_memcmp(p, bytes, len) == 0))
 		return p;
-	    p += (*mb_ptr2len)(p);
+	    mb_ptr_adv(p);
 	}
 	return NULL;
     }

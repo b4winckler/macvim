@@ -236,7 +236,8 @@
 #define GO_TOOLBAR	'T'		/* add toolbar */
 #define GO_FOOTER	'F'		/* add footer */
 #define GO_VERTICAL	'v'		/* arrange dialog buttons vertically */
-#define GO_ALL		"aAbcefFghilmMprtTv" /* all possible flags for 'go' */
+#define GO_NOCAPTION	'C'		/* remove caption bar */
+#define GO_ALL		"aAbcCefFghilmMprtTv" /* all possible flags for 'go' */
 
 /* flags for 'comments' option */
 #define COM_NEST	'n'		/* comments strings nest */
@@ -375,6 +376,9 @@ EXTERN int	p_deco;		/* 'delcombine' */
 # ifdef FEAT_EVAL
 EXTERN char_u	*p_ccv;		/* 'charconvert' */
 # endif
+#endif
+#ifdef FEAT_GUI
+EXTERN long	p_charspace;	/* 'charspace' */
 #endif
 #ifdef FEAT_CMDWIN
 EXTERN char_u	*p_cedit;	/* 'cedit' */
@@ -618,6 +622,10 @@ EXTERN long	p_mmt;		/* 'maxmemtot' */
 #ifdef FEAT_MENU
 EXTERN long	p_mis;		/* 'menuitems' */
 #endif
+#ifdef USE_MIGEMO
+EXTERN int	p_migemo;	/* 'migemo' */
+EXTERN char_u	*p_migdict;	/* 'migemodict' */
+#endif
 #ifdef FEAT_SPELL
 EXTERN char_u	*p_msm;		/* 'mkspellmem' */
 #endif
@@ -790,6 +798,9 @@ EXTERN char_u	*p_titlestring;	/* 'titlestring' */
 #endif
 #ifdef FEAT_INS_EXPAND
 EXTERN char_u	*p_tsr;		/* 'thesaurus' */
+#endif
+#ifdef USE_TRANSPARENCY
+EXTERN long	p_transparency;	/* 'transparency'*/
 #endif
 EXTERN int	p_ttimeout;	/* 'ttimeout' */
 EXTERN long	p_ttm;		/* 'ttimeoutlen' */
@@ -988,6 +999,9 @@ enum
     , BV_LISP
 #endif
     , BV_MA
+#ifdef USE_MIGEMO
+    , BV_MIG
+#endif
     , BV_ML
     , BV_MOD
     , BV_MPS

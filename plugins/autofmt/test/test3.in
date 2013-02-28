@@ -1,0 +1,162 @@
+Test for Japanese.
+
+Note: In the :source! script, you can not write some multi-byte
+character which have 0x80 byte (e.g. U+3000 UTF8:E3 80 80).  Use
+<C-V>u3000.  0x80 is a CSI byte and it is used to represent a special
+key-code (e.g. <Left>).  To see how key-code and multi-byte character
+are stored in the memory, use -w argument.
+
+Results of test3:
+
+STARTTEST
+:set tw=10 fo=tm
+/^{/+1
+:set formatexpr=
+gqgqo
+あいうえおu3002かきくけこ
+/^{/+1
+:set formatexpr=autofmt#japanese#formatexpr()
+gqgqo
+あいうえおu3002かきくけこ
+ENDTEST
+
+1254595249
+{
+あいうえお。かきくけこ
+}
+{
+あいうえお。かきくけこ
+}
+
+STARTTEST
+:set tw=10 fo=tm
+/^{/+1
+:set formatexpr=
+gqgqo
+あいうえu3002u3002かきく
+/^{/+1
+:set formatexpr=autofmt#japanese#formatexpr()
+gqgqo
+あいうえu3002u3002かきく
+ENDTEST
+
+1254595243
+{
+あいうえ。。かきく
+}
+{
+あいうえ。。かきく
+}
+
+STARTTEST
+:set tw=2 fo=tm
+/^{/+1
+:set formatexpr=
+gqgqo
+  あu3002
+/^{/+1
+:set formatexpr=autofmt#japanese#formatexpr()
+gqgqo
+  あu3002
+ENDTEST
+
+1254595244
+{
+  あ。
+}
+{
+  あ。
+}
+
+STARTTEST
+:set tw=10 fo=tm
+/^{/+1
+:set formatexpr=
+gqgqo
+あいうえu300cお
+/^{/+1
+:set formatexpr=autofmt#japanese#formatexpr()
+gqgqo
+あいうえu300cお
+ENDTEST
+
+1254595245
+{
+あいうえ「お
+}
+{
+あいうえ「お
+}
+
+STARTTEST
+:set tw=10 fo=tm
+/^{/+1
+:set formatexpr=
+gqgqo
+あああああu3002いいい
+/^{/+1
+:set formatexpr=autofmt#japanese#formatexpr()
+:let b:autofmt_allow_over_tw = 2
+gqgqo
+あああああu3002いいい
+:unlet b:autofmt_allow_over_tw
+ENDTEST
+
+1254595246
+{
+あああああ。いいい
+}
+{
+あああああ。いいい
+}
+
+STARTTEST
+:set tw=10 fo=tm
+/^{/+1
+:set formatexpr=
+gqgqo
+あああああu3002いいい
+/^{/+1
+:set formatexpr=autofmt#japanese#formatexpr()
+:let b:autofmt_allow_over_tw = 1
+gqgqo
+あああああu3002いいい
+:unlet b:autofmt_allow_over_tw
+ENDTEST
+
+1254595248
+{
+あああああ。いいい
+}
+{
+あああああ。いいい
+}
+
+STARTTEST
+:set tw=10 fo=tm
+/^{/+1
+:set formatexpr=
+gqgqjgqgqo
+あいうえu3002abcd
+あいうえu3002u300d
+/^{/+1
+:set formatexpr=autofmt#japanese#formatexpr()
+gqgqjgqgqo
+あいうえu3002abcd
+あいうえu3002u300d
+ENDTEST
+
+1295124892
+{
+あいうえ。abcd
+あいうえ。」
+}
+{
+あいうえ。abcd
+あいうえ。」
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST

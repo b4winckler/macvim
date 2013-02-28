@@ -1,0 +1,77 @@
+Results of test8:
+
+
+case1
+{
+  aaaaa
+  bbbbb
+
+  aaaaa bbbbb
+}
+{
+  aaaaa
+  bbbbb
+
+  aaaaa bbbbb
+}
+
+
+case2
+{
+  aaaaa
+bbbbb
+
+  aaaaa bbbbb
+}
+{
+  aaaaa
+bbbbb
+
+  aaaaa bbbbb
+}
+
+
+case3
+{
+(aaaaa
+bbbbb)
+
+(aaaaa bbbbb)
+}
+{
+(aaaaa
+bbbbb)
+
+(aaaaa bbbbb)
+}
+
+
+case4
+{
+  if aa
+bbb
+
+  if aa bbb
+}
+{
+  if aa
+bbb
+
+  if aa bbb
+}
+
+
+case5
+{
+aa bb cc
+dd ee ff
+
+aa bb cc dd ee ff
+}
+{
+aa bb cc
+dd ee ff
+
+aa bb cc dd ee ff
+}
+
