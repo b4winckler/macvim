@@ -6543,7 +6543,7 @@ ex_quit(eap)
     }
 #ifdef FEAT_AUTOCMD
     apply_autocmds(EVENT_QUITPRE, NULL, NULL, FALSE, curbuf);
-    /* Refuse to quick when locked or when the buffer in the last window is
+    /* Refuse to quit when locked or when the buffer in the last window is
      * being closed (can only happen in autocommands). */
     if (curbuf_locked() || (curbuf->b_nwindows == 1 && curbuf->b_closing))
 	return;
@@ -6617,7 +6617,10 @@ ex_quit_all(eap)
 	return;
     }
 #ifdef FEAT_AUTOCMD
-    if (curbuf_locked())
+    apply_autocmds(EVENT_QUITPRE, NULL, NULL, FALSE, curbuf);
+    /* Refuse to quit when locked or when the buffer in the last window is
+     * being closed (can only happen in autocommands). */
+    if (curbuf_locked() || (curbuf->b_nwindows == 1 && curbuf->b_closing))
 	return;
 #endif
 
@@ -6953,7 +6956,10 @@ ex_exit(eap)
 	return;
     }
 #ifdef FEAT_AUTOCMD
-    if (curbuf_locked())
+    apply_autocmds(EVENT_QUITPRE, NULL, NULL, FALSE, curbuf);
+    /* Refuse to quit when locked or when the buffer in the last window is
+     * being closed (can only happen in autocommands). */
+    if (curbuf_locked() || (curbuf->b_nwindows == 1 && curbuf->b_closing))
 	return;
 #endif
 
