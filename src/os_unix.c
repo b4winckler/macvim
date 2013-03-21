@@ -4809,7 +4809,7 @@ mch_call_shell(cmd, options)
 		    else
 			wait_pid = 0;
 
-# if defined(FEAT_CLIPBOARD) && defined(FEAT_X11)
+# if defined(FEAT_XCLIPBOARD) && defined(FEAT_X11)
 		    /* Handle any X events, e.g. serving the clipboard. */
 		    clip_update();
 # endif
@@ -4839,7 +4839,7 @@ finished:
 		    close(toshell_fd);
 		close(fromshell_fd);
 	    }
-# if defined(FEAT_CLIPBOARD) && defined(FEAT_X11)
+# if defined(FEAT_XCLIPBOARD) && defined(FEAT_X11)
 	    else
 	    {
 		/*
