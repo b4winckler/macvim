@@ -5067,7 +5067,6 @@ vim_fnamencmp(x, y, len)
     int		cx = NUL;
     int		cy = NUL;
 
-    /* TODO: multi-byte characters. */
     while (len > 0)
     {
 	cx = PTR2CHAR(px);
