@@ -2075,6 +2075,7 @@ close_windows(buf, keep_curwin)
 
     --RedrawingDisabled;
 
+    redraw_tabline = TRUE;
     if (h != tabline_height())
 	shell_new_rows();
 }
