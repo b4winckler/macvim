@@ -6191,6 +6191,7 @@ finish_viminfo_history()
 	}
 	vim_free(viminfo_history[type]);
 	viminfo_history[type] = NULL;
+	viminfo_hisidx[type] = 0;
     }
 }
 
@@ -6244,6 +6245,7 @@ write_viminfo_history(fp)
 			&& !(round == 2 && i >= viminfo_hisidx[type]))
 		{
 		    p = round == 1 ? history[type][i].hisstr
+				   : viminfo_history[type] == NULL ? NULL
 						   : viminfo_history[type][i];
 		    if (p != NULL && (round == 2 || !history[type][i].viminfo))
 		    {
@@ -6275,7 +6277,8 @@ write_viminfo_history(fp)
 		}
 	}
 	for (i = 0; i < viminfo_hisidx[type]; ++i)
-	    vim_free(viminfo_history[type][i]);
+	    if (viminfo_history[type] != NULL)
+		vim_free(viminfo_history[type][i]);
 	vim_free(viminfo_history[type]);
 	viminfo_history[type] = NULL;
 	viminfo_hisidx[type] = 0;
