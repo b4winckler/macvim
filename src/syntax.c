@@ -8083,6 +8083,7 @@ hl_do_font(idx, arg, do_normal, do_menu, do_tooltip, free_font)
 	|| do_tooltip
 #  endif
 	    )
+    {
 	if (free_font)
 	    gui_mch_free_fontset(HL_TABLE()[idx].sg_fontset);
 	HL_TABLE()[idx].sg_fontset = fontset_name2handle(arg, 0
@@ -8093,6 +8094,7 @@ hl_do_font(idx, arg, do_normal, do_menu, do_tooltip, free_font)
 		|| do_tooltip
 #  endif
 		);
+    }
     if (HL_TABLE()[idx].sg_fontset != NOFONTSET)
     {
 	/* If it worked and it's the Normal group, use it as the normal

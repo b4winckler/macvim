@@ -1117,6 +1117,15 @@ static struct vimoption
 			    (char_u *)&p_ffs, PV_NONE,
 			    {(char_u *)DFLT_FFS_VI, (char_u *)DFLT_FFS_VIM}
 			    SCRIPTID_INIT},
+    {"fileignorecase", "fic", P_BOOL|P_VI_DEF,
+			    (char_u *)&p_fic, PV_NONE,
+			    {
+#ifdef CASE_INSENSITIVE_FILENAME
+				    (char_u *)TRUE,
+#else
+				    (char_u *)FALSE,
+#endif
+					(char_u *)0L} SCRIPTID_INIT},
     {"filetype",    "ft",   P_STRING|P_ALLOCED|P_VI_DEF|P_NOGLOB|P_NFNAME,
 #ifdef FEAT_AUTOCMD
 			    (char_u *)&p_ft, PV_FT,
@@ -2947,6 +2956,7 @@ static struct vimoption
     p_term("t_op", T_OP)
     p_term("t_RI", T_CRI)
     p_term("t_RV", T_CRV)
+    p_term("t_u7", T_U7)
     p_term("t_Sb", T_CSB)
     p_term("t_Sf", T_CSF)
     p_term("t_se", T_SE)
@@ -7196,7 +7206,7 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf,
     return errmsg;
 }
 
-#ifdef FEAT_SYN_HL
+#if defined(FEAT_SYN_HL) || defined(PROTO)
 /*
  * Simple int comparison function for use with qsort()
  */
@@ -7717,17 +7727,33 @@ set_bool_option(opt_idx, varp, value, opt_flags)
     }
 #endif
 
-    /* 'list', 'number' */
-    else if ((int *)varp == &curwin->w_p_list
-	  || (int *)varp == &curwin->w_p_nu
-	  || (int *)varp == &curwin->w_p_rnu)
+    /* If 'number' is set, reset 'relativenumber'. */
+    /* If 'relativenumber' is set, reset 'number'. */
+    else if ((int *)varp == &curwin->w_p_nu && curwin->w_p_nu)
     {
-	/* If 'number' is set, reset 'relativenumber'. */
-	/* If 'relativenumber' is set, reset 'number'. */
-	if ((int *)varp == &curwin->w_p_nu && curwin->w_p_nu)
-	    curwin->w_p_rnu = FALSE;
-	if ((int *)varp == &curwin->w_p_rnu && curwin->w_p_rnu)
-	    curwin->w_p_nu = FALSE;
+	curwin->w_p_rnu = FALSE;
+
+	/* Only reset the global value if the own value is set globally. */
+	if (((opt_flags & (OPT_LOCAL | OPT_GLOBAL)) == 0))
+	    curwin->w_allbuf_opt.wo_rnu = FALSE;
+    }
+    else if ((int *)varp == &curwin->w_p_rnu && curwin->w_p_rnu)
+    {
+	curwin->w_p_nu = FALSE;
+
+	/* Only reset the global value if the own value is set globally. */
+	if (((opt_flags & (OPT_LOCAL | OPT_GLOBAL)) == 0))
+	    curwin->w_allbuf_opt.wo_nu = FALSE;
+    }
+    else if ((int *)varp == &curwin->w_allbuf_opt.wo_nu
+						&& curwin->w_allbuf_opt.wo_nu)
+    {
+        curwin->w_allbuf_opt.wo_rnu = FALSE;
+    }
+    else if ((int *)varp == &curwin->w_allbuf_opt.wo_rnu
+					       && curwin->w_allbuf_opt.wo_rnu)
+    {
+        curwin->w_allbuf_opt.wo_nu = FALSE;
     }
 
     else if ((int *)varp == &curbuf->b_p_ro)

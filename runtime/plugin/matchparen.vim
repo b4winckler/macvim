@@ -1,6 +1,6 @@
 " Vim plugin for showing matching parens
 " Maintainer:  Bram Moolenaar <Bram@vim.org>
-" Last Change: 2011 Aug 27
+" Last Change: 2013 Mar 19
 
 " Exit quickly when:
 " - this plugin was already loaded (or disabled)
@@ -14,6 +14,9 @@ let g:loaded_matchparen = 1
 augroup matchparen
   " Replace all matchparen autocommands
   autocmd! CursorMoved,CursorMovedI,WinEnter * call s:Highlight_Matching_Pair()
+  if exists('##TextChanged')
+    autocmd! TextChanged,TextChangedI * call s:Highlight_Matching_Pair()
+  endif
 augroup END
 
 " Skip the rest if it was already done.

@@ -38,7 +38,7 @@ Vim(put):E684:
 Vim(py3):E725:
 Vim(py3):E117:
 [0.0, 0.0]
-IndexError
+KeyError
 TypeError
 TypeError
 ValueError
@@ -61,5 +61,11 @@ ll:[1]
 0.0
 "\0":	Vim(let):E861:
 {"\0": 1}:	Vim(let):E861:
-undefined_name:	Vim(let):E860:
+undefined_name:	Vim(let):Trace
 vim:	Vim(let):E861:
+[1]
+[1, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 1]
+Abc
+bac
+def
+bar

@@ -4785,15 +4785,24 @@ $as_echo "no" >&6; }
       if test -f "${vi_cv_path_lua_pfx}/bin/cyglua-${vi_cv_version_lua}.dll"; then
 	vi_cv_dll_name_lua="cyglua-${vi_cv_version_lua}.dll"
       else
-			for LUA_SOVER in "${vi_cv_version_lua}.so" ".so.${vi_cv_version_lua}"; do
-	  for i in 0 1 2 3 4 5 6 7 8 9; do
-	    if test -f "${vi_cv_path_lua_pfx}/lib/liblua${LUA_SOVER}.$i"; then
-	      LUA_SONAME=".$i"
-	      break
-	    fi
+	multiarch=`dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null`
+	if test "X$multiarch" != "X"; then
+	  lib_multiarch="lib/${multiarch}"
+	fi
+			for subdir in "${lib_multiarch}" lib64 lib; do
+	  if test -z "$subdir"; then
+	    continue
+	  fi
+	  for sover in "${vi_cv_version_lua}.so" "-${vi_cv_version_lua}.so" ".so.${vi_cv_version_lua}"; do
+	    for i in .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 ""; do
+	      if test -f "${vi_cv_path_lua_pfx}/${subdir}/liblua${sover}$i"; then
+		sover2="$i"
+		break 3
+	      fi
+	    done
 	  done
-	  vi_cv_dll_name_lua="liblua${LUA_SOVER}$LUA_SONAME"
 	done
+	vi_cv_dll_name_lua="liblua${sover}$sover2"
       fi
       $as_echo "#define DYNAMIC_LUA 1" >>confdefs.h
 
@@ -7714,7 +7723,11 @@ fi
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking if X11 header files implicitly declare return values" >&5
 $as_echo_n "checking if X11 header files implicitly declare return values... " >&6; }
     cflags_save=$CFLAGS
-    CFLAGS="$CFLAGS $X_CFLAGS -Werror"
+        if test "$GCC" = yes; then
+      CFLAGS="$CFLAGS $X_CFLAGS -Werror"
+    else
+      CFLAGS="$CFLAGS $X_CFLAGS"
+    fi
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <X11/Xlib.h>
@@ -8937,6 +8950,27 @@ fi
 
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CYGWIN environment" >&5
+$as_echo_n "checking for CYGWIN environment... " >&6; }
+case `uname` in
+    CYGWIN*)    CYGWIN=yes; { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CYGWIN clipboard support" >&5
+$as_echo_n "checking for CYGWIN clipboard support... " >&6; }
+                if test "x$with_x" = "xno" ; then
+                  OS_EXTRA_SRC=winclip.c; OS_EXTRA_OBJ=objects/winclip.o
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+                  $as_echo "#define FEAT_CYGWIN_WIN32_CLIPBOARD 1" >>confdefs.h
+
+                else
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no - using X11" >&5
+$as_echo "no - using X11" >&6; }
+                fi ;;
+
+    *)          CYGWIN=no; { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; };;
+esac
 
 if test "$enable_hangulinput" = "yes"; then
   if test "x$GUITYPE" = "xNONE"; then

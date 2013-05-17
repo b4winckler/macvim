@@ -613,7 +613,7 @@ codepage_invalid:
     enc_dbcs = enc_dbcs_new;
     has_mbyte = (enc_dbcs != 0 || enc_utf8);
 
-#ifdef WIN3264
+#if defined(WIN3264) || defined(FEAT_CYGWIN_WIN32_CLIPBOARD)
     enc_codepage = encname2codepage(p_enc);
     enc_latin9 = (STRCMP(p_enc, "iso-8859-15") == 0);
 #endif
@@ -4089,7 +4089,7 @@ enc_locale()
     return enc_canonize((char_u *)buf);
 }
 
-#if defined(WIN3264) || defined(PROTO)
+#if defined(WIN3264) || defined(PROTO) || defined(FEAT_CYGWIN_WIN32_CLIPBOARD)
 /*
  * Convert an encoding name to an MS-Windows codepage.
  * Returns zero if no codepage can be figured out.
@@ -6328,8 +6328,23 @@ string_convert_ext(vcp, ptr, lenp, unconvlenp)
 	    if (vcp->vc_cpfrom == 0)
 		tmp_len = utf8_to_utf16(ptr, len, NULL, NULL);
 	    else
-		tmp_len = MultiByteToWideChar(vcp->vc_cpfrom, 0,
-							      ptr, len, 0, 0);
+	    {
+		tmp_len = MultiByteToWideChar(vcp->vc_cpfrom,
+					unconvlenp ? MB_ERR_INVALID_CHARS : 0,
+					ptr, len, 0, 0);
+		if (tmp_len == 0
+			&& GetLastError() == ERROR_NO_UNICODE_TRANSLATION)
+		{
+		    if (lenp != NULL)
+			*lenp = 0;
+		    if (unconvlenp != NULL)
+			*unconvlenp = len;
+		    retval = alloc(1);
+		    if (retval)
+			retval[0] = NUL;
+		    return retval;
+		}
+	    }
 	    tmp = (short_u *)alloc(sizeof(short_u) * tmp_len);
 	    if (tmp == NULL)
 		break;

@@ -1654,7 +1654,7 @@ PRO_AUTO = \
 RSRC_DIR = os_mac_rsrc
 
 PRO_MANUAL = os_amiga.pro os_msdos.pro os_win16.pro os_win32.pro \
-	os_mswin.pro os_beos.pro os_vms.pro $(PERL_PRO)
+	os_mswin.pro winclip.pro os_beos.pro os_vms.pro $(PERL_PRO)
 
 # Default target is making the executable and tools
 all: $(VIMTARGET) $(TOOLS) languages $(GUI_BUNDLE)
@@ -1805,6 +1805,10 @@ os_win32.pro: os_win32.c
 	echo "/* vim: set ft=c : */" >> proto/$@
 
 os_mswin.pro: os_mswin.c
+	$(CPROTO) -DWIN16 -DWIN32 -UHAVE_CONFIG_H $< > proto/$@
+	echo "/* vim: set ft=c : */" >> proto/$@
+
+winclip.pro: winclip.c
 	$(CPROTO) -DWIN16 -DWIN32 -UHAVE_CONFIG_H $< > proto/$@
 	echo "/* vim: set ft=c : */" >> proto/$@
 
@@ -2672,6 +2676,12 @@ objects/os_mac_conv.o: os_mac_conv.c
 objects/os_unix.o: os_unix.c
 	$(CCC) -o $@ os_unix.c
 
+objects/os_mswin.o: os_mswin.c
+	$(CCC) -o $@ os_mswin.c
+
+objects/winclip.o: winclip.c
+	$(CCC) -o $@ winclip.c
+
 objects/pathdef.o: auto/pathdef.c
 	$(CCC) -o $@ auto/pathdef.c
 
@@ -3012,6 +3022,10 @@ objects/version.o: version.c vim.h auto/config.h feature.h os_unix.h auto/osdef.
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
  gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
  arabic.h version.h
+objects/winclip.o: winclip.c vimio.h vim.h auto/config.h feature.h os_unix.h \
+ auto/osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
+ regexp.h gui.h ex_cmds.h proto.h globals.h farsi.h arabic.h \
+ proto/winclip.pro
 objects/window.o: window.c vim.h auto/config.h feature.h os_unix.h auto/osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
  gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
