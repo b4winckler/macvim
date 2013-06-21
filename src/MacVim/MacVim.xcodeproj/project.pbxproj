@@ -498,7 +498,6 @@
 				1D1C31F00EFFBFD6003FE9A5 /* Make Document Icons */,
 				528DA6671426D456003380F1 /* Copy Scripts */,
 				528DA28A1426C479003380F1 /* Copy KaoriYa Runtime Files */,
-				528DA6661426D01E003380F1 /* Copy LC_MESSAGES */,
 			);
 			buildRules = (
 			);
@@ -615,21 +614,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# Clear deployment target, else the python script always thinks we're building on Tiger\nunset MACOSX_DEPLOYMENT_TARGET\n\n# Generate the icons (redirect stderr to ignore warnings)\ncd \"$PROJECT_DIR\"/icons/\nmake OUTDIR=\"$TARGET_BUILD_DIR\"/$UNLOCALIZED_RESOURCES_FOLDER_PATH 2> /dev/null\n";
-			showEnvVarsInLog = 0;
-		};
-		528DA6661426D01E003380F1 /* Copy LC_MESSAGES */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Copy LC_MESSAGES";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "DSTDIR=$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/vim/runtime/lang/ja_JP.UTF-8/LC_MESSAGES\nmkdir -p $DSTDIR\ncp $SRCROOT/../po/ja_JP.UTF-8.mo $DSTDIR/vim.mo\nchmod 644 $DSTDIR/vim.mo";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
