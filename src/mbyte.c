@@ -5777,10 +5777,7 @@ im_get_status()
     if (!gui.in_use)
 	return uimfep_get_status();
 #endif
-#ifdef FEAT_GUI_GTK
-    if (xim_input_style & (int)GDK_IM_PREEDIT_CALLBACKS)
-	return xim_can_preediting;
-#endif
+
     return xim_has_focus;
 }
 

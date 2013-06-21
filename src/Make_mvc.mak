@@ -24,6 +24,9 @@
 #
 #	GUI interface: GUI=yes (default is no)
 #
+#	GUI with DirectWrite(DirectX): DIRECTX=yes
+#	  (default is no, requires GUI=yes)
+#
 #	OLE interface: OLE=yes (usually with GUI=yes)
 #
 #	Multibyte support: MBYTE=yes (default is no)
@@ -168,6 +171,9 @@ OBJDIR = .\Obj\G
 !else
 OBJDIR = .\Obj\C
 !endif
+!if "$(DIRECTX)" == "yes"
+OBJDIR = $(OBJDIR)X
+!endif
 !if "$(OLE)" == "yes"
 OBJDIR = $(OBJDIR)O
 !endif
@@ -293,6 +299,13 @@ NBDEBUG_INCL	= nbdebug.h
 NBDEBUG_SRC	= nbdebug.c
 !endif
 NETBEANS_LIB	= WSock32.lib
+!endif
+
+# DirectWrite(DirectX)
+!if "$(DIRECTX)" == "yes"
+DIRECTX_DEFS	= -DFEAT_DIRECTX -DDYNAMIC_DIRECTX
+DIRECTX_INCL	= gui_dwrite.h
+DIRECTX_OBJ	= $(OUTDIR)\gui_dwrite.obj
 !endif
 
 !ifndef XPM
@@ -545,6 +558,7 @@ OBJ = \
 	$(OUTDIR)\getchar.obj \
 	$(OUTDIR)\hardcopy.obj \
 	$(OUTDIR)\hashtab.obj \
+	$(OUTDIR)\job.obj \
 	$(OUTDIR)\main.obj \
 	$(OUTDIR)\mark.obj \
 	$(OUTDIR)\mbyte.obj \
@@ -637,6 +651,12 @@ GUI_LIB = \
 	/machine:$(CPU) /nodefaultlib
 !else
 SUBSYSTEM = console
+!endif
+
+!if "$(GUI)" == "yes" && "$(DIRECTX)" == "yes"
+CFLAGS = $(CFLAGS) $(DIRECTX_DEFS)
+GUI_INCL = $(GUI_INCL) $(DIRECTX_INCL)
+GUI_OBJ = $(GUI_OBJ) $(DIRECTX_OBJ)
 !endif
 
 # iconv.dll library (dynamically loaded)
@@ -1017,7 +1037,6 @@ clean:
 	- if exist *.obj del *.obj
 	- if exist $(VIM).exe del $(VIM).exe
 	- if exist $(VIM).exe.manifest del $(VIM).exe.manifest
-	- if exist $(VIM).lib del $(VIM).lib
 	- if exist $(VIM).ilk del $(VIM).ilk
 	- if exist $(VIM).pdb del $(VIM).pdb
 	- if exist $(VIM).map del $(VIM).map
@@ -1106,11 +1125,15 @@ $(OUTDIR)/hardcopy.obj:	$(OUTDIR) hardcopy.c  $(INCL)
 
 $(OUTDIR)/hashtab.obj:	$(OUTDIR) hashtab.c  $(INCL)
 
+$(OUTDIR)/job.obj:	$(OUTDIR) job.c  $(INCL)
+
 $(OUTDIR)/gui.obj:	$(OUTDIR) gui.c  $(INCL) $(GUI_INCL)
 
 $(OUTDIR)/gui_beval.obj:	$(OUTDIR) gui_beval.c $(INCL) $(GUI_INCL)
 
 $(OUTDIR)/gui_w32.obj:	$(OUTDIR) gui_w32.c gui_w48.c $(INCL) $(GUI_INCL)
+
+$(OUTDIR)/gui_dwrite.obj:	$(OUTDIR) gui_dwrite.cpp $(INCL) $(GUI_INCL)
 
 $(OUTDIR)/if_cscope.obj: $(OUTDIR) if_cscope.c  $(INCL)
 
@@ -1275,6 +1298,7 @@ proto.h: \
 	proto/getchar.pro \
 	proto/hardcopy.pro \
 	proto/hashtab.pro \
+	proto/job.pro \
 	proto/main.pro \
 	proto/mark.pro \
 	proto/memfile.pro \

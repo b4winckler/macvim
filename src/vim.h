@@ -9,6 +9,10 @@
 #ifndef VIM__H
 # define VIM__H
 
+/* TODO: make FEAT_JOB_* as puzzle and move into the Makefile. */
+#define FEAT_JOB_BASE		1
+#define FEAT_JOB_EVAL		1
+
 /* use fastcall for Borland, when compiling for Win32 (not for DOS16) */
 #if defined(__BORLANDC__) && defined(WIN32) && !defined(DEBUG)
 #if defined(FEAT_PERL) || \
@@ -124,6 +128,13 @@
 # define FEAT_GUI_ENABLED  /* also defined with NO_X11_INCLUDES */
 # if !defined(FEAT_GUI) && !defined(NO_X11_INCLUDES)
 #  define FEAT_GUI
+# endif
+#endif
+
+/* Check support for rendering options */
+#ifdef FEAT_GUI
+# if defined(FEAT_DIRECTX)
+#  define FEAT_RENDER_OPTIONS
 # endif
 #endif
 

@@ -48,10 +48,10 @@
 
 #ifdef DEBUG
 /* show/save debugging data when BT engine is used */
-# define BT_REGEXP_DUMP
+/*# define BT_REGEXP_DUMP*/
 /* save the debugging data to a file instead of displaying it */
-# define BT_REGEXP_LOG
-# define BT_REGEXP_DEBUG_LOG
+/*# define BT_REGEXP_LOG*/
+/*# define BT_REGEXP_DEBUG_LOG*/
 # define BT_REGEXP_DEBUG_LOG_NAME	"bt_regexp_debug.log"
 #endif
 

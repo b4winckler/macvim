@@ -40,18 +40,24 @@ SCRIPTS_GUI = test16.out
 
 .SUFFIXES: .in .out
 
-nongui:	fixff $(SCRIPTS16) $(SCRIPTS) report
+nongui:	clean fixff_dos $(SCRIPTS16) $(SCRIPTS) fixff_unix report
 
-small:	report
+small:	clean fixff_unix report
 
-gui:	fixff $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS_GUI) report
+gui:	clean fixff_dos $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS_GUI) fixff_unix \
+	report
 
-win32:	fixff $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS32) report
+win32:	clean fixff_dos $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS32) fixff_unix report
 
-fixff:
-	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=dos|upd" +q *.in *.ok
+fixff_dos:
+	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=dos|upd" +q \
+		*.in *.ok > NUL
 	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=unix|upd" +q \
-		dotest.in test60.ok test71.ok test74.ok
+		dotest.in test60.ok test71.ok test74.ok > NUL
+
+fixff_unix:
+	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=unix|upd" +q \
+		*.in *.ok > NUL
 
 report:
 	@echo ""

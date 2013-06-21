@@ -325,11 +325,11 @@ guess_encode(char_u** fenc, int* fenc_alloced, char_u* fname)
 
     if (p_verbose >= 1)
     {
-	verbose_enter();
+	verbose_enter_scroll();
 	smsg((char_u*)"guess_encode:");
-	smsg((char_u*)"    init: fenc=%s alloced=%d fname=%s\n",
+	smsg((char_u*)"    init: fenc=%s alloced=%d fname=%s",
 		*fenc, *fenc_alloced, fname);
-	verbose_leave();
+	verbose_leave_scroll();
     }
 
     /* open a file. */
@@ -352,9 +352,9 @@ guess_encode(char_u** fenc, int* fenc_alloced, char_u* fname)
 	readlen = fread(readbuf, 1, sizeof(readbuf), fp);
 	if (p_verbose >= 2)
 	{
-	    verbose_enter();
-	    smsg((char_u*)"    read: len=%d\n", readlen);
-	    verbose_leave();
+	    verbose_enter_scroll();
+	    smsg((char_u*)"    read: len=%d", readlen);
+	    verbose_leave_scroll();
 	}
 	if (readlen <= 0)
 	    break;
@@ -394,13 +394,15 @@ guess_encode(char_u** fenc, int* fenc_alloced, char_u* fname)
 	    pstate = &enc_table[i];
 	    if (p_verbose >= 1)
 	    {
-		verbose_enter();
-		smsg("    check: name=%s enable=%d score=%d\n",
+		verbose_enter_scroll();
+		smsg("    check: name=%s enable=%d score=%d",
 			pstate->name, pstate->enable, pstate->score);
-		verbose_leave();
+		verbose_leave_scroll();
 	    }
 	    if (pstate->enable
-		    && (minscore < 0 || minscore > pstate->score))
+		    && (minscore < 0 || minscore > pstate->score ||
+                        (minscore == pstate->score
+                         && STRCMP(pstate->name, p_enc) == 0)))
 	    {
 		newenc = pstate->name;
 		minscore = pstate->score;
@@ -415,9 +417,9 @@ guess_encode(char_u** fenc, int* fenc_alloced, char_u* fname)
     {
 	if (p_verbose >= 1)
 	{
-	    verbose_enter();
-	    smsg("    result: newenc=%s\n", newenc);
-	    verbose_leave();
+	    verbose_enter_scroll();
+	    smsg("    result: newenc=%s", newenc);
+	    verbose_leave_scroll();
 	}
 	if (*fenc_alloced)
 	    vim_free(*fenc);
@@ -938,6 +940,8 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
 	{
 	    curbuf->b_p_eol = TRUE;
 	    curbuf->b_start_eol = TRUE;
+            curbuf->b_p_lasteol = TRUE;
+            curbuf->b_start_lasteol = TRUE;
 	}
 #ifdef FEAT_MBYTE
 	curbuf->b_p_bomb = FALSE;
@@ -1307,7 +1311,10 @@ retry:
      * Try to guess encoding of the file.
      */
     if (STRICMP(fenc, "guess") == 0)
-	guess_encode(&fenc, &fenc_alloced, fname);
+    {
+        if (guess_encode(&fenc, &fenc_alloced, fname) != 0)
+            set_internal_string_var("b:x_guessed_fileencoding", fenc);
+    }
 
     /*
      * Conversion may be required when the encoding of the file is different
@@ -1586,7 +1593,8 @@ retry:
 				{
 				    /* When the last line didn't have an
 				     * end-of-line don't add it now either. */
-				    if (!curbuf->b_p_eol)
+				    if (!curbuf->b_p_eol
+					    || !curbuf->b_p_lasteol)
 					--tlen;
 				    size = tlen;
 				    break;
@@ -2507,7 +2515,10 @@ failed:
     {
 	/* remember for when writing */
 	if (set_options)
+	{
 	    curbuf->b_p_eol = FALSE;
+	    curbuf->b_p_lasteol = FALSE;
+	}
 	*ptr = NUL;
 	len = (colnr_T)(ptr - line_start + 1);
 	if (ml_append(lnum, line_start, len, newfile) == FAIL)
@@ -4822,9 +4833,11 @@ restore_backup:
 	/* write failed or last line has no EOL: stop here */
 	if (end == 0
 		|| (lnum == end
-		    && write_bin
-		    && (lnum == buf->b_no_eol_lnum
-			|| (lnum == buf->b_ml.ml_line_count && !buf->b_p_eol))))
+		    && (write_bin
+			&& (lnum == buf->b_no_eol_lnum
+			    || (lnum == buf->b_ml.ml_line_count
+				&& !buf->b_p_eol)))
+		    || (lnum == buf->b_ml.ml_line_count && !buf->b_p_lasteol)))
 	{
 	    ++lnum;			/* written the line, count it */
 	    no_eol = TRUE;
