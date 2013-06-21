@@ -1,4 +1,4 @@
-*quickref.txt*  For Vim version 7.3.  Last change: 2013 Feb 06
+*quickref.txt*  For Vim version 7.3.  Last change: 2013 May 20
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -691,6 +691,7 @@ Short explanation of each option:		*option-list*
 'fileencodings'   'fencs'   automatically detected character encodings
 'fileformat'	  'ff'	    file format used for file I/O
 'fileformats'	  'ffs'     automatically detected values for 'fileformat'
+'fileignorecase'  'fic'     ignore case when using file names
 'filetype'	  'ft'	    type of file, used for autocommands
 'fillchars'	  'fcs'     characters to use for displaying special items
 'fkmap'		  'fk'	    Farsi keyboard mapping
@@ -823,6 +824,7 @@ Short explanation of each option:		*option-list*
 'quoteescape'	  'qe'	    escape characters used in a string
 'readonly'	  'ro'	    disallow writing the buffer
 'redrawtime'	  'rdt'     timeout for 'hlsearch' and |:match| highlighting
+'regexpengine'	  're'	    default regexp engine to use
 'relativenumber'  'rnu'	    show relative line number in front of each line
 'remap'			    allow mappings to work recursively
 'report'		    threshold for reporting nr. of lines changed

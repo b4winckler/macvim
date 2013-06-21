@@ -3,17 +3,19 @@
 # Do ":help uganda"  in Vim to read copying and usage conditions.
 # Do ":help credits" in Vim to see a list of people who contributed.
 #
-# Last Change: 24-Feb-2013.
+# Last Change: 2013 May 19
 #
 # Copyright (C) 2001-12 MURAOKA Taro <koron.kaoriya@gmail.com>
 # THIS FILE IS DISTRIBUTED UNDER THE VIM LICENSE.
 #
+# Original translations.
+#
 msgid ""
 msgstr ""
-"Project-Id-Version: Vim 7.3\n"
+"Project-Id-Version: Vim 7.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-02-24 12:38+0900\n"
-"PO-Revision-Date: 2013-02-24 13:30+0900\n"
+"POT-Creation-Date: 2013-05-19 12:20+0900\n"
+"PO-Revision-Date: 2013-05-19 12:30+0900\n"
 "Last-Translator: MURAOKA Taro <koron.kaoriya@gmail.com>\n"
 "Language-Team: MURAOKA Taro <koron.kaoriya@gmail.com>\n"
 "Language: Japanese\n"
@@ -569,7 +571,7 @@ msgid "add() argument"
 msgstr "add() の引数"
 
 msgid "E699: Too many arguments"
-msgstr "E699: が多過ぎます"
+msgstr "E699: 引数が多過ぎます"
 
 msgid "E785: complete() can only be used in Insert mode"
 msgstr "E785: complete() は挿入モードでしか利用できません"
@@ -685,7 +687,7 @@ msgid "E730: using List as a String"
 msgstr "E730: リスト型を文字列として扱っています"
 
 msgid "E731: using Dictionary as a String"
-msgstr "E731: 変数型を文字列として扱っています"
+msgstr "E731: 辞書型を文字列として扱っています"
 
 msgid "E806: using Float as a String"
 msgstr "E806: 浮動小数点数を文字列として扱っています"
@@ -997,6 +999,10 @@ msgstr "E148: globalコマンドに正規表\現が指定されていません"
 #, c-format
 msgid "Pattern found in every line: %s"
 msgstr "パターンが全ての行で見つかりました: %s"
+
+#, c-format
+msgid "Pattern not found: %s"
+msgstr "パターンは見つかりませんでした: %s"
 
 msgid ""
 "\n"
@@ -2652,9 +2658,11 @@ msgstr "E858: 式評価は有効なpythonオブジェクトを返しませんでした"
 msgid "E859: Failed to convert returned python object to vim value"
 msgstr "E859: 返されたpythonオブジェクトをvimの値に変換できませんでした"
 
-#, c-format
-msgid "<buffer object (deleted) at %p>"
-msgstr "<バッファオブジェクト (消去済み) %p>"
+msgid "failed to run the code"
+msgstr "コードの実行に失敗しました"
+
+msgid "E863: return value must be an instance of str"
+msgstr "E863: 戻り値は文字列のインスタンスでなければなりません"
 
 msgid "E837: This Vim cannot execute :py3 after using :python"
 msgstr "E837: このVimでは :python を使った後に :py3 を使えません"
@@ -2664,6 +2672,9 @@ msgstr "E860: 式評価は有効なpython 3オブジェクトを返しませんでした"
 
 msgid "E861: Failed to convert returned python 3 object to vim value"
 msgstr "E861: 返されたpython 3オブジェクトをvimの値に変換できませんでした"
+
+msgid "index must be int or slice"
+msgstr "インデックスは整数かスライスでなければなりません"
 
 msgid "E265: $_ must be an instance of String"
 msgstr "E265: $_ は文字列のインスタンスでなければなりません"
@@ -6517,14 +6528,8 @@ msgstr "writelines() には文字列のリストが必要です"
 msgid "E264: Python: Error initialising I/O objects"
 msgstr "E264: Python: I/Oオブジェクトの初期化エラー"
 
-msgid "no such buffer"
-msgstr "そのようなバッファはありません"
-
 msgid "empty keys are not allowed"
 msgstr "空のキーは許可されていません"
-
-msgid "failed to add key to dictionary"
-msgstr "辞書へのキーの追加に失敗しました"
 
 msgid "Cannot delete DictionaryObject attributes"
 msgstr "DictionaryObject属性を消せません"
@@ -6532,17 +6537,17 @@ msgstr "DictionaryObject属性を消せません"
 msgid "Cannot modify fixed dictionary"
 msgstr "固定された辞書は変更できません"
 
-msgid "Only boolean objects are allowed"
-msgstr "booleanオブジェクトだけが許可されています"
-
 msgid "Cannot set this attribute"
 msgstr "この属性は設定できません"
 
-msgid "no such key in dictionary"
-msgstr "辞書にそのようなキーはありません"
-
 msgid "dict is locked"
 msgstr "辞書はロックされています"
+
+msgid "failed to add key to dictionary"
+msgstr "辞書へのキーの追加に失敗しました"
+
+msgid "list index out of range"
+msgstr "リスト範囲外のインデックスです"
 
 msgid "internal error: failed to get vim list item"
 msgstr "内部エラー: vimのリスト要素の取得に失敗しました"
@@ -6565,14 +6570,53 @@ msgstr "内部エラー: リストへの要素追加に失敗しました"
 msgid "can only concatenate with lists"
 msgstr "リストとのみ接続できます"
 
-msgid "Cannot modify fixed list"
+msgid "cannot delete vim.dictionary attributes"
+msgstr "vim.dictionary属性は消せません"
+
+msgid "cannot modify fixed list"
 msgstr "固定されたリストは変更できません"
+
+msgid "cannot set this attribute"
+msgstr "この属性は設定できません"
 
 msgid "'self' argument must be a dictionary"
 msgstr "'self' 引数は辞書型の値でなければなりません"
 
 msgid "failed to run function"
 msgstr "関数の実行に失敗しました"
+
+msgid "unable to get option value"
+msgstr "オプションの値は取得できません"
+
+msgid "unable to unset global option"
+msgstr "グローバルオプションの設定解除はできません"
+
+msgid "unable to unset option without global value"
+msgstr "グローバル変数を使わずにオプションの設定解除はできません"
+
+msgid "object must be integer"
+msgstr "オブジェクトは整数でなければなりません"
+
+msgid "object must be string"
+msgstr "オブジェクトは文字列でなければなりません"
+
+msgid "attempt to refer to deleted tab page"
+msgstr "削除されたタブを参照しようとしました"
+
+#, c-format
+msgid "<tabpage object (deleted) at %p>"
+msgstr "<タブページオブジェクト (消去済み) %p>"
+
+#, c-format
+msgid "<tabpage object (unknown) at %p>"
+msgstr "<タブページオブジェクト (不明) %p>"
+
+#, c-format
+msgid "<tabpage %d>"
+msgstr "<タブページ %d>"
+
+msgid "no such tab page"
+msgstr "そのようなタブページはありません"
 
 msgid "attempt to refer to deleted window"
 msgstr "削除されたウィンドウを参照しようとしました"
@@ -6600,6 +6644,34 @@ msgstr "そのようなウィンドウはありません"
 
 msgid "attempt to refer to deleted buffer"
 msgstr "削除されたバッファを参照しようとしました"
+
+#, c-format
+msgid "<buffer object (deleted) at %p>"
+msgstr "<バッファオブジェクト (消去済み) %p>"
+
+msgid "key must be integer"
+msgstr "キーは整数値でなければなりません"
+
+msgid "expected vim.buffer object"
+msgstr "vim.bufferオブジェクトを期待しています"
+
+msgid "failed to switch to given buffer"
+msgstr "指定されたバッファへの切り替えに失敗しました"
+
+msgid "expected vim.window object"
+msgstr "vim.windowオブジェクトを期待しています"
+
+msgid "failed to find window in the current tab page"
+msgstr "現在のタブには指定されたウィンドウがありませんでした"
+
+msgid "did not switch to the specified window"
+msgstr "指定されたウィンドウに切り替えませんでした"
+
+msgid "expected vim.tabpage object"
+msgstr "vim.tabpageオブジェクトを期待しています"
+
+msgid "did not switch to the specified tab page"
+msgstr "指定されたタブページに切り替えませんでした"
 
 msgid "unable to convert to vim structure"
 msgstr "vimの構\造体に変換できません"

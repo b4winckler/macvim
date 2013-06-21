@@ -20,7 +20,7 @@
 #
 #	!!!!  After changing features do "nmake clean" first  !!!!
 #
-#       Feature Set: FEATURES=[TINY, SMALL, NORMAL, BIG, HUGE] (default is BIG)
+#	Feature Set: FEATURES=[TINY, SMALL, NORMAL, BIG, HUGE] (default is BIG)
 #
 #	GUI interface: GUI=yes (default is no)
 #
@@ -87,20 +87,20 @@
 #	  GETTEXT=[yes or no]  (default is yes)
 #	See http://sourceforge.net/projects/gettext/
 #
-#       PostScript printing: POSTSCRIPT=yes (default is no)
+#	PostScript printing: POSTSCRIPT=yes (default is no)
 #
-#       Netbeans Support: NETBEANS=[yes or no] (default is yes if GUI is yes)
+#	Netbeans Support: NETBEANS=[yes or no] (default is yes if GUI is yes)
 #
-#       XPM Image Support: XPM=[path to XPM directory]
-#       Default is "xpm", using the files included in the distribution.
-#       Use "no" to disable this feature.
+#	XPM Image Support: XPM=[path to XPM directory]
+#	Default is "xpm", using the files included in the distribution.
+#	Use "no" to disable this feature.
 #
-#       Optimization: OPTIMIZE=[SPACE, SPEED, MAXSPEED] (default is MAXSPEED)
+#	Optimization: OPTIMIZE=[SPACE, SPEED, MAXSPEED] (default is MAXSPEED)
 #
-#       Processor Version: CPUNR=[i386, i486, i586, i686, pentium4] (default is
-#       i386)
+#	Processor Version: CPUNR=[i386, i486, i586, i686, pentium4] (default is
+#	i386)
 #
-#       Version Support: WINVER=[0x0400, 0x0500] (default is 0x0400)
+#	Version Support: WINVER=[0x0400, 0x0500] (default is 0x0400)
 #
 #	Debug version: DEBUG=yes
 #	Mapfile: MAP=[no, yes or lines] (default is yes)
@@ -108,10 +108,12 @@
 #	  yes:   Write a normal mapfile.
 #	  lines: Write a mapfile with line numbers (only for VC6 and later)
 #
-#       Netbeans Debugging Support: NBDEBUG=[yes or no] (should be no, yes
-#       doesn't work)
+#	Netbeans Debugging Support: NBDEBUG=[yes or no] (should be no, yes
+#	doesn't work)
 #
-#       Visual C Version: MSVCVER=m.n (default derived from nmake if undefined)
+#	Visual C Version: MSVCVER=m.n (default derived from nmake if undefined)
+#
+#	Static Code Analysis: ANALYZE=yes (works with VS2012 only)
 #
 # You can combine any of these interfaces
 #
@@ -422,9 +424,12 @@ MSVCVER = 11.0
 !if "$(_NMAKE_VER)" == "11.00.51106.1"
 MSVCVER = 11.0
 !endif
+!if "$(_NMAKE_VER)" == "11.00.60315.1"
+MSVCVER = 11.0
+!endif
 !endif
 
-# Abort bulding VIM if version of VC is unrecognised.
+# Abort building VIM if version of VC is unrecognised.
 !ifndef MSVCVER
 !message *** ERROR
 !message Cannot determine Visual C version being used.  If you are using the
@@ -480,6 +485,11 @@ OPTFLAG = $(OPTFLAG) /GL
 # (/Wp64 is deprecated in VC9 and generates an obnoxious warning.)
 !if ("$(MSVCVER)" == "7.0") || ("$(MSVCVER)" == "7.1") || ("$(MSVCVER)" == "8.0") 
 CFLAGS=$(CFLAGS) $(WP64CHECK)
+!endif
+
+# Static code analysis generally available starting with VS2012
+!if ("$(ANALYZE)" == "yes") && ("$(MSVCVER)" == "11.0")
+CFLAGS=$(CFLAGS) /analyze
 !endif
 
 CFLAGS = $(CFLAGS) $(OPTFLAG) -DNDEBUG $(CPUARG)
@@ -1123,10 +1133,10 @@ $(OUTDIR)/if_mzsch.obj: $(OUTDIR) if_mzsch.c if_mzsch.h $(INCL) $(MZSCHEME_EXTRA
 mzscheme_base.c:
 	$(MZSCHEME)\mzc --c-mods mzscheme_base.c ++lib scheme/base
 
-$(OUTDIR)/if_python.obj: $(OUTDIR) if_python.c  $(INCL)
+$(OUTDIR)/if_python.obj: $(OUTDIR) if_python.c if_py_both.h $(INCL)
 	$(CC) $(CFLAGS) $(PYTHON_INC) if_python.c
 
-$(OUTDIR)/if_python3.obj: $(OUTDIR) if_python3.c  $(INCL)
+$(OUTDIR)/if_python3.obj: $(OUTDIR) if_python3.c if_py_both.h $(INCL)
 	$(CC) $(CFLAGS) $(PYTHON3_INC) if_python3.c
 
 $(OUTDIR)/if_ole.obj: $(OUTDIR) if_ole.cpp  $(INCL) if_ole.h
@@ -1183,7 +1193,7 @@ $(OUTDIR)/popupmnu.obj:	$(OUTDIR) popupmnu.c  $(INCL)
 
 $(OUTDIR)/quickfix.obj:	$(OUTDIR) quickfix.c  $(INCL)
 
-$(OUTDIR)/regexp.obj:	$(OUTDIR) regexp.c  $(INCL)
+$(OUTDIR)/regexp.obj:	$(OUTDIR) regexp.c regexp_nfa.c  $(INCL)
 
 $(OUTDIR)/screen.obj:	$(OUTDIR) screen.c  $(INCL)
 

@@ -184,12 +184,14 @@ char * _fullpath(char *buf, char *fname, int len)
 }
 # endif
 
+# if !defined(__MINGW32__) || (__GNUC__ < 4)
 int _chdrive(int drive)
 {
     char temp [3] = "-:";
     temp[0] = drive + 'A' - 1;
     return !SetCurrentDirectory(temp);
 }
+# endif
 #else
 # ifdef __BORLANDC__
 /* being a more ANSI compliant compiler, BorlandC doesn't define _stricoll:
@@ -1043,6 +1045,29 @@ static char_u		*prt_name = NULL;
 #define IDC_PRINTTEXT2		402
 #define IDC_PROGRESS		403
 
+#if !defined(FEAT_MBYTE) || defined(WIN16)
+# define vimSetDlgItemText(h, i, s) SetDlgItemText(h, i, s)
+#else
+    static BOOL
+vimSetDlgItemText(HWND hDlg, int nIDDlgItem, char_u *s)
+{
+    WCHAR   *wp = NULL;
+    BOOL    ret;
+
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+    {
+	wp = enc_to_utf16(s, NULL);
+    }
+    if (wp != NULL)
+    {
+	ret = SetDlgItemTextW(hDlg, nIDDlgItem, wp);
+	vim_free(wp);
+	return ret;
+    }
+    return SetDlgItemText(hDlg, nIDDlgItem, s);
+}
+#endif
+
 /*
  * Convert BGR to RGB for Windows GDI calls
  */
@@ -1094,18 +1119,18 @@ PrintDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		    SendDlgItemMessage(hDlg, i, WM_SETFONT, (WPARAM)hfont, 1);
 		    if (GetDlgItemText(hDlg,i, buff, sizeof(buff)))
-			SetDlgItemText(hDlg,i, _(buff));
+			vimSetDlgItemText(hDlg,i, _(buff));
 		}
 		SendDlgItemMessage(hDlg, IDCANCEL,
 						WM_SETFONT, (WPARAM)hfont, 1);
 		if (GetDlgItemText(hDlg,IDCANCEL, buff, sizeof(buff)))
-		    SetDlgItemText(hDlg,IDCANCEL, _(buff));
+		    vimSetDlgItemText(hDlg,IDCANCEL, _(buff));
 	    }
 #endif
 	    SetWindowText(hDlg, szAppName);
 	    if (prt_name != NULL)
 	    {
-		SetDlgItemText(hDlg, IDC_PRINTTEXT2, (LPSTR)prt_name);
+		vimSetDlgItemText(hDlg, IDC_PRINTTEXT2, (LPSTR)prt_name);
 		vim_free(prt_name);
 		prt_name = NULL;
 	    }
@@ -1563,7 +1588,7 @@ mch_print_begin(prt_settings_T *psettings)
     SetAbortProc(prt_dlg.hDC, AbortProc);
 #endif
     wsprintf(szBuffer, _("Printing '%s'"), gettail(psettings->jobname));
-    SetDlgItemText(hDlgPrint, IDC_PRINTTEXT1, (LPSTR)szBuffer);
+    vimSetDlgItemText(hDlgPrint, IDC_PRINTTEXT1, (LPSTR)szBuffer);
 
     vim_memset(&di, 0, sizeof(DOCINFO));
     di.cbSize = sizeof(DOCINFO);
@@ -1597,7 +1622,7 @@ mch_print_end_page(void)
 mch_print_begin_page(char_u *msg)
 {
     if (msg != NULL)
-	SetDlgItemText(hDlgPrint, IDC_PROGRESS, (LPSTR)msg);
+	vimSetDlgItemText(hDlgPrint, IDC_PROGRESS, (LPSTR)msg);
     return (StartPage(prt_dlg.hDC) > 0);
 }
 
@@ -1626,28 +1651,43 @@ mch_print_start_line(margin, page_line)
     int
 mch_print_text_out(char_u *p, int len)
 {
-    int do_out = 1;
-#ifdef FEAT_PROPORTIONAL_FONTS
+#if defined(FEAT_PROPORTIONAL_FONTS) || (defined(FEAT_MBYTE) && !defined(WIN16))
     SIZE	sz;
 #endif
+#if defined(FEAT_MBYTE) && !defined(WIN16)
+    WCHAR	*wp = NULL;
+    int		wlen = len;
 
-    /* A space character without background color is not needed to be drawn.
-     * This is expected to reduce data size and speed up when printing. */
-    if (GetBkMode(prt_dlg.hDC) == TRANSPARENT)
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
     {
-	int i;
-
-	do_out = 0;
-	for (i = 0; i < len; ++i)
-	    if (p[i] != ' ')
-	    {
-		do_out = 1;
-		break;
-	    }
+	wp = enc_to_utf16(p, &wlen);
     }
-    if (do_out)
-	TextOut(prt_dlg.hDC, prt_pos_x + prt_left_margin, prt_pos_y +
-		prt_top_margin, p, len);
+    if (wp != NULL)
+    {
+	int ret = FALSE;
+
+	TextOutW(prt_dlg.hDC, prt_pos_x + prt_left_margin,
+					 prt_pos_y + prt_top_margin, wp, wlen);
+	GetTextExtentPoint32W(prt_dlg.hDC, wp, wlen, &sz);
+	vim_free(wp);
+	prt_pos_x += (sz.cx - prt_tm.tmOverhang);
+	/* This is wrong when printing spaces for a TAB. */
+	if (p[len] != NUL)
+	{
+	    wlen = MB_PTR2LEN(p + len);
+	    wp = enc_to_utf16(p + len, &wlen);
+	    if (wp != NULL)
+	    {
+		GetTextExtentPoint32W(prt_dlg.hDC, wp, 1, &sz);
+		ret = (prt_pos_x + prt_left_margin + sz.cx > prt_right_margin);
+		vim_free(wp);
+	    }
+	}
+	return ret;
+    }
+#endif
+    TextOut(prt_dlg.hDC, prt_pos_x + prt_left_margin,
+					  prt_pos_y + prt_top_margin, p, len);
 #ifndef FEAT_PROPORTIONAL_FONTS
     prt_pos_x += len * prt_tm.tmAveCharWidth;
     return (prt_pos_x + prt_left_margin + prt_tm.tmAveCharWidth
@@ -1808,7 +1848,7 @@ win32_set_foreground()
  *
  * So we create a hidden window, and arrange to destroy it on exit.
  */
-HWND message_window = 0;	    /* window that's handling messsages */
+HWND message_window = 0;	    /* window that's handling messages */
 
 #define VIM_CLASSNAME      "VIM_MESSAGES"
 #define VIM_CLASSNAME_LEN  (sizeof(VIM_CLASSNAME) - 1)
@@ -1871,7 +1911,7 @@ CleanUpMessaging(void)
 
 static int save_reply(HWND server, char_u *reply, int expr);
 
-/*s
+/*
  * The window procedure for the hidden message window.
  * It handles callback messages and notifications from servers.
  * In order to process these messages, it is necessary to run a
@@ -1911,7 +1951,6 @@ Messaging_WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	HWND		sender = (HWND)wParam;
 	COPYDATASTRUCT	reply;
 	char_u		*res;
-	char_u		winstr[30];
 	int		retval;
 	char_u		*str;
 	char_u		*tofree;
@@ -1962,8 +2001,8 @@ Messaging_WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	    reply.cbData = (DWORD)STRLEN(res) + 1;
 
 	    serverSendEnc(sender);
-	    retval = (int)SendMessage(sender, WM_COPYDATA, (WPARAM)message_window,
-							    (LPARAM)(&reply));
+	    retval = (int)SendMessage(sender, WM_COPYDATA,
+				    (WPARAM)message_window, (LPARAM)(&reply));
 	    vim_free(res);
 	    return retval;
 
@@ -1984,6 +2023,8 @@ Messaging_WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 #ifdef FEAT_AUTOCMD
 		else if (data->dwData == COPYDATA_REPLY)
 		{
+		    char_u	winstr[30];
+
 		    sprintf((char *)winstr, PRINTF_HEX_LONG_U, (long_u)sender);
 		    apply_autocmds(EVENT_REMOTEREPLY, winstr, str,
 								TRUE, curbuf);
@@ -2617,7 +2658,7 @@ init_logfont(LOGFONT *lf)
 
     ReleaseDC(hwnd, hdc);
 
-    /* If we couldn't find a useable font, return failure */
+    /* If we couldn't find a usable font, return failure */
     if (n == 1)
 	return FAIL;
 

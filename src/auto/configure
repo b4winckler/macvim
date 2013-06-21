@@ -4737,15 +4737,24 @@ $as_echo "no" >&6; }
       if test -f "${vi_cv_path_lua_pfx}/bin/cyglua-${vi_cv_version_lua}.dll"; then
 	vi_cv_dll_name_lua="cyglua-${vi_cv_version_lua}.dll"
       else
-			for LUA_SOVER in "${vi_cv_version_lua}.so" ".so.${vi_cv_version_lua}"; do
-	  for i in 0 1 2 3 4 5 6 7 8 9; do
-	    if test -f "${vi_cv_path_lua_pfx}/lib/liblua${LUA_SOVER}.$i"; then
-	      LUA_SONAME=".$i"
-	      break
-	    fi
+	multiarch=`dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null`
+	if test "X$multiarch" != "X"; then
+	  lib_multiarch="lib/${multiarch}"
+	fi
+			for subdir in "${lib_multiarch}" lib64 lib; do
+	  if test -z "$subdir"; then
+	    continue
+	  fi
+	  for sover in "${vi_cv_version_lua}.so" "-${vi_cv_version_lua}.so" ".so.${vi_cv_version_lua}"; do
+	    for i in .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 ""; do
+	      if test -f "${vi_cv_path_lua_pfx}/${subdir}/liblua${sover}$i"; then
+		sover2="$i"
+		break 3
+	      fi
+	    done
 	  done
-	  vi_cv_dll_name_lua="liblua${LUA_SOVER}$LUA_SONAME"
 	done
+	vi_cv_dll_name_lua="liblua${sover}$sover2"
       fi
       $as_echo "#define DYNAMIC_LUA 1" >>confdefs.h
 
@@ -5124,6 +5133,7 @@ $as_echo_n "checking if compile and link flags for Perl are sane... " >&6; }
       ldflags_save=$LDFLAGS
       CFLAGS="$CFLAGS $perlcppflags"
       LIBS="$LIBS $perllibs"
+      perlldflags=`echo "$perlldflags" | sed -e 's/^ *//g'`
       LDFLAGS="$perlldflags $LDFLAGS"
       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5153,7 +5163,9 @@ rm -f core conftest.err conftest.$ac_objext \
 	  	  PERL_CFLAGS=`echo "$perlcppflags" | sed -e 's/-pipe //' -e 's/-W[^ ]*//'`
 	fi
 	if test "X$perlldflags" != "X"; then
-	  LDFLAGS="$perlldflags $LDFLAGS"
+	  if test "X`echo \"$LDFLAGS\" | grep -F -e \"$perlldflags\"`" = "X"; then
+	    LDFLAGS="$perlldflags $LDFLAGS"
+	  fi
 	fi
 	PERL_LIBS=$perllibs
 	PERL_SRC="auto/if_perl.c if_perlsfio.c"
@@ -5280,10 +5292,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_var_python_version" >&5
 $as_echo "$vi_cv_var_python_version" >&6; }
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python is 1.4 or better" >&5
-$as_echo_n "checking Python is 1.4 or better... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python is 2.3 or better" >&5
+$as_echo_n "checking Python is 2.3 or better... " >&6; }
     if ${vi_cv_path_python} -c \
-	"import sys; sys.exit(${vi_cv_var_python_version} < 1.4)"
+	"import sys; sys.exit(${vi_cv_var_python_version} < 2.3)"
     then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yep" >&5
 $as_echo "yep" >&6; }
@@ -5338,14 +5350,19 @@ if test "${vi_cv_path_python_conf+set}" = set; then :
 else
 
 	vi_cv_path_python_conf=
-	for path in "${vi_cv_path_python_pfx}" "${vi_cv_path_python_epfx}"; do
-	  for subdir in lib64 lib share; do
-	    d="${path}/${subdir}/python${vi_cv_var_python_version}/config"
-	    if test -d "$d" && test -f "$d/config.c"; then
-	      vi_cv_path_python_conf="$d"
-	    fi
+	d=`${vi_cv_path_python} -c "import distutils.sysconfig; print distutils.sysconfig.get_config_var('LIBPL')"`
+	if test -d "$d" && test -f "$d/config.c"; then
+	  vi_cv_path_python_conf="$d"
+	else
+	  for path in "${vi_cv_path_python_pfx}" "${vi_cv_path_python_epfx}"; do
+	    for subdir in lib64 lib share; do
+	      d="${path}/${subdir}/python${vi_cv_var_python_version}/config"
+	      if test -d "$d" && test -f "$d/config.c"; then
+		vi_cv_path_python_conf="$d"
+	      fi
+	    done
 	  done
-	done
+	fi
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_path_python_conf" >&5
@@ -5396,9 +5413,9 @@ fi
 	fi
 	PYTHON_LIBS="${vi_cv_path_python_plibs}"
 	if test "${vi_cv_path_python_pfx}" = "${vi_cv_path_python_epfx}"; then
-	  PYTHON_CFLAGS="-I${vi_cv_path_python_pfx}/include/python${vi_cv_var_python_version} -DPYTHON_HOME=\\\"${vi_cv_path_python_pfx}\\\""
+	  PYTHON_CFLAGS="-I${vi_cv_path_python_pfx}/include/python${vi_cv_var_python_version} -DPYTHON_HOME='\"${vi_cv_path_python_pfx}\"'"
 	else
-	  PYTHON_CFLAGS="-I${vi_cv_path_python_pfx}/include/python${vi_cv_var_python_version} -I${vi_cv_path_python_epfx}/include/python${vi_cv_var_python_version} -DPYTHON_HOME=\\\"${vi_cv_path_python_pfx}\\\""
+	  PYTHON_CFLAGS="-I${vi_cv_path_python_pfx}/include/python${vi_cv_var_python_version} -I${vi_cv_path_python_epfx}/include/python${vi_cv_var_python_version} -DPYTHON_HOME='\"${vi_cv_path_python_pfx}\"'"
 	fi
 	PYTHON_SRC="if_python.c"
 	PYTHON_OBJ="objects/if_python.o"
@@ -5416,6 +5433,9 @@ $as_echo_n "checking if -pthread should be used... " >&6; }
 	  if test "`(uname) 2>/dev/null`" = FreeBSD; then
 	    threadsafe_flag="-D_THREAD_SAFE"
 	    thread_lib="-pthread"
+	  fi
+	  if test "`(uname) 2>/dev/null`" = SunOS; then
+	    threadsafe_flag="-pthreads"
 	  fi
 	fi
 	libs_save_old=$LIBS
@@ -5488,7 +5508,6 @@ rm -f core conftest.err conftest.$ac_objext \
 	  PYTHON_LIBS=
 	  PYTHON_CFLAGS=
 	fi
-
       fi
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: too old" >&5
@@ -5580,55 +5599,63 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_var_python3_version" >&5
 $as_echo "$vi_cv_var_python3_version" >&6; }
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python's abiflags" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python is 3.0 or better" >&5
+$as_echo_n "checking Python is 3.0 or better... " >&6; }
+    if ${vi_cv_path_python3} -c \
+      "import sys; sys.exit(${vi_cv_var_python3_version} < 3.0)"
+    then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yep" >&5
+$as_echo "yep" >&6; }
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python's abiflags" >&5
 $as_echo_n "checking Python's abiflags... " >&6; }
 if test "${vi_cv_var_python3_abiflags+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
 
-     vi_cv_var_python3_abiflags=
-     if ${vi_cv_path_python3} -c \
-         "import sys; sys.exit(${vi_cv_var_python3_version} < 3.2)"
-     then
-       vi_cv_var_python3_abiflags=`${vi_cv_path_python3} -c \
-         "import sys; print(sys.abiflags)"`
-     fi
+       vi_cv_var_python3_abiflags=
+       if ${vi_cv_path_python3} -c \
+           "import sys; sys.exit(${vi_cv_var_python3_version} < 3.2)"
+       then
+         vi_cv_var_python3_abiflags=`${vi_cv_path_python3} -c \
+           "import sys; print(sys.abiflags)"`
+       fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_var_python3_abiflags" >&5
 $as_echo "$vi_cv_var_python3_abiflags" >&6; }
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python's install prefix" >&5
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python's install prefix" >&5
 $as_echo_n "checking Python's install prefix... " >&6; }
 if test "${vi_cv_path_python3_pfx+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
    vi_cv_path_python3_pfx=`
-     ${vi_cv_path_python3} -c \
-     "import sys; print(sys.prefix)"`
+       ${vi_cv_path_python3} -c \
+       "import sys; print(sys.prefix)"`
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_path_python3_pfx" >&5
 $as_echo "$vi_cv_path_python3_pfx" >&6; }
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python's execution prefix" >&5
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python's execution prefix" >&5
 $as_echo_n "checking Python's execution prefix... " >&6; }
 if test "${vi_cv_path_python3_epfx+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
    vi_cv_path_python3_epfx=`
-     ${vi_cv_path_python3} -c \
-     "import sys; print(sys.exec_prefix)"`
+       ${vi_cv_path_python3} -c \
+       "import sys; print(sys.exec_prefix)"`
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_path_python3_epfx" >&5
 $as_echo "$vi_cv_path_python3_epfx" >&6; }
 
 
-    if test "${vi_cv_path_python3path+set}" = set; then :
+      if test "${vi_cv_path_python3path+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
    vi_cv_path_python3path=`
-     unset PYTHONPATH;
-     ${vi_cv_path_python3} -c \
-     "import sys, string; print(':'.join(sys.path))"`
+       unset PYTHONPATH;
+       ${vi_cv_path_python3} -c \
+       "import sys, string; print(':'.join(sys.path))"`
 fi
 
 
@@ -5640,44 +5667,49 @@ if test "${with_python3_config_dir+set}" = set; then :
 fi
 
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python's configuration directory" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python's configuration directory" >&5
 $as_echo_n "checking Python's configuration directory... " >&6; }
 if test "${vi_cv_path_python3_conf+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
 
-     vi_cv_path_python3_conf=
-     config_dir="config"
-     if test "${vi_cv_var_python3_abiflags}" != ""; then
-       config_dir="${config_dir}-${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags}"
-     fi
-     for path in "${vi_cv_path_python3_pfx}" "${vi_cv_path_python3_epfx}"; do
-       for subdir in lib64 lib share; do
-         d="${path}/${subdir}/python${vi_cv_var_python3_version}/${config_dir}"
-         if test -d "$d" && test -f "$d/config.c"; then
-           vi_cv_path_python3_conf="$d"
-         fi
-       done
-     done
+       vi_cv_path_python3_conf=
+       config_dir="config"
+       if test "${vi_cv_var_python3_abiflags}" != ""; then
+         config_dir="${config_dir}-${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags}"
+       fi
+       d=`${vi_cv_path_python3} -c "import distutils.sysconfig; print(distutils.sysconfig.get_config_var('LIBPL'))"`
+       if test -d "$d" && test -f "$d/config.c"; then
+         vi_cv_path_python3_conf="$d"
+       else
+         for path in "${vi_cv_path_python3_pfx}" "${vi_cv_path_python3_epfx}"; do
+	   for subdir in lib64 lib share; do
+	     d="${path}/${subdir}/python${vi_cv_var_python3_version}/${config_dir}"
+	     if test -d "$d" && test -f "$d/config.c"; then
+	       vi_cv_path_python3_conf="$d"
+	     fi
+	   done
+         done
+       fi
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_path_python3_conf" >&5
 $as_echo "$vi_cv_path_python3_conf" >&6; }
 
-    PYTHON3_CONFDIR="${vi_cv_path_python3_conf}"
+      PYTHON3_CONFDIR="${vi_cv_path_python3_conf}"
 
-    if test "X$PYTHON3_CONFDIR" = "X"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: can't find it!" >&5
+      if test "X$PYTHON3_CONFDIR" = "X"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: can't find it!" >&5
 $as_echo "can't find it!" >&6; }
-    else
+      else
 
-                  if test "${vi_cv_path_python3_plibs+set}" = set; then :
+                        if test "${vi_cv_path_python3_plibs+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
 
-          pwd=`pwd`
-          tmp_mkf="$pwd/config-PyMake$$"
-          cat -- "${PYTHON3_CONFDIR}/Makefile" - <<'eof' >"${tmp_mkf}"
+            pwd=`pwd`
+            tmp_mkf="$pwd/config-PyMake$$"
+            cat -- "${PYTHON3_CONFDIR}/Makefile" - <<'eof' >"${tmp_mkf}"
 __:
 	@echo "python3_BASEMODLIBS='$(BASEMODLIBS)'"
 	@echo "python3_LIBS='$(LIBS)'"
@@ -5685,45 +5717,48 @@ __:
 	@echo "python3_DLLLIBRARY='$(DLLLIBRARY)'"
 	@echo "python3_INSTSONAME='$(INSTSONAME)'"
 eof
-                    eval "`cd ${PYTHON3_CONFDIR} && make -f "${tmp_mkf}" __ | sed '/ directory /d'`"
-          rm -f -- "${tmp_mkf}"
-	  vi_cv_path_python3_plibs="-L${PYTHON3_CONFDIR} -lpython${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags}"
-          vi_cv_path_python3_plibs="${vi_cv_path_python3_plibs} ${python3_BASEMODLIBS} ${python3_LIBS} ${python3_SYSLIBS}"
-                    vi_cv_path_python3_plibs=`echo $vi_cv_path_python3_plibs | sed s/-ltermcap//`
-          vi_cv_path_python3_plibs=`echo $vi_cv_path_python3_plibs | sed s/-lffi//`
+                        eval "`cd ${PYTHON3_CONFDIR} && make -f "${tmp_mkf}" __ | sed '/ directory /d'`"
+            rm -f -- "${tmp_mkf}"
+	    vi_cv_path_python3_plibs="-L${PYTHON3_CONFDIR} -lpython${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags}"
+            vi_cv_path_python3_plibs="${vi_cv_path_python3_plibs} ${python3_BASEMODLIBS} ${python3_LIBS} ${python3_SYSLIBS}"
+                        vi_cv_path_python3_plibs=`echo $vi_cv_path_python3_plibs | sed s/-ltermcap//`
+            vi_cv_path_python3_plibs=`echo $vi_cv_path_python3_plibs | sed s/-lffi//`
 
 fi
 
 
-      if test "X$python3_DLLLIBRARY" != "X"; then
-	python3_INSTSONAME="$python3_DLLLIBRARY"
-      fi
-      PYTHON3_LIBS="${vi_cv_path_python3_plibs}"
-      if test "${vi_cv_path_python3_pfx}" = "${vi_cv_path_python3_epfx}"; then
-        PYTHON3_CFLAGS="-I${vi_cv_path_python3_pfx}/include/python${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags} -DPYTHON3_HOME=L\\\"${vi_cv_path_python3_pfx}\\\""
-      else
-        PYTHON3_CFLAGS="-I${vi_cv_path_python3_pfx}/include/python${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags} -I${vi_cv_path_python3_epfx}/include/python${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags} -DPYTHON3_HOME=L\\\"${vi_cv_path_python3_pfx}\\\""
-      fi
-      PYTHON3_SRC="if_python3.c"
-      PYTHON3_OBJ="objects/if_python3.o"
-
-                                                { $as_echo "$as_me:${as_lineno-$LINENO}: checking if -pthread should be used" >&5
-$as_echo_n "checking if -pthread should be used... " >&6; }
-      threadsafe_flag=
-      thread_lib=
-            if test "`(uname) 2>/dev/null`" != Darwin; then
-        test "$GCC" = yes && threadsafe_flag="-pthread"
-        if test "`(uname) 2>/dev/null`" = FreeBSD; then
-          threadsafe_flag="-D_THREAD_SAFE"
-          thread_lib="-pthread"
+        if test "X$python3_DLLLIBRARY" != "X"; then
+	  python3_INSTSONAME="$python3_DLLLIBRARY"
         fi
-      fi
-      libs_save_old=$LIBS
-      if test -n "$threadsafe_flag"; then
-        cflags_save=$CFLAGS
-        CFLAGS="$CFLAGS $threadsafe_flag"
-        LIBS="$LIBS $thread_lib"
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        PYTHON3_LIBS="${vi_cv_path_python3_plibs}"
+        if test "${vi_cv_path_python3_pfx}" = "${vi_cv_path_python3_epfx}"; then
+          PYTHON3_CFLAGS="-I${vi_cv_path_python3_pfx}/include/python${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags} -DPYTHON3_HOME='L\"${vi_cv_path_python3_pfx}\"'"
+        else
+          PYTHON3_CFLAGS="-I${vi_cv_path_python3_pfx}/include/python${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags} -I${vi_cv_path_python3_epfx}/include/python${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags} -DPYTHON3_HOME='L\"${vi_cv_path_python3_pfx}\"'"
+        fi
+        PYTHON3_SRC="if_python3.c"
+        PYTHON3_OBJ="objects/if_python3.o"
+
+                                                                { $as_echo "$as_me:${as_lineno-$LINENO}: checking if -pthread should be used" >&5
+$as_echo_n "checking if -pthread should be used... " >&6; }
+        threadsafe_flag=
+        thread_lib=
+                if test "`(uname) 2>/dev/null`" != Darwin; then
+          test "$GCC" = yes && threadsafe_flag="-pthread"
+          if test "`(uname) 2>/dev/null`" = FreeBSD; then
+            threadsafe_flag="-D_THREAD_SAFE"
+            thread_lib="-pthread"
+          fi
+          if test "`(uname) 2>/dev/null`" = SunOS; then
+            threadsafe_flag="-pthreads"
+          fi
+        fi
+        libs_save_old=$LIBS
+        if test -n "$threadsafe_flag"; then
+          cflags_save=$CFLAGS
+          CFLAGS="$CFLAGS $threadsafe_flag"
+          LIBS="$LIBS $thread_lib"
+          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -5744,19 +5779,19 @@ $as_echo "no" >&6; }; LIBS=$libs_save_old
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-        CFLAGS=$cflags_save
-      else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+          CFLAGS=$cflags_save
+        else
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-      fi
+        fi
 
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compile and link flags for Python 3 are sane" >&5
+                        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compile and link flags for Python 3 are sane" >&5
 $as_echo_n "checking if compile and link flags for Python 3 are sane... " >&6; }
-      cflags_save=$CFLAGS
-      libs_save=$LIBS
-      CFLAGS="$CFLAGS $PYTHON3_CFLAGS"
-      LIBS="$LIBS $PYTHON3_LIBS"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cflags_save=$CFLAGS
+        libs_save=$LIBS
+        CFLAGS="$CFLAGS $PYTHON3_CFLAGS"
+        LIBS="$LIBS $PYTHON3_LIBS"
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -5776,19 +5811,26 @@ $as_echo "no: PYTHON3 DISABLED" >&6; }; python3_ok=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-      CFLAGS=$cflags_save
-      LIBS=$libs_save
-      if test "$python3_ok" = yes; then
-        $as_echo "#define FEAT_PYTHON3 1" >>confdefs.h
+        CFLAGS=$cflags_save
+        LIBS=$libs_save
+        if test "$python3_ok" = yes; then
+          $as_echo "#define FEAT_PYTHON3 1" >>confdefs.h
 
-      else
-        LIBS=$libs_save_old
-        PYTHON3_SRC=
-        PYTHON3_OBJ=
-        PYTHON3_LIBS=
-        PYTHON3_CFLAGS=
+        else
+          LIBS=$libs_save_old
+          PYTHON3_SRC=
+          PYTHON3_OBJ=
+          PYTHON3_LIBS=
+          PYTHON3_CFLAGS=
+        fi
       fi
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: too old" >&5
+$as_echo "too old" >&6; }
     fi
+  fi
+  if test "$fail_if_missing" = "yes" -a "$python3_ok" != "yes"; then
+    as_fn_error "could not configure python3" "$LINENO" 5
   fi
 fi
 
@@ -5822,7 +5864,7 @@ else
     /* If this program fails, then RTLD_GLOBAL is needed.
      * RTLD_GLOBAL will be used and then it is not possible to
      * have both python versions enabled in the same vim instance.
-     * Only the first pyhton version used will be switched on.
+     * Only the first python version used will be switched on.
      */
 
     int no_rtl_global_needed_for(char *python_instsoname, char *prefix)
@@ -5888,7 +5930,7 @@ else
     /* If this program fails, then RTLD_GLOBAL is needed.
      * RTLD_GLOBAL will be used and then it is not possible to
      * have both python versions enabled in the same vim instance.
-     * Only the first pyhton version used will be switched on.
+     * Only the first python version used will be switched on.
      */
 
     int no_rtl_global_needed_for(char *python_instsoname, wchar_t *prefix)
@@ -6399,13 +6441,13 @@ $as_echo "$rubyhdrdir" >&6; }
 	fi
 	librubyarg=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig.expand($ruby_rbconfig::CONFIG['LIBRUBYARG'])"`
 	librubya=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig.expand($ruby_rbconfig::CONFIG['LIBRUBY_A'])"`
-  rubylibdir=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig.expand($ruby_rbconfig::CONFIG['libdir'])"`
+	rubylibdir=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig.expand($ruby_rbconfig::CONFIG['libdir'])"`
 	if test -f "$rubylibdir/$librubya"; then
 	  librubyarg="$librubyarg"
-    RUBY_LIBS="$RUBY_LIBS -L$rubylibdir"
-  elif test "$librubyarg" = "libruby.a"; then
-        librubyarg="-lruby"
-    RUBY_LIBS="$RUBY_LIBS -L$rubylibdir"
+	  RUBY_LIBS="$RUBY_LIBS -L$rubylibdir"
+	elif test "$librubyarg" = "libruby.a"; then
+	  	  librubyarg="-lruby"
+	  RUBY_LIBS="$RUBY_LIBS -L$rubylibdir"
 	fi
 
 	if test "X$librubyarg" != "X"; then
@@ -6415,7 +6457,9 @@ $as_echo "$rubyhdrdir" >&6; }
 	if test "X$rubyldflags" != "X"; then
 	  	  	  	  rubyldflags=`echo "$rubyldflags" | sed -e 's/-arch\ ppc//' -e 's/-arch\ i386//' -e 's/-arch\ x86_64//'`
 	  if test "X$rubyldflags" != "X"; then
-	    LDFLAGS="$rubyldflags $LDFLAGS"
+	    if test "X`echo \"$LDFLAGS\" | grep -F -e \"$rubyldflags\"`" = "X"; then
+	      LDFLAGS="$rubyldflags $LDFLAGS"
+	    fi
 	  fi
 	fi
 	RUBY_SRC="if_ruby.c"
@@ -7647,7 +7691,11 @@ fi
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking if X11 header files implicitly declare return values" >&5
 $as_echo_n "checking if X11 header files implicitly declare return values... " >&6; }
     cflags_save=$CFLAGS
-    CFLAGS="$CFLAGS $X_CFLAGS -Werror"
+        if test "$GCC" = yes; then
+      CFLAGS="$CFLAGS $X_CFLAGS -Werror"
+    else
+      CFLAGS="$CFLAGS $X_CFLAGS"
+    fi
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <X11/Xlib.h>
@@ -8303,9 +8351,9 @@ $as_echo "no" >&6; }
 
         GUI_LIB_LOC="`echo $GUI_LIB_LOC|sed 's%-L%%g'`"
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for location of Motif GUI libs" >&5
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for location of Motif GUI libs" >&5
 $as_echo_n "checking for location of Motif GUI libs... " >&6; }
-    gui_libs="`echo $x_libraries|sed 's%/^/^/*$%%'` `echo "$gui_XXX" | sed s/XXX/lib/g` `echo "$GUI_INC_LOC" | sed s/include/lib/` $GUI_LIB_LOC"
+    gui_libs="`echo $x_libraries|sed 's%/^/^/*$%%'` `echo "$gui_XXX" | sed s/XXX/lib/g` /usr/lib/i386-linux-gnu /usr/lib/x86_64-linux-gnu `echo "$GUI_INC_LOC" | sed s/include/lib/` $GUI_LIB_LOC"
     GUI_LIB_LOC=
     for try in $gui_libs; do
       for libtry in "$try"/libXm.a "$try"/libXm.so* "$try"/libXm.sl "$try"/libXm.dylib; do
@@ -8315,7 +8363,9 @@ $as_echo_n "checking for location of Motif GUI libs... " >&6; }
       done
     done
     if test -n "$GUI_LIB_LOC"; then
-            if test "$GUI_LIB_LOC" = /usr/lib; then
+            if test "$GUI_LIB_LOC" = /usr/lib \
+	   -o "$GUI_LIB_LOC" = /usr/lib/i386-linux-gnu \
+	   -o "$GUI_LIB_LOC" = /usr/lib/x86_64-linux-gnu; then
 	GUI_LIB_LOC=
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: in default path" >&5
 $as_echo "in default path" >&6; }
@@ -8757,7 +8807,7 @@ if test -z "$SKIP_MOTIF"; then
 	xmheader="Xm/Xm.h"
   else
 	xmheader="Xm/Xm.h Xm/XpmP.h Xm/JoinSideT.h Xm/TraitP.h Xm/Manager.h
-  	   Xm/UnhighlightT.h Xm/Notebook.h"
+	   Xm/UnhighlightT.h Xm/Notebook.h"
   fi
   for ac_header in $xmheader
 do :
@@ -10580,7 +10630,7 @@ if test "x$vim_cv_tty_group" != "xworld" ; then
 _ACEOF
 
   if test "x$vim_cv_tty_mode" = "x" ; then
-    as_fn_error "It seems you're cross compiling and have 'vim_cv_tty_group' set, please also set the environment variable 'vim_cv_tty_mode' to the correct mode (propably 0620)" "$LINENO" 5
+    as_fn_error "It seems you're cross compiling and have 'vim_cv_tty_group' set, please also set the environment variable 'vim_cv_tty_mode' to the correct mode (probably 0620)" "$LINENO" 5
   else
     $as_echo "#define PTYMODE 0620" >>confdefs.h
 
@@ -11754,7 +11804,7 @@ int
 main ()
 {
 	struct sysinfo sinfo;
- 	sinfo.mem_unit = 1;
+	sinfo.mem_unit = 1;
 
   ;
   return 0;
@@ -12645,7 +12695,7 @@ $as_echo "no" >&6; }
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we need -D_FORTIFY_SOURCE=1" >&5
 $as_echo_n "checking whether we need -D_FORTIFY_SOURCE=1... " >&6; }
   if test "$gccmajor" -gt "3"; then
-    CFLAGS=`echo "$CFLAGS" | sed -e 's/-Wp,-D_FORTIFY_SOURCE=.//g' -e 's/-D_FORTIFY_SOURCE=.//g' -e 's/$/ -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1/'`
+    CFLAGS=`echo "$CFLAGS" | sed -e 's/ *-Wp,-D_FORTIFY_SOURCE=.//g' -e 's/ *-D_FORTIFY_SOURCE=.//g' -e 's/ *-U_FORTIFY_SOURCE//g' -e 's/$/ -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1/'`
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
   else
@@ -12660,7 +12710,7 @@ $as_echo_n "checking linker --as-needed support... " >&6; }
 LINK_AS_NEEDED=
 # Check if linker supports --as-needed and --no-as-needed options
 if $CC -Wl,--help 2>/dev/null | grep as-needed > /dev/null; then
-  LDFLAGS="$LDFLAGS -Wl,--as-needed"
+  LDFLAGS=`echo "$LDFLAGS" | sed -e 's/ *-Wl,--as-needed//g' | sed -e 's/$/ -Wl,--as-needed/'`
   LINK_AS_NEEDED=yes
 fi
 if test "$LINK_AS_NEEDED" = yes; then

@@ -57,6 +57,7 @@ SRC_ALL =	\
 		src/popupmnu.c \
 		src/quickfix.c \
 		src/regexp.c \
+		src/regexp_nfa.c \
 		src/regexp.h \
 		src/screen.c \
 		src/search.c \
@@ -83,8 +84,12 @@ SRC_ALL =	\
 		src/testdir/test49.vim \
 		src/testdir/test60.vim \
 		src/testdir/test83-tags? \
+		src/testdir/python2/*.py \
+		src/testdir/python3/*.py \
+		src/testdir/pythonx/*.py \
+		src/testdir/python_after/*.py \
+		src/testdir/python_before/*.py \
 		src/proto.h \
-		src/proto/arabic.pro \
 		src/proto/blowfish.pro \
 		src/proto/buffer.pro \
 		src/proto/charset.pro \

@@ -242,6 +242,9 @@ static void	ex_popup __ARGS((exarg_T *eap));
 # define ex_syntax		ex_ni
 # define ex_ownsyntax		ex_ni
 #endif
+#if !defined(FEAT_SYN_HL) || !defined(FEAT_PROFILE)
+# define ex_syntime		ex_ni
+#endif
 #ifndef FEAT_SPELL
 # define ex_spell		ex_ni
 # define ex_mkspell		ex_ni
@@ -268,10 +271,12 @@ static void	ex_popup __ARGS((exarg_T *eap));
 #endif
 #ifndef FEAT_PYTHON
 # define ex_python		ex_script_ni
+# define ex_pydo		ex_ni
 # define ex_pyfile		ex_ni
 #endif
 #ifndef FEAT_PYTHON3
 # define ex_py3			ex_script_ni
+# define ex_py3do		ex_ni
 # define ex_py3file		ex_ni
 #endif
 #ifndef FEAT_TCL
@@ -1093,7 +1098,7 @@ do_cmdline(cmdline, fgetline, cookie, flags)
 		msg_didany = FALSE; /* no output yet */
 		msg_start();
 		msg_scroll = TRUE;  /* put messages below each other */
-		++no_wait_return;   /* dont wait for return until finished */
+		++no_wait_return;   /* don't wait for return until finished */
 		++RedrawingDisabled;
 		did_inc = TRUE;
 	    }
@@ -1298,7 +1303,7 @@ do_cmdline(cmdline, fgetline, cookie, flags)
 	    && !(did_emsg
 #ifdef FEAT_EVAL
 		/* Keep going when inside try/catch, so that the error can be
-		 * dealth with, except when it is a syntax error, it may cause
+		 * deal with, except when it is a syntax error, it may cause
 		 * the :endtry to be missed. */
 		&& (cstack.cs_trylevel == 0 || did_emsg_syntax)
 #endif
@@ -2645,7 +2650,8 @@ do_one_cmd(cmdlinep, sourcing,
 	    while (p > ea.arg && vim_iswhite(p[-1]))
 		--p;
 	}
-	ea.line2 = buflist_findpat(ea.arg, p, (ea.argt & BUFUNL) != 0, FALSE);
+	ea.line2 = buflist_findpat(ea.arg, p, (ea.argt & BUFUNL) != 0,
+								FALSE, FALSE);
 	if (ea.line2 < 0)	    /* failed */
 	    goto doend;
 	ea.addr_count = 1;
@@ -3114,7 +3120,7 @@ modifier_len(cmd)
 	for (j = 0; p[j] != NUL; ++j)
 	    if (p[j] != cmdmods[i].name[j])
 		break;
-	if (!isalpha(p[j]) && j >= cmdmods[i].minlen
+	if (!ASCII_ISALPHA(p[j]) && j >= cmdmods[i].minlen
 					&& (p == cmd || cmdmods[i].has_count))
 	    return j + (int)(p - cmd);
     }
@@ -3245,6 +3251,9 @@ set_one_cmd_context(xp, buff)
 	    ++p;
 	/* check for non-alpha command */
 	if (p == cmd && vim_strchr((char_u *)"@*!=><&~#", *p) != NULL)
+	    ++p;
+	/* for python 3.x: ":py3*" commands completion */
+	if (cmd[0] == 'p' && cmd[1] == 'y' && p == cmd + 2 && *p == '3')
 	    ++p;
 	len = (int)(p - cmd);
 
@@ -3594,6 +3603,7 @@ set_one_cmd_context(xp, buff)
 	case CMD_sandbox:
 	case CMD_silent:
 	case CMD_tab:
+	case CMD_tabdo:
 	case CMD_topleft:
 	case CMD_verbose:
 	case CMD_vertical:
@@ -3888,6 +3898,8 @@ set_one_cmd_context(xp, buff)
 	case CMD_imap:	    case CMD_inoremap:
 	case CMD_cmap:	    case CMD_cnoremap:
 	case CMD_lmap:	    case CMD_lnoremap:
+	case CMD_smap:	    case CMD_snoremap:
+	case CMD_xmap:	    case CMD_xnoremap:
 	    return set_context_in_map_cmd(xp, cmd, arg, forceit,
 						     FALSE, FALSE, ea.cmdidx);
 	case CMD_unmap:
@@ -3897,6 +3909,8 @@ set_one_cmd_context(xp, buff)
 	case CMD_iunmap:
 	case CMD_cunmap:
 	case CMD_lunmap:
+	case CMD_sunmap:
+	case CMD_xunmap:
 	    return set_context_in_map_cmd(xp, cmd, arg, forceit,
 						      FALSE, TRUE, ea.cmdidx);
 	case CMD_abbreviate:	case CMD_noreabbrev:
@@ -3978,6 +3992,12 @@ set_one_cmd_context(xp, buff)
 #if defined(FEAT_CMDHIST)
 	case CMD_history:
 	    xp->xp_context = EXPAND_HISTORY;
+	    xp->xp_pattern = arg;
+	    break;
+#endif
+#if defined(FEAT_PROFILE)
+	case CMD_syntime:
+	    xp->xp_context = EXPAND_SYNTIME;
 	    xp->xp_pattern = arg;
 	    break;
 #endif
@@ -5423,6 +5443,9 @@ static struct
     {EXPAND_MAPPINGS, "mapping"},
     {EXPAND_MENUS, "menu"},
     {EXPAND_OWNSYNTAX, "syntax"},
+#if defined(FEAT_PROFILE)
+    {EXPAND_SYNTIME, "syntime"},
+#endif
     {EXPAND_SETTINGS, "option"},
     {EXPAND_SHELLCMD, "shellcmd"},
 #if defined(FEAT_SIGNS)
@@ -6526,7 +6549,7 @@ ex_quit(eap)
     }
 #ifdef FEAT_AUTOCMD
     apply_autocmds(EVENT_QUITPRE, NULL, NULL, FALSE, curbuf);
-    /* Refuse to quick when locked or when the buffer in the last window is
+    /* Refuse to quit when locked or when the buffer in the last window is
      * being closed (can only happen in autocommands). */
     if (curbuf_locked() || (curbuf->b_nwindows == 1 && curbuf->b_closing))
 	return;
@@ -6600,7 +6623,10 @@ ex_quit_all(eap)
 	return;
     }
 #ifdef FEAT_AUTOCMD
-    if (curbuf_locked())
+    apply_autocmds(EVENT_QUITPRE, NULL, NULL, FALSE, curbuf);
+    /* Refuse to quit when locked or when the buffer in the last window is
+     * being closed (can only happen in autocommands). */
+    if (curbuf_locked() || (curbuf->b_nwindows == 1 && curbuf->b_closing))
 	return;
 #endif
 
@@ -6936,7 +6962,10 @@ ex_exit(eap)
 	return;
     }
 #ifdef FEAT_AUTOCMD
-    if (curbuf_locked())
+    apply_autocmds(EVENT_QUITPRE, NULL, NULL, FALSE, curbuf);
+    /* Refuse to quit when locked or when the buffer in the last window is
+     * being closed (can only happen in autocommands). */
+    if (curbuf_locked() || (curbuf->b_nwindows == 1 && curbuf->b_closing))
 	return;
 #endif
 
@@ -7751,7 +7780,7 @@ ex_open(eap)
 		curwin->w_cursor.col = (colnr_T)(regmatch.startp[0] - p);
 	    else
 		EMSG(_(e_nomatch));
-	    vim_free(regmatch.regprog);
+	    vim_regfree(regmatch.regprog);
 	}
 	/* Move to the NUL, ignore any other arguments. */
 	eap->arg += STRLEN(eap->arg);
@@ -8169,6 +8198,37 @@ free_cd_dir()
 }
 #endif
 
+/*
+ * Deal with the side effects of changing the current directory.
+ * When "local" is TRUE then this was after an ":lcd" command.
+ */
+    void
+post_chdir(local)
+    int		local;
+{
+    vim_free(curwin->w_localdir);
+    if (local)
+    {
+	/* If still in global directory, need to remember current
+	 * directory as global directory. */
+	if (globaldir == NULL && prev_dir != NULL)
+	    globaldir = vim_strsave(prev_dir);
+	/* Remember this local directory for the window. */
+	if (mch_dirname(NameBuff, MAXPATHL) == OK)
+	    curwin->w_localdir = vim_strsave(NameBuff);
+    }
+    else
+    {
+	/* We are now in the global directory, no need to remember its
+	 * name. */
+	vim_free(globaldir);
+	globaldir = NULL;
+	curwin->w_localdir = NULL;
+    }
+
+    shorten_fnames(TRUE);
+}
+
 
 /*
  * ":cd", ":lcd", ":chdir" and ":lchdir".
@@ -8240,27 +8300,7 @@ ex_cd(eap)
 	    EMSG(_(e_failed));
 	else
 	{
-	    vim_free(curwin->w_localdir);
-	    if (eap->cmdidx == CMD_lcd || eap->cmdidx == CMD_lchdir)
-	    {
-		/* If still in global directory, need to remember current
-		 * directory as global directory. */
-		if (globaldir == NULL && prev_dir != NULL)
-		    globaldir = vim_strsave(prev_dir);
-		/* Remember this local directory for the window. */
-		if (mch_dirname(NameBuff, MAXPATHL) == OK)
-		    curwin->w_localdir = vim_strsave(NameBuff);
-	    }
-	    else
-	    {
-		/* We are now in the global directory, no need to remember its
-		 * name. */
-		vim_free(globaldir);
-		globaldir = NULL;
-		curwin->w_localdir = NULL;
-	    }
-
-	    shorten_fnames(TRUE);
+	    post_chdir(eap->cmdidx == CMD_lcd || eap->cmdidx == CMD_lchdir);
 
 	    /* Echo the new current directory if the command was typed. */
 	    if (KeyTyped || p_verbose >= 5)
@@ -8529,11 +8569,13 @@ ex_operators(eap)
 	    break;
 
 	default:    /* CMD_rshift or CMD_lshift */
-	    if ((eap->cmdidx == CMD_rshift)
+	    if (
 #ifdef FEAT_RIGHTLEFT
-				    ^ curwin->w_p_rl
+		(eap->cmdidx == CMD_rshift) ^ curwin->w_p_rl
+#else
+		eap->cmdidx == CMD_rshift
 #endif
-						    )
+						)
 		oa.op_type = OP_RSHIFT;
 	    else
 		oa.op_type = OP_LSHIFT;
@@ -10975,7 +11017,7 @@ ses_put_fname(fd, name, flagp)
 		*p = '/';
     }
 
-    /* escapse special characters */
+    /* escape special characters */
     p = vim_strsave_fnameescape(sname, FALSE);
     vim_free(sname);
     if (p == NULL)

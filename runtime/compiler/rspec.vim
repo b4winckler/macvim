@@ -1,9 +1,7 @@
 " Vim compiler file
 " Language:		RSpec
 " Maintainer:		Tim Pope <vimNOSPAM@tpope.org>
-" Last Change:		2009 Dec 22
-" URL:			http://vim-ruby.rubyforge.org
-" Anon CVS:		See above site
+" URL:			https://github.com/vim-ruby/vim-ruby
 " Release Coordinator:	Doug Kearns <dougkearns@gmail.com>
 
 if exists("current_compiler")
@@ -18,21 +16,15 @@ endif
 let s:cpo_save = &cpo
 set cpo-=C
 
-CompilerSet makeprg=spec
+CompilerSet makeprg=rspec
 
 CompilerSet errorformat=
-    \%+W'%.%#'\ FAILED,
-    \%+I'%.%#'\ FIXED,
-    \%-Cexpected:%.%#,
-    \%-C\ \ \ \ \ got:%.%#,
+    \%f:%l:\ %tarning:\ %m,
     \%E%.%#:in\ `load':\ %f:%l:%m,
-    \%C%f:%l:,
-    \%W%f:%l:\ warning:\ %m,
-    \%E%f:%l:in\ %*[^:]:\ %m,
-    \%E%f:%l:\ %m,
-    \%-Z%\tfrom\ %f:%l,
-    \%-Z%p^%.%#,
-    \%-C%.%#,
+    \%E%f:%l:in\ `%*[^']':\ %m,
+    \%-Z\ \ \ \ \ \#\ %f:%l:%.%#,
+    \%E\ \ %\\d%\\+)%.%#,
+    \%C\ \ \ \ \ %m,
     \%-G%.%#
 
 let &cpo = s:cpo_save

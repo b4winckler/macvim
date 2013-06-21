@@ -444,7 +444,7 @@ flush_buffers(flush_typeahead)
 	typebuf.tb_off = MAXMAPLEN;
 	typebuf.tb_len = 0;
     }
-    else		    /* remove mapped characters only */
+    else		    /* remove mapped characters at the start only */
     {
 	typebuf.tb_off += typebuf.tb_maplen;
 	typebuf.tb_len -= typebuf.tb_maplen;
@@ -1337,6 +1337,10 @@ save_typebuf()
 
 static int old_char = -1;	/* character put back by vungetc() */
 static int old_mod_mask;	/* mod_mask for ungotten character */
+#ifdef FEAT_MOUSE
+static int old_mouse_row;	/* mouse_row related to old_char */
+static int old_mouse_col;	/* mouse_col related to old_char */
+#endif
 
 #if defined(FEAT_EVAL) || defined(FEAT_EX_EXTRA) || defined(PROTO)
 
@@ -1567,6 +1571,10 @@ vgetc()
 	c = old_char;
 	old_char = -1;
 	mod_mask = old_mod_mask;
+#ifdef FEAT_MOUSE
+	mouse_row = old_mouse_row;
+	mouse_col = old_mouse_col;
+#endif
     }
     else
     {
@@ -1877,6 +1885,10 @@ vungetc(c)	/* unget one character (can only be done once!) */
 {
     old_char = c;
     old_mod_mask = mod_mask;
+#ifdef FEAT_MOUSE
+    old_mouse_row = mouse_row;
+    old_mouse_col = mouse_col;
+#endif
 }
 
 /*
@@ -1912,6 +1924,7 @@ vgetorpeek(advance)
     mapblock_T	*mp;
 #ifdef FEAT_LOCALMAP
     mapblock_T	*mp2;
+    int		expecting_global_mappings;
 #endif
     mapblock_T	*mp_match;
     int		mp_match_len = 0;
@@ -2093,6 +2106,7 @@ vgetorpeek(advance)
 			/* First try buffer-local mappings. */
 			mp = curbuf->b_maphash[MAP_HASH(local_State, c1)];
 			mp2 = maphash[MAP_HASH(local_State, c1)];
+			expecting_global_mappings = (mp && mp2);
 			if (mp == NULL)
 			{
 			    mp = mp2;
@@ -2116,6 +2130,16 @@ vgetorpeek(advance)
 #endif
 				(mp = mp->m_next))
 			{
+#ifdef FEAT_LOCALMAP
+			    if (expecting_global_mappings && mp2 == NULL)
+			    {
+				/* This is the first global mapping. If we've
+				 * got a complete buffer-local match, use it. */
+				if (mp_match)
+				    break;
+				expecting_global_mappings = FALSE;
+			    }
+#endif
 			    /*
 			     * Only consider an entry if the first character
 			     * matches and it is for the current state.
@@ -4604,9 +4628,21 @@ vim_strsave_escape_csi(p)
 	    }
 	    else
 	    {
+#ifdef FEAT_MBYTE
+		int len  = mb_char2len(PTR2CHAR(s));
+		int len2 = mb_ptr2len(s);
+#endif
 		/* Add character, possibly multi-byte to destination, escaping
 		 * CSI and K_SPECIAL. */
 		d = add_char2buf(PTR2CHAR(s), d);
+#ifdef FEAT_MBYTE
+		while (len < len2)
+		{
+		    /* add following combining char */
+		    d = add_char2buf(PTR2CHAR(s + len), d);
+		    len += mb_char2len(PTR2CHAR(s + len));
+		}
+#endif
 		mb_ptr_adv(s);
 	    }
 	}

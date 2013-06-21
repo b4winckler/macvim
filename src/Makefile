@@ -200,7 +200,7 @@
 #Solaris 2.5 (sun4m)  cc (SC4.0)     +X11R6 +GUI (CDE)	4.6b (E) Andrew Large
 #Solaris 2.5	      cc	     +X11 +GUI Athena	4.2  (9) Sonia Heimann
 #Solaris 2.5	      gcc 2.5.6      +X11 Motif		5.0m (R) Ant. Colombo
-#Solaris 2.6	      gcc 2.8.1      ncursus		5.3  (G) Larry W. Virden
+#Solaris 2.6	      gcc 2.8.1      ncurses		5.3  (G) Larry W. Virden
 #Solaris with -lthread					5.5  (W) K. Nagano
 #Solaris	      gcc				     (b) Riccardo
 #SunOS 4.1.x			     +X11 -GUI		5.1b (J) Bram Moolenaar
@@ -231,8 +231,8 @@
 # (D)  Uncomment lines below for QNX
 # (E)  You might want to use termlib instead of termcap, see below.
 # (F)  See below for instructions.
-# (G)  Using ncursus version 4.2 has reported to cause a crash.  Use the
-#      Sun cursus library instead.
+# (G)  Using ncurses version 4.2 has reported to cause a crash.  Use the
+#      Sun curses library instead.
 # (H)  See line for EXTRA_LIBS below.
 # (I)  SINIX-N 5.42 and 5.43 need some EXTRA_LIBS.  Also for Reliant-Unix.
 # (J)  If you get undefined symbols, see below for a solution.
@@ -402,7 +402,7 @@ CClink = $(CC)
 # to the command line.	If you see strange flags during compilation, check in
 # auto/config.mk where they come from.  If it's PERL_CFLAGS, try commenting
 # the next line.
-# When you get an error for a missing "perl.exp" file, try creating an emtpy
+# When you get an error for a missing "perl.exp" file, try creating an empty
 # one: "touch perl.exp".
 # This requires at least "small" features, "tiny" doesn't work.
 #CONF_OPT_PERL = --enable-perlinterp
@@ -454,7 +454,7 @@ CClink = $(CC)
 
 # MULTIBYTE - To edit multi-byte characters.
 # Uncomment this when you want to edit a multibyte language.
-# It's automatically enabled with big features or IME support.
+# It's automatically enabled with normal features, GTK or IME support.
 # Note: Compile on a machine where setlocale() actually works, otherwise the
 # configure tests may fail.
 #CONF_OPT_MULTIBYTE = --enable-multibyte
@@ -601,7 +601,7 @@ LINT_OPTIONS = -beprxzF
 # Might not work with GUI or Perl.
 # For unknown reasons adding "-lc" fixes a linking problem with some versions
 # of GCC.  That's probably a bug in the "-pg" implementation.
-# After running Vim see the profile result with: gmon vim gmon.out | vim -
+# After running Vim see the profile result with: gprof vim gmon.out | vim -
 # Need to recompile everything after changing this: "make clean" "make".
 #PROFILE_CFLAGS = -pg -g -DWE_ARE_PROFILING
 #PROFILE_LIBS = -pg
@@ -1294,7 +1294,7 @@ ALL_GUI_PRO  = gui.pro gui_gtk.pro gui_motif.pro gui_xmdlg.pro gui_athena.pro gu
 ### prototype headers are ignored due to -DPROTO, system
 ### headers #include <...> are ignored if we use the -MM option, as
 ### e.g. provided by gcc-cpp.
-### Include FEAT_GUI to get gependency on gui.h
+### Include FEAT_GUI to get dependency on gui.h
 ### Need to change "-I /<path>" to "-isystem /<path>" for GCC 3.x.
 CPP_DEPEND = $(CC) -I$(srcdir) -M$(CPP_MM) \
 		`echo "$(DEPEND_CFLAGS)" $(DEPEND_CFLAGS_FILTER)`
@@ -1655,6 +1655,11 @@ tools: $(TOOLS)
 # sure configure is run when it's needed.
 #
 config auto/config.mk: auto/configure config.mk.in config.h.in
+	if test -f auto/config.cache && \
+	    grep '^ac_cv_env_CFLAGS_value=' auto/config.cache > /dev/null && \
+	    ! grep -x -F 'ac_cv_env_CFLAGS_value=$(CFLAGS)' auto/config.cache > /dev/null; then \
+		rm auto/config.cache; \
+	fi
 	GUI_INC_LOC="$(GUI_INC_LOC)" GUI_LIB_LOC="$(GUI_LIB_LOC)" \
 		CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" \
 		LDFLAGS="$(LDFLAGS)" $(CONF_SHELL) srcdir="$(srcdir)" \
@@ -1717,7 +1722,7 @@ CCC = $(CC) -c -I$(srcdir) $(ALL_CFLAGS)
 
 
 # Link the target for normal use or debugging.
-# A shell script is used to try linking without unneccesary libraries.
+# A shell script is used to try linking without unnecessary libraries.
 $(VIMTARGET): auto/config.mk objects $(OBJ) version.c version.h
 	$(CCC) version.c -o objects/version.o
 	@LINK="$(PURIFY) $(SHRPENV) $(CClink) $(ALL_LIB_DIRS) $(LDFLAGS) \
@@ -1837,8 +1842,8 @@ types.vim: $(TAGS_SRC) $(TAGS_INCL)
 #
 # This will produce a lot of garbage on your screen, including a few error
 # messages.  Don't worry about that.
-# If there is a real error, there will be a difference between "test.out" and
-# a "test99.ok" file.
+# If there is a real error, there will be a difference between "testXX.out" and
+# a "testXX.ok" file.
 # If everything is alright, the final message will be "ALL DONE".  If not you
 # get "TEST FAILURE".
 #
@@ -1860,6 +1865,19 @@ unittest unittests: $(UNITTEST_TARGETS)
 	@for t in $(UNITTEST_TARGETS); do \
 		./$$t || exit 1; echo $$t passed; \
 	done
+
+# Run individual test, assuming that Vim was already compiled.
+test1 test2 test3 test4 test5 test6 test7 test8 test9 \
+	test10 test11 test12 test13 test14 test15 test16 test17 test18 test19 \
+	test20 test21 test22 test23 test24 test25 test26 test27 test28 test29 \
+	test30 test31 test32 test33 test34 test35 test36 test37 test38 test39 \
+	test40 test41 test42 test43 test44 test45 test46 test47 test48 test49 \
+	test50 test51 test52 test53 test54 test55 test56 test57 test58 test59 \
+	test60 test61 test62 test63 test64 test65 test66 test67 test68 test69 \
+	test70 test71 test72 test73 test74 test75 test76 test77 test78 test79 \
+	test80 test81 test82 test83 test84 test85 test86 test87 test88 test89 \
+	test90 test91 test92 test93 test94 test95 test96 test97 test98 test99:
+	cd testdir; rm $@.out; $(MAKE) -f Makefile $@.out VIMPROG=../$(VIMTARGET)
 
 testclean:
 	cd testdir; $(MAKE) -f Makefile clean
@@ -2298,7 +2316,7 @@ uninstall_runtime:
 	-rm -rf $(DEST_COMP)
 	-rm -f $(DEST_PRINT)/*.ps
 	-rmdir $(DEST_HELP) $(DEST_PRINT) $(DEST_COL) $(DEST_SYN) $(DEST_IND)
-	-rm -rf $(DEST_FTP)/*.vim $(DEST_FTP)/README.txt
+	-rm -rf $(DEST_FTP)/*.vim $(DEST_FTP)/README.txt $(DEST_FTP)/logtalk.dict
 	-rm -f $(DEST_AUTO)/*.vim $(DEST_AUTO)/README.txt $(DEST_AUTO)/xml/*.vim
 	-rm -f $(DEST_PLUG)/*.vim $(DEST_PLUG)/README.txt
 	-rmdir $(DEST_FTP) $(DEST_AUTO)/xml $(DEST_AUTO) $(DEST_PLUG) $(DEST_RT)
@@ -2664,7 +2682,7 @@ objects/popupmnu.o: popupmnu.c
 objects/quickfix.o: quickfix.c
 	$(CCC) -o $@ quickfix.c
 
-objects/regexp.o: regexp.c
+objects/regexp.o: regexp.c regexp_nfa.c
 	$(CCC) -o $@ regexp.c
 
 objects/screen.o: screen.c
@@ -2779,9 +2797,9 @@ bundle-rsrc: os_mac.rsr.hqx
 	mv gui_mac.rsrc.rsrcfork $(RESDIR)/$(VIMNAME).rsrc
 
 # po/Make_osx.pl says something about generating a Mac message file
-# for Ukrananian.  Would somebody using Mac OS X in Ukranian
+# for Ukrainian.  Would somebody using Mac OS X in Ukrainian
 # *really* be upset that Carbon Vim was not localised in
-# Ukranian?
+# Ukrainian?
 #
 #bundle-language: bundle-dir po/Make_osx.pl
 #	cd po && perl Make_osx.pl --outdir ../$(RESDIR) $(MULTILANG)
@@ -2938,10 +2956,10 @@ objects/quickfix.o: quickfix.c vim.h auto/config.h feature.h os_unix.h \
  auto/osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h gui.h gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h \
  globals.h farsi.h arabic.h
-objects/regexp.o: regexp.c vim.h auto/config.h feature.h os_unix.h auto/osdef.h \
- ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
- gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
- arabic.h
+objects/regexp.o: regexp.c regexp_nfa.c vim.h auto/config.h feature.h os_unix.h \
+ auto/osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
+ regexp.h gui.h gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h \
+ globals.h farsi.h arabic.h
 objects/screen.o: screen.c vim.h auto/config.h feature.h os_unix.h auto/osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
  gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \

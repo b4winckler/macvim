@@ -37,6 +37,7 @@ LANGUAGES = \
 CONVERTED = \
 		cs.cp1250 \
 		ja.sjis \
+		ja.euc-jp \
 		pl.cp1250 \
 		pl.UTF-8 \
 		ru.cp1251 \
@@ -77,6 +78,7 @@ MOFILES = \
 MOCONVERTED = \
 		cs.cp1250.mo \
 		ja.sjis.mo \
+		ja.euc-jp.mo \
 		pl.cp1250.mo \
 		pl.UTF-8.mo \
 		ru.cp1251.mo \
@@ -115,6 +117,7 @@ CHECKFILES = \
 		zh_TW.ck \
 		cs.cp1250.ck \
 		ja.sjis.ck \
+		ja.euc-jp.ck \
 		pl.cp1250.ck \
 		pl.UTF-8.ck \
 		ru.cp1251.ck \
@@ -176,9 +179,10 @@ uninstall:
 
 converted: $(MOCONVERTED)
 
-# nl.po was added later, if it does not exist use an empty file.
+# nl.po was added later, if it does not exist use a file with just a # in it
+# (an empty file doesn't work with old msgfmt).
 nl.po:
-	touch nl.po
+	@( echo \# > nl.po )
 
 # Norwegian/Bokmal: "nb" is an alias for "no".
 # Copying the file is not efficient, but I don't know of another way to make
@@ -192,10 +196,14 @@ nb.po: no.po
 ja.sjis.po: ja.po
 	@$(MAKE) sjiscorr
 	rm -f ja.sjis.po
-	iconv -f euc-jp -t cp932 ja.po | ./sjiscorr > ja.sjis.po
+	iconv -f utf-8 -t cp932 ja.po | ./sjiscorr > ja.sjis.po
 
 sjiscorr: sjiscorr.c
 	$(CC) -o sjiscorr sjiscorr.c
+
+ja.euc-jp.po: ja.po
+	iconv -f utf-8 -t euc-jp ja.po | \
+		sed -e 's/charset=utf-8/charset=euc-jp/' -e 's/# Original translations/# Generated from ja.po, DO NOT EDIT/' > ja.euc-jp.po
 
 # Convert cs.po to create cs.cp1250.po.
 cs.cp1250.po: cs.po

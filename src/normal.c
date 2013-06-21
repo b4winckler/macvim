@@ -21,6 +21,7 @@
 static int	resel_VIsual_mode = NUL;	/* 'v', 'V', or Ctrl-V */
 static linenr_T	resel_VIsual_line_count;	/* number of lines */
 static colnr_T	resel_VIsual_vcol;		/* nr of cols or end col */
+static int	VIsual_mode_orig = NUL;         /* type of Visual mode, that user entered */
 
 static int	restart_VIsual_select = 0;
 #endif
@@ -700,6 +701,7 @@ normal_cmd(oap, toplevel)
 	else
 	    c = 'c';
 	msg_nowait = TRUE;	/* don't delay going to insert mode */
+	old_mapped_len = 0;	/* do go to Insert mode */
     }
 #endif
 
@@ -1503,11 +1505,14 @@ do_pending_operator(cap, old_col, gui_yank)
 	}
 #endif
 
-	/* only redo yank when 'y' flag is in 'cpoptions' */
-	/* never redo "zf" (define fold) */
+	/* Only redo yank when 'y' flag is in 'cpoptions'. */
+	/* Never redo "zf" (define fold). */
 	if ((vim_strchr(p_cpo, CPO_YANK) != NULL || oap->op_type != OP_YANK)
 #ifdef FEAT_VISUAL
-		&& (!VIsual_active || oap->motion_force)
+		&& ((!VIsual_active || oap->motion_force)
+		    /* Also redo Operator-pending Visual mode mappings */
+		    || (VIsual_active && cap->cmdchar == ':'
+						 && oap->op_type != OP_COLON))
 #endif
 		&& cap->cmdchar != 'D'
 #ifdef FEAT_FOLDING
@@ -1594,6 +1599,11 @@ do_pending_operator(cap, old_col, gui_yank)
 		curbuf->b_visual.vi_start = VIsual;
 		curbuf->b_visual.vi_end = curwin->w_cursor;
 		curbuf->b_visual.vi_mode = VIsual_mode;
+		if (VIsual_mode_orig != NUL)
+		{
+		    curbuf->b_visual.vi_mode = VIsual_mode_orig;
+		    VIsual_mode_orig = NUL;
+		}
 		curbuf->b_visual.vi_curswant = curwin->w_curswant;
 # ifdef FEAT_EVAL
 		curbuf->b_visual_mode_eval = VIsual_mode;
@@ -1791,7 +1801,7 @@ do_pending_operator(cap, old_col, gui_yank)
 		    prep_redo(oap->regname, 0L, NUL, cap->cmdchar, cap->nchar,
 					get_op_char(oap->op_type),
 					get_extra_op_char(oap->op_type));
-		else
+		else if (cap->cmdchar != ':')
 		    prep_redo(oap->regname, 0L, NUL, 'v',
 					get_op_char(oap->op_type),
 					get_extra_op_char(oap->op_type),
@@ -2437,7 +2447,31 @@ do_mouse(oap, c, dir, count, fixindent)
 		return FALSE;
 	}
 
-    which_button = get_mouse_button(KEY2TERMCAP1(c), &is_click, &is_drag);
+    for (;;)
+    {
+	which_button = get_mouse_button(KEY2TERMCAP1(c), &is_click, &is_drag);
+	if (is_drag)
+	{
+	    /* If the next character is the same mouse event then use that
+	     * one. Speeds up dragging the status line. */
+	    if (vpeekc() != NUL)
+	    {
+		int nc;
+		int save_mouse_row = mouse_row;
+		int save_mouse_col = mouse_col;
+
+		/* Need to get the character, peeking doesn't get the actual
+		 * one. */
+		nc = safe_vgetc();
+		if (c == nc)
+		    continue;
+		vungetc(nc);
+		mouse_row = save_mouse_row;
+		mouse_col = save_mouse_col;
+	    }
+	}
+	break;
+    }
 
 #ifdef FEAT_MOUSESHAPE
     /* May have stopped dragging the status or separator line.  The pointer is
@@ -2480,7 +2514,7 @@ do_mouse(oap, c, dir, count, fixindent)
 
 #ifndef FEAT_VISUAL
     /*
-     * ALT is only used for starging/extending Visual mode.
+     * ALT is only used for starting/extending Visual mode.
      */
     if ((mod_mask & MOD_MASK_ALT))
 	return FALSE;
@@ -5051,7 +5085,7 @@ dozet:
 		}
 		break;
 
-		/* "zE": erease all folds */
+		/* "zE": erase all folds */
     case 'E':	if (foldmethodIsManual(curwin))
 		{
 		    clearFolding(curwin);
@@ -5388,6 +5422,7 @@ nv_colon(cap)
     cmdarg_T  *cap;
 {
     int	    old_p_im;
+    int	    cmd_result;
 
 #ifdef FEAT_VISUAL
     if (VIsual_active)
@@ -5419,7 +5454,7 @@ nv_colon(cap)
 	old_p_im = p_im;
 
 	/* get a command line and execute it */
-	do_cmdline(NULL, getexline, NULL,
+	cmd_result = do_cmdline(NULL, getexline, NULL,
 			    cap->oap->op_type != OP_NOP ? DOCMD_KEEPLINE : 0);
 
 	/* If 'insertmode' changed, enter or exit Insert mode */
@@ -5431,12 +5466,17 @@ nv_colon(cap)
 		restart_edit = 0;
 	}
 
-	/* The start of the operator may have become invalid by the Ex
-	 * command. */
-	if (cap->oap->op_type != OP_NOP
+	if (cmd_result == FAIL)
+	    /* The Ex command failed, do not execute the operator. */
+	    clearop(cap->oap);
+	else if (cap->oap->op_type != OP_NOP
 		&& (cap->oap->start.lnum > curbuf->b_ml.ml_line_count
 		    || cap->oap->start.col >
-			       (colnr_T)STRLEN(ml_get(cap->oap->start.lnum))))
+			       (colnr_T)STRLEN(ml_get(cap->oap->start.lnum))
+		    || did_emsg
+		    ))
+	    /* The start of the operator has become invalid by the Ex command.
+	     */
 	    clearopbeep(cap->oap);
     }
 }
@@ -7238,6 +7278,7 @@ nv_Replace(cap)
     {
 	cap->cmdchar = 'c';
 	cap->nchar = NUL;
+	VIsual_mode_orig = VIsual_mode; /* remember original area for gv */
 	VIsual_mode = 'V';
 	nv_operator(cap);
     }
@@ -7433,11 +7474,14 @@ v_visop(cap)
     static char_u trans[] = "YyDdCcxdXdAAIIrr";
 
     /* Uppercase means linewise, except in block mode, then "D" deletes till
-     * the end of the line, and "C" replaces til EOL */
+     * the end of the line, and "C" replaces till EOL */
     if (isupper(cap->cmdchar))
     {
 	if (VIsual_mode != Ctrl_V)
+	{
+	    VIsual_mode_orig = VIsual_mode;
 	    VIsual_mode = 'V';
+	}
 	else if (cap->cmdchar == 'C' || cap->cmdchar == 'D')
 	    curwin->w_curswant = MAXCOL;
     }
@@ -7457,7 +7501,10 @@ nv_subst(cap)
     if (VIsual_active)	/* "vs" and "vS" are the same as "vc" */
     {
 	if (cap->cmdchar == 'S')
+	{
+	    VIsual_mode_orig = VIsual_mode;
 	    VIsual_mode = 'V';
+	}
 	cap->cmdchar = 'c';
 	nv_operator(cap);
     }
@@ -8787,7 +8834,7 @@ nv_wordcmd(cap)
 		 * at first, but it's really more what we mean when we say
 		 * 'cw'.
 		 * Another strangeness: When standing on the end of a word
-		 * "ce" will change until the end of the next wordt, but "cw"
+		 * "ce" will change until the end of the next word, but "cw"
 		 * will change only one character! This is done by setting
 		 * flag.
 		 */
@@ -9133,7 +9180,7 @@ nv_edit(cap)
 		{
 		    int save_State = State;
 
-		    /* Pretent Insert mode here to allow the cursor on the
+		    /* Pretend Insert mode here to allow the cursor on the
 		     * character past the end of the line */
 		    State = INSERT;
 		    coladvance((colnr_T)MAXCOL);
@@ -9172,7 +9219,7 @@ nv_edit(cap)
 	{
 	    int save_State = State;
 
-	    /* Pretent Insert mode here to allow the cursor on the
+	    /* Pretend Insert mode here to allow the cursor on the
 	     * character past the end of the line */
 	    State = INSERT;
 	    coladvance(getviscol());
