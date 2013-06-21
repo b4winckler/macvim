@@ -1553,11 +1553,11 @@ void ruby_window_free(win_T *win)
     }
 }
 
-void vim_ruby_init()
+void vim_ruby_init(void *stack_start)
 {
     switch (dynamic_ruby_version) {
-    case DYNAMIC_RUBY_VER18: vim_ruby18_init(); return;
-    case DYNAMIC_RUBY_VER19: vim_ruby19_init(); return;
+    case DYNAMIC_RUBY_VER18: vim_ruby18_init(stack_start); return;
+    case DYNAMIC_RUBY_VER19: vim_ruby19_init(stack_start); return;
     }
 }
 
