@@ -1223,7 +1223,7 @@ gui_mch_set_text_area_pos(int x, int y, int w, int h)
 
     /* When side scroll bar is unshown, the size of window will change.
      * then, the text area move left or right. thus client rect should be
-     * forcely redraw. (Yasuhiro Matsumoto) */
+     * forcedly redrawn. (Yasuhiro Matsumoto) */
     if (oldx != x || oldy != y)
     {
 	InvalidateRect(s_hwnd, NULL, FALSE);
@@ -2778,6 +2778,10 @@ _OnPaint(
 
 	out_flush();	    /* make sure all output has been processed */
 	(void)BeginPaint(hwnd, &ps);
+#if defined(FEAT_DIRECTX)
+	if (IS_ENABLE_DIRECTX())
+	    DWriteContext_BeginDraw(s_dwc);
+#endif
 
 #ifdef FEAT_MBYTE
 	/* prevent multi-byte characters from misprinting on an invalid
@@ -2793,9 +2797,20 @@ _OnPaint(
 #endif
 
 	if (!IsRectEmpty(&ps.rcPaint))
+	{
+#if defined(FEAT_DIRECTX)
+	    if (IS_ENABLE_DIRECTX())
+		DWriteContext_BindDC(s_dwc, s_hdc, &ps.rcPaint);
+#endif
 	    gui_redraw(ps.rcPaint.left, ps.rcPaint.top,
 		    ps.rcPaint.right - ps.rcPaint.left + 1,
 		    ps.rcPaint.bottom - ps.rcPaint.top + 1);
+	}
+
+#if defined(FEAT_DIRECTX)
+	if (IS_ENABLE_DIRECTX())
+	    DWriteContext_EndDraw(s_dwc);
+#endif
 	EndPaint(hwnd, &ps);
     }
 }
@@ -3034,6 +3049,12 @@ gui_mch_insert_lines(
     void
 gui_mch_exit(int rc)
 {
+#if defined(FEAT_DIRECTX)
+    DWriteContext_Close(s_dwc);
+    DWrite_Final();
+    s_dwc = NULL;
+#endif
+
     ReleaseDC(s_textArea, s_hdc);
     DeleteObject(s_brush);
 
@@ -3124,8 +3145,42 @@ update_im_font()
     void
 gui_mch_wide_font_changed()
 {
+# ifndef MSWIN16_FASTTEXT
+    LOGFONT lf;
+# endif
+
 # ifdef FEAT_MBYTE_IME
     update_im_font();
+# endif
+
+# ifndef MSWIN16_FASTTEXT
+    gui_mch_free_font(gui.wide_ital_font);
+    gui.wide_ital_font = NOFONT;
+    gui_mch_free_font(gui.wide_bold_font);
+    gui.wide_bold_font = NOFONT;
+    gui_mch_free_font(gui.wide_boldital_font);
+    gui.wide_boldital_font = NOFONT;
+
+    if (gui.wide_font
+	&& GetObject((HFONT)gui.wide_font, sizeof(lf), &lf))
+    {
+	if (!lf.lfItalic)
+	{
+	    lf.lfItalic = TRUE;
+	    gui.wide_ital_font = get_font_handle(&lf);
+	    lf.lfItalic = FALSE;
+	}
+	if (lf.lfWeight < FW_BOLD)
+	{
+	    lf.lfWeight = FW_BOLD;
+	    gui.wide_bold_font = get_font_handle(&lf);
+	    if (!lf.lfItalic)
+	    {
+		lf.lfItalic = TRUE;
+		gui.wide_boldital_font = get_font_handle(&lf);
+	    }
+	}
+    }
 # endif
 }
 #endif
@@ -3266,27 +3321,27 @@ gui_mch_settitle(
  * misc2.c! */
 static LPCSTR mshape_idcs[] =
 {
-    MAKEINTRESOURCE(IDC_ARROW),		/* arrow */
-    MAKEINTRESOURCE(0),			/* blank */
-    MAKEINTRESOURCE(IDC_IBEAM),		/* beam */
-    MAKEINTRESOURCE(IDC_SIZENS),	/* updown */
-    MAKEINTRESOURCE(IDC_SIZENS),	/* udsizing */
-    MAKEINTRESOURCE(IDC_SIZEWE),	/* leftright */
-    MAKEINTRESOURCE(IDC_SIZEWE),	/* lrsizing */
-    MAKEINTRESOURCE(IDC_WAIT),		/* busy */
+    IDC_ARROW,			/* arrow */
+    MAKEINTRESOURCE(0),		/* blank */
+    IDC_IBEAM,			/* beam */
+    IDC_SIZENS,			/* updown */
+    IDC_SIZENS,			/* udsizing */
+    IDC_SIZEWE,			/* leftright */
+    IDC_SIZEWE,			/* lrsizing */
+    IDC_WAIT,			/* busy */
 #ifdef WIN3264
-    MAKEINTRESOURCE(IDC_NO),		/* no */
+    IDC_NO,			/* no */
 #else
-    MAKEINTRESOURCE(IDC_ICON),		/* no */
+    IDC_ICON,			/* no */
 #endif
-    MAKEINTRESOURCE(IDC_ARROW),		/* crosshair */
-    MAKEINTRESOURCE(IDC_ARROW),		/* hand1 */
-    MAKEINTRESOURCE(IDC_ARROW),		/* hand2 */
-    MAKEINTRESOURCE(IDC_ARROW),		/* pencil */
-    MAKEINTRESOURCE(IDC_ARROW),		/* question */
-    MAKEINTRESOURCE(IDC_ARROW),		/* right-arrow */
-    MAKEINTRESOURCE(IDC_UPARROW),	/* up-arrow */
-    MAKEINTRESOURCE(IDC_ARROW)		/* last one */
+    IDC_ARROW,			/* crosshair */
+    IDC_ARROW,			/* hand1 */
+    IDC_ARROW,			/* hand2 */
+    IDC_ARROW,			/* pencil */
+    IDC_ARROW,			/* question */
+    IDC_ARROW,			/* right-arrow */
+    IDC_UPARROW,		/* up-arrow */
+    IDC_ARROW			/* last one */
 };
 
     void
@@ -3299,7 +3354,7 @@ mch_set_mouse_shape(int shape)
     else
     {
 	if (shape >= MSHAPE_NUMBERED)
-	    idc = MAKEINTRESOURCE(IDC_ARROW);
+	    idc = IDC_ARROW;
 	else
 	    idc = mshape_idcs[shape];
 #ifdef SetClassLongPtr

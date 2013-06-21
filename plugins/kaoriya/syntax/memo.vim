@@ -4,7 +4,7 @@
 "
 " Language:	memo
 " Maintainer:	MURAOKA Taro <koron.kaoriya@gmail.com>
-" Last Change:	06-Feb-2006.
+" Last Change:	18-Jan-2013.
 
 scriptencoding cp932
 
@@ -19,7 +19,7 @@ syntax match memoLabelWarning display "íçà”:"
 
 syntax match memoTitle display "\%1l.*"
 syntax match memoDate display "\<\([012]\d\|3[01]\)-\k\+-\d\+\(\.\)\="
-syntax match memoUrl display "\(http\|ftp\):[-!#%&+,./0-9:;=?@A-Za-z_~]\+"
+syntax match memoUrl display "\(https\=\|ftp\):[-!#%&+,./0-9:;=?@A-Za-z_~]\+"
 
 syntax match memoListItem display "^\s*[-+*]\s\+\S.*$"
 syntax match memoListOrderedItem display "^\s*\d\+[.):]\s\+\S.*$"

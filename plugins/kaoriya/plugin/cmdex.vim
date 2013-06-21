@@ -3,7 +3,7 @@
 " cmdex.vim - Extra coomands
 "
 " Maintainer:	Muraoka Taro <koron.kaoriya@gmail.com>
-" Last Change:	24-Nov-2012.
+" Last Change:	19-Mar-2013.
 " Commands:
 "		:MenuLang {language}
 "		    (language: none/ja/zh...etc.)
@@ -60,7 +60,7 @@ function! s:StartTutorial()
     let enc = 'utf-8'
     if &encoding ==# 'cp932'
       let enc='sjis'
-    else if &encoding =~ 'euc'
+    elseif &encoding =~ 'euc'
       let enc = 'euc'
     endif
     let tutor = tutor . '.' . enc
@@ -113,17 +113,17 @@ endfunction
 
 " c_CTRL-X
 "   Input current buffer's directory on command line.
-cnoremap <C-X> <C-R>=<SID>GetBufferDirectory()<CR>/
+cnoremap <C-X> <C-R>=<SID>GetBufferDirectory()<CR>
 function! s:GetBufferDirectory()
   let path = expand('%:p:h')
   let cwd = getcwd()
-  if match(path, cwd) != 0
-    return path
+  let dir = '.'
+  if match(path, escape(cwd, '\')) != 0
+    let dir = path
   elseif strlen(path) > strlen(cwd)
-    return strpart(path, strlen(cwd) + 1)
-  else
-    return '.'
+    let dir = strpart(path, strlen(cwd) + 1)
   endif
+  return dir . (exists('+shellslash') && !&shellslash ? '\' : '/')
 endfunction
 
 " :Undiff

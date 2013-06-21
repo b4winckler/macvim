@@ -1,9 +1,9 @@
                    Vim version 7.3 香り屋版 導入マニュアル
 
-                                                         Version: 1.6.6
+                                                         Version: 1.7.3
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 01-Dec-2012.
+                                                     Last Change: 16-Jun-2013.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -14,7 +14,6 @@
 
   リリースには32bit版と64bit版があります。32bit OSでは必ず32bit版をご利用くだ
   さい。64bit OSでは64bit版と32bit版どちらでもご利用いただけます。
-
 
 インストール方法
   配布ファイルはZIP書庫です。配布ファイルにはVimプログラムフォルダが格納されて
@@ -61,6 +60,14 @@ Vimの拡張機能について
     - ctagsオリジナルサイト
         http://ctags.sourceforge.net/
 
+  Luaとの連携
+    KaoriYa版にはLua (LuaJIT)がバンドルされているので、Luaインターフェースは自
+    動的に有効になります。Luaインターフェースの詳細については":help lua"として
+    Vim付属のマニュアルを参照してください。
+
+    - LuaJIT サイト
+        http://luajit.org/
+
   Perl(ActivePerl)との連携
     注意: PerlをインストールしなくてもVimは使用できます。
 
@@ -94,7 +101,7 @@ Vimの拡張機能について
   Python3との連携
     注意: Python3をインストールしなくてもVimは使用できます。
 
-    Python.orgにより公開されているPython 3.2をインストールすることで、Pythonイ
+    Python.orgにより公開されているPython 3.3をインストールすることで、Pythonイ
     ンターフェースを使用することができます。Pythonをインストールしていない場合
     は、Pythonインターフェースは自動的に無効となります。Pythonインターフェース
     の詳細については":help python3"としてVim付属のマニュアルを参照してくださ
@@ -106,32 +113,19 @@ Vimの拡張機能について
     - Python.org
         http://www.python.org/
 
-  Luaとの連携
-    注意: LuaをインストールしなくてもVimは利用できます。
-
-    LuaBinariesにより公開されているLua 5.2.1をインストールすることで、Luaイン
-    ターフェースを利用できます。Luaをインストールしていない場合は、Luaインター
-    フェースは自動的に無効となります。Luaインターフェースの詳細については
-    ":help lua"としてVim付属のマニュアルを参照してください。
-
-    - LuaBinaries
-        http://luabinaries.sourceforge.net/
-        http://goo.gl/3eqvS (32bit版 DLL)
-        http://goo.gl/ZTgGV (64bit版 DLL)
-
   Rubyとの連携
     注意: RubyをインストールしなくてもVimは使用できます。
 
-    Ruby-mswin32の1.9.2をインストールすることで、Rubyインターフェースを利用で
-    きます。Rubyをインストールしていない場合は、Rubyインターフェーエスは自動的
-    に無効となります。Rubyインターフェースの詳細については":help ruby"として
-    Vim付属のマニュアルを参照してください。
+    Ruby 2.0.0-p0をインストールするとRubyインターフェースを利用できます。Ruby
+    をインストールしていない場合はRubyインターフェースは自動的に無効となりま
+    す。Rubyインターフェースの詳細については":help ruby"としてVim付属のマニュ
+    アルを参照してください。
 
     64bit版のVimを使う場合は64bit版のRubyを、32bit版を使う場合は32bit版の
     Rubyをインストールしてください。
 
-    - Ruby-mswin32 配布サイト
-        http://www.garbagecollect.jp/ruby/mswin32/ja/
+    - Ruby 配布サイト
+        http://rubyinstaller.org/
     - Ruby全般の情報
         http://www.ruby-lang.org/ja/
 
@@ -165,25 +159,35 @@ Vimの拡張機能について
 
 オリジナルとの相違点
   ソース差分
-    patchフォルダ内にhg diffによって取得した差分を同梱しています。差分の使い方
-    や内容に関する質問やコメントなどありましたら香り屋版メンテナまで連絡くださ
-    い。ソース1行1行に至るまでの検証も大歓迎します。
+    patchフォルダ内に差分を同梱しています。差分の使い方や内容に関する質問やコ
+    メントなどありましたら香り屋版メンテナまで連絡ください。ソース1行1行に至る
+    までの検証も大歓迎します。
+
+    以下のレポジトリでは同パッチの最新版を公開しています。
+
+    - vim-kaoriya-patches: +kaoriyaパッチのMercurial Queue
+      https://bitbucket.org/koron/vim-kaoriya-patches
+
+    patchフォルダ及びvim-kaoriya-patches内の名前がXで始まるパッチは非常に実験
+    的なものであり公開版には適用されていません。興味のある方だけ御覧ください。
 
   Mercurial レポジトリ
-    bitbucket.orgにて3つのレポジトリを公開しています。
+    bitbucket.orgにて2つのレポジトリを公開しています。
 
-    - vim-kaoriya: ビルド要スクリプト他
+    - vim-kaoriya: ビルド用スクリプト他
       https://bitbucket.org/koron/vim-kaoriya
-    - vim-kaoriya-vim: vim+kaoriyaパッチなclone
-      https://bitbucket.org/koron/vim-kaoriya-vim
-    - vim-kaoriya-vim-mq-ex: 実験的なパッチ集(Mercurial MQ用)
-      https://bitbucket.org/koron/vim-kaoriya-vim-mq-ex
+    - vim-kaoriya-patches: +kaoriyaパッチのMercurial Queue
+      https://bitbucket.org/koron/vim-kaoriya-patches
 
-    vim-kaoriya は vim-kaoriya-vim を hgsub にて参照していますので、通常は
-    vim-kaoriya だけを clone すると良いでしょう。
+  Mercurialによるソースとパッチの入手方法
+    香り屋版のソースコード(及びパッチ)をMercurialレポジトリから取得するには以
+    下のようにしてください。
 
-    vim-kaoriya-vim-mq は vim-kaoriya-vim の .hg/patches をレポジトリ化したも
-    のです。興味のある方だけ御覧ください。
+      $ hg qclone https://code.google.com/p/vim/ \
+        -p https://bitbucket.org/koron/vim-kaoriya-patches
+      $ cd vim
+      $ hg qselect -n
+      $ hg qpush -a
 
 既知の問題点
   * qkcの-njフラグでコンバートしたJISファイルは開けない(iconv.dll)
@@ -210,10 +214,11 @@ Vimの拡張機能について
       http://www.vim.org/
   - Vimの日本コミュニティvim-jp
       http://vim-jp.org/
+      https://github.com/vim-jp/issues/issues (バグ報告、機能要望)
   - vim_jp Google グループ
       http://groups.google.com/group/vim_jp/?hl=ja
   - Vimドキュメント翻訳(vimdoc-ja)
-      http://code.google.com/p/vimdoc-ja/?hl=ja
+      https://github.com/vim-jp/vimdoc-ja/
   - 香り屋版メンテナ
       http://www.kaoriya.net/software/vim
       MURAOKA Taro <koron.kaoriya@gmail.com>

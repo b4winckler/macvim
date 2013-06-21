@@ -694,7 +694,7 @@ vimobj = $(vimobj) \
 
 !if ($(OSTYPE)==WIN32)
 vimobj = $(vimobj) \
-	$(OBJDIR)\os_win32.obj $(OBJDIR)\os_mswin.obj
+	$(OBJDIR)\os_win32.obj $(OBJDIR)\os_mswin.obj $(OBJDIR)\winclip.obj
 !elif ($(OSTYPE)==DOS16)
 vimobj = $(vimobj) \
 	$(OBJDIR)\os_msdos.obj
@@ -1006,10 +1006,10 @@ if_perl.c: if_perl.xs typemap
 	$(PERL)\bin\perl.exe $(PERL)\lib\ExtUtils\xsubpp -prototypes -typemap \
 	    $(PERL)\lib\ExtUtils\typemap if_perl.xs > $@
 
-$(OBJDIR)\if_python.obj: if_python.c python.lib
+$(OBJDIR)\if_python.obj: if_python.c if_py_both.h python.lib
 	$(CC) -I$(PYTHON)\include $(CCARG) $(CC1) $(CC2)$@ -pc if_python.c
 
-$(OBJDIR)\if_python3.obj: if_python3.c python3.lib
+$(OBJDIR)\if_python3.obj: if_python3.c if_py_both.h python3.lib
 	$(CC) -I$(PYTHON3)\include $(CCARG) $(CC1) $(CC2)$@ -pc if_python3.c
 
 $(OBJDIR)\if_ruby.obj: if_ruby.c ruby.lib

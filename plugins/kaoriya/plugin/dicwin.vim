@@ -3,7 +3,7 @@
 " dicwin.vim - Dictionary window
 "
 " Maintainer:	MURAOKA Taro <koron.kaoriya@gmail.com>
-" Last Change:	01-May-2012.
+" Last Change:	26-Dec-2012.
 " Commands:	<C-k><C-k>  Search word under cursor.
 "		<C-k>/	    Search prompted word.
 "		<C-k>c	    Close dictionary window.
@@ -235,11 +235,14 @@ function! s:OpenDictionaryWindow(name)
     return
   endif
   if s:GoDictWindow() < 0
+    if &shellslash == 0
+      let name = substitute(a:name, '\\', '/', 'g')
+    endif
     execute "augroup Dictionary"
     execute "autocmd!"
-    execute "autocmd WinEnter " . a:name . " call <SID>DicWinEnter()"
-    execute "autocmd WinLeave " . a:name . " call <SID>DicWinLeave()"
-    execute "autocmd BufUnload " . a:name . " call <SID>DicWinUnload()"
+    execute "autocmd WinEnter " . name . " call <SID>DicWinEnter()"
+    execute "autocmd WinLeave " . name . " call <SID>DicWinLeave()"
+    execute "autocmd BufUnload " . name . " call <SID>DicWinUnload()"
     execute "augroup END"
     execute 'silent normal! :sview ' . a:name ."\<CR>"
     let w:dicwin_dicwin = 1

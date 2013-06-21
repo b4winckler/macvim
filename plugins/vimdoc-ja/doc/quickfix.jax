@@ -1,4 +1,4 @@
-*quickfix.txt*  For Vim バージョン 7.3.  Last change: 2011 May 10
+*quickfix.txt*  For Vim バージョン 7.3.  Last change: 2013 Mar 07
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -17,7 +17,7 @@
 8. ディレクトリスタック			|quickfix-directory-stack|
 9. 具体的なエラーファイルフォーマット	|errorformats|
 
-{Vi にはこれらのコマンドは存在しない}
+{Vi にはこれらのコマンドはない}
 
 コンパイル時に|+quickfix|機能が無効にされた場合は、QuickFixコマンドは使えない。
 
@@ -545,6 +545,8 @@ Note: 検索結果へのリンク一覧を開くには |:copen| (|:lgrep| なら
 			大文字小文字を区別しなくなり、|/\C|を含めると区別する
 			ようになる。これは 'ignorecase' より優先される。
 			'smartcase' は適用されない。
+			{pattern} が空のときは(つまり // が指定されたときは)、
+			最後に使われた検索パターンが使用される。|last-pattern|
 
 			このコマンドの前に数字が置かれると、その数が検索する
 			マッチの最大数となる。":1vimgrep pattern file" とする

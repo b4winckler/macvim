@@ -205,6 +205,13 @@ main
     params.window_count = -1;
 #endif
 
+#ifdef FEAT_RUBY
+    {
+	int ruby_stack_start;
+	vim_ruby_init((void *)&ruby_stack_start);
+    }
+#endif
+
 #ifdef FEAT_TCL
     vim_tcl_init(params.argv[0]);
 #endif
@@ -826,6 +833,9 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
 
     starttermcap();	    /* start termcap if not done by wait_return() */
     TIME_MSG("start termcap");
+#if defined(FEAT_TERMRESPONSE) && defined(FEAT_MBYTE)
+    may_req_ambiguous_character_width();
+#endif
 
 #ifdef FEAT_MOUSE
     setmouse();				/* may start using the mouse */
@@ -1235,6 +1245,19 @@ main_loop(cmdwin, noexmode)
 		}
 # endif
 		last_cursormoved = curwin->w_cursor;
+	    }
+#endif
+
+#ifdef FEAT_AUTOCMD
+	    /* Trigger TextChanged if b_changedtick differs. */
+	    if (!finish_op && has_textchanged()
+		    && last_changedtick != curbuf->b_changedtick)
+	    {
+		if (last_changedtick_buf == curbuf)
+		    apply_autocmds(EVENT_TEXTCHANGED, NULL, NULL,
+							       FALSE, curbuf);
+		last_changedtick_buf = curbuf;
+		last_changedtick = curbuf->b_changedtick;
 	    }
 #endif
 
@@ -2885,7 +2908,25 @@ edit_buffers(parmp)
 # ifdef FEAT_AUTOCMD
     --autocmd_no_enter;
 # endif
-    win_enter(firstwin, FALSE);		/* back to first window */
+#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+    /*
+     * Avoid making a preview window the current window.
+     */
+    if (firstwin->w_p_pvw)
+    {
+       win_T   *win;
+
+       for (win = firstwin; win != NULL; win = win->w_next)
+           if (!win->w_p_pvw)
+           {
+               firstwin = win;
+               break;
+           }
+    }
+#endif
+    /* make the first window the current window */
+    win_enter(firstwin, FALSE);
+
 # ifdef FEAT_AUTOCMD
     --autocmd_no_leave;
 # endif
@@ -3048,6 +3089,10 @@ source_startup_scripts(parmp)
 #endif
 #ifdef USR_VIMRC_FILE3
 		&& do_source((char_u *)USR_VIMRC_FILE3, TRUE,
+							   DOSO_VIMRC) == FAIL
+#endif
+#ifdef USR_VIMRC_FILE4
+		&& do_source((char_u *)USR_VIMRC_FILE4, TRUE,
 							   DOSO_VIMRC) == FAIL
 #endif
 		&& process_env((char_u *)"EXINIT", FALSE) == FAIL
@@ -4122,8 +4167,6 @@ server_to_input_buf(str)
 
 /*
  * Evaluate an expression that the client sent to a string.
- * Handles disabling error messages and disables debugging, otherwise Vim
- * hangs, waiting for "cont" to be typed.
  */
     char_u *
 eval_client_expr_to_string(expr)
@@ -4133,15 +4176,21 @@ eval_client_expr_to_string(expr)
     int		save_dbl = debug_break_level;
     int		save_ro = redir_off;
 
+     /* Disable debugging, otherwise Vim hangs, waiting for "cont" to be
+      * typed. */
     debug_break_level = -1;
     redir_off = 0;
-    ++emsg_skip;
+    /* Do not display error message, otherwise Vim hangs, waiting for "cont"
+     * to be typed.  Do generate errors so that try/catch works. */
+    ++emsg_silent;
 
     res = eval_to_string(expr, NULL, TRUE);
 
     debug_break_level = save_dbl;
     redir_off = save_ro;
-    --emsg_skip;
+    --emsg_silent;
+    if (emsg_silent < 0)
+	emsg_silent = 0;
 
     /* A client can tell us to redraw, but not to display the cursor, so do
      * that here. */

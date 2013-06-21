@@ -3141,7 +3141,7 @@ ml_delete_int(buf, lnum, message)
 	   )
 	    set_keep_msg((char_u *)_(no_lines_msg), 0);
 
-	/* FEAT_BYTEOFF already handled in there, dont worry 'bout it below */
+	/* FEAT_BYTEOFF already handled in there, don't worry 'bout it below */
 	i = ml_replace((linenr_T)1, (char_u *)"", TRUE);
 	buf->b_ml.ml_flags |= ML_EMPTY;
 
@@ -5259,7 +5259,7 @@ ml_find_line_or_offset(buf, lnum, offp)
 	    size += lnum - 1;
 
 	/* Don't count the last line break if 'bin' and 'noeol'. */
-	if (buf->b_p_bin && !buf->b_p_eol)
+	if ((buf->b_p_bin && !buf->b_p_eol) || !buf->b_p_lasteol)
 	    size -= ffdos + 1;
     }
 

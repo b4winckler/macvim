@@ -2,7 +2,7 @@
 "
 " 日本語向けにエンコードを設定するサンプル - Vim7用
 "
-" Last Change: 09-Dec-2011.
+" Last Change: 23-Apr-2013.
 " Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 
 " 各エンコードを示す文字列のデフォルト値。s:CheckIconvCapabilityを()呼ぶことで
@@ -40,7 +40,7 @@ function! s:DetermineFileencodings()
   let value = 'ucs-bom,latin1'
   if &encoding ==? 'utf-8'
     " UTF-8環境向けにfileencodingsを設定する
-    let value = s:enc_jisx. ','.s:enc_cp932. ','.s:enc_eucjp. ','.value
+    let value = s:enc_jisx. ','.s:enc_cp932. ','.s:enc_eucjp. ',ucs-bom'
   elseif &encoding ==? 'cp932'
     " CP932環境向けにfileencodingsを設定する
     let value = value. ','.s:enc_jisx. ','.s:enc_utf8. ','.s:enc_eucjp

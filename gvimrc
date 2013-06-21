@@ -1,9 +1,10 @@
+scriptencoding utf-8
 " vim:set ts=8 sts=2 sw=2 tw=0: (この行に関しては:help modelineを参照)
 "
 " An example for a Japanese version gvimrc file.
 " 日本語版のデフォルトGUI設定ファイル(gvimrc) - Vim7用試作
 "
-" Last Change: 09-Jan-2011.
+" Last Change: 07-May-2013.
 " Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 "
 " 解説:
@@ -173,4 +174,4 @@ if has('printer')
   endif
 endif
 
-" Copyright (C) 2011 KaoriYa/MURAOKA Taro
+" Copyright (C) 2009-2013 KaoriYa/MURAOKA Taro

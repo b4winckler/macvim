@@ -56,6 +56,7 @@ static int	new_cmdpos;	/* position set by set_cmdline_pos() */
 typedef struct hist_entry
 {
     int		hisnum;		/* identifying number */
+    int		viminfo;	/* when TRUE hisstr comes from viminfo */
     char_u	*hisstr;	/* actual entry, separator char after the NUL */
 } histentry_T;
 
@@ -67,7 +68,7 @@ static int	hislen = 0;		/* actual length of history tables */
 
 static int	hist_char2type __ARGS((int c));
 
-static int	in_history __ARGS((int, char_u *, int, int));
+static int	in_history __ARGS((int, char_u *, int, int, int));
 # ifdef FEAT_EVAL
 static int	calc_hist_idx __ARGS((int histype, int num));
 # endif
@@ -118,6 +119,9 @@ static char_u	*get_history_arg __ARGS((expand_T *xp, int idx));
 static int	ExpandUserDefined __ARGS((expand_T *xp, regmatch_T *regmatch, int *num_file, char_u ***file));
 static int	ExpandUserList __ARGS((expand_T *xp, int *num_file, char_u ***file));
 # endif
+#endif
+#ifdef FEAT_CMDHIST
+static void	clear_hist_entry __ARGS((histentry_T *hisptr));
 #endif
 
 #ifdef FEAT_CMDWIN
@@ -3681,19 +3685,16 @@ ExpandOne(xp, str, orig, options, mode)
 	{
 	    for (i = 0; i < xp->xp_numfiles; ++i)
 	    {
-#ifdef CASE_INSENSITIVE_FILENAME
-		if (xp->xp_context == EXPAND_DIRECTORIES
+		if (p_fic && (xp->xp_context == EXPAND_DIRECTORIES
 			|| xp->xp_context == EXPAND_FILES
 			|| xp->xp_context == EXPAND_SHELLCMD
-			|| xp->xp_context == EXPAND_BUFFERS)
+			|| xp->xp_context == EXPAND_BUFFERS))
 		{
 		    if (TOLOWER_LOC(xp->xp_files[i][len]) !=
 					    TOLOWER_LOC(xp->xp_files[0][len]))
 			break;
 		}
-		else
-#endif
-		     if (xp->xp_files[i][len] != xp->xp_files[0][len])
+		else if (xp->xp_files[i][len] != xp->xp_files[0][len])
 		    break;
 	    }
 	    if (i < xp->xp_numfiles)
@@ -4701,6 +4702,9 @@ ExpandFromContext(xp, pat, num_file, file, options)
 #ifdef FEAT_SYN_HL
 	    {EXPAND_SYNTAX, get_syntax_name, TRUE, TRUE},
 #endif
+#ifdef FEAT_PROFILE
+	    {EXPAND_SYNTIME, get_syntime_arg, TRUE, TRUE},
+#endif
 	    {EXPAND_HIGHLIGHT, get_highlight_name, TRUE, TRUE},
 #ifdef FEAT_AUTOCMD
 	    {EXPAND_EVENTS, get_event_name, TRUE, TRUE},
@@ -4744,7 +4748,7 @@ ExpandFromContext(xp, pat, num_file, file, options)
 	    }
     }
 
-    vim_free(regmatch.regprog);
+    vim_regfree(regmatch.regprog);
 
     return ret;
 #endif /* FEAT_CMDL_COMPL */
@@ -5377,10 +5381,7 @@ init_history()
 		if (hisidx[type] < 0)		/* there are no entries yet */
 		{
 		    for (i = 0; i < newlen; ++i)
-		    {
-			temp[i].hisnum = 0;
-			temp[i].hisstr = NULL;
-		    }
+			clear_hist_entry(&temp[i]);
 		}
 		else if (newlen > hislen)	/* array becomes bigger */
 		{
@@ -5388,10 +5389,7 @@ init_history()
 			temp[i] = history[type][i];
 		    j = i;
 		    for ( ; i <= newlen - (hislen - hisidx[type]); ++i)
-		    {
-			temp[i].hisnum = 0;
-			temp[i].hisstr = NULL;
-		    }
+			clear_hist_entry(&temp[i]);
 		    for ( ; j < hislen; ++i, ++j)
 			temp[i] = history[type][j];
 		}
@@ -5419,16 +5417,26 @@ init_history()
     }
 }
 
+    static void
+clear_hist_entry(hisptr)
+    histentry_T	*hisptr;
+{
+    hisptr->hisnum = 0;
+    hisptr->viminfo = FALSE;
+    hisptr->hisstr = NULL;
+}
+
 /*
  * Check if command line 'str' is already in history.
  * If 'move_to_front' is TRUE, matching entry is moved to end of history.
  */
     static int
-in_history(type, str, move_to_front, sep)
+in_history(type, str, move_to_front, sep, writing)
     int	    type;
     char_u  *str;
     int	    move_to_front;	/* Move the entry to the front if it exists */
     int	    sep;
+    int	    writing;		/* ignore entries read from viminfo */
 {
     int	    i;
     int	    last_i = -1;
@@ -5446,6 +5454,7 @@ in_history(type, str, move_to_front, sep)
 	 * well. */
 	p = history[type][i].hisstr;
 	if (STRCMP(str, p) == 0
+		&& !(writing && history[type][i].viminfo)
 		&& (type != HIST_SEARCH || sep == p[STRLEN(p) + 1]))
 	{
 	    char_u *p = history[type][i].hisstr;
@@ -5474,8 +5483,9 @@ in_history(type, str, move_to_front, sep)
 	    history[type][last_i] = history[type][i];
 	    last_i = i;
 	}
-	history[type][i].hisstr = str;
 	history[type][i].hisnum = ++hisnum[type];
+	history[type][i].viminfo = FALSE;
+	history[type][i].hisstr = str;
 	return TRUE;
     }
     return FALSE;
@@ -5539,15 +5549,14 @@ add_to_history(histype, new_entry, in_map, sep)
 	    /* Current line is from the same mapping, remove it */
 	    hisptr = &history[HIST_SEARCH][hisidx[HIST_SEARCH]];
 	    vim_free(hisptr->hisstr);
-	    hisptr->hisstr = NULL;
-	    hisptr->hisnum = 0;
+	    clear_hist_entry(hisptr);
 	    --hisnum[histype];
 	    if (--hisidx[HIST_SEARCH] < 0)
 		hisidx[HIST_SEARCH] = hislen - 1;
 	}
 	last_maptick = -1;
     }
-    if (!in_history(histype, new_entry, TRUE, sep))
+    if (!in_history(histype, new_entry, TRUE, sep, FALSE))
     {
 	if (++hisidx[histype] == hislen)
 	    hisidx[histype] = 0;
@@ -5561,6 +5570,7 @@ add_to_history(histype, new_entry, in_map, sep)
 	    hisptr->hisstr[len + 1] = sep;
 
 	hisptr->hisnum = ++hisnum[histype];
+	hisptr->viminfo = FALSE;
 	if (histype == HIST_SEARCH && in_map)
 	    last_maptick = maptick;
     }
@@ -5750,8 +5760,7 @@ clr_history(histype)
 	for (i = hislen; i--;)
 	{
 	    vim_free(hisptr->hisstr);
-	    hisptr->hisnum = 0;
-	    hisptr++->hisstr = NULL;
+	    clear_hist_entry(hisptr);
 	}
 	hisidx[histype] = -1;	/* mark history as cleared */
 	hisnum[histype] = 0;	/* reset identifier counter */
@@ -5796,16 +5805,14 @@ del_history_entry(histype, str)
 	    {
 		found = TRUE;
 		vim_free(hisptr->hisstr);
-		hisptr->hisstr = NULL;
-		hisptr->hisnum = 0;
+		clear_hist_entry(hisptr);
 	    }
 	    else
 	    {
 		if (i != last)
 		{
 		    history[histype][last] = *hisptr;
-		    hisptr->hisstr = NULL;
-		    hisptr->hisnum = 0;
+		    clear_hist_entry(hisptr);
 		}
 		if (--last < 0)
 		    last += hislen;
@@ -5816,7 +5823,7 @@ del_history_entry(histype, str)
 	if (history[histype][idx].hisstr == NULL)
 	    hisidx[histype] = -1;
     }
-    vim_free(regmatch.regprog);
+    vim_regfree(regmatch.regprog);
     return found;
 }
 
@@ -5849,8 +5856,7 @@ del_history_idx(histype, idx)
 	history[histype][i] = history[histype][j];
 	i = j;
     }
-    history[histype][i].hisstr = NULL;
-    history[histype][i].hisnum = 0;
+    clear_hist_entry(&history[histype][i]);
     if (--i < 0)
 	i += hislen;
     hisidx[histype] = i;
@@ -6035,6 +6041,9 @@ ex_history(eap)
 #endif
 
 #if (defined(FEAT_VIMINFO) && defined(FEAT_CMDHIST)) || defined(PROTO)
+/*
+ * Buffers for history read from a viminfo file.  Only valid while reading.
+ */
 static char_u **viminfo_history[HIST_COUNT] = {NULL, NULL, NULL, NULL};
 static int	viminfo_hisidx[HIST_COUNT] = {0, 0, 0, 0};
 static int	viminfo_hislen[HIST_COUNT] = {0, 0, 0, 0};
@@ -6069,8 +6078,9 @@ hist_type2char(type, use_question)
  * This allocates history arrays to store the read history lines.
  */
     void
-prepare_viminfo_history(asklen)
+prepare_viminfo_history(asklen, writing)
     int	    asklen;
+    int	    writing;
 {
     int	    i;
     int	    num;
@@ -6078,18 +6088,17 @@ prepare_viminfo_history(asklen)
     int	    len;
 
     init_history();
-    viminfo_add_at_front = (asklen != 0);
+    viminfo_add_at_front = (asklen != 0 && !writing);
     if (asklen > hislen)
 	asklen = hislen;
 
     for (type = 0; type < HIST_COUNT; ++type)
     {
-	/*
-	 * Count the number of empty spaces in the history list.  If there are
-	 * more spaces available than we request, then fill them up.
-	 */
+	/* Count the number of empty spaces in the history list.  Entries read
+	 * from viminfo previously are also considered empty.  If there are
+	 * more spaces available than we request, then fill them up. */
 	for (i = 0, num = 0; i < hislen; i++)
-	    if (history[type][i].hisstr == NULL)
+	    if (history[type][i].hisstr == NULL || history[type][i].viminfo)
 		num++;
 	len = asklen;
 	if (num > len)
@@ -6111,8 +6120,9 @@ prepare_viminfo_history(asklen)
  * new.
  */
     int
-read_viminfo_history(virp)
+read_viminfo_history(virp, writing)
     vir_T	*virp;
+    int		writing;
 {
     int		type;
     long_u	len;
@@ -6128,7 +6138,7 @@ read_viminfo_history(virp)
 	    int sep = (*val == ' ' ? NUL : *val);
 
 	    if (!in_history(type, val + (type == HIST_SEARCH),
-						   viminfo_add_at_front, sep))
+					  viminfo_add_at_front, sep, writing))
 	    {
 		/* Need to re-allocate to append the separator byte. */
 		len = STRLEN(val);
@@ -6158,6 +6168,9 @@ read_viminfo_history(virp)
     return viminfo_readline(virp);
 }
 
+/*
+ * Finish reading history lines from viminfo.  Not used when writing viminfo.
+ */
     void
 finish_viminfo_history()
 {
@@ -6168,7 +6181,7 @@ finish_viminfo_history()
     for (type = 0; type < HIST_COUNT; ++type)
     {
 	if (history[type] == NULL)
-	    return;
+	    continue;
 	idx = hisidx[type] + viminfo_hisidx[type];
 	if (idx >= hislen)
 	    idx -= hislen;
@@ -6182,7 +6195,8 @@ finish_viminfo_history()
 		hisidx[type] = hislen - 1;
 	    do
 	    {
-		if (history[type][idx].hisstr != NULL)
+		if (history[type][idx].hisstr != NULL
+						|| history[type][idx].viminfo)
 		    break;
 		if (++idx == hislen)
 		    idx = 0;
@@ -6194,6 +6208,7 @@ finish_viminfo_history()
 	{
 	    vim_free(history[type][idx].hisstr);
 	    history[type][idx].hisstr = viminfo_history[type][i];
+	    history[type][idx].viminfo = TRUE;
 	    if (--idx < 0)
 		idx = hislen - 1;
 	}
@@ -6206,18 +6221,27 @@ finish_viminfo_history()
 	}
 	vim_free(viminfo_history[type]);
 	viminfo_history[type] = NULL;
+	viminfo_hisidx[type] = 0;
     }
 }
 
+/*
+ * Write history to viminfo file in "fp".
+ * When "merge" is TRUE merge history lines with a previously read viminfo
+ * file, data is in viminfo_history[].
+ * When "merge" is FALSE just write all history lines.  Used for ":wviminfo!".
+ */
     void
-write_viminfo_history(fp)
+write_viminfo_history(fp, merge)
     FILE    *fp;
+    int	    merge;
 {
     int	    i;
     int	    type;
     int	    num_saved;
     char_u  *p;
     int	    c;
+    int     round;
 
     init_history();
     if (hislen == 0)
@@ -6236,26 +6260,67 @@ write_viminfo_history(fp)
 					_("Input Line"));
 	if (num_saved > hislen)
 	    num_saved = hislen;
-	i = hisidx[type];
-	if (i >= 0)
-	    while (num_saved--)
-	    {
-		p = history[type][i].hisstr;
-		if (p != NULL)
+
+	/*
+	 * Merge typed and viminfo history:
+	 * round 1: history of typed commands.
+	 * round 2: history from recently read viminfo.
+	 */
+	for (round = 1; round <= 2; ++round)
+	{
+	    if (round == 1)
+		/* start at newest entry, somewhere in the list */
+		i = hisidx[type];
+	    else if (viminfo_hisidx[type] > 0)
+		/* start at newest entry, first in the list */
+		i = 0;
+	    else
+		/* empty list */
+		i = -1;
+	    if (i >= 0)
+		while (num_saved > 0
+			&& !(round == 2 && i >= viminfo_hisidx[type]))
 		{
-		    fputc(hist_type2char(type, TRUE), fp);
-		    /* For the search history: put the separator in the second
-		     * column; use a space if there isn't one. */
-		    if (type == HIST_SEARCH)
+		    p = round == 1 ? history[type][i].hisstr
+				   : viminfo_history[type] == NULL ? NULL
+						   : viminfo_history[type][i];
+		    if (p != NULL && (round == 2
+				       || !merge
+				       || !history[type][i].viminfo))
 		    {
-			c = p[STRLEN(p) + 1];
-			putc(c == NUL ? ' ' : c, fp);
+			--num_saved;
+			fputc(hist_type2char(type, TRUE), fp);
+			/* For the search history: put the separator in the
+			 * second column; use a space if there isn't one. */
+			if (type == HIST_SEARCH)
+			{
+			    c = p[STRLEN(p) + 1];
+			    putc(c == NUL ? ' ' : c, fp);
+			}
+			viminfo_writestring(fp, p);
 		    }
-		    viminfo_writestring(fp, p);
+		    if (round == 1)
+		    {
+			/* Decrement index, loop around and stop when back at
+			 * the start. */
+			if (--i < 0)
+			    i = hislen - 1;
+			if (i == hisidx[type])
+			    break;
+		    }
+		    else
+		    {
+			/* Increment index. Stop at the end in the while. */
+			++i;
+		    }
 		}
-		if (--i < 0)
-		    i = hislen - 1;
-	    }
+	}
+	for (i = 0; i < viminfo_hisidx[type]; ++i)
+	    if (viminfo_history[type] != NULL)
+		vim_free(viminfo_history[type][i]);
+	vim_free(viminfo_history[type]);
+	viminfo_history[type] = NULL;
+	viminfo_hisidx[type] = 0;
     }
 }
 #endif /* FEAT_VIMINFO */

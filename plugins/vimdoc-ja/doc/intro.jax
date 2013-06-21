@@ -1,7 +1,7 @@
-*intro.txt*     For Vim バージョン 7.3.  Last change: 2011 May 15
+*intro.txt*     For Vim バージョン 7.3.  Last change: 2012 Sep 05
 
 
-		  VIM REFERENCE MANUAL    by Bram Moolenaar
+		  VIMリファレンスマニュアル    by Bram Moolenaar
 
 
 序文							*ref* *reference*
@@ -385,6 +385,8 @@ CTRL-{char}	制御文字として入力された文字 {char}。CTRL キーを�
 							*quotecommandquote*
 "command"	説明の中にでてくる入力可能なコマンドは、ダブルクォートで囲んで
 		表記されます。
+`command`	コマンドの新しい表記法です。他のクォート表記のテキストや文字列
+		と区別するために使われます。
 
 					*key-notation* *key-codes* *keycodes*
 このドキュメントでは、キーの名前として以下のものが使われます。これらは ":map"

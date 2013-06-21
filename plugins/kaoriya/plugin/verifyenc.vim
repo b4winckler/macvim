@@ -1,12 +1,12 @@
-" vi:set ts=8 sts=2 sw=2 tw=0:
+" vi:set ts=8 sts=2 sw=2 tw=0 et:
 "
 " verifyenc.vim
 "   Verify the file is truly in 'fileencoding' encoding.
 "
-" Maintainer:	MURAOKA Taro <koron.kaoriya@gmail.com>
-" Last Change:	27-Jul-2003.
-" Options:	'verifyenc_enable'	When 0, checking become disable.
-"		'verifyenc_maxlines'	Maximum range to check (for speed).
+" Maintainer:   MURAOKA Taro <koron.kaoriya@gmail.com>
+" Last Change:  10-Mar-2013.
+" Options:      'verifyenc_enable'      When 0, checking become disable.
+"               'verifyenc_maxlines'    Maximum range to check (for speed).
 "
 " To make vim NOT TO LOAD this plugin, write next line in your .vimrc:
 "   :let plugin_verifyenc_disable = 1
@@ -14,7 +14,6 @@
 if exists('plugin_verifyenc_disable')
   finish
 endif
-let s:debug = 1
 
 " Set default options
 if !exists("verifyenc_enable")
@@ -32,7 +31,7 @@ command! -nargs=? VerifyEnc call <SID>Status(<q-args>)
 if has('autocmd')
   augroup VerifyEncoding
   au!
-  autocmd BufReadPost * silent call <SID>VerifyEncoding()
+  autocmd BufReadPost * call <SID>VerifyEncoding()
   augroup END
 endif
 
@@ -49,49 +48,90 @@ function! s:Status(argv)
   echo 'Verify encoding is *'.(g:verifyenc_enable ? 'ON' : 'OFF').'*'
 endfunction
 
+function! s:EditByGlobalFenc()
+  if len(bufname('%')) != 0
+    execute 'edit! ++enc='.&g:fileencoding
+  endif
+  let b:verifyenc_guard = 1
+  doautocmd BufReadPost
+  unlet b:verifyenc_guard
+endfunction
+
+function! s:GetMaxlines()
+  return min([line('$'), g:verifyenc_maxlines])
+endfunction
+
+function! s:IsDisabled()
+  if !has('iconv') || &modifiable == 0 || g:verifyenc_enable == 0 || exists('b:verifyenc_guard')
+    return 1
+  else
+    return 0
+  endif
+endfunction
+
 function! s:VerifyEncoding()
-  if !has('iconv') || &modifiable == 0 || g:verifyenc_enable == 0
+  if s:IsDisabled()
+    return
+  endif
+  " Check fenc=guess has been worked yet, to cancel verification.
+  if exists('b:x_guessed_fileencoding')
+    let b:verifyenc = 'CANCELED BY GUESS'
     return
   endif
   " Check if empty file.
   if &fileencoding != '' && line2byte(1) < 0
-    edit! ++enc=
-    doautocmd BufReadPost
+    call s:EditByGlobalFenc()
+    let b:verifyenc = 'SUPPRESSED'
     return
   endif
   " Check whether multibyte is exists or not.
-  if &fileencoding != '' && &fileencoding !~ '^ucs' && s:Has_multibyte_character()
-    if s:debug
-      let b:verifyenc = 'NO MULTIBYTE'
-    endif
+  if &fileencoding != '' && &fileencoding !~ '^ucs' && s:HasMultibyteChar()
+    let b:verifyenc = 'NO MULTIBYTE'
     return
   endif
   " Check to be force euc-jp
   if &encoding =~# '^euc-\%(jp\|jisx0213\)$' && s:Verify_euc_jp()
-    if s:debug
-      let b:verifyenc = 'FORCE EUC-JP'
-    endif
+    call s:EditByGlobalFenc()
+    let b:verifyenc = 'FORCE EUC-JP'
+    return
+  endif
+  " Check to be force cp932
+  if &encoding == 'cp932' && s:Verify_cp932()
+    call s:EditByGlobalFenc()
+    let b:verifyenc = 'FORCE CP-932'
     return
   endif
   " Nop
   let b:verifyenc = 'NONE'
 endfunction
 
+function! s:SearchFromTop(pattern)
+  let stopline = s:GetMaxlines()
+  let timeout = 1000
+  let pos = getpos('.')
+  normal! 1G
+  let retval = search(a:pattern, 'cnW', stopline, timeout) > 0
+  call setpos('.', pos)
+  return retval
+endfunction
+
 "-----------------------------------------------------------------------------
 " multibyte character
 
-function! s:Has_multibyte_character()
-  if &fileencoding == '' && &encoding == &fileencoding
+function! s:HasMultibyteChar()
+  if &fileencoding == '' || &encoding == &fileencoding
     return 0
   endif
-  let lnum = line('.')
-  let cnum = col('.')
-  if search("[^\t -~]", 'w') > 0
-    call cursor(lnum, cnum)
+
+  " Assure latency for big files without multibyte chars.
+  let stopline = s:GetMaxlines()
+  let timeout = 1000
+
+  if s:SearchFromTop("[^\t -~]") > 0
     return 0
   else
-    " No multibyte characters, then set 'fileencoding' to NULL
-    let &fileencoding = ""
+    " No multibyte characters, then set global 'fileencoding'.
+    let &l:fileencoding = &g:fileencoding
     return 1
   endif
 endfunction
@@ -101,7 +141,8 @@ endfunction
 
 let s:mx_euc_kana = '['.nr2char(0x8ea4).nr2char(0x8ea5).']'.'\%([^\t -~]\)'
 
-if s:debug
+" For development purpose.
+if 0
   function! CheckEucEUC()
     echo "charlen=".strlen(substitute(substitute(getline('.'),'[\t -~]', '', 'g'), '.', "\1", 'g'))
     echo "kanalen=".strlen(substitute(substitute(getline('.'), s:mx_euc_kana, "\1", 'g'), "[^\1]", '', 'g'))
@@ -111,10 +152,7 @@ endif
 function! s:Verify_euc_jp()
   if &encoding =~# '^euc-\%(jp\|jisx0213\)$' && &fileencoding != '' && &encoding != &fileencoding
     " Range to check
-    let rangelast = line('$')
-    if rangelast > g:verifyenc_maxlines
-      let rangelast = g:verifyenc_maxlines
-    endif
+    let rangelast = s:GetMaxlines()
     " Checking loop
     let linenum = 1
     while linenum <= rangelast
@@ -122,12 +160,22 @@ function! s:Verify_euc_jp()
       let charlen = strlen(substitute(substitute(curline,'[\t -~]', '', 'g'), '.', "\1", 'g'))
       let kanalen = strlen(substitute(substitute(curline, s:mx_euc_kana, "\1", 'g'), "[^\1]", '', 'g'))
       if charlen / 2 < kanalen * 3
-	edit! ++enc=
-	doautocmd BufReadPost
-	return 1
+        return 1
       endif
       let linenum = linenum + 1
     endwhile
+  endif
+  return 0
+endfunction
+
+function! s:Verify_cp932()
+  if &encoding == 'cp932' && &fileencoding == 'cp932'
+    let stopline = s:GetMaxlines()
+    let timeout = 10000
+    if s:SearchFromTop('[\x82]$') > 0
+      return 1
+    endif
+    " TODO: Verify another encodings that didn't be recognized.
   endif
   return 0
 endfunction

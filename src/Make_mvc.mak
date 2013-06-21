@@ -20,9 +20,12 @@
 #
 #	!!!!  After changing features do "nmake clean" first  !!!!
 #
-#       Feature Set: FEATURES=[TINY, SMALL, NORMAL, BIG, HUGE] (default is BIG)
+#	Feature Set: FEATURES=[TINY, SMALL, NORMAL, BIG, HUGE] (default is BIG)
 #
 #	GUI interface: GUI=yes (default is no)
+#
+#	GUI with DirectWrite(DirectX): DIRECTX=yes
+#	  (default is no, requires GUI=yes)
 #
 #	OLE interface: OLE=yes (usually with GUI=yes)
 #
@@ -87,20 +90,20 @@
 #	  GETTEXT=[yes or no]  (default is yes)
 #	See http://sourceforge.net/projects/gettext/
 #
-#       PostScript printing: POSTSCRIPT=yes (default is no)
+#	PostScript printing: POSTSCRIPT=yes (default is no)
 #
-#       Netbeans Support: NETBEANS=[yes or no] (default is yes if GUI is yes)
+#	Netbeans Support: NETBEANS=[yes or no] (default is yes if GUI is yes)
 #
-#       XPM Image Support: XPM=[path to XPM directory]
-#       Default is "xpm", using the files included in the distribution.
-#       Use "no" to disable this feature.
+#	XPM Image Support: XPM=[path to XPM directory]
+#	Default is "xpm", using the files included in the distribution.
+#	Use "no" to disable this feature.
 #
-#       Optimization: OPTIMIZE=[SPACE, SPEED, MAXSPEED] (default is MAXSPEED)
+#	Optimization: OPTIMIZE=[SPACE, SPEED, MAXSPEED] (default is MAXSPEED)
 #
-#       Processor Version: CPUNR=[i386, i486, i586, i686, pentium4] (default is
-#       i386)
+#	Processor Version: CPUNR=[i386, i486, i586, i686, pentium4] (default is
+#	i386)
 #
-#       Version Support: WINVER=[0x0400, 0x0500] (default is 0x0400)
+#	Version Support: WINVER=[0x0400, 0x0500] (default is 0x0400)
 #
 #	Debug version: DEBUG=yes
 #	Mapfile: MAP=[no, yes or lines] (default is yes)
@@ -108,10 +111,12 @@
 #	  yes:   Write a normal mapfile.
 #	  lines: Write a mapfile with line numbers (only for VC6 and later)
 #
-#       Netbeans Debugging Support: NBDEBUG=[yes or no] (should be no, yes
-#       doesn't work)
+#	Netbeans Debugging Support: NBDEBUG=[yes or no] (should be no, yes
+#	doesn't work)
 #
-#       Visual C Version: MSVCVER=m.n (default derived from nmake if undefined)
+#	Visual C Version: MSVCVER=m.n (default derived from nmake if undefined)
+#
+#	Static Code Analysis: ANALYZE=yes (works with VS2012 only)
 #
 # You can combine any of these interfaces
 #
@@ -165,6 +170,9 @@ TARGETOS = BOTH
 OBJDIR = .\Obj\G
 !else
 OBJDIR = .\Obj\C
+!endif
+!if "$(DIRECTX)" == "yes"
+OBJDIR = $(OBJDIR)X
 !endif
 !if "$(OLE)" == "yes"
 OBJDIR = $(OBJDIR)O
@@ -291,6 +299,13 @@ NBDEBUG_INCL	= nbdebug.h
 NBDEBUG_SRC	= nbdebug.c
 !endif
 NETBEANS_LIB	= WSock32.lib
+!endif
+
+# DirectWrite(DirectX)
+!if "$(DIRECTX)" == "yes"
+DIRECTX_DEFS	= -DFEAT_DIRECTX -DDYNAMIC_DIRECTX
+DIRECTX_INCL	= gui_dwrite.h
+DIRECTX_OBJ	= $(OUTDIR)\gui_dwrite.obj
 !endif
 
 !ifndef XPM
@@ -422,9 +437,12 @@ MSVCVER = 11.0
 !if "$(_NMAKE_VER)" == "11.00.51106.1"
 MSVCVER = 11.0
 !endif
+!if "$(_NMAKE_VER)" == "11.00.60315.1"
+MSVCVER = 11.0
+!endif
 !endif
 
-# Abort bulding VIM if version of VC is unrecognised.
+# Abort building VIM if version of VC is unrecognised.
 !ifndef MSVCVER
 !message *** ERROR
 !message Cannot determine Visual C version being used.  If you are using the
@@ -482,6 +500,11 @@ OPTFLAG = $(OPTFLAG) /GL
 CFLAGS=$(CFLAGS) $(WP64CHECK)
 !endif
 
+# Static code analysis generally available starting with VS2012
+!if ("$(ANALYZE)" == "yes") && ("$(MSVCVER)" == "11.0")
+CFLAGS=$(CFLAGS) /analyze
+!endif
+
 CFLAGS = $(CFLAGS) $(OPTFLAG) -DNDEBUG $(CPUARG)
 RCFLAGS = $(rcflags) $(rcvars) -DNDEBUG
 ! ifdef USE_MSVCRT
@@ -535,6 +558,7 @@ OBJ = \
 	$(OUTDIR)\getchar.obj \
 	$(OUTDIR)\hardcopy.obj \
 	$(OUTDIR)\hashtab.obj \
+	$(OUTDIR)\job.obj \
 	$(OUTDIR)\main.obj \
 	$(OUTDIR)\mark.obj \
 	$(OUTDIR)\mbyte.obj \
@@ -549,6 +573,7 @@ OBJ = \
 	$(OUTDIR)\ops.obj \
 	$(OUTDIR)\option.obj \
 	$(OUTDIR)\os_mswin.obj \
+	$(OUTDIR)\winclip.obj \
 	$(OUTDIR)\os_win32.obj \
 	$(OUTDIR)\pathdef.obj \
 	$(OUTDIR)\popupmnu.obj \
@@ -626,6 +651,12 @@ GUI_LIB = \
 	/machine:$(CPU) /nodefaultlib
 !else
 SUBSYSTEM = console
+!endif
+
+!if "$(GUI)" == "yes" && "$(DIRECTX)" == "yes"
+CFLAGS = $(CFLAGS) $(DIRECTX_DEFS)
+GUI_INCL = $(GUI_INCL) $(DIRECTX_INCL)
+GUI_OBJ = $(GUI_OBJ) $(DIRECTX_OBJ)
 !endif
 
 # iconv.dll library (dynamically loaded)
@@ -1006,7 +1037,6 @@ clean:
 	- if exist *.obj del *.obj
 	- if exist $(VIM).exe del $(VIM).exe
 	- if exist $(VIM).exe.manifest del $(VIM).exe.manifest
-	- if exist $(VIM).lib del $(VIM).lib
 	- if exist $(VIM).ilk del $(VIM).ilk
 	- if exist $(VIM).pdb del $(VIM).pdb
 	- if exist $(VIM).map del $(VIM).map
@@ -1095,11 +1125,15 @@ $(OUTDIR)/hardcopy.obj:	$(OUTDIR) hardcopy.c  $(INCL)
 
 $(OUTDIR)/hashtab.obj:	$(OUTDIR) hashtab.c  $(INCL)
 
+$(OUTDIR)/job.obj:	$(OUTDIR) job.c  $(INCL)
+
 $(OUTDIR)/gui.obj:	$(OUTDIR) gui.c  $(INCL) $(GUI_INCL)
 
 $(OUTDIR)/gui_beval.obj:	$(OUTDIR) gui_beval.c $(INCL) $(GUI_INCL)
 
 $(OUTDIR)/gui_w32.obj:	$(OUTDIR) gui_w32.c gui_w48.c $(INCL) $(GUI_INCL)
+
+$(OUTDIR)/gui_dwrite.obj:	$(OUTDIR) gui_dwrite.cpp $(INCL) $(GUI_INCL)
 
 $(OUTDIR)/if_cscope.obj: $(OUTDIR) if_cscope.c  $(INCL)
 
@@ -1122,10 +1156,10 @@ $(OUTDIR)/if_mzsch.obj: $(OUTDIR) if_mzsch.c if_mzsch.h $(INCL) $(MZSCHEME_EXTRA
 mzscheme_base.c:
 	$(MZSCHEME)\mzc --c-mods mzscheme_base.c ++lib scheme/base
 
-$(OUTDIR)/if_python.obj: $(OUTDIR) if_python.c  $(INCL)
+$(OUTDIR)/if_python.obj: $(OUTDIR) if_python.c if_py_both.h $(INCL)
 	$(CC) $(CFLAGS) $(PYTHON_INC) if_python.c
 
-$(OUTDIR)/if_python3.obj: $(OUTDIR) if_python3.c  $(INCL)
+$(OUTDIR)/if_python3.obj: $(OUTDIR) if_python3.c if_py_both.h $(INCL)
 	$(CC) $(CFLAGS) $(PYTHON3_INC) if_python3.c
 
 $(OUTDIR)/if_ole.obj: $(OUTDIR) if_ole.cpp  $(INCL) if_ole.h
@@ -1169,6 +1203,8 @@ $(OUTDIR)/ops.obj:	$(OUTDIR) ops.c  $(INCL)
 
 $(OUTDIR)/os_mswin.obj:	$(OUTDIR) os_mswin.c  $(INCL)
 
+$(OUTDIR)/winclip.obj:	$(OUTDIR) winclip.c  $(INCL)
+
 $(OUTDIR)/os_win32.obj:	$(OUTDIR) os_win32.c  $(INCL) os_win32.h
 
 $(OUTDIR)/os_w32exe.obj:	$(OUTDIR) os_w32exe.c  $(INCL)
@@ -1180,7 +1216,7 @@ $(OUTDIR)/popupmnu.obj:	$(OUTDIR) popupmnu.c  $(INCL)
 
 $(OUTDIR)/quickfix.obj:	$(OUTDIR) quickfix.c  $(INCL)
 
-$(OUTDIR)/regexp.obj:	$(OUTDIR) regexp.c  $(INCL)
+$(OUTDIR)/regexp.obj:	$(OUTDIR) regexp.c regexp_nfa.c  $(INCL)
 
 $(OUTDIR)/screen.obj:	$(OUTDIR) screen.c  $(INCL)
 
@@ -1262,6 +1298,7 @@ proto.h: \
 	proto/getchar.pro \
 	proto/hardcopy.pro \
 	proto/hashtab.pro \
+	proto/job.pro \
 	proto/main.pro \
 	proto/mark.pro \
 	proto/memfile.pro \
@@ -1276,6 +1313,7 @@ proto.h: \
 	proto/ops.pro \
 	proto/option.pro \
 	proto/os_mswin.pro \
+	proto/winclip.pro \
 	proto/os_win32.pro \
 	proto/popupmnu.pro \
 	proto/quickfix.pro \

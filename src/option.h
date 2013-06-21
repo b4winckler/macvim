@@ -391,6 +391,9 @@ EXTERN long	p_ch;		/* 'cmdheight' */
 #if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
 EXTERN int	p_confirm;	/* 'confirm' */
 #endif
+#ifdef FEAT_EVAL
+EXTERN int	p_cfs;		/* 'compactfunc' */
+#endif
 EXTERN int	p_cp;		/* 'compatible' */
 #ifdef FEAT_INS_EXPAND
 EXTERN char_u	*p_cot;		/* 'completeopt' */
@@ -457,6 +460,7 @@ EXTERN int	p_exrc;		/* 'exrc' */
 EXTERN char_u	*p_fencs;	/* 'fileencodings' */
 #endif
 EXTERN char_u	*p_ffs;		/* 'fileformats' */
+EXTERN long	p_fic;		/* 'fileignorecase' */
 #ifdef FEAT_FOLDING
 EXTERN char_u	*p_fcl;		/* 'foldclose' */
 EXTERN long	p_fdls;		/* 'foldlevelstart' */
@@ -673,7 +677,11 @@ EXTERN char_u	*p_cdpath;	/* 'cdpath' */
 EXTERN long	p_rdt;		/* 'redrawtime' */
 #endif
 EXTERN int	p_remap;	/* 'remap' */
+EXTERN long	p_re;		/* 'regexpengine' */
 EXTERN long	p_report;	/* 'report' */
+#ifdef FEAT_RENDER_OPTIONS
+EXTERN char_u	*p_rop;		/* 'renderoptions' */
+#endif
 #if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
 EXTERN long	p_pvh;		/* 'previewheight' */
 #endif
@@ -1008,6 +1016,7 @@ enum
     , BV_KMAP
 #endif
     , BV_KP
+    , BV_LEOL
 #ifdef FEAT_LISP
     , BV_LISP
 #endif

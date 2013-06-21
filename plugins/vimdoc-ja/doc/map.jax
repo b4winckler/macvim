@@ -1,7 +1,7 @@
-*map.txt*       For Vim バージョン 7.3.  Last change: 2012 Apr 13
+*map.txt*       For Vim バージョン 7.3.  Last change: 2013 May 05
 
 
-		  VIM REFERENCE MANUAL	  by Bram Moolenaar
+		  VIMリファレンスマニュアル	  by Bram Moolenaar
 
 
 キーマップ、短縮入力、ユーザ定義コマンドについて。
@@ -47,7 +47,7 @@
 :nm[ap]	{lhs} {rhs}		|mapmode-n|		*:nm* *:nmap*
 :vm[ap]	{lhs} {rhs}		|mapmode-v|		*:vm* *:vmap*
 :xm[ap]	{lhs} {rhs}		|mapmode-x|		*:xm* *:xmap*
-:smap	{lhs} {rhs}		|mapmode-s|		      *:smap*
+:smap	{lhs} {rhs}		|mapmode-s|		    *:smap*
 :om[ap]	{lhs} {rhs}		|mapmode-o|		*:om* *:omap*
 :map!	{lhs} {rhs}		|mapmode-ic|		*:map!*
 :im[ap]	{lhs} {rhs}		|mapmode-i|		*:im* *:imap*
@@ -74,7 +74,7 @@
 			{rhs} は再マップされないので、マップが入れ子になったり
 			再帰的になることはありません。コマンドを再定義するとき
 			によく使われます。
-			{Vi にはない機能です}
+			{Vi にはありません}
 
 
 :unm[ap]  {lhs}			|mapmode-nvo|		*:unm*  *:unmap*
@@ -105,7 +105,7 @@
 :lmapc[lear]			|mapmode-l|		*:lmapc*  *:lmapclear*
 :cmapc[lear]			|mapmode-c|		*:cmapc*  *:cmapclear*
 			マップコマンドに対応したモードのすべてのマップを削除し
-			ます。{Vi にはない機能です}
+			ます。{Vi にはありません}
 			バッファローカルなマップを削除するには <buffer> 引数を
 			付けてください |:map-<buffer>|。
 			mappings |:map-<buffer>|
@@ -137,7 +137,7 @@
 :cm[ap] {lhs}			|mapmode-c|		*:cmap_l*
 			マップコマンドに対応したモードの {lhs} で始まるマップ
 			を一覧表示します。
-			{Vi にはない機能です}
+			{Vi にはありません}
 
 マップコマンドを使うと、単キーまたは複数キーの入力を別の文字列にマップできま
 す。ファンクションキーにコマンド列を割り当てたり、あるキーを別のキーに変換した
@@ -258,7 +258,7 @@ getchar() によって取得され、返されます。
 	endfunc
 
 CTRL-L で次の番号を挿入し、CTRL-R で番号をリセットします。CTRL-R は空文字列を
-返すので、なにも挿入されません。
+返すので、何も挿入されません。
 
 Note: 特殊キーが機能するようにしたり、テキスト中の CSI バイトをエスケープした
 りするために、特別な処理が行われています。|:map| コマンドも同様の処理を行うの
@@ -943,47 +943,47 @@ CTRL-V を押してから短縮入力の後の文字を入力します。
 						*:norea* *:noreabbrev*
 :norea[bbrev] [<expr>] [<buffer>] [lhs] [rhs]
 			":ab" と同じですが、展開後にマップを適用しません。
-			{Vi にはない機能です}
+			{Vi にはありません}
 
 						*:ca* *:cabbrev*
 :ca[bbrev] [<expr>] [<buffer>] [lhs] [rhs]
 			":ab" と同じですが、コマンドラインモード用の短縮入力の
-			み対象です。{Vi にはない機能です}
+			み対象です。{Vi にはありません}
 
 						*:cuna* *:cunabbrev*
 :cuna[bbrev] {lhs}	":una" と同じですが、コマンドラインモード用の短縮入力
-			のみ対象です。{Vi にはない機能です}
+			のみ対象です。{Vi にはありません}
 
 						*:cnorea* *:cnoreabbrev*
 :cnorea[bbrev] [<expr>] [<buffer>] [lhs] [rhs]
 			":ab" と同じですが、コマンドラインモード用の短縮入力の
-			み対象で、展開後にマップを適用しません。{Vi にはない機
-			能です}
+			み対象で、展開後にマップを適用しません。
+			{Vi にはありません}
 
 						*:ia* *:iabbrev*
 :ia[bbrev] [<expr>] [<buffer>] [lhs] [rhs]
 			":ab" と同じですが、挿入モード用の短縮入力のみ対象で
-			す。{Vi にはない機能です}
+			す。{Vi にはありません}
 
 						*:iuna* *:iunabbrev*
 :iuna[bbrev] {lhs}	":una" と同じですが、挿入モード用の短縮入力のみ対象で
-			す。{Vi にはない機能です}
+			す。{Vi にはありません}
 
 						*:inorea* *:inoreabbrev*
 :inorea[bbrev] [<expr>] [<buffer>] [lhs] [rhs]
 			":ab" と同じですが、挿入モード用の短縮入力のみ対象で、
-			展開後にマップを適用しません。{Vi にはない機能です}
+			展開後にマップを適用しません。{Vi にはありません}
 
 							*:abc* *:abclear*
-:abc[lear] [<buffer>]	すべての短縮入力を削除します。{Vi にはない機能です}
+:abc[lear] [<buffer>]	すべての短縮入力を削除します。{Vi にはありません}
 
 							*:iabc* *:iabclear*
 :iabc[lear] [<buffer>]	挿入モード用の短縮入力を削除します。
-			{Vi にはない機能です}
+			{Vi にはありません}
 
 							*:cabc* *:cabclear*
 :cabc[lear] [<buffer>]	コマンドラインモード用の短縮入力を削除します。
-			{Vi にはない機能です}
+			{Vi にはありません}
 
 							*using_CTRL-V*
 特殊な文字を短縮入力の{rhs}で使うことができます。非印字可能文字の特殊な意味を
@@ -1070,7 +1070,7 @@ CTRL-V を押してから短縮入力の後の文字を入力します。
 コマンド|:scriptnames|を使って、それまでに実行されたスクリプトとそのスクリプト
 番号を確認できます。
 
-これらはすべて {Vi にはない機能です}。
+これらはすべて {Vi にはありません}。
 {|+eval| が有効な場合のみ利用できます}
 
 ==============================================================================

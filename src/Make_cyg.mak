@@ -1,6 +1,6 @@
 #
 # Makefile for VIM on Win32, using Cygnus gcc
-# Last updated by Dan Sharp.  Last Change: 2012 Jun 30
+# Last updated by Dan Sharp.  Last Change: 2013 Apr 22
 #
 # Also read INSTALLpc.txt!
 #
@@ -8,6 +8,7 @@
 # Cygwin application use the Makefile (just like on Unix).
 #
 # GUI		no or yes: set to yes if you want the GUI version (yes)
+# DIRECTX	no or yes: set to yes if you want use DirectWrite (no)
 # PERL		define to path to Perl dir to get Perl support (not defined)
 #   PERL_VER	  define to version of Perl being used (56)
 #   DYNAMIC_PERL  no or yes: set to yes to load the Perl DLL dynamically (yes)
@@ -47,8 +48,8 @@
 #               (i386)
 # USEDLL	no or yes: set to yes to use the Runtime library DLL (no)
 #		For USEDLL=yes the cygwin1.dll is required to run Vim.
-#		"no" does not work with latest version of Cygwin, use
-#		Make_ming.mak instead.  Or set CC to gcc-3 and add
+#		For "no" the mingw-gcc-g++ package or the mingw64-i686-gcc-g++
+#		package is required to compile Vim.  Or set CC to gcc-3 and add
 #		-L/lib/w32api to EXTRA_LIBS.
 # POSTSCRIPT	no or yes: set to yes for PostScript printing (no)
 # FEATURES	TINY, SMALL, NORMAL, BIG or HUGE (BIG)
@@ -88,6 +89,10 @@ ifndef ARCH
 ARCH = i386
 endif
 
+ifndef DIRECTX
+DIRECTX = no
+endif
+
 ifndef WINVER
 WINVER = 0x0500
 endif
@@ -106,6 +111,13 @@ ifndef OPTIMIZE
 OPTIMIZE = MAXSPEED
 endif
 
+
+# Link against the shared version of libstdc++ by default.  Set
+# STATIC_STDCPLUS to "yes" to link against static version instead.
+ifndef STATIC_STDCPLUS
+STATIC_STDCPLUS=no
+endif
+
 ### See feature.h for a list of optionals.
 ### Any other defines can be included here.
 
@@ -114,9 +126,17 @@ DEFINES = -DWIN32 -DHAVE_PATHDEF -DFEAT_$(FEATURES) \
 INCLUDES = -march=$(ARCH) -Iproto
 
 #>>>>> name of the compiler and linker, name of lib directory
-CROSS_COMPILE =
+ifeq (yes, $(USEDLL))
+# CROSS_COMPILE is used for the gvimext DLL.
+CROSS_COMPILE = i686-pc-mingw32-
 CC = gcc
 RC = windres
+else
+# i686-pc-mingw32-gcc, i686-w64-mingw32-gcc or gcc-3 can be used.
+CROSS_COMPILE = i686-pc-mingw32-
+CC = $(CROSS_COMPILE)gcc
+RC = $(CROSS_COMPILE)windres
+endif
 
 ##############################
 # DYNAMIC_PERL=yes and no both work
@@ -193,31 +213,45 @@ endif
 ##############################
 ifdef RUBY
 
-ifndef RUBY_VER
-RUBY_VER=16
-endif
-
-ifndef RUBY_VER_LONG
-RUBY_VER_LONG=1.6
-endif
-
 ifndef DYNAMIC_RUBY
-DYNAMIC_RUBY = yes
+DYNAMIC_RUBY=yes
+endif
+#  Set default value
+ifndef RUBY_VER
+RUBY_VER = 16
+endif
+ifndef RUBY_VER_LONG
+RUBY_VER_LONG = 1.6
+endif
+ifndef RUBY_API_VER
+RUBY_API_VER = $(subst .,,$(RUBY_VER_LONG))
 endif
 
+ifndef RUBY_PLATFORM
 ifeq ($(RUBY_VER), 16)
-ifndef RUBY_PLATFORM
 RUBY_PLATFORM = i586-mswin32
-endif
-ifndef RUBY_INSTALL_NAME
-RUBY_INSTALL_NAME = mswin32-ruby$(RUBY_VER)
-endif
 else
-ifndef RUBY_PLATFORM
+ifneq ($(wildcard $(RUBY)/lib/ruby/$(RUBY_VER_LONG)/i386-mingw32),)
+RUBY_PLATFORM = i386-mingw32
+else
+ifneq ($(wildcard $(RUBY)/lib/ruby/$(RUBY_VER_LONG)/x64-mingw32),)
+RUBY_PLATFORM = x64-mingw32
+else
 RUBY_PLATFORM = i386-mswin32
 endif
+endif
+endif
+endif
+
 ifndef RUBY_INSTALL_NAME
-RUBY_INSTALL_NAME = msvcrt-ruby$(RUBY_VER)
+ifeq ($(RUBY_VER), 16)
+RUBY_INSTALL_NAME = mswin32-ruby$(RUBY_API_VER)
+else
+ifeq ($(ARCH),x86-64)
+RUBY_INSTALL_NAME = x64-msvcrt-ruby$(RUBY_API_VER)
+else
+RUBY_INSTALL_NAME = msvcrt-ruby$(RUBY_API_VER)
+endif
 endif
 endif
 
@@ -226,6 +260,10 @@ RUBY_19_OR_LATER = 1
 endif
 
 DEFINES += -DFEAT_RUBY
+ifneq ($(findstring w64-mingw32,$(CC)),)
+# A workaround for mingw-w64
+DEFINES += -DHAVE_STRUCT_TIMESPEC -DHAVE_STRUCT_TIMEZONE
+endif
 INCLUDES += -I$(RUBY)/lib/ruby/$(RUBY_VER_LONG)/$(RUBY_PLATFORM)
 ifdef RUBY_19_OR_LATER
 INCLUDES += -I$(RUBY)/include/ruby-$(RUBY_VER_LONG) -I$(RUBY)/include/ruby-$(RUBY_VER_LONG)/$(RUBY_PLATFORM)
@@ -436,6 +474,15 @@ endif
 endif
 
 ##############################
+ifeq (yes, $(DIRECTX))
+# Only allow DIRECTX for a GUI build.
+DEFINES += -DFEAT_DIRECTX -DDYNAMIC_DIRECTX
+EXTRA_OBJS += $(OUTDIR)/gui_dwrite.o
+EXTRA_LIBS += -ld2d1 -ldwrite
+USE_STDCPLUS = yes
+endif
+
+##############################
 ifdef XPM
 # Only allow XPM for a GUI build.
 DEFINES += -DFEAT_XPM_W32
@@ -460,7 +507,8 @@ endif
 ifeq (yes, $(OLE))
 DEFINES += -DFEAT_OLE
 EXTRA_OBJS += $(OUTDIR)/if_ole.o
-EXTRA_LIBS += -loleaut32 -lstdc++
+EXTRA_LIBS += -loleaut32
+USE_STDCPLUS = yes
 endif
 
 ##############################
@@ -472,6 +520,15 @@ else
 DEL = del
 MKDIR = mkdir
 DIRSLASH = \\
+endif
+
+##############################
+ifeq (yes, $(USE_STDCPLUS))
+ifeq (yes, $(STATIC_STDCPLUS))
+EXTRA_LIBS += -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
+else
+EXTRA_LIBS += -lstdc++
+endif
 endif
 
 #>>>>> end of choices
@@ -517,6 +574,7 @@ OBJ = \
 	$(OUTDIR)/option.o \
 	$(OUTDIR)/os_win32.o \
 	$(OUTDIR)/os_mswin.o \
+	$(OUTDIR)/winclip.o \
 	$(OUTDIR)/pathdef.o \
 	$(OUTDIR)/popupmnu.o \
 	$(OUTDIR)/quickfix.o \
@@ -603,16 +661,19 @@ $(OUTDIR)/ex_eval.o:	ex_eval.c $(INCL) ex_cmds.h
 $(OUTDIR)/gui_w32.o:	gui_w32.c gui_w48.c $(INCL)
 	$(CC) -c $(CFLAGS) gui_w32.c -o $(OUTDIR)/gui_w32.o
 
+$(OUTDIR)/gui_dwrite.o:	gui_dwrite.cpp $(INCL) gui_dwrite.h
+	$(CC) -c $(CFLAGS) gui_dwrite.cpp -o $(OUTDIR)/gui_dwrite.o
+
 $(OUTDIR)/if_cscope.o:	if_cscope.c $(INCL) if_cscope.h
 	$(CC) -c $(CFLAGS) if_cscope.c -o $(OUTDIR)/if_cscope.o
 
 $(OUTDIR)/if_ole.o:	if_ole.cpp $(INCL)
 	$(CC) -c $(CFLAGS) if_ole.cpp -o $(OUTDIR)/if_ole.o
 
-$(OUTDIR)/if_python.o : if_python.c $(INCL)
+$(OUTDIR)/if_python.o : if_python.c if_py_both.h $(INCL)
 	$(CC) -c $(CFLAGS) -I$(PYTHON)/include $< -o $@
 
-$(OUTDIR)/if_python3.o : if_python3.c $(INCL)
+$(OUTDIR)/if_python3.o : if_python3.c if_py_both.h $(INCL)
 	$(CC) -c $(CFLAGS) -I$(PYTHON3)/include $< -o $@
 
 if_perl.c: if_perl.xs typemap
@@ -632,6 +693,9 @@ endif
 
 $(OUTDIR)/netbeans.o:	netbeans.c $(INCL) $(NBDEBUG_DEP)
 	$(CC) -c $(CFLAGS) netbeans.c -o $(OUTDIR)/netbeans.o
+
+$(OUTDIR)/regexp.o:		regexp.c regexp_nfa.c $(INCL)
+	$(CC) -c $(CFLAGS) regexp.c -o $(OUTDIR)/regexp.o
 
 $(OUTDIR)/if_mzsch.o:	if_mzsch.c $(INCL) if_mzsch.h $(MZ_EXTRA_DEP)
 	$(CC) -c $(CFLAGS) if_mzsch.c -o $(OUTDIR)/if_mzsch.o

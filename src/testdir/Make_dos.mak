@@ -30,7 +30,9 @@ SCRIPTS =	test3.out test4.out test5.out test6.out test7.out \
 		test68.out test69.out test71.out test72.out test73.out \
 		test74.out test75.out test76.out test77.out test78.out \
 		test79.out test80.out test81.out test82.out test83.out \
-		test84.out test85.out test86.out test87.out test88.out
+		test84.out test85.out test86.out test87.out test88.out \
+		test89.out test90.out test91.out test92.out test93.out \
+		test94.out test95.out
 
 SCRIPTS32 =	test50.out test70.out
 
@@ -38,25 +40,34 @@ SCRIPTS_GUI = test16.out
 
 .SUFFIXES: .in .out
 
-nongui:	fixff $(SCRIPTS16) $(SCRIPTS)
-	echo ALL DONE
+nongui:	clean fixff_dos $(SCRIPTS16) $(SCRIPTS) fixff_unix report
 
-small:
-	echo ALL DONE
+small:	clean fixff_unix report
 
-gui:	fixff $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS_GUI)
-	echo ALL DONE
+gui:	clean fixff_dos $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS_GUI) fixff_unix \
+	report
 
-win32:	fixff $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS32)
-	echo ALL DONE
+win32:	clean fixff_dos $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS32) fixff_unix report
 
-fixff:
-	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=dos|upd" +q *.in *.ok
+fixff_dos:
+	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=dos|upd" +q \
+		*.in *.ok > NUL
 	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=unix|upd" +q \
-		dotest.in test60.ok test71.ok test74.ok
+		dotest.in test60.ok test71.ok test74.ok > NUL
+
+fixff_unix:
+	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=unix|upd" +q \
+		*.in *.ok > NUL
+
+report:
+	@echo ""
+	@echo Test results:
+	@IF EXIST test.log ( type test.log & echo TEST FAILURE & exit /b 1 ) \
+		ELSE ( ECHO ALL DONE )
 
 clean:
 	-del *.out
+	-del *.failed
 	-if exist test.ok del test.ok
 	-if exist small.vim del small.vim
 	-if exist tiny.vim del tiny.vim
@@ -64,16 +75,23 @@ clean:
 	-if exist mzscheme.vim del mzscheme.vim
 	-if exist lua.vim del lua.vim
 	-del X*
+	-if exist Xdir1 rd /s /q Xdir1
+	-if exist Xfind rd /s /q Xfind
 	-if exist viminfo del viminfo
+	-del test.log
 
 .in.out:
+	-if exist $*.failed del $*.failed
 	copy $*.ok test.ok
 	$(VIMPROG) -u dos.vim -U NONE --noplugin -s dotest.in $*.in
-	diff test.out $*.ok
-	-if exist $*.out del $*.out
-	rename test.out $*.out
+	@diff test.out $*.ok & if errorlevel 1 \
+		( move /y test.out $*.failed & echo $* FAILED >> test.log ) \
+		else ( move /y test.out $*.out )
 	-del X*
-	-del X*.*
 	-del test.ok
-	-rmdir /s /q Xfind
+	-if exist Xdir1 rd /s /q Xdir1
+	-if exist Xfind rd /s /q Xfind
 	-if exist viminfo del viminfo
+
+nolog:
+	-del test.log

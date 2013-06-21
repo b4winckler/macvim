@@ -20,6 +20,22 @@ typedef int		colnr_T;
 typedef unsigned short	short_u;
 #endif
 
+#ifdef FEAT_JOB_BASE
+typedef int (*JOB_CHECK_END)(void *);
+typedef void (*JOB_CLOSE)(void *);
+
+typedef struct _job_T job_T;
+
+struct _job_T
+{
+    void	    *data;
+    JOB_CHECK_END   check_end;
+    JOB_CLOSE	    close;
+    int		    wait;
+    job_T	    *next;
+};
+#endif
+
 /*
  * position in file or buffer
  */
@@ -63,15 +79,16 @@ typedef struct growarray
 
 #define GA_EMPTY    {0, 0, 0, 0, NULL}
 
-/*
- * This is here because regexp.h needs pos_T and below regprog_T is used.
- */
-#include "regexp.h"
-
 typedef struct window_S		win_T;
 typedef struct wininfo_S	wininfo_T;
 typedef struct frame_S		frame_T;
 typedef int			scid_T;		/* script ID */
+typedef struct file_buffer	buf_T;  /* forward declaration */
+
+/*
+ * This is here because regexp.h needs pos_T and below regprog_T is used.
+ */
+#include "regexp.h"
 
 /*
  * This is here because gui.h needs the pos_T and win_T, and win_T needs gui.h
@@ -110,6 +127,26 @@ typedef struct xfilemark
     fmark_T	fmark;
     char_u	*fname;		/* file name, used when fnum == 0 */
 } xfmark_T;
+
+#ifdef FEAT_EVAL
+
+typedef struct evalmark_S emark_T;
+
+struct evalmark_S
+{
+    int		em_id;
+    pos_T	em_pos;
+    emark_T	*em_next;
+};
+
+typedef struct evalmarklist_S
+{
+    emark_T	*eml_first;
+    int_u	eml_count;
+    int_u	eml_next_id;
+} emarklist_T;
+
+#endif /* FEAT_EVAL */
 
 /*
  * The taggy struct is used to store the information about a :tag command.
@@ -525,8 +562,6 @@ typedef struct
     char_u	*save_ei;		/* saved value of 'eventignore' */
 # endif
 } cmdmod_T;
-
-typedef struct file_buffer buf_T;  /* forward declaration */
 
 #define MF_SEED_LEN	8
 
@@ -1181,12 +1216,12 @@ typedef struct dictitem_S dictitem_T;
  */
 struct dictvar_S
 {
-    int		dv_refcount;	/* reference count */
-    hashtab_T	dv_hashtab;	/* hashtab that refers to the items */
-    int		dv_copyID;	/* ID used by deepcopy() */
-    dict_T	*dv_copydict;	/* copied dict used by deepcopy() */
     char	dv_lock;	/* zero, VAR_LOCKED, VAR_FIXED */
     char	dv_scope;	/* zero, VAR_SCOPE, VAR_DEF_SCOPE */
+    int		dv_refcount;	/* reference count */
+    int		dv_copyID;	/* ID used by deepcopy() */
+    hashtab_T	dv_hashtab;	/* hashtab that refers to the items */
+    dict_T	*dv_copydict;	/* copied dict used by deepcopy() */
     dict_T	*dv_used_next;	/* next dict in used dicts list */
     dict_T	*dv_used_prev;	/* previous dict in used dicts list */
 };
@@ -1207,6 +1242,18 @@ struct dictvar_S
 typedef struct qf_info_S qf_info_T;
 #endif
 
+#ifdef FEAT_PROFILE
+/*
+ * Used for :syntime: timing of executing a syntax pattern.
+ */
+typedef struct {
+    proftime_T	total;		/* total time used */
+    proftime_T	slowest;	/* time of slowest call */
+    long	count;		/* nr of times used */
+    long	match;		/* nr of times matched */
+} syn_time_T;
+#endif
+
 /*
  * These are items normally related to a buffer.  But when using ":ownsyntax"
  * a window may have its own instance.
@@ -1215,7 +1262,7 @@ typedef struct {
 #ifdef FEAT_SYN_HL
     hashtab_T	b_keywtab;		/* syntax keywords hash table */
     hashtab_T	b_keywtab_ic;		/* idem, ignore case */
-    int		b_syn_error;		/* TRUE when error occured in HL */
+    int		b_syn_error;		/* TRUE when error occurred in HL */
     int		b_syn_ic;		/* ignore case for :syn cmds */
     int		b_syn_spell;		/* SYNSPL_ values */
     garray_T	b_syn_patterns;		/* table for syntax patterns */
@@ -1231,6 +1278,9 @@ typedef struct {
     long	b_syn_sync_linebreaks;	/* offset for multi-line pattern */
     char_u	*b_syn_linecont_pat;	/* line continuation pattern */
     regprog_T	*b_syn_linecont_prog;	/* line continuation program */
+#ifdef FEAT_PROFILE
+    syn_time_T  b_syn_linecont_time;
+#endif
     int		b_syn_linecont_ic;	/* ignore-case flag for above */
     int		b_syn_topgrp;		/* for ":syntax include" */
 # ifdef FEAT_CONCEAL
@@ -1536,6 +1586,7 @@ struct file_buffer
     char_u	*b_p_key;	/* 'key' */
 #endif
     char_u	*b_p_kp;	/* 'keywordprg' */
+    int		b_p_lasteol;	/* 'lasteol' */
 #ifdef FEAT_LISP
     int		b_p_lisp;	/* 'lisp' */
 #endif
@@ -1608,6 +1659,7 @@ struct file_buffer
 				 * write should not have an end-of-line */
 
     int		b_start_eol;	/* last line had eol when it was read */
+    int		b_start_lasteol;/* last lien had eol when it was read */
     int		b_start_ffc;	/* first char of 'ff' when edit started */
 #ifdef FEAT_MBYTE
     char_u	*b_start_fenc;	/* 'fileencoding' when edit started or NULL */
@@ -1617,7 +1669,11 @@ struct file_buffer
 
 #ifdef FEAT_EVAL
     dictitem_T	b_bufvar;	/* variable for "b:" Dictionary */
-    dict_T	b_vars;		/* internal variables, local to buffer */
+    dict_T	*b_vars;	/* internal variables, local to buffer */
+#endif
+
+#ifdef FEAT_EVAL
+    emarklist_T	b_emarklist;
 #endif
 
 #if defined(FEAT_BEVAL) && defined(FEAT_EVAL)
@@ -1768,7 +1824,15 @@ struct tabpage_S
     frame_T	    *(tp_snapshot[SNAP_COUNT]);  /* window layout snapshots */
 #ifdef FEAT_EVAL
     dictitem_T	    tp_winvar;	    /* variable for "t:" Dictionary */
-    dict_T	    tp_vars;	    /* internal variables, local to tab page */
+    dict_T	    *tp_vars;	    /* internal variables, local to tab page */
+#endif
+
+#ifdef FEAT_PYTHON
+    void	    *tp_python_ref;	/* The Python value for this tab page */
+#endif
+
+#ifdef FEAT_PYTHON3
+    void	    *tp_python3_ref;	/* The Python value for this tab page */
 #endif
 };
 
@@ -2091,7 +2155,7 @@ struct window_S
 
 #ifdef FEAT_EVAL
     dictitem_T	w_winvar;	/* variable for "w:" Dictionary */
-    dict_T	w_vars;		/* internal variables, local to window */
+    dict_T	*w_vars;	/* internal variables, local to window */
 #endif
 
 #if defined(FEAT_RIGHTLEFT) && defined(FEAT_FKMAP)

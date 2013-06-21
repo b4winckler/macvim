@@ -1,7 +1,7 @@
-*autocmd.txt*   For Vim バージョン 7.3.  Last change: 2012 Jul 10
+*autocmd.txt*   For Vim バージョン 7.3.  Last change: 2013 May 19
 
 
-		  VIM REFERENCE MANUAL    by Bram Moolenaar
+		  VIMリファレンスマニュアル    by Bram Moolenaar
 
 
 自動コマンド						*autocommand*
@@ -20,7 +20,7 @@
 10.自動コマンドの使用			|autocmd-use|
 11.自動コマンドを無効にする		|autocmd-disable|
 
-{Vi にはこういったコマンドは全くない。}
+{Vi にはこれらのコマンドはない}
 {only: |+autocmd| の機能は、コンパイル時に有効にされていなければ使えない。}
 
 ==============================================================================
@@ -271,8 +271,10 @@ Vimは以下のイベントを認識する。イベント名が大文字か小�
 	起動と終了
 |VimEnter|		全ての起動処理が終わった後
 |GUIEnter|		GUIの起動が成功した後
+|GUIFailed|		GUIの起動が失敗した後
 |TermResponse|		|t_RV|に対する端末の反応を受け取った後
 
+|QuitPre|		`:quit` を使ったとき、本当に閉じるか決定する前
 |VimLeavePre|		Vimを終了する前、viminfoファイルを書き出す前
 |VimLeave|		Vimを終了する前、viminfoファイルを書き出した後
 
@@ -321,8 +323,9 @@ Vimは以下のイベントを認識する。イベント名が大文字か小�
 |SessionLoadPost|	セッションファイルを読み込んだ後
 
 |MenuPopup|		ポップアップメニューを表示する直前
+|CompleteDone|		挿入モード補完が完了したとき
 
-|User|			":duautocmd"との組合せで使われる
+|User|			":doautocmd"との組合せで使われる
 
 自動コマンドイベントのアルファベット順リスト:		*autocmd-events-abc*
 
@@ -525,8 +528,9 @@ CursorMoved			ノーマルモードでカーソルが移動した後。カーソ
 				先行入力があったりオペレータが実行待ちになって
 				いる場合は発生しない。
 				|match-parens|の例を参照。
-				注意: ユーザが予期しないことや時間のかかる処理
-				は行わないこと。
+				注意: このイベントは頻繁に発生するので、ユーザ
+				が予期しないことや時間のかかる処理は行わないこ
+				と。
 							*CursorMovedI*
 CursorMovedI			挿入モードでカーソルが移動した後。ポップアップ
 				メニューが表示されているときは発行されない。
@@ -681,9 +685,10 @@ InsertCharPre			挿入モードで文字が入力されたとき、その文字�
 				ときは発行されない。
 							*InsertEnter*
 InsertEnter			挿入モード・置換モード・仮想置換モードを開始す
-				る直前。変数|v:insertmode|がモードを示す。カー
-				ソルを移動したりなどユーザが予期しないことは行
-				わないように注意。
+				る直前。変数|v:insertmode|がモードを示す。
+				ユーザが予期しないことは行わないように注意。
+				カーソルはコマンド実行後に復元される。復元され
+				たくない場合は |v:char| に非空文字を設定する。
 							*InsertLeave*
 InsertLeave			挿入モードを抜けるとき。CTRL-O |i_CTRL-O| を
 				使ったときにも発生する。|i_CTRL-C| のときは発
@@ -721,11 +726,11 @@ QuickFixCmdPost			QuickFixCmdPreと同様だが、QuickFixコマンドが実
 				初のエラーに移動する前に実行される。
 				|QuickFixCmdPost-example| を参照。
 							*QuitPre*
-QuitPre				`:quit` を使ったとき、カレントウィンドウを閉じ
-				るのか、Vim を終了するのかを決定する前に発行さ
-				れる。例えば、普通のウィンドウがカレントウィン
-				ドウだけだったときに、他の余分なウィンドウを閉
-				じることができます。
+QuitPre				`:quit`, `:wq`, `:qall` を使ったとき、カレント
+				ウィンドウを閉じるのか、Vim を終了するのかを決
+				定する前に発行される。例えば、普通のウィンドウ
+				がカレントウィンドウだけだったときに、他の余分
+				なウィンドウを閉じることができる。
 							*RemoteReply*
 RemoteReply			サーバとして働くVimからの応答を受け取ったとき
 				|server2client()|。パターンは{serverid}に対し
@@ -823,12 +828,27 @@ TermResponse			|t_RV| に対する応答をターミナルから受け取った
 				Note: このイベントは他のイベントの処理中にも発
 				行されることがある。特に、ファイル入出力、シェ
 				ルコマンドの実行、時間の掛かる処理など。
+							*TextChanged*
+TextChanged			ノーマルモードでカレントバッファのテキストが変
+				更されたとき。つまり |b:changedtick| が更新さ
+				れるとき。
+				未処理のキー入力がまだあるとき、またはオペレー
+				ターを待機しているときは、発生しない。
+				注意: このイベントは頻繁に発生するので、ユーザ
+				が予期しないことや時間のかかる処理は行わないこ
+				と。
+							*TextChangedI*
+TextChangedI			インサートモードでカレントバッファのテキストが
+				変更されたとき。
+				ポップアップメニューが表示されているときは発生
+				しない。
+				他は TextChanged と同じ。
 							*User*
 User				自動的に実行されることはない。コマンド
 				":doautocmd" によってのみ実行される
 				自動コマンドのために使用される。
 							*UserGettingBored*
-UserGettingBored		ユーザが CTRL-C を打ち込んだとき。
+UserGettingBored		ユーザが同じキーを 42 回押したとき。
 				ただの冗談！ :-)
 							*VimEnter*
 VimEnter			ファイル .vimrc の読み込みを含む、全てのスター

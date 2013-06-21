@@ -16,7 +16,7 @@ Vimのグラフィカルユーザインターフェース			*gui-w16* *win16-gui
 
 その他の関連文章:
 |gui.txt|	GUIの一般的な要素。
-|os_msdos.txt|  DOSとWindows共通の要素。
+|os_msdos.txt|	DOSとWindows共通の要素。
 |gui_w32.txt|	これに書いてある事の一部はWin16バージョンにも該当する。
 
 {Vi にはWindowsのGUIは無い}

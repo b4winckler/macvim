@@ -1,7 +1,7 @@
 *tabpage.txt*   For Vim バージョン 7.3.  Last change: 2012 Aug 08
 
 
-		  VIM REFERENCE MANUAL    by Bram Moolenaar
+		  VIMリファレンスマニュアル    by Bram Moolenaar
 
 
 タブページの使い方					*tab-page* *tabpage*
@@ -200,7 +200,7 @@ Note :Ntabmove を使うことでタブを N 番目のタブの後ろに移動�
 		{cmd} は '|' を使って複数のコマンドを繋げることができます。
 		{cmd} はタブページを開いたり閉じたり並べ替えたりしてはいけませ
 		ん。
-		{Vi にはない機能です}
+		{Vi にはありません}
 		{|+listcmds| が有効な場合のみ利用できます}
 		|:windo|、|:argdo|、|:bufdo| も参照してください。
 

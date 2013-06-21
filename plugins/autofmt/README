@@ -1,1 +1,10 @@
-see doc/autofmt.txt
+This is a 'formatexpr' plugin.
+
+License:
+  public domain
+
+Usage:
+  :set runtimepath+=/path/to/autofmt/
+  :set formatexpr=autofmt#compat#formatexpr()
+
+See doc/autofmt.txt for more information.

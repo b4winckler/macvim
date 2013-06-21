@@ -31,6 +31,8 @@ DEBUG=no
 OPTIMIZE=MAXSPEED
 # set to yes to make gvim, no for vim
 GUI=yes
+# set to yes if you want to use DirectWrite (DirectX)
+DIRECTX=no
 # FEATURES=[TINY | SMALL  | NORMAL | BIG | HUGE]
 # Set to TINY to make minimal version (few features).
 FEATURES=BIG
@@ -288,7 +290,11 @@ else
 ifneq ($(wildcard $(RUBY)/lib/ruby/$(RUBY_VER_LONG)/i386-mingw32),)
 RUBY_PLATFORM = i386-mingw32
 else
+ifneq ($(wildcard $(RUBY)/lib/ruby/$(RUBY_VER_LONG)/x64-mingw32),)
+RUBY_PLATFORM = x64-mingw32
+else
 RUBY_PLATFORM = i386-mswin32
+endif
 endif
 endif
 endif
@@ -297,7 +303,11 @@ ifndef RUBY_INSTALL_NAME
 ifeq ($(RUBY_VER), 16)
 RUBY_INSTALL_NAME = mswin32-ruby$(RUBY_API_VER)
 else
+ifeq ($(ARCH),x86-64)
+RUBY_INSTALL_NAME = x64-msvcrt-ruby$(RUBY_API_VER)
+else
 RUBY_INSTALL_NAME = msvcrt-ruby$(RUBY_API_VER)
+endif
 endif
 endif
 
@@ -443,6 +453,14 @@ endif
 endif
 endif
 
+# DirectWrite (DirectX)
+ifeq ($(DIRECTX),yes)
+# Only allow DirectWrite for a GUI build.
+ifeq (yes, $(GUI))
+DEFINES += -DFEAT_DIRECTX -DDYNAMIC_DIRECTX
+endif
+endif
+
 # Only allow XPM for a GUI build.
 ifeq (yes, $(GUI))
 
@@ -523,6 +541,7 @@ OBJ = \
 	$(OUTDIR)/option.o \
 	$(OUTDIR)/os_win32.o \
 	$(OUTDIR)/os_mswin.o \
+	$(OUTDIR)/winclip.o \
 	$(OUTDIR)/pathdef.o \
 	$(OUTDIR)/popupmnu.o \
 	$(OUTDIR)/quickfix.o \
@@ -577,6 +596,14 @@ ifeq ($(NETBEANS),yes)
 ifeq (yes, $(GUI))
 OBJ += $(OUTDIR)/netbeans.o
 LIB += -lwsock32
+endif
+endif
+ifeq ($(DIRECTX),yes)
+# Only allow DIRECTX for a GUI build.
+ifeq (yes, $(GUI))
+OBJ += $(OUTDIR)/gui_dwrite.o
+LIB += -ld2d1 -ldwrite
+USE_STDCPLUS = yes
 endif
 endif
 ifdef XPM
@@ -636,11 +663,7 @@ endif
 ifeq (yes, $(OLE))
 LIB += -loleaut32
 OBJ += $(OUTDIR)/if_ole.o
-ifeq (yes, $(STATIC_STDCPLUS))
-LIB += -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
-else
-LIB += -lstdc++
-endif
+USE_STDCPLUS = yes
 endif
 
 ifeq (yes, $(MBYTE))
@@ -662,6 +685,14 @@ LIB += -L$(ICONV)
 CFLAGS += -I$(ICONV)
 endif
 DEFINES+=-DDYNAMIC_ICONV
+endif
+
+ifeq (yes, $(USE_STDCPLUS))
+ifeq (yes, $(STATIC_STDCPLUS))
+LIB += -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
+else
+LIB += -lstdc++
+endif
 endif
 
 all: $(TARGET) vimrun.exe xxd/xxd.exe install.exe uninstal.exe GvimExt/gvimext.dll
@@ -712,10 +743,10 @@ INCL = vim.h feature.h os_win32.h os_dos.h ascii.h keymap.h term.h macros.h \
 	structs.h regexp.h option.h ex_cmds.h proto.h globals.h farsi.h \
 	gui.h
 
-$(OUTDIR)/if_python.o : if_python.c $(INCL)
+$(OUTDIR)/if_python.o : if_python.c if_py_both.h $(INCL)
 	$(CC) -c $(CFLAGS) $(PYTHONINC) -DDYNAMIC_PYTHON_DLL=\"python$(PYTHON_VER).dll\" $< -o $@
 
-$(OUTDIR)/if_python3.o : if_python3.c $(INCL)
+$(OUTDIR)/if_python3.o : if_python3.c if_py_both.h $(INCL)
 	$(CC) -c $(CFLAGS) $(PYTHON3INC) -DDYNAMIC_PYTHON3_DLL=\"PYTHON$(PYTHON3_VER).dll\" $< -o $@
 
 $(OUTDIR)/%.o : %.c $(INCL)
@@ -737,6 +768,9 @@ $(OUTDIR)/ex_eval.o:	ex_eval.c $(INCL) ex_cmds.h
 $(OUTDIR)/gui_w32.o:	gui_w32.c gui_w48.c $(INCL)
 	$(CC) -c $(CFLAGS) gui_w32.c -o $(OUTDIR)/gui_w32.o
 
+$(OUTDIR)/gui_dwrite.o:	gui_dwrite.cpp $(INCL) gui_dwrite.h
+	$(CC) -c $(CFLAGS) gui_dwrite.cpp -o $(OUTDIR)/gui_dwrite.o
+
 $(OUTDIR)/if_cscope.o:	if_cscope.c $(INCL) if_cscope.h
 	$(CC) -c $(CFLAGS) if_cscope.c -o $(OUTDIR)/if_cscope.o
 
@@ -755,6 +789,9 @@ if_perl.c: if_perl.xs typemap
 
 $(OUTDIR)/netbeans.o:	netbeans.c $(INCL) $(NBDEBUG_INCL) $(NBDEBUG_SRC)
 	$(CC) -c $(CFLAGS) netbeans.c -o $(OUTDIR)/netbeans.o
+
+$(OUTDIR)/regexp.o:		regexp.c regexp_nfa.c $(INCL)
+	$(CC) -c $(CFLAGS) regexp.c -o $(OUTDIR)/regexp.o
 
 $(OUTDIR)/if_mzsch.o:	if_mzsch.c $(INCL) if_mzsch.h $(MZ_EXTRA_DEP)
 	$(CC) -c $(CFLAGS) if_mzsch.c -o $(OUTDIR)/if_mzsch.o

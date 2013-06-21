@@ -1,18 +1,50 @@
 " Maintainer:   Yukihiro Nakadaira <yukihiro.nakadaira@gmail.com>
 " License:      This file is placed in the public domain.
-" Last Change:  2011-01-09
+" Last Change:  2013-03-07
 
 if &encoding != "utf-8" && !has("iconv")
-  echoerr "unicode.vim requires iconv() in non utf-8 encoding"
+  " Use echomsg because echoerr is not displayed in formatexpr context.
+  " Echomsg is same but message is logged in :messages buffer.
+  echomsg "autofmt/unicode.vim requires iconv() in non utf-8 encoding"
+  echoerr "autofmt/unicode.vim requires iconv() in non utf-8 encoding"
   finish
 endif
 
 let s:cpo_save = &cpo
 set cpo&vim
 
-function unicode#import()
+function autofmt#unicode#import()
   return s:lib
 endfunction
+
+if v:version > 702 || v:version == 702 && has('patch780')
+  let s:char2nr_utf8 = function('char2nr')
+else
+  function s:char2nr_utf8(expr, utf8)
+    if a:utf8 && &encoding != 'utf-8'
+      let x = map(range(len(a:expr)), 'char2nr(a:expr[v:val])')
+      if len(x) == 0
+        return -1
+      elseif len(x) == 1
+        return x[0]
+      elseif len(x) == 2
+        return ((x[0] % 0x20) * 0x40)
+              \ + (x[1] % 0x40)
+      elseif len(x) == 3
+        return ((x[0] % 0x10) * 0x1000)
+              \ + ((x[1] % 0x40) * 0x40)
+              \ + (x[2] % 0x40)
+      elseif len(x) >= 4
+        return ((x[0] % 0x8) * 0x40000)
+              \ + ((x[1] % 0x40) * 0x1000)
+              \ + ((x[2] % 0x40) * 0x40)
+              \ + (x[3] % 0x40)
+      endif
+    else
+      return char2nr(a:expr)
+    endif
+  endfunction
+endif
 
 let s:lib = {}
 
@@ -78,28 +110,7 @@ function s:lib.to_ucs4(c)
     return char2nr(a:c)
   else
     let u = iconv(a:c, &encoding, "utf-8")
-    return self.utf8_to_ucs4(u)
-  endif
-endfunction
-
-function s:lib.utf8_to_ucs4(c)
-  let utf8 = map(range(len(a:c)), 'char2nr(a:c[v:val])')
-  if len(utf8) == 0
-    return -1
-  elseif len(utf8) == 1
-    return utf8[0]
-  elseif len(utf8) == 2
-    return ((utf8[0] % 0x20) * 0x40)
-          \ + (utf8[1] % 0x40)
-  elseif len(utf8) == 3
-    return ((utf8[0] % 0x10) * 0x1000)
-          \ + ((utf8[1] % 0x40) * 0x40)
-          \ + (utf8[2] % 0x40)
-  elseif len(utf8) >= 4
-    return ((utf8[0] % 0x8) * 0x40000)
-          \ + ((utf8[1] % 0x40) * 0x1000)
-          \ + ((utf8[2] % 0x40) * 0x40)
-          \ + (utf8[3] % 0x40)
+    return s:char2nr_utf8(u, 1)
   endif
 endfunction
 

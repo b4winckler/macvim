@@ -1,6 +1,6 @@
 " Maintainer:   Yukihiro Nakadaira <yukihiro.nakadaira@gmail.com>
 " License:      This file is placed in the public domain.
-" Last Change:  2011-05-15
+" Last Change:  2012-01-25
 "
 " Options:
 "
@@ -73,7 +73,7 @@
 "   UAX #11: East Asian Width
 "   http://unicode.org/reports/tr11/
 "
-"   Ward wrap - Wikipedia
+"   Word wrap - Wikipedia
 "   http://en.wikipedia.org/wiki/Word_wrap
 
 let s:cpo_save = &cpo
@@ -210,6 +210,9 @@ function s:lib.format_lines(lnum, count)
   let lnum = a:lnum
   let prev_lines = line('$')
   let fo_2 = self.get_second_line_leader(getline(lnum, lnum + a:count - 1))
+  " If the line doesn't start with a comment leader, then don't start
+  " one in a following broken line. (edit.c:internal_format():6063)
+  let no_leader = !self.is_comment(getline(lnum))
   let lines = getline(lnum, lnum + a:count - 1)
   let line = self.join_lines(lines)
   call setline(lnum, line)
@@ -229,7 +232,7 @@ function s:lib.format_lines(lnum, count)
     if fo_2 != -1
       let leader = fo_2
     else
-      let leader = self.make_leader(lnum + 1)
+      let leader = self.make_leader(lnum + 1, no_leader)
     endif
     call setline(lnum + 1, leader . line2)
     let lnum += 1
@@ -502,12 +505,30 @@ function s:lib.parse_leader(line)
   if a:line =~# '^\s*$'
     return [a:line, "", "", "", ""]
   endif
+  let middle = []
   for [flags, str] in self.parse_opt_comments(&comments)
     let mx = printf('\v^(\s*)(\V%s\v)(\s%s|$)(.*)$', escape(str, '\'),
           \ (flags =~# 'b') ? '+' : '*')
+    " If we found a middle match previously, use that match when this is
+    " not a middle or end. */
+    if !empty(middle) && flags !~# '[me]'
+      break
+    endif
     if a:line =~# mx
       let res = matchlist(a:line, mx)[1:4] + [flags]
-      if flags =~# 'n'
+      " We have found a match, stop searching unless this is a middle
+      " comment. The middle comment can be a substring of the end
+      " comment in which case it's better to return the length of the
+      " end comment and its flags.  Thus we keep searching with middle
+      " and end matches and use an end match if it matches better.
+      if flags =~# 'm'
+        let middle = res
+        continue
+      elseif flags =~# 'e'
+        if !empty(middle) && strchars(res[1]) <= strchars(middle[1])
+          let res = middle
+        endif
+      elseif flags =~# 'n'
         " nested comment
         while 1
           let [indent, com_str, mindent, text, com_flags] = self.parse_leader(res[3])
@@ -520,6 +541,9 @@ function s:lib.parse_leader(line)
       return res
     endif
   endfor
+  if !empty(middle)
+    return middle
+  endif
   return matchlist(a:line, '\v^(\s*)()()(.*)$')[1:4] + [""]
 endfunction
 
@@ -592,10 +616,10 @@ function s:lib.get_second_line_leader(lines)
   return -1
 endfunction
 
-function s:lib.make_leader(lnum)
+function s:lib.make_leader(lnum, no_leader)
   let prev_line = getline(a:lnum - 1)
 
-  if self.is_comment_enabled() && self.is_comment(prev_line)
+  if !a:no_leader && self.is_comment_enabled() && self.is_comment(prev_line)
     return self.make_comment_leader(prev_line)
   endif
 

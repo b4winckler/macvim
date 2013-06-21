@@ -1,7 +1,7 @@
-*if_mzsch.txt*  For Vim バージョン 7.3.  Last change: 2010 Feb 11
+*if_mzsch.txt*  For Vim バージョン 7.3.  Last change: 2012 Dec 17
 
 
-		  VIM REFERENCE MANUAL    by Sergey Khorev
+		  VIMリファレンスマニュアル    by Sergey Khorev
 
 
 Vim の MzScheme インターフェイス			*mzscheme* *MzScheme*
@@ -11,9 +11,10 @@ Vim の MzScheme インターフェイス			*mzscheme* *MzScheme*
 3. スレッド				|mzscheme-threads|
 4. MzScheme から Vim にアクセスする	|mzscheme-vim|
 5. mzeval() Vim 関数			|mzscheme-mzeval|
-6. 動的ローディング			|mzscheme-dynamic|
+6. 関数参照を使う			|mzscheme-funcref|
+7. 動的ローディング			|mzscheme-dynamic|
 
-{Vi にはこれらのコマンドはない}
+{Vi にはこれらのコマンドはありません}
 
 MzScheme インターフェイスは、Vim が |+mzscheme| 機能付きでコンパイルされたとき
 のみ利用できます。
@@ -21,10 +22,16 @@ MzScheme インターフェイスは、Vim が |+mzscheme| 機能付きでコン
 Brent Fulgham の作業にもとづいています。
 動的ローディングは Sergey Khorev によって追加されました。
 
-MzScheme のダウンロードや情報については:
-	http://www.plt-scheme.org/software/mzscheme/
+MzScheme と PLT Scheme は Racket という名前になりました。詳しいことは
+http://racket-lang.org を見てください。
 
-Note: FreeBSD では "drscheme" port を使ってください。
+Racket 5.x (5.3.1も含む) の futures と places は Vim から作成されたプロセスで
+は機能しません。
+簡単な解決法はそれらの機能を無効にした Racket を自分でビルドすることです。: >
+  ./configure --disable-futures --disable-places --prefix=your-install-prefix
+
+プロセスを高速化するには、--disable-gracket と --disable-docs も指定するといい
+かもしれません。
 
 ==============================================================================
 1. コマンド						*mzscheme-commands*
@@ -32,7 +39,7 @@ Note: FreeBSD では "drscheme" port を使ってください。
 							*:mzscheme* *:mz*
 :[range]mz[scheme] {stmt}
 			MzScheme のステートメント {stmt} を実行します。
-			{Vi にはない}
+			{Vi にはありません}
 
 :[range]mz[scheme] << {endmarker}
 {script}
@@ -44,7 +51,7 @@ Note: FreeBSD では "drscheme" port を使ってください。
 
 							*:mzfile* *:mzf*
 :[range]mzf[ile] {file}	{file} 内の MzScheme スクリプトを実行します。
-			{Vi にはない}
+			{Vi にはありません}
 
 これらのコマンドは、本質的には同じことを行います - つまり、MzScheme のコードを、
 与えられた "現在の範囲" に対して実行します。
@@ -154,11 +161,13 @@ NOTE
 ------
     (command {command-string})	    Vim の Ex コマンドを実行する。
     (eval {expr-string})	    Vim の式を評価し、対応する MzScheme のオブ
-				    ジェクトに変換する。リスト |Lists| は
-				    Scheme のリストとなり、辞書|Dictionaries|
-				    はハッシュテーブルとなる。
+				    ジェクトに変換する。リスト (|Lists|) は
+				    Scheme のリスト、辞書 (|Dictionaries|) は
+				    はハッシュテーブル、関数参照 (|Funcref|)
+				    は関数になる。
 				    NOTE: MzScheme の eval と名前が衝突してい
-				    る。
+				    るので、呼び出すにはモジュール限定子を使っ
+				    てください。
     (range-start)		    Scheme コマンドに渡された範囲の開始行
     (range-end)			    /終了行を取得
     (beep)			    ビープを鳴らす
@@ -243,7 +252,23 @@ NOTE
 MzScheme の式を評価してその結果を VimL の値に変換したものを返します。
 
 ==============================================================================
-6. 動的ローディング				    *mzscheme-dynamic* *E815*
+6. 関数参照を使う					    *mzscheme-funcref*
+
+MzScheme インターフェースでは関数参照 (|Funcref|) が使えます。Vim の関数を
+Scheme から直接呼び出せます。例: >
+    function! MyAdd2(arg)
+	return a:arg + 2
+    endfunction
+    mz (define f2 (vim-eval "function(\"MyAdd2\")"))
+    mz (f2 7)
+< または : >
+    :mz (define indent (vim-eval "function('indent')"))
+    " return Vim indent for line 12
+    :mz (indent 12)
+<
+
+==============================================================================
+7. 動的ローディング				    *mzscheme-dynamic* *E815*
 
 MS-Windows では MzScheme ライブラリを動的に読み込むことが可能です。これを行う
 と |:version| の出力に |+mzscheme/dyn| が含まれるようになります。

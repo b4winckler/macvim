@@ -1,7 +1,7 @@
-*pi_paren.txt*  For Vim バージョン 7.3.  Last change: 2008 Jun 16
+*pi_paren.txt*  For Vim バージョン 7.3.  Last change: 2013 May 08
 
 
-		  VIM REFERENCE MANUAL    by Bram Moolenaar
+		  VIMリファレンスマニュアル    by Bram Moolenaar
 
 
 対応するカッコの強調表示			*matchparen*
@@ -47,7 +47,10 @@
   範囲だけ検索する。
 - 長い行が構文強調表示されていると処理に時間がかかるので、カーソル位置から
   'synmaxcol' の二倍の範囲の文字だけ検索する。
-
+- 300 ミリ秒でタイムアウト (挿入モードでは 60 ミリ秒)。これは変数の
+  g:matchparen_timeout と g:matchparen_insert_timeout を設定することで変更でき
+  る。バッファ毎に設定する場合は b:matchparen_timeout と
+  b:matchparen_insert_timeout を設定する。
 
 |%| コマンドの動作を改善したい場合は matchit プラグインを使ってください。
 |matchit-install| 参照。このプラグインを使うとコメント内のカッコをスキップする

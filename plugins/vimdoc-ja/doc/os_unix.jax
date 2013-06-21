@@ -1,7 +1,7 @@
 *os_unix.txt*   For Vim バージョン 7.3.  Last change: 2005 Mar 29
 
 
-		  VIM REFERENCE MANUAL	  by Bram Moolenaar
+		  VIMリファレンスマニュアル	  by Bram Moolenaar
 
 							*unix* *Unix*
 このファイルは Unix のバージョンの Vim で特殊な事柄について書いてあります。

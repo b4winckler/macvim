@@ -415,8 +415,15 @@ ex_sort(eap)
 	    }
 	    *s = NUL;
 	    /* Use last search pattern if sort pattern is empty. */
-	    if (s == p + 1 && last_search_pat() != NULL)
+	    if (s == p + 1)
+	    {
+		if (last_search_pat() == NULL)
+		{
+		    EMSG(_(e_noprevre));
+		    goto sortend;
+		}
 		regmatch.regprog = vim_regcomp(last_search_pat(), RE_MAGIC);
+	    }
 	    else
 		regmatch.regprog = vim_regcomp(p + 1, RE_MAGIC);
 	    if (regmatch.regprog == NULL)
@@ -564,7 +571,7 @@ sortend:
     vim_free(nrs);
     vim_free(sortbuf1);
     vim_free(sortbuf2);
-    vim_free(regmatch.regprog);
+    vim_regfree(regmatch.regprog);
     if (got_int)
 	EMSG(_(e_interr));
 }
@@ -777,6 +784,7 @@ do_move(line1, line2, dest)
      */
     last_line = curbuf->b_ml.ml_line_count;
     mark_adjust(line1, line2, last_line - line2, 0L);
+    changed_lines(last_line - num_lines + 1, 0, last_line + 1, num_lines);
     if (dest >= line2)
     {
 	mark_adjust(line2 + 1, dest, -num_lines, 0L);
@@ -792,6 +800,7 @@ do_move(line1, line2, dest)
     curbuf->b_op_start.col = curbuf->b_op_end.col = 0;
     mark_adjust(last_line - num_lines + 1, last_line,
 					     -(last_line - dest - extra), 0L);
+    changed_lines(last_line - num_lines + 1, 0, last_line + 1, -extra);
 
     /*
      * Now we delete the original text -- webb
@@ -1713,11 +1722,11 @@ read_viminfo(file, flags)
 }
 
 /*
- * write_viminfo() -- Write the viminfo file.  The old one is read in first so
- * that effectively a merge of current info and old info is done.  This allows
- * multiple vims to run simultaneously, without losing any marks etc.  If
- * forceit is TRUE, then the old file is not read in, and only internal info is
- * written to the file. -- webb
+ * Write the viminfo file.  The old one is read in first so that effectively a
+ * merge of current info and old info is done.  This allows multiple vims to
+ * run simultaneously, without losing any marks etc.
+ * If "forceit" is TRUE, then the old file is not read in, and only internal
+ * info is written to the file.
  */
     void
 write_viminfo(file, forceit)
@@ -2038,6 +2047,7 @@ do_viminfo(fp_in, fp_out, flags)
     int		count = 0;
     int		eof = FALSE;
     vir_T	vir;
+    int		merge = FALSE;
 
     if ((vir.vir_line = alloc(LSIZE)) == NULL)
 	return;
@@ -2049,9 +2059,12 @@ do_viminfo(fp_in, fp_out, flags)
     if (fp_in != NULL)
     {
 	if (flags & VIF_WANT_INFO)
+	{
 	    eof = read_viminfo_up_to_marks(&vir,
 					 flags & VIF_FORCEIT, fp_out != NULL);
-	else
+	    merge = TRUE;
+	}
+	else if (flags != 0)
 	    /* Skip info, find start of marks */
 	    while (!(eof = viminfo_readline(&vir))
 		    && vir.vir_line[0] != '>')
@@ -2070,7 +2083,7 @@ do_viminfo(fp_in, fp_out, flags)
 	write_viminfo_search_pattern(fp_out);
 	write_viminfo_sub_string(fp_out);
 #ifdef FEAT_CMDHIST
-	write_viminfo_history(fp_out);
+	write_viminfo_history(fp_out, merge);
 #endif
 	write_viminfo_registers(fp_out);
 #ifdef FEAT_EVAL
@@ -2106,7 +2119,7 @@ read_viminfo_up_to_marks(virp, forceit, writing)
     buf_T	*buf;
 
 #ifdef FEAT_CMDHIST
-    prepare_viminfo_history(forceit ? 9999 : 0);
+    prepare_viminfo_history(forceit ? 9999 : 0, writing);
 #endif
     eof = viminfo_readline(virp);
     while (!eof && virp->vir_line[0] != '>')
@@ -2154,7 +2167,7 @@ read_viminfo_up_to_marks(virp, forceit, writing)
 	    case '=':
 	    case '@':
 #ifdef FEAT_CMDHIST
-		eof = read_viminfo_history(virp);
+		eof = read_viminfo_history(virp, writing);
 #else
 		eof = viminfo_readline(virp);
 #endif
@@ -2175,7 +2188,8 @@ read_viminfo_up_to_marks(virp, forceit, writing)
 
 #ifdef FEAT_CMDHIST
     /* Finish reading history items. */
-    finish_viminfo_history();
+    if (!writing)
+	finish_viminfo_history();
 #endif
 
     /* Change file names to buffer numbers for fmarks. */
@@ -2406,6 +2420,59 @@ print_line(lnum, use_number, list)
     info_message = FALSE;
 }
 
+    int
+rename_buffer(new_fname)
+    char_u	*new_fname;
+{
+    char_u	*fname, *sfname, *xfname;
+    buf_T	*buf;
+
+#ifdef FEAT_AUTOCMD
+    buf = curbuf;
+    apply_autocmds(EVENT_BUFFILEPRE, NULL, NULL, FALSE, curbuf);
+    /* buffer changed, don't change name now */
+    if (buf != curbuf)
+	return FAIL;
+# ifdef FEAT_EVAL
+    if (aborting())	    /* autocmds may abort script processing */
+	return FAIL;
+# endif
+#endif
+    /*
+     * The name of the current buffer will be changed.
+     * A new (unlisted) buffer entry needs to be made to hold the old file
+     * name, which will become the alternate file name.
+     * But don't set the alternate file name if the buffer didn't have a
+     * name.
+     */
+    fname = curbuf->b_ffname;
+    sfname = curbuf->b_sfname;
+    xfname = curbuf->b_fname;
+    curbuf->b_ffname = NULL;
+    curbuf->b_sfname = NULL;
+    if (setfname(curbuf, new_fname, NULL, TRUE) == FAIL)
+    {
+	curbuf->b_ffname = fname;
+	curbuf->b_sfname = sfname;
+	return FAIL;
+    }
+    curbuf->b_flags |= BF_NOTEDITED;
+    if (xfname != NULL && *xfname != NUL)
+    {
+	buf = buflist_new(fname, xfname, curwin->w_cursor.lnum, 0);
+	if (buf != NULL && !cmdmod.keepalt)
+	    curwin->w_alt_fnum = buf->b_fnum;
+    }
+    vim_free(fname);
+    vim_free(sfname);
+#ifdef FEAT_AUTOCMD
+    apply_autocmds(EVENT_BUFFILEPOST, NULL, NULL, FALSE, curbuf);
+#endif
+    /* Change directories when the 'acd' option is set. */
+    DO_AUTOCHDIR
+    return OK;
+}
+
 /*
  * ":file[!] [fname]".
  */
@@ -2413,9 +2480,6 @@ print_line(lnum, use_number, list)
 ex_file(eap)
     exarg_T	*eap;
 {
-    char_u	*fname, *sfname, *xfname;
-    buf_T	*buf;
-
     /* ":0file" removes the file name.  Check for illegal uses ":3file",
      * "0file name", etc. */
     if (eap->addr_count > 0
@@ -2429,49 +2493,8 @@ ex_file(eap)
 
     if (*eap->arg != NUL || eap->addr_count == 1)
     {
-#ifdef FEAT_AUTOCMD
-	buf = curbuf;
-	apply_autocmds(EVENT_BUFFILEPRE, NULL, NULL, FALSE, curbuf);
-	/* buffer changed, don't change name now */
-	if (buf != curbuf)
+	if (rename_buffer(eap->arg) == FAIL)
 	    return;
-# ifdef FEAT_EVAL
-	if (aborting())	    /* autocmds may abort script processing */
-	    return;
-# endif
-#endif
-	/*
-	 * The name of the current buffer will be changed.
-	 * A new (unlisted) buffer entry needs to be made to hold the old file
-	 * name, which will become the alternate file name.
-	 * But don't set the alternate file name if the buffer didn't have a
-	 * name.
-	 */
-	fname = curbuf->b_ffname;
-	sfname = curbuf->b_sfname;
-	xfname = curbuf->b_fname;
-	curbuf->b_ffname = NULL;
-	curbuf->b_sfname = NULL;
-	if (setfname(curbuf, eap->arg, NULL, TRUE) == FAIL)
-	{
-	    curbuf->b_ffname = fname;
-	    curbuf->b_sfname = sfname;
-	    return;
-	}
-	curbuf->b_flags |= BF_NOTEDITED;
-	if (xfname != NULL && *xfname != NUL)
-	{
-	    buf = buflist_new(fname, xfname, curwin->w_cursor.lnum, 0);
-	    if (buf != NULL && !cmdmod.keepalt)
-		curwin->w_alt_fnum = buf->b_fnum;
-	}
-	vim_free(fname);
-	vim_free(sfname);
-#ifdef FEAT_AUTOCMD
-	apply_autocmds(EVENT_BUFFILEPOST, NULL, NULL, FALSE, curbuf);
-#endif
-	/* Change directories when the 'acd' option is set. */
-	DO_AUTOCHDIR
     }
     /* print full file name if :cd used */
     fileinfo(FALSE, FALSE, eap->forceit);
@@ -5242,7 +5265,7 @@ outofmem:
 	changed_window_setting();
 #endif
 
-    vim_free(regmatch.regprog);
+    vim_regfree(regmatch.regprog);
 }
 
 /*
@@ -5411,13 +5434,13 @@ ex_global(eap)
 	if (type == 'v')
 	    smsg((char_u *)_("Pattern found in every line: %s"), pat);
 	else
-	    smsg((char_u *)_(e_patnotf2), pat);
+	    smsg((char_u *)_("Pattern not found: %s"), pat);
     }
     else
 	global_exe(cmd);
 
     ml_clearmarked();	   /* clear rest of the marks */
-    vim_free(regmatch.regprog);
+    vim_regfree(regmatch.regprog);
 }
 
 /*

@@ -9,6 +9,10 @@
 #ifndef VIM__H
 # define VIM__H
 
+/* TODO: make FEAT_JOB_* as puzzle and move into the Makefile. */
+#define FEAT_JOB_BASE		1
+#define FEAT_JOB_EVAL		1
+
 /* use fastcall for Borland, when compiling for Win32 (not for DOS16) */
 #if defined(__BORLANDC__) && defined(WIN32) && !defined(DEBUG)
 #if defined(FEAT_PERL) || \
@@ -131,6 +135,13 @@
 # define FEAT_GUI_ENABLED  /* also defined with NO_X11_INCLUDES */
 # if !defined(FEAT_GUI) && !defined(NO_X11_INCLUDES)
 #  define FEAT_GUI
+# endif
+#endif
+
+/* Check support for rendering options */
+#ifdef FEAT_GUI
+# if defined(FEAT_DIRECTX)
+#  define FEAT_RENDER_OPTIONS
 # endif
 #endif
 
@@ -805,7 +816,8 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define EXPAND_LOCALES		40
 #define EXPAND_HISTORY		41
 #define EXPAND_USER		42
-#define EXPAND_MACACTION	43
+#define EXPAND_SYNTIME		43
+#define EXPAND_MACACTION	44
 
 /* Values for exmode_active (0 is no exmode) */
 #define EXMODE_NORMAL		1
@@ -1326,6 +1338,8 @@ enum auto_event
     EVENT_TABENTER,		/* after entering a tab page */
     EVENT_SHELLCMDPOST,		/* after ":!cmd" */
     EVENT_SHELLFILTERPOST,	/* after ":1,2!cmd", ":w !cmd", ":r !cmd". */
+    EVENT_TEXTCHANGED,		/* text was modified */
+    EVENT_TEXTCHANGEDI,		/* text was modified in Insert mode*/
     NUM_EVENTS			/* MUST be the last one */
 };
 
@@ -1651,18 +1665,8 @@ void mch_memmove __ARGS((void *, void *, size_t));
  * (this does not account for maximum name lengths and things like "../dir",
  * thus it is not 100% accurate!)
  */
-#ifdef CASE_INSENSITIVE_FILENAME
-# ifdef BACKSLASH_IN_FILENAME
-#  define fnamecmp(x, y) vim_fnamecmp((x), (y))
-#  define fnamencmp(x, y, n) vim_fnamencmp((x), (y), (size_t)(n))
-# else
-#  define fnamecmp(x, y) MB_STRICMP((x), (y))
-#  define fnamencmp(x, y, n) MB_STRNICMP((x), (y), (n))
-# endif
-#else
-# define fnamecmp(x, y) strcmp((char *)(x), (char *)(y))
-# define fnamencmp(x, y, n) strncmp((char *)(x), (char *)(y), (size_t)(n))
-#endif
+#define fnamecmp(x, y) vim_fnamecmp((char_u *)(x), (char_u *)(y))
+#define fnamencmp(x, y, n) vim_fnamencmp((char_u *)(x), (char_u *)(y), (size_t)(n))
 
 #ifdef HAVE_MEMSET
 # define vim_memset(ptr, c, size)   memset((ptr), (c), (size))
@@ -1953,7 +1957,7 @@ typedef struct VimClipboard
     GdkAtom     gtk_sel_atom;	/* PRIMARY/CLIPBOARD selection ID */
 # endif
 
-# ifdef MSWIN
+# if defined(MSWIN) || defined(FEAT_CYGWIN_WIN32_CLIPBOARD)
     int_u	format;		/* Vim's own special clipboard format */
     int_u	format_raw;	/* Vim's raw text clipboard format */
 # endif
@@ -2263,5 +2267,21 @@ typedef int VimClipboard;	/* This is required for the prototypes. */
 #define FILEINFO_ENC_FAIL    1	/* enc_to_utf16() failed */
 #define FILEINFO_READ_FAIL   2	/* CreateFile() failed */
 #define FILEINFO_INFO_FAIL   3	/* GetFileInformationByHandle() failed */
+
+/* Return value from get_option_value_strict */
+#define SOPT_BOOL	0x01	/* Boolean option */
+#define SOPT_NUM	0x02	/* Number option */
+#define SOPT_STRING	0x04	/* String option */
+#define SOPT_GLOBAL	0x08	/* Option has global value */
+#define SOPT_WIN	0x10	/* Option has window-local value */
+#define SOPT_BUF	0x20	/* Option has buffer-local value */
+#define SOPT_UNSET	0x40	/* Option does not have local value set */
+
+#define SREQ_GLOBAL	0	/* Request global option */
+#define SREQ_WIN	1	/* Request window-local option */
+#define SREQ_BUF	2	/* Request buffer-local option */
+
+/* Character used as separated in autoload function/variable names. */
+#define AUTOLOAD_CHAR '#'
 
 #endif /* VIM__H */

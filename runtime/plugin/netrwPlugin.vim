@@ -1,9 +1,9 @@
 " netrwPlugin.vim: Handles file transfer and remote directory listing across a network
 "            PLUGIN SECTION
-" Date:		Aug 24, 2011
-" Maintainer:	Charles E Campbell, Jr <NdrOchip@ScampbellPfamily.AbizM-NOSPAM>
+" Date:		Apr 30, 2013
+" Maintainer:	Charles E Campbell <NdrOchip@ScampbellPfamily.AbizM-NOSPAM>
 " GetLatestVimScripts: 1075 1 :AutoInstall: netrw.vim
-" Copyright:    Copyright (C) 1999-2008 Charles E. Campbell, Jr. {{{1
+" Copyright:    Copyright (C) 1999-2012 Charles E. Campbell {{{1
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
 "               notice is copied with it. Like anything else that's free,
@@ -20,13 +20,15 @@
 if &cp || exists("g:loaded_netrwPlugin")
  finish
 endif
-let g:loaded_netrwPlugin = "v146"
+"DechoTabOn
+let g:loaded_netrwPlugin = "v149"
 if v:version < 702
  echohl WarningMsg | echo "***netrw*** you need vim version 7.2 for this version of netrw" | echohl None
  finish
 endif
 let s:keepcpo = &cpo
 set cpo&vim
+"DechoTabOn
 
 " ---------------------------------------------------------------------
 " Public Interface: {{{1
@@ -34,9 +36,7 @@ set cpo&vim
 " Local Browsing: {{{2
 augroup FileExplorer
  au!
-" au BufReadCmd *[/\\]	sil! call s:LocalBrowse(expand("<amatch>")) 
-" au BufEnter *[^/\\]	sil! call s:LocalBrowse(expand("<amatch>"))
-" au VimEnter *[^/\\]	sil! call s:VimEnter(expand("<amatch>"))
+ " SEE Benzinger problem...
  au BufEnter *	sil! call s:LocalBrowse(expand("<amatch>"))
  au VimEnter *	sil! call s:VimEnter(expand("<amatch>"))
  if has("win32") || has("win95") || has("win64") || has("win16")
@@ -47,11 +47,11 @@ augroup END
 " Network Browsing Reading Writing: {{{2
 augroup Network
  au!
- au BufReadCmd   file://*		call netrw#FileUrlRead(expand("<amatch>"))
- au BufReadCmd   ftp://*,rcp://*,scp://*,http://*,https://*,dav://*,davs://*,rsync://*,sftp://*	exe "silent doau BufReadPre ".fnameescape(expand("<amatch>"))|call netrw#Nread(2,expand("<amatch>"))|exe "silent doau BufReadPost ".fnameescape(expand("<amatch>"))
- au FileReadCmd  ftp://*,rcp://*,scp://*,http://*,https://*,dav://*,davs://*,rsync://*,sftp://*	exe "silent doau FileReadPre ".fnameescape(expand("<amatch>"))|call netrw#Nread(1,expand("<amatch>"))|exe "silent doau FileReadPost ".fnameescape(expand("<amatch>"))
- au BufWriteCmd  ftp://*,rcp://*,scp://*,dav://*,davs://*,rsync://*,sftp://*			exe "silent doau BufWritePre ".fnameescape(expand("<amatch>"))|exe 'Nwrite '.fnameescape(expand("<amatch>"))|exe "silent doau BufWritePost ".fnameescape(expand("<amatch>"))
- au FileWriteCmd ftp://*,rcp://*,scp://*,dav://*,davs://*,rsync://*,sftp://*			exe "silent doau FileWritePre ".fnameescape(expand("<amatch>"))|exe "'[,']".'Nwrite '.fnameescape(expand("<amatch>"))|exe "silent doau FileWritePost ".fnameescape(expand("<amatch>"))
+ au BufReadCmd   file://*									call netrw#FileUrlRead(expand("<amatch>"))
+ au BufReadCmd   ftp://*,rcp://*,scp://*,http://*,https://*,dav://*,davs://*,rsync://*,sftp://*	exe "sil doau BufReadPre ".fnameescape(expand("<amatch>"))|call netrw#Nread(2,expand("<amatch>"))|exe "sil doau BufReadPost ".fnameescape(expand("<amatch>"))
+ au FileReadCmd  ftp://*,rcp://*,scp://*,http://*,https://*,dav://*,davs://*,rsync://*,sftp://*	exe "sil doau FileReadPre ".fnameescape(expand("<amatch>"))|call netrw#Nread(1,expand("<amatch>"))|exe "sil doau FileReadPost ".fnameescape(expand("<amatch>"))
+ au BufWriteCmd  ftp://*,rcp://*,scp://*,dav://*,davs://*,rsync://*,sftp://*			exe "sil doau BufWritePre ".fnameescape(expand("<amatch>"))|exe 'Nwrite '.fnameescape(expand("<amatch>"))|exe "sil doau BufWritePost ".fnameescape(expand("<amatch>"))
+ au FileWriteCmd ftp://*,rcp://*,scp://*,dav://*,davs://*,rsync://*,sftp://*			exe "sil doau FileWritePre ".fnameescape(expand("<amatch>"))|exe "'[,']".'Nwrite '.fnameescape(expand("<amatch>"))|exe "sil doau FileWritePost ".fnameescape(expand("<amatch>"))
  try
   au SourceCmd   ftp://*,rcp://*,scp://*,http://*,https://*,dav://*,davs://*,rsync://*,sftp://*	exe 'Nsource '.fnameescape(expand("<amatch>"))
  catch /^Vim\%((\a\+)\)\=:E216/
@@ -92,27 +92,37 @@ fun! s:LocalBrowse(dirname)
   " unfortunate interaction -- debugging calls can't be used here;
   " the BufEnter event causes triggering when attempts to write to
   " the DBG buffer are made.
+  if !exists("s:vimentered")
+   return
+  endif
+"  call Decho("s:LocalBrowse(dirname<".a:dirname.">){")
 "  echomsg "dirname<".a:dirname.">"
   if has("amiga")
    " The check against '' is made for the Amiga, where the empty
    " string is the current directory and not checking would break
    " things such as the help command.
+"   call Decho("(LocalBrowse) dirname<".a:dirname.">  (amiga)")
    if a:dirname != '' && isdirectory(a:dirname)
     sil! call netrw#LocalBrowseCheck(a:dirname)
    endif
   elseif isdirectory(a:dirname)
 "   echomsg "dirname<".dirname."> isdir"
+"   call Decho("(LocalBrowse) dirname<".a:dirname.">  (not amiga)")
    sil! call netrw#LocalBrowseCheck(a:dirname)
   endif
   " not a directory, ignore it
+"  call Decho("|return s:LocalBrowse }")
 endfun
 
 " ---------------------------------------------------------------------
 " s:VimEnter: {{{2
 fun! s:VimEnter(dirname)
-  let curwin= winnr()
+"  call Decho("VimEnter(dirname<".a:dirname.">){")
+  let curwin       = winnr()
+  let s:vimentered = 1
   windo if a:dirname != expand("%")|call s:LocalBrowse(expand("%:p"))|endif
   exe curwin."wincmd w"
+"  call Decho("|return VimEnter }")
 endfun
 
 " ---------------------------------------------------------------------

@@ -67,6 +67,10 @@
 # define PERL5101_OR_LATER
 #endif
 
+#if (PERL_REVISION == 5) && (PERL_VERSION >= 18)
+# define PERL5180_OR_LATER
+#endif
+
 #ifndef pTHX
 #    define pTHX void
 #    define pTHX_
@@ -132,8 +136,10 @@ typedef int perl_key;
 # define perl_free dll_perl_free
 # define Perl_get_context dll_Perl_get_context
 # define Perl_croak dll_Perl_croak
+# ifndef PERL5180_OR_LATER
 # ifdef PERL5101_OR_LATER
 #  define Perl_croak_xs_usage dll_Perl_croak_xs_usage
+# endif
 # endif
 # ifndef PROTO
 #  define Perl_croak_nocontext dll_Perl_croak_nocontext
@@ -247,8 +253,10 @@ static int (*perl_run)(PerlInterpreter*);
 static int (*perl_parse)(PerlInterpreter*, XSINIT_t, int, char**, char**);
 static void* (*Perl_get_context)(void);
 static void (*Perl_croak)(pTHX_ const char*, ...);
+#ifndef PERL5180_OR_LATER
 #ifdef PERL5101_OR_LATER
 static void (*Perl_croak_xs_usage)(pTHX_ const CV *const, const char *const params);
+#endif
 #endif
 static void (*Perl_croak_nocontext)(const char*, ...);
 static I32 (*Perl_dowantarray)(pTHX);
@@ -368,8 +376,10 @@ static struct {
     {"perl_parse", (PERL_PROC*)&perl_parse, FALSE},
     {"Perl_get_context", (PERL_PROC*)&Perl_get_context, FALSE},
     {"Perl_croak", (PERL_PROC*)&Perl_croak, FALSE},
+#ifndef PERL5180_OR_LATER
 #ifdef PERL5101_OR_LATER
     {"Perl_croak_xs_usage", (PERL_PROC*)&Perl_croak_xs_usage, TRUE},
+#endif
 #endif
     {"Perl_croak_nocontext", (PERL_PROC*)&Perl_croak_nocontext, FALSE},
     {"Perl_dowantarray", (PERL_PROC*)&Perl_dowantarray, FALSE},
@@ -616,9 +626,9 @@ msg_split(s, attr)
  */
     char_u *
 eval_to_string(arg, nextcmd, dolist)
-    char_u	*arg;
-    char_u	**nextcmd;
-    int		dolist;
+    char_u	*arg UNUSED;
+    char_u	**nextcmd UNUSED;
+    int		dolist UNUSED;
 {
     return NULL;
 }
@@ -673,7 +683,7 @@ newBUFrv(rv, ptr)
 
 /*
  * perl_win_free
- *	Remove all refences to the window to be destroyed
+ *	Remove all references to the window to be destroyed
  */
     void
 perl_win_free(wp)
@@ -1072,7 +1082,7 @@ Buffers(...)
 
 		pat = (char_u *)SvPV(sv, len);
 		++emsg_off;
-		b = buflist_findpat(pat, pat+len, FALSE, FALSE);
+		b = buflist_findpat(pat, pat+len, FALSE, FALSE, FALSE);
 		--emsg_off;
 	    }
 

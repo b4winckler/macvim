@@ -1,7 +1,7 @@
 *tips.txt*      For Vim バージョン 7.3.  Last change: 2009 Nov 07
 
 
-		  VIM REFERENCE MANUAL	  by Bram Moolenaar
+		  VIMリファレンスマニュアル	  by Bram Moolenaar
 
 
 Vim を使うときのヒントとアイディア				*tips*
@@ -487,7 +487,7 @@ Sam Lantinga <slouken@cs.ucdavis.edu> です。もう一つの方法は "window"
 - 自動コマンドイベント|CursorMoved|の使い方
 - |searchpairpos()|を使って対応する括弧を見つける方法
 - |synID()|を使ってカーソルが文字列やコメントの中にあるかを判定する方法
-- |:match|を使ってなにかを強調する方法
+- |:match|を使って何かを強調する方法
 - |pattern|を使ってファイルの特定の位置にマッチさせる方法
 
 これはスクリプトローカル変数を使っているので、Vimスクリプトファイル中に書かな

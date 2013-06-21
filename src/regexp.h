@@ -22,20 +22,87 @@
 #define NSUBEXP  10
 
 /*
+ * In the NFA engine: how many braces are allowed.
+ * TODO(RE): Use dynamic memory allocation instead of static, like here
+ */
+#define NFA_MAX_BRACES 20
+
+typedef struct regengine regengine_T;
+
+/*
  * Structure returned by vim_regcomp() to pass on to vim_regexec().
+ * This is the general structure. For the actual matcher, two specific
+ * structures are used. See code below.
+ */
+typedef struct regprog
+{
+    regengine_T		*engine;
+    unsigned		regflags;
+} regprog_T;
+
+/*
+ * Structure used by the back track matcher.
  * These fields are only to be used in regexp.c!
- * See regep.c for an explanation.
+ * See regexp.c for an explanation.
  */
 typedef struct
 {
+    /* These two members implement regprog_T */
+    regengine_T		*engine;
+    unsigned		regflags;
+
     int			regstart;
     char_u		reganch;
     char_u		*regmust;
     int			regmlen;
-    unsigned		regflags;
+#ifdef FEAT_SYN_HL
     char_u		reghasz;
-    char_u		program[1];		/* actually longer.. */
-} regprog_T;
+#endif
+    char_u		program[1];	/* actually longer.. */
+} bt_regprog_T;
+
+/*
+ * Structure representing a NFA state.
+ * A NFA state may have no outgoing edge, when it is a NFA_MATCH state.
+ */
+typedef struct nfa_state nfa_state_T;
+struct nfa_state
+{
+    int			c;
+    nfa_state_T		*out;
+    nfa_state_T		*out1;
+    int			id;
+    int			lastlist[2]; /* 0: normal, 1: recursive */
+    int			val;
+};
+
+/*
+ * Structure used by the NFA matcher.
+ */
+typedef struct
+{
+    /* These two members implement regprog_T */
+    regengine_T		*engine;
+    unsigned		regflags;
+
+    nfa_state_T		*start;		/* points into state[] */
+
+    int			reganch;	/* pattern starts with ^ */
+    int			regstart;	/* char at start of pattern */
+    char_u		*match_text;	/* plain text to match with */
+
+    int			has_zend;	/* pattern contains \ze */
+    int			has_backref;	/* pattern contains \1 .. \9 */
+#ifdef FEAT_SYN_HL
+    int			reghasz;
+#endif
+#ifdef DEBUG
+    char_u		*pattern;
+#endif
+    int			nsubexp;	/* number of () */
+    int			nstate;
+    nfa_state_T		state[1];	/* actually longer.. */
+} nfa_regprog_T;
 
 /*
  * Structure to be used for single-line matching.
@@ -77,5 +144,20 @@ typedef struct
     short		refcnt;
     char_u		*matches[NSUBEXP];
 } reg_extmatch_T;
+
+struct regengine
+{
+    regprog_T	*(*regcomp)(char_u*, int);
+    void	(*regfree)(regprog_T *);
+    int		(*regexec)(regmatch_T*, char_u*, colnr_T);
+#if defined(FEAT_MODIFY_FNAME) || defined(FEAT_EVAL) \
+	|| defined(FIND_REPLACE_DIALOG) || defined(PROTO)
+    int		(*regexec_nl)(regmatch_T*, char_u*, colnr_T);
+#endif
+    long	(*regexec_multi)(regmmatch_T*, win_T*, buf_T*, linenr_T, colnr_T, proftime_T*);
+#ifdef DEBUG
+    char_u	*expr;
+#endif
+};
 
 #endif	/* _REGEXP_H */

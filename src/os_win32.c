@@ -78,6 +78,16 @@
 # endif
 #endif
 
+/*
+ * Reparse Point
+ */
+#ifndef FILE_ATTRIBUTE_REPARSE_POINT
+# define FILE_ATTRIBUTE_REPARSE_POINT	0x00000400
+#endif
+#ifndef IO_REPARSE_TAG_SYMLINK
+# define IO_REPARSE_TAG_SYMLINK		0xA000000C
+#endif
+
 /* Record all output and all keyboard & mouse input */
 /* #define MCH_WRITE_DUMP */
 
@@ -161,9 +171,9 @@ static PFNGCKLN    s_pfnGetConsoleKeyboardLayoutName = NULL;
 
 #ifndef PROTO
 
-/* Enable common dialogs input unicode from IME if posible. */
+/* Enable common dialogs input unicode from IME if possible. */
 #ifdef FEAT_MBYTE
-LRESULT (WINAPI *pDispatchMessage)(LPMSG) = DispatchMessage;
+LRESULT (WINAPI *pDispatchMessage)(CONST MSG *) = DispatchMessage;
 BOOL (WINAPI *pGetMessage)(LPMSG, HWND, UINT, UINT) = GetMessage;
 BOOL (WINAPI *pIsDialogMessage)(HWND, LPMSG) = IsDialogMessage;
 BOOL (WINAPI *pPeekMessage)(LPMSG, HWND, UINT, UINT, UINT) = PeekMessage;
@@ -218,6 +228,10 @@ static int s_dont_use_vimrun = TRUE;
 static int need_vimrun_warning = FALSE;
 static char *vimrun_path = "vimrun ";
 #endif
+
+static int win32_getattrs(char_u *name);
+static int win32_setattrs(char_u *name, int attrs);
+static int win32_set_archive(char_u *name);
 
 #ifndef FEAT_GUI_W32
 static int suppress_winsize = 1;	/* don't fiddle with console */
@@ -1032,7 +1046,7 @@ decode_mouse_event(
 	    DWORD dwLR = (pmer->dwButtonState & LEFT_RIGHT);
 
 	    /* if either left or right button only is pressed, see if the
-	     * the next mouse event has both of them pressed */
+	     * next mouse event has both of them pressed */
 	    if (dwLR == LEFT || dwLR == RIGHT)
 	    {
 		for (;;)
@@ -1259,6 +1273,9 @@ WaitForChar(long msec)
      */
     for (;;)
     {
+#ifdef FEAT_JOB_BASE
+        job_check_ends();
+#endif
 #ifdef FEAT_MZSCHEME
 	mzvim_check_threads();
 #endif
@@ -1285,7 +1302,15 @@ WaitForChar(long msec)
 	if (msec != 0)
 	{
 	    DWORD dwWaitTime = dwEndTime - dwNow;
+#ifdef FEAT_JOB_BASE
+	    int job_wait;
+#endif
 
+#ifdef FEAT_JOB_BASE
+	    job_wait = job_get_wait();
+	    if (job_wait > 0 && (DWORD)job_wait < dwWaitTime)
+		dwWaitTime = job_wait;
+#endif
 #ifdef FEAT_MZSCHEME
 	    if (mzthreads_allowed() && p_mzq > 0
 				    && (msec < 0 || (long)dwWaitTime > p_mzq))
@@ -1466,6 +1491,11 @@ mch_inchar(
 #define TYPEAHEADLEN 20
     static char_u   typeahead[TYPEAHEADLEN];	/* previously typed bytes. */
     static int	    typeaheadlen = 0;
+#ifdef FEAT_MBYTE
+    static char_u   *rest = NULL;	/* unconverted rest of previous read */
+    static int	    restlen = 0;
+    int		    unconverted;
+#endif
 
     /* First use any typeahead that was kept because "buf" was too small. */
     if (typeaheadlen > 0)
@@ -1569,6 +1599,33 @@ mch_inchar(
 
 	    c = tgetch(&modifiers, &ch2);
 
+#ifdef FEAT_MBYTE
+	    /* stolen from fill_input_buf() in ui.c */
+	    if (rest != NULL)
+	    {
+		/* Use remainder of previous call, starts with an invalid
+		 * character that may become valid when reading more. */
+		if (restlen > TYPEAHEADLEN - typeaheadlen)
+		    unconverted = TYPEAHEADLEN - typeaheadlen;
+		else
+		    unconverted = restlen;
+		mch_memmove(typeahead + typeaheadlen, rest, unconverted);
+		if (unconverted == restlen)
+		{
+		    vim_free(rest);
+		    rest = NULL;
+		}
+		else
+		{
+		    restlen -= unconverted;
+		    mch_memmove(rest, rest + unconverted, restlen);
+		}
+		typeaheadlen += unconverted;
+	    }
+	    else
+		unconverted = 0;
+#endif
+
 	    if (typebuf_changed(tb_change_cnt))
 	    {
 		/* "buf" may be invalid now if a client put something in the
@@ -1604,8 +1661,12 @@ mch_inchar(
 		 * when 'tenc' is set. */
 		if (input_conv.vc_type != CONV_NONE
 						&& (ch2 == NUL || c != K_NUL))
-		    n = convert_input(typeahead + typeaheadlen, n,
-						 TYPEAHEADLEN - typeaheadlen);
+		{
+		    typeaheadlen -= unconverted;
+		    n = convert_input_safe(typeahead + typeaheadlen,
+				n + unconverted, TYPEAHEADLEN - typeaheadlen,
+				rest == NULL ? &rest : NULL, &restlen);
+		}
 #endif
 
 		/* Use the ALT key to set the 8th bit of the character
@@ -1815,16 +1876,7 @@ mch_init(void)
 	set_option_value((char_u *)"grepprg", 0, (char_u *)"grep -n", 0);
 
 #ifdef FEAT_CLIPBOARD
-    clip_init(TRUE);
-
-    /*
-     * Vim's own clipboard format recognises whether the text is char, line,
-     * or rectangular block.  Only useful for copying between two Vims.
-     * "VimClipboard" was used for previous versions, using the first
-     * character to specify MCHAR, MLINE or MBLOCK.
-     */
-    clip_star.format = RegisterClipboardFormat("VimClipboard2");
-    clip_star.format_raw = RegisterClipboardFormat("VimRawBytes");
+    win_clip_init();
 #endif
 }
 
@@ -2309,16 +2361,7 @@ mch_init(void)
 #endif
 
 #ifdef FEAT_CLIPBOARD
-    clip_init(TRUE);
-
-    /*
-     * Vim's own clipboard format recognises whether the text is char, line, or
-     * rectangular block.  Only useful for copying between two Vims.
-     * "VimClipboard" was used for previous versions, using the first
-     * character to specify MCHAR, MLINE or MBLOCK.
-     */
-    clip_star.format = RegisterClipboardFormat("VimClipboard2");
-    clip_star.format_raw = RegisterClipboardFormat("VimRawBytes");
+    win_clip_init();
 #endif
 
     /* This will be NULL on anything but NT 4.0 */
@@ -2605,57 +2648,54 @@ mch_dirname(
 /*
  * get file permissions for `name'
  * -1 : error
- * else FILE_ATTRIBUTE_* defined in winnt.h
+ * else mode_t
  */
     long
 mch_getperm(char_u *name)
 {
-#ifdef FEAT_MBYTE
-    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
-    {
-	WCHAR	*p = enc_to_utf16(name, NULL);
-	long	n;
+    struct stat st;
+    int n;
 
-	if (p != NULL)
-	{
-	    n = (long)GetFileAttributesW(p);
-	    vim_free(p);
-	    if (n >= 0 || GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-		return n;
-	    /* Retry with non-wide function (for Windows 98). */
-	}
-    }
-#endif
-    return (long)GetFileAttributes((char *)name);
+    n = mch_stat(name, &st);
+    return n == 0 ? (int)st.st_mode : -1;
 }
 
 
 /*
  * set file permission for `name' to `perm'
+ *
+ * return FAIL for failure, OK otherwise
  */
     int
 mch_setperm(
     char_u  *name,
     long    perm)
 {
-    perm |= FILE_ATTRIBUTE_ARCHIVE;	/* file has changed, set archive bit */
+    long	n;
 #ifdef FEAT_MBYTE
+    WCHAR *p;
     if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
     {
-	WCHAR	*p = enc_to_utf16(name, NULL);
-	long	n;
+	p = enc_to_utf16(name, NULL);
 
 	if (p != NULL)
 	{
-	    n = (long)SetFileAttributesW(p, perm);
+	    n = _wchmod(p, perm);
 	    vim_free(p);
-	    if (n || GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-		return n ? OK : FAIL;
+	    if (n == -1 && GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
+		return FAIL;
 	    /* Retry with non-wide function (for Windows 98). */
 	}
     }
+    if (p == NULL)
 #endif
-    return SetFileAttributes((char *)name, perm) ? OK : FAIL;
+	n = _chmod(name, perm);
+    if (n == -1)
+	return FAIL;
+
+    win32_set_archive(name);
+
+    return OK;
 }
 
 /*
@@ -2664,49 +2704,12 @@ mch_setperm(
     void
 mch_hide(char_u *name)
 {
-    int		perm;
-#ifdef FEAT_MBYTE
-    WCHAR	*p = NULL;
+    int attrs = win32_getattrs(name);
+    if (attrs == -1)
+	return;
 
-    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
-	p = enc_to_utf16(name, NULL);
-#endif
-
-#ifdef FEAT_MBYTE
-    if (p != NULL)
-    {
-	perm = GetFileAttributesW(p);
-	if (perm < 0 && GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
-	{
-	    /* Retry with non-wide function (for Windows 98). */
-	    vim_free(p);
-	    p = NULL;
-	}
-    }
-    if (p == NULL)
-#endif
-	perm = GetFileAttributes((char *)name);
-    if (perm >= 0)
-    {
-	perm |= FILE_ATTRIBUTE_HIDDEN;
-#ifdef FEAT_MBYTE
-	if (p != NULL)
-	{
-	    if (SetFileAttributesW(p, perm) == 0
-		    && GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
-	    {
-		/* Retry with non-wide function (for Windows 98). */
-		vim_free(p);
-		p = NULL;
-	    }
-	}
-	if (p == NULL)
-#endif
-	    SetFileAttributes((char *)name, perm);
-    }
-#ifdef FEAT_MBYTE
-    vim_free(p);
-#endif
+    attrs |= FILE_ATTRIBUTE_HIDDEN;
+    win32_setattrs(name, attrs);
 }
 
 /*
@@ -2716,7 +2719,7 @@ mch_hide(char_u *name)
     int
 mch_isdir(char_u *name)
 {
-    int f = mch_getperm(name);
+    int f = win32_getattrs(name);
 
     if (f == -1)
 	return FALSE;		    /* file does not exist at all */
@@ -2752,12 +2755,82 @@ mch_mkdir(char_u *name)
  * Return TRUE if file "fname" has more than one link.
  */
     int
-mch_is_linked(char_u *fname)
+mch_is_hard_link(char_u *fname)
 {
     BY_HANDLE_FILE_INFORMATION info;
 
     return win32_fileinfo(fname, &info) == FILEINFO_OK
 						   && info.nNumberOfLinks > 1;
+}
+
+/*
+ * Return TRUE if file "fname" is a symbolic link.
+ */
+    int
+mch_is_symbolic_link(char_u *fname)
+{
+    HANDLE		hFind;
+    int			res = FALSE;
+    WIN32_FIND_DATAA	findDataA;
+    DWORD		fileFlags = 0, reparseTag = 0;
+#ifdef FEAT_MBYTE
+    WCHAR		*wn = NULL;
+    WIN32_FIND_DATAW	findDataW;
+
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+	wn = enc_to_utf16(fname, NULL);
+    if (wn != NULL)
+    {
+	hFind = FindFirstFileW(wn, &findDataW);
+	vim_free(wn);
+	if (hFind == INVALID_HANDLE_VALUE
+		&& GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+	{
+	    /* Retry with non-wide function (for Windows 98). */
+	    hFind = FindFirstFile(fname, &findDataA);
+	    if (hFind != INVALID_HANDLE_VALUE)
+	    {
+		fileFlags = findDataA.dwFileAttributes;
+		reparseTag = findDataA.dwReserved0;
+	    }
+	}
+	else
+	{
+	    fileFlags = findDataW.dwFileAttributes;
+	    reparseTag = findDataW.dwReserved0;
+	}
+    }
+    else
+#endif
+    {
+	hFind = FindFirstFile(fname, &findDataA);
+	if (hFind != INVALID_HANDLE_VALUE)
+	{
+	    fileFlags = findDataA.dwFileAttributes;
+	    reparseTag = findDataA.dwReserved0;
+	}
+    }
+
+    if (hFind != INVALID_HANDLE_VALUE)
+	FindClose(hFind);
+
+    if ((fileFlags & FILE_ATTRIBUTE_REPARSE_POINT)
+	    && reparseTag == IO_REPARSE_TAG_SYMLINK)
+	res = TRUE;
+
+    return res;
+}
+
+/*
+ * Return TRUE if file "fname" has more than one link or if it is a symbolic
+ * link.
+ */
+    int
+mch_is_linked(char_u *fname)
+{
+    if (mch_is_hard_link(fname) || mch_is_symbolic_link(fname))
+	return TRUE;
+    return FALSE;
 }
 
 /*
@@ -2824,6 +2897,92 @@ win32_fileinfo(char_u *fname, BY_HANDLE_FILE_INFORMATION *info)
 }
 
 /*
+ * get file attributes for `name'
+ * -1 : error
+ * else FILE_ATTRIBUTE_* defined in winnt.h
+ */
+    static
+    int
+win32_getattrs(char_u *name)
+{
+    int		attr;
+#ifdef FEAT_MBYTE
+    WCHAR	*p = NULL;
+
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+	p = enc_to_utf16(name, NULL);
+
+    if (p != NULL)
+    {
+	attr = GetFileAttributesW(p);
+	if (attr < 0 && GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+	{
+	    /* Retry with non-wide function (for Windows 98). */
+	    vim_free(p);
+	    p = NULL;
+	}
+    }
+    if (p == NULL)
+#endif
+	attr = GetFileAttributes((char *)name);
+#ifdef FEAT_MBYTE
+    vim_free(p);
+#endif
+    return attr;
+}
+
+/*
+ * set file attributes for `name' to `attrs'
+ *
+ * return -1 for failure, 0 otherwise
+ */
+    static
+    int
+win32_setattrs(char_u *name, int attrs)
+{
+    int res;
+#ifdef FEAT_MBYTE
+    WCHAR	*p = NULL;
+
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+	p = enc_to_utf16(name, NULL);
+
+    if (p != NULL)
+    {
+	res = SetFileAttributesW(p, attrs);
+	if (res == FALSE
+	    && GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+	{
+	    /* Retry with non-wide function (for Windows 98). */
+	    vim_free(p);
+	    p = NULL;
+	}
+    }
+    if (p == NULL)
+#endif
+	res = SetFileAttributes((char *)name, attrs);
+#ifdef FEAT_MBYTE
+    vim_free(p);
+#endif
+    return res ? 0 : -1;
+}
+
+/*
+ * Set archive flag for "name".
+ */
+    static
+    int
+win32_set_archive(char_u *name)
+{
+    int attrs = win32_getattrs(name);
+    if (attrs == -1)
+	return -1;
+
+    attrs |= FILE_ATTRIBUTE_ARCHIVE;
+    return win32_setattrs(name, attrs);
+}
+
+/*
  * Return TRUE if file or directory "name" is writable (not readonly).
  * Strange semantics of Win32: a readonly directory is writable, but you can't
  * delete a file.  Let's say this means it is writable.
@@ -2831,10 +2990,10 @@ win32_fileinfo(char_u *fname, BY_HANDLE_FILE_INFORMATION *info)
     int
 mch_writable(char_u *name)
 {
-    int perm = mch_getperm(name);
+    int attrs = win32_getattrs(name);
 
-    return (perm != -1 && (!(perm & FILE_ATTRIBUTE_READONLY)
-				       || (perm & FILE_ATTRIBUTE_DIRECTORY)));
+    return (attrs != -1 && (!(attrs & FILE_ATTRIBUTE_READONLY)
+			  || (attrs & FILE_ATTRIBUTE_DIRECTORY)));
 }
 
 /*
@@ -3440,13 +3599,14 @@ sub_process_writer(LPVOID param)
 	{
 	    /* Finished a line, add a NL, unless this line should not have
 	     * one. */
+            /* TODO: check curbuf->b_p_lasteol */
 	    if (lnum != curbuf->b_op_end.lnum
 		|| !curbuf->b_p_bin
 		|| (lnum != curbuf->b_no_eol_lnum
 		    && (lnum != curbuf->b_ml.ml_line_count
 			|| curbuf->b_p_eol)))
 	    {
-		WriteFile(g_hChildStd_IN_Wr, "\n", 1, &ignored, NULL);
+		WriteFile(g_hChildStd_IN_Wr, "\n", 1, (LPDWORD)&ignored, NULL);
 	    }
 
 	    ++lnum;
@@ -4960,6 +5120,28 @@ mch_delay(
     Sleep((int)msec);	    /* never wait for input */
 #else /* Console */
     if (ignoreinput)
+    {
+# ifdef FEAT_JOB_BASE
+	int job_wait;
+# endif
+
+# ifdef FEAT_JOB_BASE
+	/* FIXME: consider combination with FEAT_MZSCHEME. */
+	job_wait = job_get_wait();
+	if (job_wait > 0 && job_wait < msec)
+	{
+	    while (msec > 0)
+	    {
+		job_check_ends();
+		job_wait = job_get_wait();
+		if (job_wait < 0 || msec < job_wait)
+		    job_wait = msec;
+		Sleep(job_wait);
+		msec -= job_wait;
+	    }
+	}
+	else
+# endif
 # ifdef FEAT_MZSCHEME
 	if (mzthreads_allowed() && p_mzq > 0 && msec > p_mzq)
 	{
@@ -4978,6 +5160,7 @@ mch_delay(
 	else
 # endif
 	    Sleep((int)msec);
+    }
     else
 	WaitForChar(msec);
 #endif
@@ -4994,13 +5177,16 @@ mch_remove(char_u *name)
 #ifdef FEAT_MBYTE
     WCHAR	*wn = NULL;
     int		n;
+#endif
 
+    win32_setattrs(name, FILE_ATTRIBUTE_NORMAL);
+
+#ifdef FEAT_MBYTE
     if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
     {
 	wn = enc_to_utf16(name, NULL);
 	if (wn != NULL)
 	{
-	    SetFileAttributesW(wn, FILE_ATTRIBUTE_NORMAL);
 	    n = DeleteFileW(wn) ? 0 : -1;
 	    vim_free(wn);
 	    if (n == 0 || GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
@@ -5009,7 +5195,6 @@ mch_remove(char_u *name)
 	}
     }
 #endif
-    SetFileAttributes(name, FILE_ATTRIBUTE_NORMAL);
     return DeleteFile(name) ? 0 : -1;
 }
 
@@ -5029,37 +5214,6 @@ mch_breakcheck(void)
 #endif
 }
 
-
-/*
- * How much memory is available in Kbyte?
- * Return sum of available physical and page file memory.
- */
-/*ARGSUSED*/
-    long_u
-mch_avail_mem(int special)
-{
-#ifdef MEMORYSTATUSEX
-    PlatformId();
-    if (g_PlatformId == VER_PLATFORM_WIN32_NT)
-    {
-	MEMORYSTATUSEX	ms;
-
-	/* Need to use GlobalMemoryStatusEx() when there is more memory than
-	 * what fits in 32 bits. But it's not always available. */
-	ms.dwLength = sizeof(MEMORYSTATUSEX);
-	GlobalMemoryStatusEx(&ms);
-	return (long_u)((ms.ullAvailPhys + ms.ullAvailPageFile) >> 10);
-    }
-    else
-#endif
-    {
-	MEMORYSTATUS	ms;
-
-	ms.dwLength = sizeof(MEMORYSTATUS);
-	GlobalMemoryStatus(&ms);
-	return (long_u)((ms.dwAvailPhys + ms.dwAvailPageFile) >> 10);
-    }
-}
 
 #ifdef FEAT_MBYTE
 /*
@@ -5232,6 +5386,28 @@ mch_rename(
 	return -8;
 
     return 0;	/* success */
+}
+
+    int
+mch_rmdir __ARGS((const char *dirname))
+{
+    BOOL result = FALSE;
+
+#ifdef FEAT_MBYTE
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+    {
+	WCHAR	*wdirname = enc_to_utf16((char_u *)dirname, NULL);
+	if (wdirname != NULL)
+	    result = RemoveDirectoryW(wdirname);
+    }
+    else
+#endif
+    {
+	if (dirname != NULL)
+	    result = RemoveDirectoryA(dirname);
+    }
+
+    return result != FALSE ? 0 : 1;
 }
 
 /*
@@ -5947,3 +6123,34 @@ fix_arg_enc(void)
     set_alist_count();
 }
 #endif
+
+    int
+mch_setenv(var, value, x)
+    char *var;
+    char *value;
+    int	 x;
+{
+    char_u	*envbuf;
+
+    envbuf = alloc((unsigned)(STRLEN(var) + STRLEN(value) + 2));
+    if (envbuf == NULL)
+	return -1;
+
+    sprintf((char *)envbuf, "%s=%s", var, value);
+
+#ifdef FEAT_MBYTE
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+    {
+	WCHAR	    *p = enc_to_utf16(envbuf, NULL);
+
+	vim_free(envbuf);
+	if (p == NULL)
+	    return -1;
+	_wputenv(p);
+    }
+    else
+#endif
+	_putenv((char *)envbuf);
+
+    return 0;
+}

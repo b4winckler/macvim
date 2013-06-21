@@ -1,4 +1,4 @@
-*filetype.txt*  For Vim バージョン 7.3.  Last change: 2011 Jun 19
+*filetype.txt*  For Vim バージョン 7.3.  Last change: 2013 May 25
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -12,7 +12,7 @@
 
 |autocmd.txt|も参照。
 
-{Vi にはこれらのコマンドは存在しない}
+{Vi にはこれらのコマンドはない}
 
 ==============================================================================
 1. ファイル形式					*filetypes* *file-types*
@@ -418,7 +418,7 @@ NewChangelogEntry	適切にアイテムを追加する(以下参照)。
 
 グローバルマッピング:
 			NOTE: グローバルマッピングはあらかじめ
-			frplugin/changelog.vim を実行することで有効になる。
+			ftplugin/changelog.vim を実行することで有効になる。
 			例えば >
 				runtime ftplugin/changelog.vim
 <			と |.vimrc| に書くようにして。
@@ -594,7 +594,7 @@ SQL							*ft-sql*
 |ft_sql.txt|
 
 
-TEX							*ft-tex-plugin*
+TEX						*ft-tex-plugin* *g:tex_flavor*
 
 *.tex ファイルの最初の行が次のような形なら >
 	%&<format>

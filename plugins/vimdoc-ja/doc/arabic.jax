@@ -1,12 +1,12 @@
 *arabic.txt*	For Vim バージョン 7.3.  Last change: 2010 Nov 13
 
 
-		  VIM REFERENCE MANUAL	  by Nadim Shaikli
+		  VIMリファレンスマニュアル	  by Nadim Shaikli
 
 
 アラビア語サポート (オプション & マッピング)			*Arabic*
 
-{Vi にはこれらのコマンドはない}
+{Vi にはこれらのコマンドはありません}
 
 								*E800*
 right-to-left (右横書き) とアラビア語マッピングを使用するには、Vim を

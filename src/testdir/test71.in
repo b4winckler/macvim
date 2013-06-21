@@ -2,13 +2,15 @@ Test for encryption.
 
 STARTTEST
 :so small.vim
+:set enc=latin1
+:e
 :/^start of text/+1
 :let text_lines = getline('.', line('.') + 2)
 :/^start of cm=zip bytes/+1
 :let cm0_bytes = getline('.', '.')
 :/^start of cm=blowfish bytes/+1
 :let cm1_bytes = getline('.', '.')
-:bwipe
+:bwipe!
 :call append(0, text_lines)
 :$d
 :X

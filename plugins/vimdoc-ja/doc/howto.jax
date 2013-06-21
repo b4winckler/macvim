@@ -1,7 +1,7 @@
 *howto.txt*	For Vim バージョン 7.3.  Last change: 2006 Apr 02
 
 
-		  VIM REFERENCE MANUAL	  by Bram Moolenaar
+		  VIMリファレンスマニュアル	  by Bram Moolenaar
 
 
 How to ...				*howdoi* *how-do-i* *howto* *how-to*
@@ -39,8 +39,8 @@ How to ...				*howdoi* *how-do-i* *howto* *how-to*
 |'virtualedit'|		テキストのないところを移動する
 |usr_27.txt|		検索のパターンを指定する
 |tags-and-searches|	タグを実行し特殊な検索を行う
-|29.4|			インクルードされるファイルを検索して変数や関
-			数やマクロを見つける
+|29.4|			インクルードされるファイルを検索して変数や関数やマクロ
+			を見つける
 |K|			カーソルの下の単語をキーワードにしてマニュアルを読む
 
 |03.7|			スクロールする
