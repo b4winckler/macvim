@@ -1,7 +1,7 @@
-*cmdline.txt*   For Vim バージョン 7.3.  Last change: 2013 Jan 17
+*cmdline.txt*   For Vim バージョン 7.3.  Last change: 2013 Mar 16
 
 
-		  VIM REFERENCE MANUAL    by Bram Moolenaar
+		  VIMリファレンスマニュアル    by Bram Moolenaar
 
 				*Cmdline-mode* *Command-line-mode*
 コマンドラインモード		*Cmdline* *Command-line* *mode-cmdline* *:*

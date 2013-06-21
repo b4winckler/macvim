@@ -1,7 +1,7 @@
 *if_mzsch.txt*  For Vim バージョン 7.3.  Last change: 2012 Dec 17
 
 
-		  VIM REFERENCE MANUAL    by Sergey Khorev
+		  VIMリファレンスマニュアル    by Sergey Khorev
 
 
 Vim の MzScheme インターフェイス			*mzscheme* *MzScheme*
@@ -14,7 +14,7 @@ Vim の MzScheme インターフェイス			*mzscheme* *MzScheme*
 6. 関数参照を使う			|mzscheme-funcref|
 7. 動的ローディング			|mzscheme-dynamic|
 
-{Vi にはこれらのコマンドはない}
+{Vi にはこれらのコマンドはありません}
 
 MzScheme インターフェイスは、Vim が |+mzscheme| 機能付きでコンパイルされたとき
 のみ利用できます。
@@ -39,7 +39,7 @@ Racket 5.x (5.3.1も含む) の futures と places は Vim から作成された
 							*:mzscheme* *:mz*
 :[range]mz[scheme] {stmt}
 			MzScheme のステートメント {stmt} を実行します。
-			{Vi にはない}
+			{Vi にはありません}
 
 :[range]mz[scheme] << {endmarker}
 {script}
@@ -51,7 +51,7 @@ Racket 5.x (5.3.1も含む) の futures と places は Vim から作成された
 
 							*:mzfile* *:mzf*
 :[range]mzf[ile] {file}	{file} 内の MzScheme スクリプトを実行します。
-			{Vi にはない}
+			{Vi にはありません}
 
 これらのコマンドは、本質的には同じことを行います - つまり、MzScheme のコードを、
 与えられた "現在の範囲" に対して実行します。

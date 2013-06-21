@@ -1,0 +1,54 @@
+Test for no_leader.
+
+edit.c:
+6063         /* If the line doesn't start with a comment leader, then don't
+6064          * start one in a following broken line.  Avoids that a %word
+6065          * moved to the start of the next line causes all following lines
+6066          * to start with %. */
+6067         if (leader_len == 0)
+6068             no_leader = TRUE;
+
+Results of test9:
+
+STARTTEST
+:set tw=4 formatoptions=tcq comments=:\"
+/^{/+1
+gqgqo
+innoremap "hoge" fuga puyo
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+innoremap "hoge" fuga puyo
+ENDTEST
+
+case1
+{
+nnoremap "hoge" fuga puyo
+}
+{
+nnoremap "hoge" fuga puyo
+}
+
+STARTTEST
+:set tw=4 formatoptions=tcq cindent comments=s1:/*,mb:*,ex:*/
+/^{/+1
+gqgqo
+iint xxx /* a b c d */
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gqgqo
+iint xxx /* a b c d */
+ENDTEST
+
+case2
+{
+int xxx /* a b c d */
+}
+{
+int xxx /* a b c d */
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST

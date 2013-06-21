@@ -1,7 +1,7 @@
 *if_cscop.txt*  For Vim バージョン 7.3.  Last change: 2011 Jun 12
 
 
-		  VIM リファレンスマニュアル    by Andy Kahn
+		  VIMリファレンスマニュアル    by Andy Kahn
 
 
 							*cscope* *Cscope*
@@ -21,7 +21,7 @@ ctagsの代わりとみなせる。Vimではタグにジャンプするように
 7. 入手法と情報			|cscope-info|
 
 現在のところUNIXとWin32で使える。
-{Vi にはこれらのコマンドは無い}
+{Vi にはこれらのコマンドはない}
 
 ==============================================================================
 1. Cscopeの紹介						*cscope-intro*

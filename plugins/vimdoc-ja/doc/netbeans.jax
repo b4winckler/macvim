@@ -1,7 +1,7 @@
 *netbeans.txt*  For Vim バージョン 7.3.  Last change: 2012 Jan 26
 
 
-		  VIM REFERENCE MANUAL    by Gordon Prieur et al.
+		  VIMリファレンスマニュアル    by Gordon Prieur et al.
 
 
 			*socket-interface* *netbeans* *netbeans-support*
@@ -24,7 +24,7 @@ Vim NetBeans プロトコル: Vim と IDE を統合するためのソケット�
     10.4. External Editor モジュールの入手	|obtaining-exted|
     10.5. NetBeans の設定			|netbeans-setup|
 
-{Vi にはこれらの機能はまったくない}
+{Vi にはこれらの機能はありません}
 {|+netbeans_intg| 機能つきでコンパイルされたときのみ利用可能}
 
 ==============================================================================

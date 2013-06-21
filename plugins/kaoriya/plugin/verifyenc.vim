@@ -4,7 +4,7 @@
 "   Verify the file is truly in 'fileencoding' encoding.
 "
 " Maintainer:   MURAOKA Taro <koron.kaoriya@gmail.com>
-" Last Change:  11-Jan-2013.
+" Last Change:  10-Mar-2013.
 " Options:      'verifyenc_enable'      When 0, checking become disable.
 "               'verifyenc_maxlines'    Maximum range to check (for speed).
 "
@@ -73,6 +73,11 @@ function! s:VerifyEncoding()
   if s:IsDisabled()
     return
   endif
+  " Check fenc=guess has been worked yet, to cancel verification.
+  if exists('b:x_guessed_fileencoding')
+    let b:verifyenc = 'CANCELED BY GUESS'
+    return
+  endif
   " Check if empty file.
   if &fileencoding != '' && line2byte(1) < 0
     call s:EditByGlobalFenc()
@@ -105,7 +110,7 @@ function! s:SearchFromTop(pattern)
   let timeout = 1000
   let pos = getpos('.')
   normal! 1G
-  let retval = search(a:pattern, 'n', stopline, timeout) > 0
+  let retval = search(a:pattern, 'cnW', stopline, timeout) > 0
   call setpos('.', pos)
   return retval
 endfunction

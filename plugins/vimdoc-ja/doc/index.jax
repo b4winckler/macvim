@@ -1,7 +1,7 @@
-*index.txt*     For Vim バージョン 7.3.  Last change: 2012 Jul 25
+*index.txt*     For Vim バージョン 7.3.  Last change: 2013 May 17
 
 
-		  VIM REFERENCE MANUAL	  by Bram Moolenaar
+		  VIMリファレンスマニュアル	  by Bram Moolenaar
 
 
 								*index*
@@ -212,7 +212,7 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 |CTRL-W|	CTRL-W {char}	   ウィンドウコマンド、|CTRL-W| を参照。
 |CTRL-X|	CTRL-X		2  カーソル位置/カーソルより後ろにある数字に N
 				   を減じる。
-|CTRL-Y|	CTRL-Y		   ウィンドウを N 行下へスクロール。
+|CTRL-Y|	CTRL-Y		   ウィンドウを N 行上へスクロール。
 |CTRL-Z|	CTRL-Z		   Vim の実行を中断。(新しいシェルを開始する)
 		CTRL-[ <Esc>	   未使用
 |CTRL-\_CTRL-N|	CTRL-\ CTRL-N	   ノーマルモードへ移行。(つまり何もしない)
@@ -745,6 +745,7 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 				   挿入、カーソルは挿入テキストの最後へ移動。
 |gQ|		gQ		   "Ex" モードを開始する。
 |gR|		gR		2  仮想置換モード開始。
+|gT|		gT		   前のタブページに移動
 |gU|		gU{motion}	2  Nmove テキストを大文字にする。
 |gV|		gV		   選択モードでマップやメニューを使用した後、
 				   選択していた選択範囲を再選択しない。
@@ -776,6 +777,7 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 |gq|		gq{motion}	2  Nmove テキストを整形する
 |gr|		gr{char}	2  N 文字を {char} で仮想上書きする
 |gs|		gs		   N 秒間スリープする(省略時は1秒)
+|gt|		gt		   次のタブページに移動
 |gu|		gu{motion}	2  Nmove テキストを小文字にする
 |gv|		gv		   前回の選択範囲を再選択する
 |gw|		gw{motion}	2  Nmove テキストを整形する。カーソル移動なし
@@ -1047,11 +1049,11 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 |c_<Right>|	<Right>		カーソルを右へ移動
 |c_<S-Right>|	<S-Right>	カーソルを1単語右へ移動
 |c_<C-Right>|	<C-Right>	カーソルを1単語右へ移動
-|c_<Up>|	<Up>		ヒストリの中でカーソルより前のパタンに一致する
-				1つ前のコマンドラインを呼び出す
+|c_<Up>|	<Up>		ヒストリの中でカーソルより前のパターンに一致す
+				る1つ前のコマンドラインを呼び出す
 |c_<S-Up>|	<S-Up>		ヒストリから1つ前のコマンドラインを呼び出す
-|c_<Down>|	<Down>		ヒストリの中でカーソルより前のパタンに一致する
-				1つ次のコマンドラインを呼び出す
+|c_<Down>|	<Down>		ヒストリの中でカーソルより前のパターンに一致す
+				る1つ次のコマンドラインを呼び出す
 |c_<S-Down>|	<S-Down>	ヒストリから1つ次のコマンドラインを呼び出す
 |c_<Home>|	<Home>		カーソルをコマンドラインの先頭へ移動
 |c_<End>|	<End>		カーソルをコマンドラインの末尾へ移動
@@ -1157,7 +1159,7 @@ You found it, Arthur!				*holy-grail*
 |:cgetbuffer|	:cgetb[uffer]	バッファからエラーを取得する
 |:cgetexpr|	:cgete[xpr]	式からエラーを取得する
 |:cgetfile|	:cg[etfile]	エラーファイルを読み込む
-|:change|	:ch[ange]	行を削除し、テキストを挿入
+|:changes|	:changes	変更リストを表示する
 |:chdir|	:chd[ir]	ディレクトリの移動
 |:checkpath|	:che[ckpath]	インクルードファイルを一覧表示
 |:checktime|	:checkt[ime]	開いているファイルのタイムスタンプを確認する
@@ -1430,7 +1432,7 @@ You found it, Arthur!				*holy-grail*
 |:promptrepl|	:promptr[epl]	GUIの検索・置換ダイアログを開く
 |:perldo|	:perld[o]	1行ずつ Perl コマンドを実行
 |:pop|		:po[p]		タグスタックの1つ古いエントリへジャンプ
-|:popup|	:pop[up]	指定した名前のメニューをポップアップ表示する
+|:popup|	:popup		指定した名前のメニューをポップアップ表示する
 |:ppop|		:pp[op]		プレビューウィンドウで ":pop" を実行
 |:preserve|	:pre[serve]	すべてのテキストをスワップファイルに書き出す
 |:previous|	:prev[ious]	引数リスト中の前のファイルを読み込む
@@ -1451,8 +1453,10 @@ You found it, Arthur!				*holy-grail*
 |:pwd|		:pw[d]		カレントディレクトリを表示
 |:py3|		:py3		Python 3 コマンドを実行
 |:python3|	:python3	:py3 と同じ
+|:py3do|	:py3d[o]	各行に対して Python 3 コマンドを実行
 |:py3file|	:py3f[ile]	Python 3 スクリプトファイルを実行
 |:python|	:py[thon]	Python コマンドを実行
+|:pydo|		:pyd[o]		各行に対して Python コマンドを実行
 |:pyfile|	:pyf[ile]	Python スクリプトファイルを実行
 |:quit|		:q[uit]		カレントウィンドウを閉じる(ウィンドウが1つなら
 				Vim を終了)
@@ -1521,11 +1525,11 @@ You found it, Arthur!				*holy-grail*
 |:simalt|	:si[malt]	Win32 GUI: Windows ALT キーをシミュレートする
 |:sign|		:sig[n]		目印を取り扱うコマンド
 |:silent|	:sil[ent]	実行したコマンドの出力を抑制する
-|:sleep|	:sl[eep]	数秒間なにもしない
+|:sleep|	:sl[eep]	数秒間何もしない
 |:slast|	:sla[st]	ウィンドウを分割して引数リストの最後のファイル
 				を開く
 |:smagic|	:sm[agic]	'magic' オプションの下で :substitute を実行
-|:smap|		:sma[p]		":map" と同様。選択モード用
+|:smap|		:smap		":map" と同様。選択モード用
 |:smapclear|	:smapc[lear]	選択モードのすべてのマップを削除する
 |:smenu|	:sme[nu]	選択モードのメニューを追加する
 |:snext|	:sn[ext]	ウィンドウを分割して引数リストの次のファイルを

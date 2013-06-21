@@ -1,7 +1,7 @@
 *if_tcl.txt*    For Vim バージョン 7.3.  Last change: 2012 Aug 02
 
 
-		  VIM REFERENCE MANUAL    by Ingo Wilken
+		  VIMリファレンスマニュアル    by Ingo Wilken
 
 
 VimへのTclインターフェイス				*tcl* *Tcl* *TCL*
@@ -16,7 +16,7 @@ VimへのTclインターフェイス				*tcl* *Tcl* *TCL*
 8. 例					|tcl-examples|
 9. 動的ローディング			|tcl-dynamic|
 
-{Vi はこれらのコマンドを持たない} *E280* *E281*
+{Vi にはこれらのコマンドはない} *E280* *E281*
 
 Tclインターフェイスは、Vimが|+tcl|機能と共にコンパイルされたときのみ機能する。
 

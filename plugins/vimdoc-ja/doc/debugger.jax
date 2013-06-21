@@ -1,7 +1,7 @@
 *debugger.txt*  For Vim バージョン 7.3.  Last change: 2005 Mar 29
 
 
-		VIM リファレンスマニュアル    by Gordon Prieur
+		VIMリファレンスマニュアル    by Gordon Prieur
 
 
 デバッガ支援機能					*debugger-support*
@@ -10,7 +10,7 @@
 2. Vimのコンパイルオプション	|debugger-compilation|
 3. 統合デバッガ			|debugger-integration|
 
-{Vi にはこれらのコマンドは無い}
+{Vi にはこれらの機能は無い}
 
 ==============================================================================
 1. デバッガ機能						*debugger-features*
@@ -91,8 +91,7 @@ XmNballoonEvalBackground, XmNballoonEvalForeground)。
 オプション 'balloondelay' はバルーンを表示するまでの遅延時間を設定する。
 この機能を有効にするにはオプション 'ballooneval' をオンにする必要がある。
 
-バルーンウィンドウは|+balloon_eval|と|+sun_workshop|機能をコンパイル時にした時
-のみ利用できる。
+バルーンウィンドウは|+balloon_eval|機能をコンパイル時にした時のみ利用できる。
 
 バルーンウィンドウ関数はツールバーのツールチップを表示する際にも利用されてい
 る。これにはオプション 'ballooneval' を設定する必要はない。しかしその他の設定

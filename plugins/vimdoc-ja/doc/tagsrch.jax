@@ -1,7 +1,7 @@
 *tagsrch.txt*   For Vim バージョン 7.3.  Last change: 2011 Oct 28
 
 
-		  VIM REFERENCE MANUAL    by Bram Moolenaar
+		  VIMリファレンスマニュアル    by Bram Moolenaar
 
 
 タグと特別な検索					*tags-and-searches*
@@ -167,8 +167,8 @@ FuncAの呼び出し部分の上でCTRL-]を使うことによって、mainか�
    2  1 FuncB	       59  harddisk2:text/vim/src/main.c
 
 							*E73*
-タグスタックを使おうとしたとき、タグスタックになにも入っていないとエラーが表示
-される。
+タグスタックを使おうとしたとき、タグスタックに何も入っていないとエラーが表示さ
+れる。
 
 ==============================================================================
 3. タグマッチリスト				*tag-matchlist* *E427* *E428*

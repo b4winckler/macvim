@@ -1,7 +1,7 @@
 *if_perl.txt*   For Vim バージョン 7.3.  Last change: 2012 Oct 25
 
 
-		  VIM REFERENCE MANUAL    by Sven Verdoolaege
+		  VIMリファレンスマニュアル    by Sven Verdoolaege
 					 and Matt Gerassimof
 
 Perl と Vim				*perl* *Perl*
@@ -11,7 +11,7 @@ Perl と Vim				*perl* *Perl*
 3. Perl インタフェイスを使う		|perl-using|
 4. 動的ローディング			|perl-dynamic|
 
-{Vi にはこれらのうちのどの機能もありません}
+{Vi にはこれらのコマンドはありません}
 
 Perl インタフェイスは、Vim を |+perl| 機能付きでコンパイルしている場合にのみ
 利用できます。

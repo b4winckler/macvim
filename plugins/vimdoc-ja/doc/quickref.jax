@@ -1,7 +1,7 @@
-*quickref.txt*  For Vim バージョン 7.3.  Last change: 2013 Feb 06
+*quickref.txt*  For Vim バージョン 7.3.  Last change: 2013 May 20
 
 
-		  VIM REFERENCE MANUAL    by Bram Moolenaar
+		  VIMリファレンスマニュアル    by Bram Moolenaar
 
 			    Quick reference guide
 
@@ -708,6 +708,7 @@
 'fileencodings'	  'fencs'   自動認識する 'fileencoding' のリスト
 'fileformat'	  'ff'      ファイル入出力時のファイルのフォーマット
 'fileformats'	  'ffs'     自動認識する 'fileformat' のリスト
+'fileignorecase'  'fic'     ファイル名の大文字と小文字を区別するかどうか
 'filetype'	  'ft'      オートコマンドで使うファイルタイプ名
 'fillchars'	  'fcs'     特殊な表示に使う文字
 'fkmap'		  'fk'      ペルシア語のキーボードマッピング
@@ -840,6 +841,7 @@
 'quoteescape'	  'qe'	    文字列中に使われるエスケープ文字
 'readonly'	  'ro'      バッファの書き込みを制限する
 'redrawtime'	  'rdt'     'hlsearch' と |:match| のハイライトのタイムアウト
+'regexpengine'	  're'	    デフォルトで使用する正規表現エンジン
 'relativenumber'  'rnu'	    相対行番号を表示する
 'remap'			    再帰的マッピングを有効にする
 'report'		    変更された行の数の方向が出る最小値

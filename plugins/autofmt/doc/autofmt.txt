@@ -46,5 +46,33 @@ For example: >
     endif
   endfunction
 <
+==============================================================================
+3. Customize Unicode Line Break Property
+
+uax14.vim is Pair Table-Based implementation of UAX #14.  It uses Unicode Line
+Break Property.  But it is not useful for all language.  You can customize it
+for your language.
+For example, line break is not allowed before LEFT DOUBLE QUOTATION MARK
+(U+201C) without space.  To change its behavior as Open Punctuation (e.g. "(",
+"{", etc...):
+>
+  " Use uax14
+  set formatexpr=autofmt#uax14#formatexpr()
+
+  " Customize Line Break Property
+  let s:unicode = unicode#import()
+  let s:orig_prop_line_break = s:unicode.prop_line_break
+  function! s:unicode.prop_line_break(char)
+    if a:char == "\u201c" || a:char == "\u2018"
+      return "OP"   " Open Punctuation
+    elseif a:char == "\u201d" || a:char == "\u2019"
+      return "CL"   " Close Punctuation
+    endif
+    return call(s:orig_prop_line_break, [a:char], self)
+  endfunction
+<
+Add this code in your vimrc.
+
+See http://unicode.org/reports/tr14/ for more information.
 
  vim:tw=78:ts=8:ft=help:norl:

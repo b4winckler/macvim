@@ -1,6 +1,6 @@
 " Maintainer:   Yukihiro Nakadaira <yukihiro.nakadaira@gmail.com>
 " License:      This file is placed in the public domain.
-" Last Change:  2009-10-04
+" Last Change:  2013-03-07
 
 let s:cpo_save = &cpo
 set cpo&vim
@@ -18,7 +18,7 @@ let s:compat = autofmt#compat#import()
 let s:lib = {}
 call extend(s:lib, s:compat)
 
-let s:lib.uni = unicode#import()
+let s:lib.uni = autofmt#unicode#import()
 
 function! s:lib.check_boundary(lst, i)
   " UAX #14: Line Breaking Properties

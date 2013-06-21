@@ -1,4 +1,4 @@
-*ft_sql.txt*	For Vim バージョン 7.3.  Last change: 2010 Jul 20
+*ft_sql.txt*	For Vim バージョン 7.3.  Last change: 2013 May 15
 
 by David Fishburn
 
@@ -342,6 +342,7 @@ static ポップアップはファイルタイプが SQL のファイルを編�
 
 static マップ(構文強調グループに基づいている)は以下の形式で定義されています: >
     imap <buffer> <C-C>k <C-\><C-O>:call sqlcomplete#Map('sqlKeyword')<CR><C-X><C-O>
+    imap <buffer> <C-C>k <C-\><C-O>:call sqlcomplete#Map('sqlKeyword\w*')<CR><C-X><C-O>
 
 このコマンドは次のように分解できます: >
     imap		   - 挿入モードでのマップを作成する
@@ -358,6 +359,8 @@ static マップ(構文強調グループに基づいている)は以下の形�
 			     イルを編集中に次のコマンドで表示できます。
 				 :syntax list
     'sqlKeyword'	   - 構文強調グループ sqlKeyword の項目を表示します。
+    'sqlKeyword\w*'	   - Vim 7.4 からは、正規表現を使って構文強調グループ
+			     を選択できます。
     )<CR>		   - :let コマンドを実行します。
     <C-X><C-O>		   - 標準のオムニ補完のキーストロークを実行します。
 			    sqlcomplete#Map 関数の引数に 'sqlKeyword' を渡して

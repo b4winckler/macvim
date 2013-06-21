@@ -1,41 +1,42 @@
 *spell.txt*	For Vim バージョン 7.3.  Last change: 2011 May 25
 
 
-		  VIM REFERENCE MANUAL	  by Bram Moolenaar
+		  VIMリファレンスマニュアル	  by Bram Moolenaar
 
 
 スペルチェック						*spell*
 
 1. はじめに			|spell-quickstart|
 2. スペルチェックの注意点	|spell-remarks|
-3. Spell ファイルの生成		|spell-mkspell|
-4. Spell ファイルの形式		|spell-file-format|
+3. スペルファイルの生成		|spell-mkspell|
+4. スペルファイルの形式		|spell-file-format|
 
 {Vi にはこれらのコマンドはない}
 
-Spell checking is not available when the |+syntax| feature has been disabled
-at compile time.
+コンパイル時に |+syntax| 機能を無効にした場合にはスペルチェックは利用すること
+ができない。
 
-Note: There also is a vimspell plugin.  If you have it you can do ":help
-vimspell" to find about it.  But you will probably want to get rid of the
-plugin and use the 'spell' option instead, it works better.
+Note: または vimspell プラグインがある。プラグインを入れていればそのプラグイン
+について調べるために ":help vimspell" を実行できる。しかし、おそらくそのプラグ
+インを削除し、代わりに 'spell' オプションを使いたいと思うだろう。そちらのほう
+がうまく機能する。
 
 ==============================================================================
-1. Quick start					*spell-quickstart* *E756*
+1. はじめに					*spell-quickstart* *E756*
 
-This command switches on spell checking: >
+このコマンドで、スペルチェックがオンになる: >
 
 	:setlocal spell spelllang=en_us
 
-This switches on the 'spell' option and specifies to check for US English.
+'spell' オプションをオンにし、アメリカ英語のチェックを指定する。
 
-The words that are not recognized are highlighted with one of these:
-	SpellBad	word not recognized			|hl-SpellBad|
-	SpellCap	word not capitalised			|hl-SpellCap|
-	SpellRare	rare word				|hl-SpellRare|
-	SpellLocal	wrong spelling for selected region	|hl-SpellLocal|
+認識されない単語は以下のようにハイライトされる:
+	SpellBad	認識されない単語			|hl-SpellBad|
+	SpellCap	頭文字が大文字化されていない単語	|hl-SpellCap|
+	SpellRare	まれな単語				|hl-SpellRare|
+	SpellLocal	選択された地域では間違った綴り		|hl-SpellLocal|
 
-Vim only checks words for spelling, there is no grammar check.
+Vim は単語の綴りのみをチェックし、文法はチェックしない。
 
 If the 'mousemodel' option is set to "popup" and the cursor is on a badly
 spelled word or it is "popup_setpos" and the mouse pointer is on a badly
@@ -44,35 +45,35 @@ word.  Note: this slows down the appearance of the popup menu.  Note for GTK:
 don't release the right mouse button until the menu appears, otherwise it
 won't work.
 
-To search for the next misspelled word:
+次の綴りの間違った単語を探すには:
 
 							*]s*
-]s			Move to next misspelled word after the cursor.
-			A count before the command can be used to repeat.
-			'wrapscan' applies.
+]s			カーソルの後の、次の綴りの間違った単語に移動する。コマ
+                        ンドの前に count を指定することで、繰り返しができる。
+                        'wrapscan' が適用される。
 
 							*[s*
-[s			Like "]s" but search backwards, find the misspelled
-			word before the cursor.  Doesn't recognize words
-			split over two lines, thus may stop at words that are
-			not highlighted as bad.  Does not stop at word with
-			missing capital at the start of a line.
+[s			"]s" と同様であるが後方検索を行い、カーソルより前の綴
+                        りの間違った単語を探す。2行に渡った単語は認識しないた
+                        め、間違いとしてハイライトされていない単語で止まること
+                        がある。行頭の大文字化されていない単語では止まらない。
 
 							*]S*
-]S			Like "]s" but only stop at bad words, not at rare
-			words or words for another region.
+]S			"]s" と同様であるが、間違った単語のみで止まり、まれな
+                        単語や他の地域の単語では止まらない。
 
 							*[S*
-[S			Like "]S" but search backwards.
+[S			"]S" と同様であるが、後方検索を行う。
 
 
-To add words to your own word list:
+単語をあなた自身の単語リストに追加するには:
 
 							*zg*
-zg			Add word under the cursor as a good word to the first
-			name in 'spellfile'.  A count may precede the command
-			to indicate the entry in 'spellfile' to be used.  A
-			count of two uses the second entry.
+zg			カーソルの下の単語を正しい (good) 単語として、
+			'spellfile' の最初のファイルに追加する。
+                        コマンドの前に count を指定することで、'spellfile' 内
+                        の項目を指定することができる。count として 2 を指定す
+                        ると、二番目の項目が使われる。
 
 			In Visual mode the selected characters are added as a
 			word (including white space!).
@@ -85,26 +86,26 @@ zg			Add word under the cursor as a good word to the first
 			another spell file the result is unpredictable.
 
 							*zG*
-zG			Like "zg" but add the word to the internal word list
-			|internal-wordlist|.
+zG			"zg" と同様であるが、その単語を内部単語リスト
+                        |internal-wordlist| に加える。
 
 							*zw*
-zw			Like "zg" but mark the word as a wrong (bad) word.
-			If the word already appears in 'spellfile' it is
-			turned into a comment line.  See |spellfile-cleanup|
-			for getting rid of those.
+zw			"zg" と同様であるが、間違った (wrong) 単語としてマーク
+                        する。もしその単語がすでに 'spellfile' にある場合は、
+                        コメント行に変更される。それらを取り除くには
+                        |spellfile-cleanup|を参照する。
 
 							*zW*
-zW			Like "zw" but add the word to the internal word list
-			|internal-wordlist|.
+zW			"zw" と同様であるが、その単語を内部単語リスト
+                        |internal-wordlist| に加える。
 
 zuw							*zug* *zuw*
-zug			Undo |zw| and |zg|, remove the word from the entry in
-			'spellfile'.  Count used as with |zg|.
+zug			|zw| や |zg| をundoして、'spellfile' の項目からその単
+                        語を削除する。count は |zg| と同様に使われる。
 
 zuW							*zuG* *zuW*
-zuG			Undo |zW| and |zG|, remove the word from the internal
-			word list.  Count used as with |zg|.
+zuG			|zW| や |zG| をundoして、内部単語リストからその単語を
+                        削除する。count は |zg| と同様に使われる。
 
 							*:spe* *:spellgood*
 :[count]spe[llgood] {word}
@@ -208,12 +209,12 @@ affix file can be used to define common words, so that this mechanism also
 works in a new or short file |spell-COMMON|.
 
 ==============================================================================
-2. Remarks on spell checking				*spell-remarks*
+2. スペルチェックの注意点				*spell-remarks*
 
-PERFORMANCE
+性能
 
-Vim does on-the-fly spell checking.  To make this work fast the word list is
-loaded in memory.  Thus this uses a lot of memory (1 Mbyte or more).  There
+Vim はオンザフライのスペルチェックをする。To make this work fast the word list
+is loaded in memory.  Thus this uses a lot of memory (1 Mbyte or more).  There
 might also be a noticeable delay when the word list is loaded, which happens
 when 'spell' is set and when 'spelllang' is set while 'spell' was already set.
 To minimize the delay each word list is only loaded once, it is not deleted
@@ -221,17 +222,17 @@ when 'spelllang' is made empty or 'spell' is reset.  When 'encoding' is set
 all the word lists are reloaded, thus you may notice a delay then too.
 
 
-REGIONS
+地域
 
-A word may be spelled differently in various regions.  For example, English
-comes in (at least) these variants:
+単語はそれぞれの地域で綴りが異なるかもしれない。例えば、英語は少なくともこれ
+らの差異がある。
 
-	en		all regions
-	en_au		Australia
-	en_ca		Canada
-	en_gb		Great Britain
-	en_nz		New Zealand
-	en_us		USA
+	en		全ての地域
+	en_au		オーストラリア
+	en_ca		カナダ
+	en_gb		イギリス
+	en_nz		ニュージーランド
+	en_us		アメリカ
 
 Words that are not used in one region but are used in another region are
 highlighted with SpellLocal |hl-SpellLocal|.
@@ -270,7 +271,7 @@ In a table:
 	utf-8		yi-tr		transliterated Yiddish
 
 
-SPELL FILES						*spell-load*
+スペルファイル						*spell-load*
 
 Vim searches for spell files in the "spell" subdirectory of the directories in
 'runtimepath'.  The name is: LL.EEE.spl, where:
@@ -368,7 +369,7 @@ For example, to clean only files that were not changed in the last hour: >
 The default is one second.
 
 
-WORDS
+単語
 
 Vim uses a fixed method to recognize a word.  This is independent of
 'iskeyword', so that it also works in help files and for languages that
@@ -385,7 +386,7 @@ recognized as a word, but if "3D" is not a word then only the "D" is marked as
 bad.  Hex numbers in the form 0x12ab and 0X12AB are recognized.
 
 
-WORD COMBINATIONS
+単語の組み合わせ
 
 It is possible to spell-check words that include a space.  This is used to
 recognize words that are invalid when used by themselves, e.g. for "et al.".
@@ -404,7 +405,7 @@ When encountering a line break Vim skips characters such as '*', '>' and '"',
 so that comments in C, shell and Vim code can be spell checked.
 
 
-SYNTAX HIGHLIGHTING					*spell-syntax*
+構文ハイライト						*spell-syntax*
 
 Files that use syntax highlighting can specify where spell checking should be
 done:
@@ -419,7 +420,7 @@ program, and add @NoSpell for items that shouldn't be checked.
 Also see |:syn-spell| for text that is not in a syntax item.
 
 
-VIM SCRIPTS
+VIM スクリプト
 
 If you want to write a Vim script that does something with spelling, you may
 find these functions useful:
@@ -429,7 +430,7 @@ find these functions useful:
     soundfold()		get the sound-a-like version of a word
 
 
-SETTING 'spellcapcheck' AUTOMATICALLY			*set-spc-auto*
+'spellcapcheck' の自動設定				*set-spc-auto*
 
 After the 'spelllang' option has been set successfully, Vim will source the
 files "spell/LANG.vim" in 'runtimepath'.  "LANG" is the value of 'spelllang'
@@ -465,7 +466,7 @@ second kind of mistakes.  Therefore 'spellsuggest' can be set to select the
 preferred method for scoring the suggestions.
 
 ==============================================================================
-3. Generating a spell file				*spell-mkspell*
+3. スペルファイルの生成					*spell-mkspell*
 
 Vim uses a binary file format for spelling.  This greatly speeds up loading
 the word list and keeps it small.
@@ -573,7 +574,7 @@ When the Myspell files are updated you can merge the differences:
 4. Rename xx_YY.new.dic to xx_YY.orig.dic and xx_YY.new.aff to xx_YY.new.aff.
 
 
-SPELL FILE VERSIONS					*E770* *E771* *E772*
+スペルファイルのバージョン				*E770* *E771* *E772*
 
 Spell checking is a relatively new feature in Vim, thus it's possible that the
 .spl file format will be changed to support more languages.  Vim will check
@@ -592,7 +593,7 @@ section that is required for the spell file to work.  In this case it's
 probably a good idea to upgrade your Vim.
 
 
-SPELL FILE DUMP
+スペルファイルをダンプ
 
 If for some reason you want to check what words are supported by the currently
 used spelling files, use this command:
@@ -620,7 +621,7 @@ Comment lines with the name of the .spl file are used as a header above the
 words that were generated from that .spl file.
 
 
-SPELL FILE MISSING		*spell-SpellFileMissing* *spellfile.vim*
+スペルファイルがないとき	*spell-SpellFileMissing* *spellfile.vim*
 
 If the spell file for the language you are using is not available, you will
 get an error message.  But if the "spellfile.vim" plugin is active it will
@@ -666,7 +667,7 @@ Note that the SpellFileMissing autocommand must not change or destroy the
 buffer the user was editing.
 
 ==============================================================================
-4. Spell file format					*spell-file-format*
+4. スペルファイルの形式					*spell-file-format*
 
 This is the format of the files that are used by the person who creates and
 maintains a word list.
@@ -844,7 +845,7 @@ a "#" character.  Example:
 	KEEPCASE =  # fix case for words with this flag ~
 
 
-ENCODING							*spell-SET*
+エンコーディング						*spell-SET*
 
 The affix file can be in any encoding that is supported by "iconv".  However,
 in some cases the current locale should also be set properly at the time
@@ -867,7 +868,7 @@ flags.  But Myspell doesn't support that, thus you may not want to use it
 anyway.  For compatibility use an 8-bit encoding.
 
 
-INFORMATION
+情報
 
 These entries in the affix file can be used to add information to the spell
 file.  There are no restrictions on the format, but they should be in the

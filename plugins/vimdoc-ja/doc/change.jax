@@ -1,7 +1,7 @@
-*change.txt*    For Vim バージョン 7.3.  Last change: 2012 Nov 02
+*change.txt*    For Vim バージョン 7.3.  Last change: 2013 Mar 19
 
 
-		  VIM REFERENCE MANUAL    by Bram Moolenaar
+		  VIMリファレンスマニュアル    by Bram Moolenaar
 
 
 このファイルでは、テキストを削除したり変更するコマンドの説明をする。この文章の
@@ -304,8 +304,8 @@ g~~			現在行の大文字／小文字を切り替える。 {Vi にはない}
 
 							*v_~*
 {Visual}~		ビジュアル選択されたテキストの大文字／小文字を切り替え
-			る({Visual} については |Visual-mode| を参照)。 {Vi に
-			はない}
+			る({Visual} については |Visual-mode| を参照)。
+			{Vi にはない}
 
 							*v_U*
 {Visual}U		ビジュアル選択されたテキストを大文字にする ({Visual}
@@ -338,8 +338,8 @@ g?{motion}		{motion} のテキストをRot13エンコードする。{Vi には�
 
 							*v_g?*
 {Visual}g?		ビジュアル選択されたテキストをRot13エンコードする
-			({Visual}については |Visual-mode| を参照)。 {Vi にはな
-			い}
+			({Visual}については |Visual-mode| を参照)。
+			{Vi にはない}
 
 g?g?							*g?g?* *g??*
 g??			現在行をRot13エンコードする。 {Vi にはない}
@@ -704,7 +704,7 @@ Viとの互換性のため、これら2つの例外が許される。
 
 パターンの定義については |pattern| を参照。矩形ビジュアルモードで、置換をその
 領域内だけで行いたい場合は、パターンに |/\%V| を含める。これを使わない場合は、
-置換はつねに行全体に対して行われる。
+置換は常に行全体に対して行われる。
 
 					*sub-replace-special* *:s\=*
 {string} が "\=" で始まるときは、それは式として評価される。
@@ -752,11 +752,16 @@ Viとの互換性のため、これら2つの例外が許される。
   - \<CR> は特別な意味を持たない。単に \x の一種として扱われる。
 
 例: >
-	:s/a\|b/xxx\0xxx/g		"a b"	   を "xxxaxxx xxxbxxx" に置換
-	:s/\([abc]\)\([efg]\)/\2\1/g	"af fa bg" を "fa fa gb"	に置換
-	:s/abcde/abc^Mde/		"abcde"	   を "abc", "de" (2行) に置換
-	:s/$/^V^M/			"abcde"	   を "abcde^M"		に置換
-        :s/\w\+/\u\0/g		        "bla bla"  を "Bla Bla"         に置換
+  :s/a\|b/xxx\0xxx/g		 "a b"      を "xxxaxxx xxxbxxx" に置換
+  :s/\([abc]\)\([efg]\)/\2\1/g	 "af fa bg" を "fa fa gb"        に置換
+  :s/abcde/abc^Mde/		 "abcde"    を "abc", "de" (2行) に置換
+  :s/$/^V^M/			 "abcde"    を "abcde^M"         に置換
+  :s/\w\+/\u\0/g		 "bla bla"  を "Bla Bla"         に置換
+  :s/\w\+/\L\u/g		 "BLA bla"  を "Bla Bla"         に置換
+
+Note: "\L\u" を使うと単語の最初の文字をキャピタライズできる。これは Vi や古い
+Vim とは互換性がない。それらの古い環境では "\u" は "\L" をキャンセルする。
+"\U\l" も同様。
 
 NOTE: 以前のバージョンでは CTRL-V が特別に扱われていた。これはVi互換ではないの
 で変更された。代わりに '\' を使うこと。
@@ -908,13 +913,13 @@ NOTE: 以前のバージョンでは CTRL-V が特別に扱われていた。こ
 							*v_y*
 {Visual}["x]y		ビジュアル選択されたテキストを [レジスタ x に] コピー
 			する
-			({Visual} については |Visual-mode| を参照)。 {Vi には
-			ない}
+			({Visual} については |Visual-mode| を参照)。
+			{Vi にはない}
 
 							*v_Y*
 {Visual}["x]Y		ビジュアル選択された行を [レジスタ x に] コピーする
-			({Visual} については |Visual-mode| を参照)。 {Vi には
-			ない}
+			({Visual} については |Visual-mode| を参照)。
+			{Vi にはない}
 
 							*:y* *:yank* *E850*
 :[range]y[ank] [x]	[range] の行を [レジスタ x に] コピーする。"* レジスタ

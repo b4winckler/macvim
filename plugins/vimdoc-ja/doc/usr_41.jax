@@ -1,4 +1,4 @@
-*usr_41.txt*	For Vim バージョン 7.3.  Last change: 2012 Oct 13
+*usr_41.txt*	For Vim バージョン 7.3.  Last change: 2013 Feb 20
 
 		     VIM USER MANUAL - by Bram Moolenaar
 
@@ -235,9 +235,9 @@ Vim は数値と文字列を基本型としてサポートしています。変�
 <	"peter" ~
 
 シングルクォート文字列の中ではすべての文字がそのまま使われます。ただし、シング
-ルクォートだけは特別で、一つのシングルクォートを表すためには二つのシングルク
-オートを書く必要があります。バックスラッシュはそのまま使われるので、特殊文字は
-使えません。
+ルクォートだけは特別で、一つのシングルクォートを表すためには二つのシングル
+クォートを書く必要があります。バックスラッシュはそのまま使われるので、特殊文字
+は使えません。
 ダブルクォート文字列の中では特殊文字が使えます。次のようなものがあります:
 
 	\t		<Tab>
@@ -839,12 +839,15 @@ Vimサーバ:					*server-functions*
 	winsaveview()		カレントウィンドウのビューを取得
 	winrestview()		カレントウィンドウのビューを復元
 
-その他:						*various-functions*
-	mode()			現在の編集モードを得る
-	visualmode()		最後に使われたビジュアルモードの種類
+マッピング:				    *mapping-functions*
 	hasmapto()		マップの存在をチェック
 	mapcheck()		マッチするマップの存在をチェック
 	maparg()		マップのrhs(展開結果)を得る
+	wildmenumode()		wildmodeが有効かどうかをチェック
+
+その他:						*various-functions*
+	mode()			現在の編集モードを得る
+	visualmode()		最後に使われたビジュアルモードの種類
 	exists()		変数、関数の存在をチェック
 	has()			機能がサポートされているかをチェック
 	changenr()		最近の変更番号を返す

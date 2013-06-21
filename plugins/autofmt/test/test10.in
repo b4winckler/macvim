@@ -1,0 +1,27 @@
+TODO: Test for comment.
+
+Results of test10:
+
+STARTTEST
+:set tw=80 formatoptions=tcq comments=sO:\"\ -,mO:\"\ \ ,eO:\"\",:\"
+/^{/+1
+2gqgq
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+2gqgq
+ENDTEST
+
+case1
+{
+" hoge
+"  fuga
+}
+{
+" hoge
+"  fuga
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST

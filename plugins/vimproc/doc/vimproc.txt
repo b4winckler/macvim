@@ -38,7 +38,7 @@ Changelog		|vimproc-changelog|
 ==============================================================================
 INTRODUCTION					*vimproc-introduction*
 
-|vimproc|is great asynchronous execution library for Vim. Original vimshell is
+|vimproc| is great asynchronous execution library for Vim. Original vimproc is
 created by Yukihiro Nakadaira. But I'm maintaining it now.
 Instead of external shell(example: 'shell'), |vimproc| uses external dll file.
 
@@ -46,7 +46,8 @@ Instead of external shell(example: 'shell'), |vimproc| uses external dll file.
 INSTALL						*vimproc-install*
 
 In first, you get vimproc from git repository.
-[http://github.com/Shougo/vimproc/tree/master](http://github.com/Shougo/vimproc/tree/master)
+
+http://github.com/Shougo/vimproc
 
 Next, make external dll "vimproc_xxx.so(or vimproc_win32.dll,
 vimproc_cygwin.dll)". Because vimproc depends on "vimproc_xxx.so(or
@@ -62,37 +63,43 @@ Supported platforms:
 * Cygwin
 * Solaris
 * BSD (but cannot check)
+* Android (experimental)
+
+Note: You must use GNU make to build vimproc.
 
 Not supported platforms:
-* Android (may work but no support)
 * Other UNIX platforms
 
 Below is Make command.
-* Mingw(32bit Vim): >
-	$ make -f make_mingw32.mak
+* Windows using Mingw(32bit Vim): >
+ $ make -f make_mingw32.mak
 
-* Mingw(64bit Vim): >
-	$ make -f make_mingw64.mak
+* Windows using Mingw(64bit Vim): >
+ $ make -f make_mingw64.mak
+
+* Windows using newer version of Visual Studio(32bit/64bit Vim): >
+ $ nmake -f Make_msvc.mak nodebug=1
+
+* Windows using old version of Visual Studio for 32bit Vim
+(Ex: Visual Studio 2005): >
+ $ SET INCLUDE=%INCLUDE%;C:\Program Files\Microsoft SDKs\Windows\v7.1\Include
+ $ SET LIB=%LIB%;C:\Program Files\Microsoft SDKs\Windows\v7.1\Lib
+ $ nmake -f make_msvc32.mak
 
 * Mac OS X: >
-	$ make -f make_mac.mak
-
-* Old Mac OS X(llvm-gcc is not installed): >
-	$ make -f make_mac_old.mak
+ $ make -f make_mac.mak
 
 * Linux/BSD: >
-	$ make -f make_unix.mak
-
-* Visual Studio(32bit Vim): >
-	$ make -f make_msvc32.mak
-	or
-	$ nmake /f make_msvc32.mak
+ $ make -f make_unix.mak
 
 * Cygwin: >
-	$ make -f make_cygwin.mak
+ $ make -f make_cygwin.mak
 
-* Solaris/Sun  OS: >
-	$ make -f make_sunos.mak
+* Solaris/SunOS: >
+	$ gmake -f make_sunos.mak
+
+* Android: >
+	$ make -f make_android.mak
 
 After compile, you copy autoload/* and plugin/* files to your
 'runtimepath' directory.
@@ -100,7 +107,11 @@ After compile, you copy autoload/* and plugin/* files to your
 I compiled vimproc_win**.dll in 32/64 bit Windows, and distributed it below
 URL.
 Note: I DON'T recommend to use it. You should build dll files manually.
-http://github.com/Shougo/vimproc/downloads
+https://github.com/Shougo/vimproc/downloads
+Note: Github downloads feature is deprecated. It may be deleted.
+
+You can use Kaoriya Vim in Windows. It includes vimproc dll file.
+(http://www.kaoriya.net/news/2012/20121213)
 
 If you use |neobundle.vim|, you can update and build vimproc automatically.
 http://github.com/Shougo/neobundle.vim
@@ -151,11 +162,11 @@ vimproc#get_command_name({command} [, {path}, {count}])	*vimproc#get_command_nam
 		{count} candidate. If you set {count} is -1, returns as list.
 
 vimproc#system({expr} [, {input}, {timeout}])	*vimproc#system()*
-		This function replaces |system()|. If you call |system()| in
-		Windows environment,
-		DOS window will appeared. But, |vimproc#system()| is not.
-		Note: This function is not execute shell. So shell internal
-		command is invalid.  Ex: pwd, cd, ...
+		It replaces |system()|. If you call |system()| in Windows
+		environment, DOS window will appeared. But, |vimproc#system()|
+		is not.
+		Note: It is not execute shell. So shell internal command is
+		invalid.  Ex: pwd, cd, ...
 		
 		The {expr} are same to |vimproc#plineopen3()|. The type is
 		string or arguments list. If arguments is string, it parsed
@@ -164,28 +175,34 @@ vimproc#system({expr} [, {input}, {timeout}])	*vimproc#system()*
 >
 		call vimproc#system('ls &')
 <
-		If you set {timeout}, vimproc kill process after {timeout}.
+		If you set {timeout}, vimproc will kill process after
+		{timeout} and throw "vimproc: vimproc#system(): Timeout."
+		exception.
 		The unit is mill seconds.
 		Note: |+reltime| and Vim 7.2 is required.
 		If you set {input}, input the string to commands.
 
 vimproc#system2({expr} [, {input}, {timeout}])	*vimproc#system2()*
-		Same as |vimproc#system()|. But this function convert
-		encoding.
+		Same as |vimproc#system()|. But it converts encoding
+		automatically.
 
 vimproc#system_passwd({expr} [, {input}, {timeout}])
 						*vimproc#system_passwd()*
-		Same as |vimproc#system()|. But this function supports
-		password input.
+		Same as |vimproc#system()|. But it supports password input.
 
 vimproc#system_bg({expr})			*vimproc#system_bg()*
 		Same as |vimproc#parser#system()|. But execute command in
 		background.
-		Note: This function disabled input.
+		Note: It disables user input.
 
 vimproc#system_gui({expr})			*vimproc#system_gui()*
-		Same as |vimproc#system_bg()|. But this function execute GUI
-		program in background.
+		Same as |vimproc#system_bg()|. But it executes GUI command in
+		background.
+
+vimproc#cmd#system({expr})			*vimproc#cmd#system()*
+		Similar to |vimproc#system()|. But it executes "cmd.exe" by
+		background.
+		Note: It is available in Windows only.
 
 vimproc#get_last_status()			*vimproc#get_last_status()*
 		Get last |vimproc#system()| status value.
@@ -261,6 +278,9 @@ vimproc#ptyopen({args}, [{npipe}])		*vimproc#ptyopen()*
 
 vimproc#kill({pid}, {sig})			*vimproc#kill()*
 		Send {sig} signal to {pid} process.
+		If error is occurred, it will return 1 for error and set
+		|vimproc#get_last_errmsg()|.
+		If {sig} is 0, it check whether {pid} is exists.
 
 vimproc#write({filename}, {string}, [{mode}])		*vimproc#write()*
 		Writes {string} to {filename} file.
@@ -374,6 +394,70 @@ EXAMPLES					*vimproc-examples*
 ==============================================================================
 CHANGELOG					*vimproc-changelog*
 
+2013-06-12
+- Added vimproc#cmd#system() experimentally.
+
+2013-06-11
+- Added simple benchmark script.
+
+2013-06-09
+- Fixed performance problem in if_lua.
+- Fixed for Visual Studio.
+
+2013-06-07
+- Optimized using if_lua.
+
+2013-05-23
+- Fixed fatal resource leak in Windows(required recompile).
+
+2013-05-17
+- Fixed resource leak.
+
+2013-04-28
+- Add starting GUI process support in Windows.
+
+2013-04-17
+- Improved vimproc#readdir().
+
+2013-04-07
+- Fixed vimproc#system_passwd().
+
+2013-03-23
+- Fixed for double quote.
+- Improved catch behavior.
+
+2013-03-20
+- Fixed escape sequence behavior.
+
+2013-03-19
+- Added Android support(experimental).
+
+2013-03-16
+- Fixed expand glob.
+- Fixed backquote.
+
+2013-03-10
+- Changed expand wildcard behavior.
+
+2013-02-16
+- Fixed parse variables.
+
+2013-01-31
+- Changed timeout behavior.
+- Improved initialization.
+
+2013-01-19
+- Fixed parser.
+
+2012-12-27
+- Fixed parse of backquote.
+
+2012-12-20
+- Improved vimproc#kill() behavior.
+
+2012-12-14
+- Improved for Visual Studio support(KoRoN).
+
 2012-12-08
 - Fixed for UTF-8 string(mattn).
 
@@ -430,4 +514,4 @@ CHANGELOG					*vimproc-changelog*
 - Remain vimproc#version().
 
 ==============================================================================
-vim:tw=78:ts=8:ft=help:norl:noet:fen:fdl=0:
+vim:tw=78:ts=8:ft=help:norl:noet:fen:

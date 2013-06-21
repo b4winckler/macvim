@@ -2307,8 +2307,8 @@ char2nr({expr}[, {utf8}])					*char2nr()*
 			char2nr("ABC")		returns 65
 <		When {utf8} is omitted or zero, the current 'encoding' is used.
 		Example for "utf-8": >
-			char2nr("รก")		returns 225
-			char2nr("รก"[0])		returns 195
+			char2nr("แ")		returns 225
+			char2nr("แ"[0])		returns 195
 <		With {utf8} set to 1, always treat as utf-8 characters.
 		A combining character is a separate character.
 		|nr2char()| does the opposite.
@@ -6362,6 +6362,7 @@ dialog_con		Compiled with console dialog support.
 dialog_gui		Compiled with GUI dialog support.
 diff			Compiled with |vimdiff| and 'diff' support.
 digraphs		Compiled with support for digraphs.
+directx			Compiled with support for 'directx'.
 dnd			Compiled with support for the "~ register |quote_~|.
 dos16			16 bits DOS version of Vim.
 dos32			32 bits DOS (DJGPP) version of Vim.

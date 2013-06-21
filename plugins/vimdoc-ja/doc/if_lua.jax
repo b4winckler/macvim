@@ -1,7 +1,7 @@
 *if_lua.txt*    For Vim バージョン 7.3.  Last change: 2012 Jun 29
 
 
-		  VIM REFERENCE MANUAL    by Luis Carvalho
+		  VIMリファレンスマニュアル    by Luis Carvalho
 
 
 Vim の Lua インターフェース				*lua* *Lua*
@@ -14,7 +14,7 @@ Vim の Lua インターフェース				*lua* *Lua*
 6. ウィンドウユーザーデータ	|lua-window|
 7. luaeval 関数			|lua-luaeval|
 
-{Vi にはこれらのコマンドはない}
+{Vi にはこれらのコマンドはありません}
 
 Lua インターフェースは Vim が |+lua| 機能付きでコンパイルされたときのみ利用で
 きます。
@@ -24,7 +24,7 @@ Lua インターフェースは Vim が |+lua| 機能付きでコンパイルさ
 
 							*:lua*
 :[range]lua {chunk}
-			Lua チャンク {chunk} を実行する。    {Vi にはない}
+			Lua チャンク {chunk} を実行する。 {Vi にはありません}
 
 例:
 >
@@ -35,7 +35,8 @@ Lua インターフェースは Vim が |+lua| 機能付きでコンパイルさ
 :[range]lua << {endmarker}
 {script}
 {endmarker}
-			Lua スクリプト {script} を実行する。  {Vi にはない}
+			Lua スクリプト {script} を実行する。
+			{Vi にはありません}
 			Note: このコマンドは Lua が組み込まれていない場合は機
 			能しません。エラーを避けるには |script-here| を参照。
 
@@ -64,7 +65,7 @@ Lua インターフェースは Vim が |+lua| 機能付きでコンパイルさ
 			渡されます。関数の返り値が文字列なら行のテキストはその
 			文字列で置換されます。[range] を省略するとすべてのファ
 			イル ("1,$") が処理されます。
-							{Vi にはない}
+							{Vi にはありません}
 
 例:
 >
@@ -78,7 +79,8 @@ Lua インターフェースは Vim が |+lua| 機能付きでコンパイルさ
 
 							*:luafile*
 :[range]luafile {file}
-			{file} 内の Lua スクリプトを実行する。 {Vi にはない}
+			{file} 内の Lua スクリプトを実行する。
+			{Vi にはありません}
 			引数全体で一つのファイル名として認識されます。
 
 例:
@@ -171,8 +173,8 @@ List ユーザーデータは vim のリストを表します。Vim のリスト
 プロパティ
 ----------
 	o "#l" はリスト "l" の要素数。Vim の "len(l)" と同じ。
-	o "l[k]" は "l" の k 個目の要素を返す。"l" のインデックスはゼロベース
-	  (Vim と同じ)。
+	o "l[k]" は "l" の k 個目の要素を返す。"l" のインデックスは Vim と同じ
+	  で、 0 を基準とする。
 	  k 個目の要素を変更するには、単に "l[k] = newitem" とする。
 	  "l[k] = nil" で k 個目の要素を "l" から削除できる。
 	o "l()" は "l" のイテレータを返す。

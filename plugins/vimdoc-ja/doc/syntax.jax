@@ -1,4 +1,4 @@
-*syntax.txt*	For Vim バージョン 7.3.  Last change: 2013 Jan 30
+*syntax.txt*	For Vim バージョン 7.3.  Last change: 2013 May 31
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -37,8 +37,9 @@ Vimは全ての端末で構文ハイライトをサポートしている。し�
 15. 関数名などのハイライト		|tag-highlight|
 16. ウィンドウローカル構文		|:ownsyntax|
 17. カラー対応xterm			|xterm-color|
+18. シンタックスが遅い時には		|:syntime|
 
-{Vi にはこれらのコマンドは存在しない}
+{Vi にはこれらのコマンドはない}
 
 コンパイル時に|+syntax|機能を無効にした場合には構文ハイライトは利用することは
 できない。
@@ -377,7 +378,10 @@ Vimはロードした構文の名前を変数 "b:current_syntax" に記憶して
 である。Vimは新しいウィンドウを作成しそこにHTMLファイルを構築する。
 
 変換結果を保存すればブラウザでそれを表示できる。Vim での表示と同じ色で表示され
-るはずである。
+るはずである。ブラウザーのアドレスバーで URL の末尾に #L123 や #123 と付け加え
+ると、その特定の行にジャンプできる (#123 は javascript サポート時のみ)。ま
+た、|g:html_dynamic_folds| を有効化すると、Vim の折り畳みを表示したり隠したり
+できる。
 
 使う際にはオプション 'filetype' や 'syntax' に "2html" を設定してはならない!
 現在のファイルをコンバートするためにはこのスクリプトを読込む: >
@@ -417,7 +421,12 @@ Vimはロードした構文の名前を変数 "b:current_syntax" に記憶して
 			もしカレントウィンドウが |diff| の一部で、
 			|g:html_diff_one_file| が設定されていない場合、:TOhtml
 			はカレントタブ内の diff を表示しているすべてのウィンド
-			ウを変換して <table> 要素で並べた HTML を生成する。
+			ウを変換して <table> 要素で並べた HTML を生成する。そ
+			の場合、特定のウィンドウの特定の行にジャンプするには、
+			例えば #W1L42 で一番目のウィンドウの 42 行目、#W3L87
+			で三番目のウィンドウの 87 行目にジャンプできる。ウィン
+			ドウ番号を省略した場合は一番目のウィンドウになる
+			(javascript が有効な場合)。
 
 			例: >
 
@@ -515,8 +524,8 @@ Note -s フラグは .vimrc とプラグインの読み込みを抑制する。�
 1 なら、Vim の動作と同じように折り畳みを開いたり閉じたりするための、javascript
 が生成される。
 
-この変数を 1 に設定すると、|g:html_use_css| の設定にかかわらず、2html.vim は常
-に CSS を使うようになる。
+この変数を 1 に設定すると、|g:html_use_css| の設定に関わらず、2html.vim は常に
+CSS を使うようになる。
 
 この変数は |g:html_ignore_folding| が設定されているときは無視される。
 >
@@ -975,6 +984,14 @@ ColdFusionには独自版のHTMLコメントが存在する。ColdFusionのコ�
 ColdFusionの構文ファイルはHTML用構文ファイルに基づいている。
 
 
+CPP						*cpp.vim* *ft-cpp-syntax*
+
+大部分は |ft-c-syntax| と同じ。
+
+変数			強調表示 ~
+cpp_no_c11		C++11 標準のアイテムを強調表示しない
+
+
 CSH						*csh.vim* *ft-csh-syntax*
 
 これは "csh" という名前のシェルに対応している。システムによっては実際に使われ
@@ -1178,7 +1195,7 @@ eiffel_strictを設定すると "Current", "Void", "Result", "Precursor" そし�
 
 eiffel_pedanticを設定すると、Eiffelのスタイルガイドラインを相当に厳格に強制す
 る。(キーワードを大文字で書く時代遅れの方法と同様に、大小文字を任意にミックス
-したようなものが補足される)
+したようなものが捕捉される)
 
 "Current", "Void", "Result" そして "Precursor" の小文字版を使用するには、大小
 文字を区別するハイライト方法を無効化する代わりに: >
@@ -1201,15 +1218,17 @@ ISEが提案し、実験的に幾つかのコンパイラでは取り扱うこ�
 
 ERLANG						*erlang.vim* *ft-erlang-syntax*
 
-これはErlang(ERicsson LANGuage: エリクソン言語)をサポートする構文ハイライトファ
-イルである。Erlangは大小文字を区別しデフォルトの拡張子は ".erl" である。
+Erlang は Ericsson が開発した関数型プログラミング言語である。次の拡張子のファ
+イルが Erlang ファイルとして認識される: erl, hrl, yaws
 
-キーワードハイライトを無効化するには、これを.vimrcに書き足す: >
-	:let erlang_keywords = 1
-組み込み関数ハイライトを無効化するには、これを.vimrcに書き足す: >
-	:let erlang_functions = 1
-特殊文字のハイライトを無効化するには、これを.vimrcに書き足す: >
-	:let erlang_characters = 1
+組み込み関数 (BIFs: built-in functions) は初期設定で強調表示される。それを無効
+化するには vimrc で次のように設定する: >
+
+      :let g:erlang_highlight_bifs = 0
+
+いくつかの特殊アトムを強調表示するには、vimrc で次のように設定する: >
+
+      :let g:erlang_highlight_special_atoms = 1
 
 
 FLEXWIKI				*flexwiki.vim* *ft-flexwiki-syntax*
@@ -1521,8 +1540,8 @@ syntax.vimを参照すること)。
     - htmlUnderline
     - htmlUnderlineItalic
     - htmlItalic
-    - htmlTitle for titles
-    - htmlH1 - htmlH6 for headings
+    - htmlTitle タイトル用
+    - htmlH1 - htmlH6 見出し用
 
 この再定義が機能するためには最後の2つを除くすべてを再定義しなければならない。
 最後の2つ、htmlTitleとhtmlH[1-6]は任意である。そして次の変数をvimrcで設定しな
@@ -2344,22 +2363,32 @@ PROGRESS				*progress.vim* *ft-progress-syntax*
 
 PYTHON						*python.vim* *ft-python-syntax*
 
-Python構文ハイライトをコントロールするオプションは4つある。
+Python構文ハイライトをコントロールするオプションは 6 つある。
 
 数字のハイライト: >
-	:let python_highlight_numbers = 1
+	:let python_no_number_highlight = 1
 
 組み込み関数のハイライト: >
-	:let python_highlight_builtins = 1
+	:let python_no_builtin_highlight = 1
 
 標準例外のハイライト: >
-	:let python_highlight_exceptions = 1
+	:let python_no_exception_highlight = 1
 
-行末の空白と、スペースとタブの混在をハイライト: >
-	:let python_highlight_space_errors = 1
+doctest とその中のコードのハイライト: >
+	:let python_no_doctest_highlight = 1
+または >
+	:let python_no_doctest_code_highlight = 1
+(最初のオプションは二番目のオプションも含む)。
 
-全てのハイライトを有効化させるには(上の3つのオプションをセットするのと同じ): >
+行末の空白と、スペースとタブの混在のハイライト: >
+	:let python_space_error_highlight = 1
+
+全てのハイライトを有効化させるには (最後に挙げたオプションを有効化し、他のオプ
+ションを無効化するのと同じ): >
 	:let python_highlight_all = 1
+
+Note: 変数が定義されているかどうかが意味を持つ。値は関係ない。設定値は 1 以外
+      でも構わない。
 
 
 QUAKE						*quake.vim* *ft-quake-syntax*
@@ -2553,7 +2582,7 @@ SGMLファイル中のタグをハイライトする方法は以下のように�
     - sgmlBoldItalic
     - sgmlUnderline
     - sgmlItalic
-    - sgmlLink for links
+    - sgmlLink リンク用
 
 この再定義を機能させるにはこれらすべてを再定義し、以下の変数をvimrc中で定義し
 なければならない(初期化の際にファイルが読み込まれる順序のため) >
@@ -2790,6 +2819,33 @@ texZone, texMathZoneの3つの主な区間・範囲がサポートされてい�
 
 構文による折り畳みによって遅くなる場合もある。回避方法については
 |tex-folding| を参照のこと。
+
+								*g:tex_fast*
+
+最後に、もし構文強調表示がまだ遅い場合は、.vimrc で次のように設定するとよい >
+
+	:let g:tex_fast= ""
+
+g:tex_fast 変数を設定すると、構文強調表示でリージョンや同期が定義されなくな
+る。それによって構文強調表示が速くなる。ただし、豊富な強調表示、構文ベースの折
+り畳み、構文ベースのエラーチェックはできなくなる。
+
+特定の構文のみを有効化することもできる。次の一覧の中から有効化したい構文強調表
+示を選ぶことができる: >
+
+    b : ボールド、イタリックを許可
+    c : texComment を許可
+    m : texMatcher を許可 (例: {...} と [...])
+    M : texMath を許可
+    p : 部 (parts)、 章 (chapter)、 節 (section) などを許可
+    r : texRefZone を許可 (nocite, bibliography, label, pageref, eqref)
+    s : superscript/subscript リージョンを許可
+    S : texStyle を許可
+    v : verbatim を許可
+    V : texNewEnv と texNewCmd を許可
+<
+例えば、let g:tex_fast= "M" は 数学関連の強調表示を有効化する。他のリージョン
+ベースの構文強調表示は有効化されない。
 
 					    *tex-morecommands* *tex-package*
  Tex: もっとコマンドをハイライトさせるには ~
@@ -3655,7 +3711,7 @@ s-{nr}	パターンのマッチ部分の先頭から左へ{nr}文字目
 e	パターンのマッチ部分の末尾
 e+{nr}	パターンのマッチ部分の末尾から右へ{nr}文字目
 e-{nr}	パターンのマッチ部分の末尾から左へ{nr}文字目
-{nr}	("lc" 専用): 左へ{nr}文字目からマッチを開始する
+{nr}	("lc" 専用): 右へ{nr}文字目からマッチを開始する
 
 例: "ms=s+1", "hs=e-2", "lc=3".
 
@@ -4819,5 +4875,65 @@ xtermのパッチレベル107以上を使い(入手場所は上を参照)、以�
 また、TTproのSetup→Window→Full Colorが有効になっていることと、
 Setup→Font→Enable Boldが無効になっていることを確認すること。
 (この情報はJohn Love-Jensen <eljay@Adobe.COM>によって提供された)
+
+
+==============================================================================
+18. シンタックスが遅い時には			*:syntime*
+
+この章はシンタックスファイルを作る人向けである。
+
+もしあなたの作ったシンタックスにより再描画が遅くなってしまったら、ここに書いた
+方法でそれを速くできるかもしれない。|folding| や 'relativenumber' といった機能
+を有効化すると、それらが干渉して遅くなる場合もある。
+
+時間のかかっているシンタックスパターンを発見するために、以下の様な手順で概要を
+得られる: >
+
+    :syntime on
+    [ CTRL-L で最低でも一度は再描画を実行する ]
+    :syntime report
+
+これにより利用されたシンタックスパターンが、マッチにかかった時間の多い順にソー
+トして表示される。
+
+:syntime on         シンタックスにかかる時間の測定を開始する。
+            測定をするにはシンタックスパターンのマッチに多少のオーバーヘッドが
+            発生する。
+
+:syntime off        シンタックスの計測を終了する。
+
+:syntime clear      全部のカウンタを 0 にし、計測をやり直す。
+
+:syntime report     現在のウィンドウで ":syntime on" してから使用されたシンタ
+            ックス要素を表示する。
+            出力される内容をちゃんと読むには幅の広いディスプレイを使ったほうが
+            良い。
+
+            リストは総時間(TOTAL)でソートされている。
+            リストには以下のカラムからなる:
+            TOTAL       パターンのマッチにかかった総時間
+            COUNT       パターンが使われた回数
+            MATCH       パターンが実際にマッチした回数
+            SLOWEST     マッチ1回あたりの最長時間
+            AVERAGE     マッチ1回あたりの平均時間
+            NAME        シンタックス要素の名前。
+                 Note:  一意な名前ではないことに注意。
+            PATTERN     使用されたパターン
+
+パターンマッチングは多くの可能性を試さなければならないときに遅くなる。
+パターンにできる限り多くのリテラルテキストを含むことで、パターンが無駄にマッチ
+する可能性を減らすよう試してみると良い。
+
+"\@<=" や "\@<!" 要素を使用する時は、マッチする最大サイズを指定すると現在以降
+の行の全部の位置でパターンを試すことを避けられる。
+たとえば要素のマッチするものがリテラルテキストならば、そのテキストのサイズをバ
+イト数で指定すると良い。
+
+"<\@<=span"     "<span" 中の "span" にマッチする。
+                これは "<" があるかどうか多くの場所でマッチを試みる。
+                (ゆえに遅くなりやすい)
+"<\@1<=span"    同じものにマッチするが、"span" の前の1バイトだけをチェックする
+                。
+
 
  vim:tw=78:sw=4:ts=8:ft=help:norl:

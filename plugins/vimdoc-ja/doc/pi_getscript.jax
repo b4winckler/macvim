@@ -1,11 +1,11 @@
-*pi_getscript.txt*  For Vim バージョン 7.0.  Last change: 2011 Jun 23
+*pi_getscript.txt*  For Vim バージョン 7.0.  Last change: 2012 Apr 07
 >
-		GETSCRIPT REFERENCE MANUAL  by Charles E. Campbell, Jr.
+		GETSCRIPT REFERENCE MANUAL  by Charles E. Campbell
 <
-Authors:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamilyA.Mbiz>
+Authors:  Charles E. Campbell  <NdrOchip@ScampbellPfamilyA.Mbiz>
 	  (remove NOSPAM from the email address)
 						*GetLatestVimScripts-copyright*
-Copyright: (c) 2004-2012 by Charles E. Campbell, Jr.	*glvs-copyright*
+Copyright: (c) 2004-2012 by Charles E. Campbell	*glvs-copyright*
 	The VIM LICENSE (see |copyright|) applies to the files in this
 	package, including getscriptPlugin.vim, getscript.vim,
 	GetLatestVimScripts.dist, and pi_getscript.txt, except use "getscript"
@@ -332,6 +332,11 @@ after/syntax/c/ ディレクトリを使えるようにしています:
 		自動インストールスクリプト (:AutoInstall:) のインストール先を
 		変更できます。
 		vimball のインストールには適用されません。
+>
+	g:GetLatestVimScripts_scriptaddr
+<       初期設定='http://vim.sourceforge.net/script.php?script_id='
+		あなたのシステムで設定が必要な場合に上書きしてください。
+	  ...  ='http://vim.sourceforge.net/script/script.php?script_id='
 
 ==============================================================================
 8. GetLatestVimScripts アルゴリズム		*glvs-algorithm* *glvs-alg*
@@ -368,8 +373,11 @@ scriptname を更新します。
 ==============================================================================
 9. GetLatestVimScripts 開発履歴		*getscript-history* *glvs-hist* {{{1
 
-v44 Jun 23, 2011 : * handles additional decompression options for tarballs
-                     (tgz taz tbz txz)
+v35 Apr 07, 2012 : * (MengHuan Yu) pointed out that the script url has
+		     changed (somewhat).  However, it doesn't work, and
+		     the original one does (under Linux). I'll make it
+		     yet-another-option.
+v34 Jun 23, 2011 : * handles additional decompression options for tarballs
 v33 May 31, 2011 : * using fnameescape() instead of escape()
 		   * *.xz support
 v32 Jun 19, 2010 : * (Jan Steffens) added support for xz compression

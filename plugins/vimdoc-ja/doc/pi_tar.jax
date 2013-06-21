@@ -1,10 +1,10 @@
-*pi_tar.txt*	For Vim バージョン 7.3.  Last change: 2012 Jan 17
+*pi_tar.txt*	For Vim バージョン 7.3.  Last change: 2013 Apr 17
 
 		       +====================+
 		       | Tar File Interface |
 		       +====================+
 
-Author:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamily.AbizM>
+Author:  Charles E. Campbell  <NdrOchip@ScampbellPfamily.AbizM>
 	  (remove NOSPAM from Campbell's email first)
 Copyright 2005-2012:					*tar-copyright*
 	The VIM LICENSE (see |copyright|) applies to the files in this
@@ -50,6 +50,21 @@ Copyright 2005-2012:					*tar-copyright*
 	す。初期設定は: >
 		"tar -xf"
 <
+						*:TarDiff*
+   差分サポート~
+
+   :TarDiff [filename]
+
+	このコマンドは tarball の中のファイルと、システム上の関連付けられた
+	ファイルの差分を表示します。システム上のファイルを探すため、そのファイ
+	ルに関連する tarball 内のファイルのパスが使われます。カレントディレク
+	トリがそのパスと整合しなかった場合は、:TarDiff コマンドは関連付けられ
+	たファイルを見つけることできずに失敗します。
+
+	[filename] が指定された場合は、関連付けられたファイルとしてそのファイ
+	ル名 (とパス) が使われます。
+
+
    ロードの無効化~
 
    もしなんらかの理由で tar ファイルを vim で開きたくない場合は、次の二つの変
