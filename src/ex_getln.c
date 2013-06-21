@@ -205,7 +205,17 @@ getcmdline(firstc, count, indent)
      * custom status line may invoke ":normal". */
     struct cmdline_info save_ccline;
 #endif
+#ifdef USE_MIGEMO
+    int		migemo_enabled = 0;
+#endif
 
+#ifdef USE_MIGEMO
+    if (count < 0)
+    {
+	migemo_enabled = 1;
+	count = -count;
+    }
+#endif
 #ifdef FEAT_SNIFF
     want_sniff_request = 0;
 #endif
@@ -1772,15 +1782,22 @@ cmdline_changed:
 		i = 0;
 	    else
 	    {
+		int search_options = (SEARCH_KEEP + SEARCH_OPT
+			+ SEARCH_NOOF + SEARCH_PEEK);
+
 		cursor_off();		/* so the user knows we're busy */
 		out_flush();
 		++emsg_off;    /* So it doesn't beep if bad expr */
+#ifdef USE_MIGEMO
+		if (migemo_enabled)
+		    search_options |= SEARCH_MIGEMO;
+#endif
 #ifdef FEAT_RELTIME
 		/* Set the time limit to half a second. */
 		profile_setlimit(500L, &tm);
 #endif
 		i = do_search(NULL, firstc, ccline.cmdbuff, count,
-			SEARCH_KEEP + SEARCH_OPT + SEARCH_NOOF + SEARCH_PEEK,
+			search_options,
 #ifdef FEAT_RELTIME
 			&tm
 #else

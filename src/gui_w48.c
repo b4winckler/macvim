@@ -138,6 +138,7 @@ typedef int LONG;
 static void _OnPaint( HWND hwnd);
 static void clear_rect(RECT *rcp);
 static int gui_mswin_get_menu_height(int fix_window);
+static int get_caption_height(void);
 
 static WORD		s_dlgfntheight;		/* height of the dialog font */
 static WORD		s_dlgfntwidth;		/* width of the dialog font */
@@ -1306,7 +1307,7 @@ GetFontSize(GuiFont font)
     TEXTMETRIC tm;
 
     GetTextMetrics(hdc, &tm);
-    gui.char_width = tm.tmAveCharWidth + tm.tmOverhang;
+    gui.char_width = tm.tmAveCharWidth + tm.tmOverhang + p_charspace;
 
     gui.char_height = tm.tmHeight
 #ifndef MSWIN16_FASTTEXT
@@ -2777,6 +2778,10 @@ _OnPaint(
 
 	out_flush();	    /* make sure all output has been processed */
 	(void)BeginPaint(hwnd, &ps);
+#if defined(FEAT_DIRECTX)
+	if (IS_ENABLE_DIRECTX())
+	    DWriteContext_BeginDraw(s_dwc);
+#endif
 
 #ifdef FEAT_MBYTE
 	/* prevent multi-byte characters from misprinting on an invalid
@@ -2792,9 +2797,20 @@ _OnPaint(
 #endif
 
 	if (!IsRectEmpty(&ps.rcPaint))
+	{
+#if defined(FEAT_DIRECTX)
+	    if (IS_ENABLE_DIRECTX())
+		DWriteContext_BindDC(s_dwc, s_hdc, &ps.rcPaint);
+#endif
 	    gui_redraw(ps.rcPaint.left, ps.rcPaint.top,
 		    ps.rcPaint.right - ps.rcPaint.left + 1,
 		    ps.rcPaint.bottom - ps.rcPaint.top + 1);
+	}
+
+#if defined(FEAT_DIRECTX)
+	if (IS_ENABLE_DIRECTX())
+	    DWriteContext_EndDraw(s_dwc);
+#endif
 	EndPaint(hwnd, &ps);
     }
 }
@@ -2910,7 +2926,7 @@ gui_mswin_get_valid_dimensions(
 	+ GetSystemMetrics(SM_CXFRAME) * 2;
     base_height = gui_get_base_height()
 	+ GetSystemMetrics(SM_CYFRAME) * 2
-	+ GetSystemMetrics(SM_CYCAPTION)
+	+ get_caption_height()
 #ifdef FEAT_MENU
 	+ gui_mswin_get_menu_height(FALSE)
 #endif
@@ -3033,6 +3049,12 @@ gui_mch_insert_lines(
     void
 gui_mch_exit(int rc)
 {
+#if defined(FEAT_DIRECTX)
+    DWriteContext_Close(s_dwc);
+    DWrite_Final();
+    s_dwc = NULL;
+#endif
+
     ReleaseDC(s_textArea, s_hdc);
     DeleteObject(s_brush);
 
@@ -3275,7 +3297,7 @@ gui_mch_newfont()
 			- GetSystemMetrics(SM_CXFRAME) * 2,
 		     rect.bottom - rect.top
 			- GetSystemMetrics(SM_CYFRAME) * 2
-			- GetSystemMetrics(SM_CYCAPTION)
+			- get_caption_height()
 #ifdef FEAT_MENU
 			- gui_mswin_get_menu_height(FALSE)
 #endif

@@ -1,0 +1,134 @@
+*os_390.txt*    For Vim バージョン 7.3.  Last change: 2010 May 30
+
+
+		 VIMリファレンスマニュアル    by Ralf Schandl
+
+					*zOS* *z/OS* *OS390* *os390* *MVS*
+このファイルには z/OS Unix 上の Vim についての事項が書かれている。
+
+1. ASCII/EBCDIC 依存のスクリプト	|zOS-has-ebcdic|
+2. Putty と色				|zOS-PuTTY|
+3. Motif の問題				|zOS-Motif|
+4. バグ					|zOS-Bugs|
+5. 制限事項				|zOS-limitations|
+6. z/OS UNIX 上のオープンソース		|zOS-open-source|
+
+貢献者: ~
+z/OS Unix への移植は Ralf Schandl <schandl@de.ibm.com> によって後述の Redbook
+のために行われた。
+
+以下の方々からパッチやバグレポートを戴いた:
+
+	David Moore
+	Anthony Giorgio
+	and others
+
+==============================================================================
+1. ASCII/EBCDIC に依存のスクリプト	*OS390-has-ebcdic* *zOS-has-ebcdic*
+
+Vim スクリプト用に "ebcdic" 機能が追加された。ASCII に依存したスクリプトは、以
+下のようにすることで修正可能である:
+>
+    if has("ebcdic")
+	let space = 64
+    else
+	let space = 32
+    endif
+<
+
+==============================================================================
+2. Putty と色				*OS390-PuTTY* *zOS-PuTTY*
+
+Putty を使って z/OS に接続したときに、構文強調表示やスクリーンの表示が乱れるよ
+うな問題が発生した場合は、次の手順を試してみてください:
+
+- Putty を "vt220" 端末として設定する (Connection->Data)
+- 次の三行を vimrc に追加する:
+
+>
+    set t_AB=[4%p1%dm
+    set t_AF=[3%p1%dm
+    set t_CO=8
+<
+
+Note:  は一文字で、<C-V><Esc> を使って入力できる。
+
+==============================================================================
+3. Motifの問題				*OS390-Motif* *zOS-Motif*
+
+Note: Vim 6.* で確認。その後は未テスト。
+
+Motif ライブラリの z/OS への移植において、プルダウンメニューのアクセラレータ文
+字を EBCDIC から ASCII への変換することが忘れられているように思える。 
+手動で変換するように試してみたが、メニューを開くところ (ファイルメニューを開く
+ <Alt-F>) までしか働かず、メニュー項目を選択すること (ファイルブラウザを開く
+ <Alt-F>O) はできない。
+
+まだ解決法が見つかっていない。
+
+==============================================================================
+4. バグ					*OS390-bugs* *zOS-Bugs*
+
+- ビジュアルブロックモードで長大なテキストを選択すると常にハングする。これはメ
+  モリ破壊による可能性がある。ターミナルと GUI 版両方で起きる。
+
+==============================================================================
+5. 制限事項				*OS390-limitations* *zOS-limitations*
+
+- タグファイルには二分検索を使っていない
+  /bin/sort はデフォルトで ASCII の値を使って並べ替えを行う。このプログラムは
+  tags を並べ替えるのに ctag により通常使われている。いつかはそれを正しく扱え
+  る ctags がリリースされるかもしれないが、いつになるかはわからない。もしかし
+  たら永遠にリリースされないかもしれないし…
+
+- 著者のメインフレーム上で使っている cscope のバージョンでは、cscope インター
+  フェイス(|cscope|)は動作しない。著者が使っているのはバージョン 15.0b12 で、
+  これを使って Vim でコマンド "cscope add" を実行すると、Vim がハングする。
+  cscope のデータベースのバイナリフォーマットが Vim が期待するものと異なるの
+  ではないかと推測している。cscope の現在のバージョン(15.3)を z/OS へ移植しよ
+  うとしたが、うまくいっていない。興味のある方がおられたら、何か進展があったと
+  きは著者にご連絡ください。
+
+- glib/gtk はサポートしていない。著者は z/OS UNIX 上で glib をコンパイルするこ
+  とはできなかった。そのため、すてきな gtk ツールバーなしで生きていかねばなら
+  ない。
+
+コンパイル時に無効化される機能:
+    - マルチバイトサポート      (|multibyte|)
+    - 右横書きモード            (|rileft|)
+    - ペルシア語キーマップ      (|Farsi|)
+    - アラビア語サポート        (|Arabic|)
+    - スペルチェック            (|spell|)
+
+テストされていない機能:
+    - Perl インターフェイス	(|perl|)
+    - ハングル文字入力		(|hangul|)
+    - 暗号化サポート		(|encryption|)
+    - Langmap			(|'langmap'|)
+    - Python インターフェース	(|Python|)
+    - "右左" 書きモード		(|'rightleft'|)
+    - SNiFF+ インターフェイス	(|sniff|)
+    - TCL インターフェイス	(|tcl|)
+    ....
+
+==============================================================================
+6. z/OS UNIX 上のオープンソース		*OS390-open-source* *zOS-open-source*
+
+z/OS UNIX 上の他のオープンソースソフトウェアに興味があるなら、以下の Redbook
+を参照すること:
+
+    Mike MacIsaac et al
+    "Open Source Software for z/OS and OS/390 UNIX"
+    IBM Form Number: SG24-5944-01
+    ISBN: 0738424633
+    http://www-03.ibm.com/systems/resources/servers_eserver_zseries_zos_unix_redbook_sg245944.pdf
+
+以下も参照してください:
+    http://www.redbooks.ibm.com
+    http://www-03.ibm.com/systems/z/os/zos/features/unix/
+    http://www-03.ibm.com/systems/z/os/zos/features/unix/library/IBM+Redbooks/index.html
+
+
+
+------------------------------------------------------------------------------
+ vim:tw=78:fo=tcq2:ts=8:ft=help:norl:

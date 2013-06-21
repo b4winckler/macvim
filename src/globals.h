@@ -235,6 +235,9 @@ EXTERN int	ex_nesting_level INIT(= 0);	/* nesting level */
 EXTERN int	debug_break_level INIT(= -1);	/* break below this level */
 EXTERN int	debug_did_msg INIT(= FALSE);	/* did "debug mode" message */
 EXTERN int	debug_tick INIT(= 0);		/* breakpoint change count */
+EXTERN int	devel_compact_presize INIT(= 0);
+EXTERN int	devel_compact_postsize INIT(= 0);
+EXTERN int	devel_compact_funcnum INIT(= 0);
 # ifdef FEAT_PROFILE
 EXTERN int	do_profiling INIT(= PROF_NONE);	/* PROF_ values */
 # endif
@@ -1621,4 +1624,12 @@ EXTERN char *ignoredp;
  */
 #ifdef FEAT_ARABIC
 # include "arabic.h"
+#endif
+
+/*
+ * Asynchronous job support.
+ */
+#ifdef FEAT_JOB_BASE
+EXTERN job_T	*job_top_p	INIT(= NULL);
+EXTERN int	job_next_wait	INIT(= -1);
 #endif

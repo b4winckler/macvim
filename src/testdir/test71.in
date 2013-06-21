@@ -2,6 +2,8 @@ Test for encryption.
 
 STARTTEST
 :so small.vim
+:set enc=latin1
+:e
 :/^start of text/+1
 :let text_lines = getline('.', line('.') + 2)
 :/^start of cm=zip bytes/+1

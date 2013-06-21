@@ -1,0 +1,529 @@
+*if_tcl.txt*    For Vim バージョン 7.3.  Last change: 2012 Aug 02
+
+
+		  VIMリファレンスマニュアル    by Ingo Wilken
+
+
+VimへのTclインターフェイス				*tcl* *Tcl* *TCL*
+
+1. コマンド				|tcl-ex-commands|
+2. Tcl コマンド				|tcl-commands|
+3. Tcl 変数				|tcl-variables|
+4. Tcl ウィンドウコマンド		|tcl-window-cmds|
+5. Tcl バッファコマンド			|tcl-buffer-cmds|
+6. その他; Tcl からの出力		|tcl-misc| |tcl-output|
+7. 既知のバグと問題点			|tcl-bugs|
+8. 例					|tcl-examples|
+9. 動的ローディング			|tcl-dynamic|
+
+{Vi にはこれらのコマンドはない} *E280* *E281*
+
+Tclインターフェイスは、Vimが|+tcl|機能と共にコンパイルされたときのみ機能する。
+
+警告: 多分まだいくらかのバグが残っている。バグレポート、コメント、意見などが
+あったら、<Ingo.Wilken@informatik.uni-oldenburg.de>まで送ってください。
+
+==============================================================================
+1. コマンド				*tcl-ex-commands* *E571* *E572*
+
+							*:tcl* *:tc*
+:tc[l] {cmd}		Tclコマンド{cmd}を実行する。`:tcl` コマンドが機能する
+			か簡単にチェックするには: >
+				:tcl puts "Hello"
+
+:[range]tc[l] << {endmarker}
+{script}
+{endmarker}
+			Tclスクリプト{script}を実行する。
+			Note: このコマンドはTclの機能付きでコンパイルされてい
+			ないと使えない。エラーを抑制するには|script-here|を参
+			照のこと。
+
+{endmarker}の前には空白を置いてはいけない。"<<" の後に{endmarker}が省略された
+ときは |:append| や |:insert| のように '.' が使われる。
+この形式の |:tcl| コマンドはVimスクリプトの中にtclコードを埋め込むのに特に便利
+である。
+
+例: >
+	function! DefineDate()
+	    tcl << EOF
+	    proc date {} {
+		return[clock format [clock seconds]]
+	    }
+	EOF
+	endfunction
+<
+
+							*:tcldo* *:tcld*
+:[range]tcld[o] {cmd}	Tclコマンド{cmd}を、[range]内の各行に対し、変数 "line"
+			に各行のテキストを順にセットし、変数 "lnum" に各行番号
+			をセットしながら実行する。"line" への設定はテキストを
+			変更しするが、このコマンドの実行中に、行を追加したり
+			削除したりすることはできない。{cmd}がエラーを返せば、
+			コマンドは中断される。[range]の標準値はファイルの全て
+			"1,$" である。|tcl-var-line|、|tcl-var-lnum|を参照せ
+			よ。 {Vi にはない}
+
+							*:tclfile* *:tclf*
+:tclf[ile] {file}	{file}内のTclスクリプトを実行する。これは、
+			":tcl source {file}" と同じであるが、ファイル名の補完
+			が有効である。{Vi にはない}
+
+
+Tclオブジェクト(変数のようなもの)は、Tclシェル内でと同様、1つのコマンドから次
+のコマンドへと引き継がれることに注意せよ。
+
+|sandbox|の中ではTclコマンドは実行できない。
+
+==============================================================================
+2. Tcl コマンド						*tcl-commands*
+
+Tclコードからは、"::vim" 名前空間のコマンドを介してvimの全てにアクセスできる。
+次のコマンドが実装されている: >
+
+	::vim::beep			# 文字通りのbeep。
+	::vim::buffer {n}		# Tclコマンドを１つのバッファに作る。
+	::vim::buffer list		# Tclコマンドを全てのバッファに作る。
+	::vim::command [-quiet] {cmd}	# exコマンドを実行する。
+	::vim::expr {expr}		# Vimの式評価を使用する。
+	::vim::option {opt}		# vimのオプションを得る。
+	::vim::option {opt} {val}	# vimのオプションを設定する。
+	::vim::window list		# 全てのウィンドウにTclコマンドを作る。
+
+コマンド:
+	::vim::beep					*tcl-beep*
+	音を鳴らす。戻り値はない。
+
+	::vim::buffer {n}				*tcl-buffer*
+	::vim::buffer exists {n}
+	::vim::buffer list
+	vimバッファへのアクセスを提供する。整数引数を伴い、その数に対応する
+	バッファへのバッファコマンド(|tcl-buffer-cmds|を参照)を作り、結果とし
+	てそのバッファの名前を返す。不正なバッファ番号は、標準Tclエラーを返
+	す。有効なバッファ番号を調べるには、vimの内部関数を使うとよい: >
+		set nbufs [::vim::expr bufnr("$")]
+		set isvalid [::vim::expr "bufexists($n)"]
+<	"list" オプションは、各有効バッファに対してバッファコマンドを作り、戻
+	り値としてコマンドバッファの名前のリストを返す。
+	例: >
+		set bufs [::vim::buffer list]
+		foreach b $bufs { $b append end "The End!" }
+<	"exists" オプションは、与えられた番号のバッファが存在するかを確かめる。
+	例: >
+		if { [::vim::buffer exists $n] } { ::vim::command ":e #$n" }
+<	このコマンドは、将来のバージョンで変数に置き換えられるはずである。現在
+	のバッファについては|tcl-var-current|も参照。
+
+	::vim::command {cmd}				*tcl-command*
+	::vim::command -quiet {cmd}
+	vimの(exモードの)コマンド{cmd}を実行する。バッファ、ウィンドウに影響す
+	るexコマンドは、全て現在のバッファ/ウィンドウを対象とする。標準Tclエ
+	ラーコード以外の戻り値を返すことはない。このコマンドの終了後、
+	"::vim::current" 変数は更新される。
+	"-quiet" フラグは、vimからの全てのエラーメッセージを抑制する。
+	例: >
+		::vim::command "set ts=8"
+		::vim::command "%s/foo/bar/g"
+<	ノーマルモードのコマンドの実行には、"normal" を使う(|:normal|を参照): >
+		set cmd "jj"
+		::vim::command "normal $cmd"
+<	|tcl-window-command| と |tcl-buffer-command|も参照。
+
+	::vim::expr {expr}				*tcl-expr*
+	式{expr}を、vimの内部式評価(|expression|を参照)を使って評価する。バッ
+	ファやウィンドウプロパティに問い合わせする種類の式は、全て現在のバッ
+	ファ/ウィンドウを対象とする。結果を文字列として返す。リスト |List| は
+	文字列に変換される。そのとき各要素の間に改行が挿入され、連結される。
+	例: >
+		set perl_available [::vim::expr has("perl")]
+<	|tcl-window-expr| と |tcl-buffer-expr|も参照。
+
+	::vim::option {opt}				*tcl-option*
+	::vim::option {opt} {value}
+	第２引数なしで、vimオプションの値を問い合わせる。この引数を伴えば、vim
+	オプションに{value}を設定し、以前の値を結果として返す。'バッファに固
+	有'、'ウィンドウに固有' と記されているオプションは、全て現在のバッ
+	ファ/ウィンドウを対象とする。":set" コマンドでそれらを変更してもグロー
+	バルのオプションは変更されない。真偽値のオプションでは、{value}は "0"
+	か "1"、あるいは "on"、"off"、"toggle" のキーワードの内のどれかでなく
+	てはならない。オプションの一覧は、|option-summary|を参照。
+	例: >
+		::vim::option ts 8
+<	|tcl-window-option| と |tcl-buffer-option|も参照。
+
+	::vim::window {option}				*tcl-window*
+	vimウィンドウへのアクセスを提供する。今のところ、"list" オプションのみ
+	が実装されている。これは各ウィンドウに対し、ウィンドウコマンドを作り
+	(|tcl-window-cmds|を参照)、戻り値としてコマンドの名前のリストを返す。
+	例: >
+		set wins [::vim::window list]
+		foreach w $wins { $w height 4 }
+<	このコマンドは、将来のバージョンで変数と置き換えられるはずである。
+	現在のウィンドウについては、|tcl-var-current|を参照。
+
+==============================================================================
+3. Tcl 変数						*tcl-variables*
+
+::vim名前空間は、いくつかの変数を持っている。これらはvimにTclインタープリタが
+呼び出されたときに作られ、現在の値が設定される。 >
+
+	::vim::current		# "current" オブジェクトを含む配列
+	::vim::lbase		# 最初の行番号
+	::vim::range		# 現在の範囲の番号を含む配列
+	line			# 文字列形式での現在の行 (:tcldo のみ)
+	lnum			# 現在の行番号 (:tcldo のみ)
+
+変数:
+	::vim::current					*tcl-var-current*
+	これは、vimから利用可能な様々な "current" オブジェクトへのアクセスを提
+	供する配列である。この配列の内容は、vimの現在の設定を変更(例、カレント
+	バッファの削除など)する可能性のある、"::vim::command" が呼び出された後
+	に更新される。
+	"buffer" 要素は、カレントバッファへのバッファコマンドの名前を持つ。こ
+	れで、直接バッファコマンドを利用することができる(|tcl-buffer-cmds|を参
+	照)。この要素は読取り専用である。
+	例: >
+		$::vim::current(buffer) insert begin "Hello world"
+<	"window" 要素は、カレントウィンドウへのウィンドウコマンドの名前を持つ。
+	これで、直接ウィンドウコマンドを利用することができる
+	(|tcl-window-cmds|を参照)。この要素は読取り専用である。
+	例: >
+		$::vim::current(window) height 10
+<
+	::vim::lbase					*tcl-var-lbase*
+	この変数は、Tclが行番号をどのように扱うかを制御する。これが '1' にセッ
+	トされていると、行と縦列は1から始まる。このとき、Tclコマンドからの行番
+	号とvimの表現は互換性を持つ。この変数が '0' にセットされた場合、Tclで
+	は行番号、縦列は0から始まる。これは、バッファをTclのリスト、行をTclの
+	文字列として扱い、さらにインデックスを返す標準のTclコマンド(例えば、
+	"lsort" や "string first")を使うときに役に立つ。標準値は '1' である。
+	今のところ、非0の値は全て '1' として扱われるが、この事実に依存したスク
+	リプトを書くべきではない。|tcl-linenumbers|も参照。
+
+	::vim::range					*tcl-var-range*
+	これは３つの要素、"start"、"begin"、"end" から成る配列である。現在の範
+	囲の、最初と最後の行番号を持つ。"begin" は "start" と同じである。この
+	変数は読取り専用である。|tcl-examples|を参照。
+
+	line						*tcl-var-line*
+	lnum						*tcl-var-lnum*
+	このグローバル変数は、exコマンド ":tcldo" が実行されたときのみ利用可能
+	である。これらはテキストと現在の行の行番号を持つ。Tclコマンドが
+	":tcldo" により呼び出されて完了したとき、"line" 変数がTclコマンドによっ
+	て設定解除されていないければ、現在の行は "line" 変数の内容に設定され
+	る。"lnum" 変数は読取り専用である。これらの変数は、"::vim" 名前空間に
+	属していないため、修飾なしで ":tcldo" で使うことができる(これは将来の
+	バージョンで変更されるはずである)。|tcl-linenumbers|も参照。
+
+==============================================================================
+4. Tcl ウィンドウコマンド				*tcl-window-cmds*
+
+ウィンドウコマンドは、vimのウィンドウの表現である。これらはいくつかの方法で作
+られる:
+	::vim::window リスト			|tcl-window|
+	バッファコマンドの "windows" オプション	|tcl-buffer-windows|
+::vim::current(window)変数は、現在のウィンドウのウィンドウコマンドの名前を持
+つ。ウィンドウコマンドは、vimウィンドウが閉じられるに従って、自動的に破棄され
+る。
+
+ウィンドウコマンドの名前がTcl変数 "win" に格納される、すなわち、"$win" がコマ
+ンドを呼び出す、と仮定しよう。次のオプションが利用可能である: >
+
+	$win buffer		# ウィンドウのバッファのTclコマンドを作る。
+	$win command {cmd}	# ウィンドウのコンテクストに、exコマンドを実行
+	                        # する。
+	$win cursor		# 現在のカーソルの位置を得る。
+	$win cursor {var}	# 配列変数により、カーソルの位置を設定する。
+	$win cursor {row} {col}	# カーソルの位置を設定する。
+	$win delcmd {cmd}	# ウィンドウが閉じたら、Tclコマンドを呼出す。
+	$win expr {expr}	# ウィンドウのコンテクストに、vimの式評価を行
+				# う。
+	$win height		# ウィンドウの高さを報告する。
+	$win height {n}		# ウィンドウの高さを設定する。
+	$win option {opt} [val]	# ウィンドウのコンテクストに、vimのオプション
+				# を取得/設定する
+
+オプション:
+	$win buffer					*tcl-window-buffer*
+	ウィンドウのバッファのTclコマンドを作成し、戻り値としてその名前を返す。
+	名前は変数に格納されるべきである: >
+		set buf [$win buffer]
+<	$bufは有効なTclコマンドとなる。利用可能なオプションについては、
+	|tcl-buffer-cmds|を参照。
+
+	$win cursor					*tcl-window-cursor*
+	$win cursor {var}
+	$win cursor {row} {col}
+	引数なしで、現在のカーソル位置を文字列として返す。これは、Tclの配列変
+	数へと変換することができる: >
+		array set here [$win cursor]
+<	このとき、"here(row)" と "here(column)" がカーソル位置を持つ。
+	１つの引数を伴うと、引数は２つの要素 "row" と "column" を持つべき、Tcl
+	配列変数名と解釈される。これらはカーソルを新しい位置へセットするために
+	使われる。 >
+		$win cursor here	;# not $here !
+<	２つの引数を伴い、カーソルをrowとcolumで指定した位置へセットする: >
+		$win cursor $here(row) $here(column)
+<	不正な位置指定は、"catch" にて捕捉可能な標準Tclエラーを返す。rowと
+	columnの値は、"::vim::lbase" 変数に依存する。|tcl-var-lbase|を参照。
+
+	$win delcmd {cmd}				*tcl-window-delcmd*
+	Tclコマンド{cmd}を、ウィンドウ破棄のコールバックとして登録する。この
+	コマンドはウィンドウが閉じられた直後に(グローバルスコープで)実行され
+	る。複雑なコマンドは、"list" により構成するとよい: >
+		$win delcmd [list puts vimerr "window deleted"]
+<	|tcl-buffer-delcmd|を参照。
+
+	$win height					*tcl-window-height*
+	$win height {n}
+	引数なしで、ウィンドウの現在の高さを報告する。引数を伴うと、ウィンド
+	ウの高さを{n}に設定しようと試み、戻り値として新しい高さ(これは{n}では
+	ないかもしれない)を返す。
+
+	$win command [-quiet] {cmd}			*tcl-window-command*
+	$win expr {expr}				*tcl-window-expr*
+	$win option {opt} [val]				*tcl-window-option*
+	これらは、全てがカレントウィンドウの代わりに$winで表現されるウィンド
+	ウコンテキストにおいて実行されるという点を除けば、"::vim::command" な
+	どに似ている。例えば、'local to window' と記されたオプションの設定は、
+	ウィンドウ$winに影響を与える。バッファへの影響、または問い合わせは、全
+	てこのウィンドウに表示されるバッファ(すなわち、"$win buffer" で表現さ
+	れるバッファ)を対象とする。より詳しい情報は、|tcl-command|、
+	|tcl-expr|、|tcl-option|を参照せよ。
+	例: >
+		$win option number on
+
+==============================================================================
+5. Tcl バッファコマンド					*tcl-buffer-cmds*
+
+バッファコマンドはvimのバッファを表現する。これらはいくつかの方法で作成される:
+	::vim::buffer {N}			|tcl-buffer|
+	::vim::buffer リスト			|tcl-buffer|
+	ウィンドウコマンドの"buffer"オプション	|tcl-window-buffer|
+::vim::current(バッファ)変数は、カレントバッファへのバッファコマンドの名前を
+持っている。バッファコマンドはvimのバッファが破棄されると、それに合わせて自動
+的に削除される。バッファの内容が変更されると、バッファ内の全てのマークは自動
+的に調整される。Tclコマンドによるバッファ内容への変更は、vimの "undo" コマンド
+で元に戻すことができる(|undo|を参照)。
+
+バッファコマンドの名前がTcl変数 "buf" に格納されている、すなわち、"$buf" がコ
+マンドを呼出すものと仮定しよう。次のオプションが利用可能である: >
+
+	$buf append {n} {str}	# バッファの行{n}の後に、行を追加する。
+	$buf command {cmd}	# バッファコンテクストでexコマンドを実行する。
+	$buf count		# バッファ内の行数を返す。
+	$buf delcmd {cmd}	# バッファが削除されたらTclコマンドを呼ぶ。
+	$buf delete {n}		# １行を削除する。
+	$buf delete {n} {m}	# 数行を削除する。
+	$buf expr {expr}	# バッファコンテクストで、vimの式評価をする。
+	$buf get {n}		# １行を文字列として取得する。
+	$buf get {n} {m}	# 数行をリストとして取得する。
+	$buf insert {n} {str}	# バッファに行{n}として、行を挿入する。
+	$buf last		# バッファの最終行の行番号を返す。
+	$buf mark {mark}	# バッファマークの位置を返す。
+	$buf name		# バッファ内のファイル名を返す。
+	$buf number		# そのバッファの番号を返す。
+	$buf option {opt} [val]	# バッファコンテクストでvimオプションを
+				# 取得/設定
+	$buf set {n} {text}	# １行を置換する。
+	$buf set {n} {m} {list}	# 数行を置換する
+	$buf windows		# バッファウィンドウのTclコマンドを作成する。
+<
+							*tcl-linenumbers*
+ほとんどのバッファコマンドは引数として行番号を取る。Tclコマンドがこれらをどう
+扱うかは "::vim::lbase" 変数に依っている(|tcl-var-lbase|を参照)。行番号の代わ
+りに、いくつかのキーワードを使うこともできる: "top"、"start"、"begin"、
+"first"、"bottom"、"end"、"last" が使える。
+
+オプション:
+	$buf append {n} {str}				*tcl-buffer-append*
+	$buf insert {n} {str}				*tcl-buffer-insert*
+	バッファに行を追加する。"insert" オプションを伴うと文字列は新しい行
+	{n}になり、"append" オプションを伴うと行{n}の後に挿入される。
+	例: >
+		$buf insert top "ここが始まり。"
+		$buf append end "ここで終わり。"
+<	バッファに行にリストを追加するには、ループを使うとよい: >
+		foreach line $list { $buf append $num $line ; incr num }
+<
+	$buf count					*tcl-buffer-count*
+	バッファ内の行の総数を返す。
+
+	$buf delcmd {cmd}				*tcl-buffer-delcmd*
+	Tclコマンド{cmd}を、バッファの削除に対するコールバックとして登録する。
+	このコマンドは、バッファが削除された直後に(グローバルスコープで)実行
+	される。複雑なコマンドは "list" として構成するべきである: >
+		$buf delcmd [list puts vimerr "buffer [$buf number] gone"]
+<	|tcl-window-delcmd|も参照。
+
+	$buf delete {n}					*tcl-buffer-delete*
+	$buf delete {n} {m}
+	バッファから行{n}、または行{n}から{m}までを削除する。
+	次の例は、最終行を除く全ての行を削除する: >
+		$buf delete first [expr [$buf last] - 1]
+<
+	$buf get {n}					*tcl-buffer-get*
+	$buf get {n} {m}
+	バッファから１行以上を取得する。１行の場合、戻り値は文字列である; 数行
+	の場合には文字列のリストが返される。
+	例:
+>		set topline [$buf get top]
+
+	$buf last					*tcl-buffer-last*
+	最終行の行番号を返す。この値は "::vim::lbase" 変数に依存する。
+	|tcl-var-lbase|を参照。
+
+	$buf mark {mark}				*tcl-buffer-mark*
+	名前付きマークの位置を、ウィンドウコマンドの "cursor" オプションにて表
+	されるカーソル位置に似た文字列として返す(|tcl-window-cursor|を参照)。
+	これはTcl配列変数に変換される: >
+		array set mpos [$buf mark "a"]
+<	"mpos(column)" と "mpos(row)" はマークの位置を保持する。マークがセット
+	されていなければ、標準Tclエラーが返される。
+
+	$buf name
+	バッファ内のファイル名を返す。ファイルなしのバッファの場合、空文字列
+	を返す。
+
+	$buf number
+	そのバッファの番号を返す。|:buffer|を参照。
+	この例は、vimからバッファを削除する: >
+		::vim::command "bdelete [$buf number]"
+<
+	$buf set {n} {string}				*tcl-buffer-set*
+	$buf set {n} {m} {list}
+	バッファ内の１行以上を置換する。リスト(list)が置換される行以上の要素を
+	持っていた場合、それらはバッファに追加される。リストの要素が少ない場合
+	には、置換されなかった行はバッファから削除される。
+
+	$buf windows					*tcl-buffer-windows*
+	そのバッファに表示されている各ウィンドウに対し、ウィンドウコマンドを作
+	成し、コマンド名のリストを結果として返す。
+	例: >
+		set winlist [$buf windows]
+		foreach win $winlist { $win height 4 }
+<	可能なオプションについては|tcl-window-cmds|を参照。
+
+	$buf command [-quiet] {cmd}			*tcl-buffer-command*
+	$buf expr {expr}				*tcl-buffer-expr*
+	$buf option {opt} [val]				*tcl-buffer-option*
+	これらは、カレントバッファではなく、$bufで表されるバッファコンテクス
+	トにおいて全てが実行されるということ以外は、"::vim::command" などと同
+	じである。例えば、'local to buffer" と記されたオプションの設定は、バッ
+	ファ$bufに作用する。ウィンドウへの作用、あるいは問い合わせは、全てvim
+	のウィンドウリストの内でこのバッファを表示している最初のウィンドウ(す
+	なわち、"$buf windows" で最初に返されるエントリ)に対して行われる。より
+	詳しい情報は、|tcl-command|、|tcl-expr|、|tcl-option|を参照。
+	例: >
+		if { [$buf option modified] } { $buf command "w" }
+
+==============================================================================
+6. その他; Tcl からの出力				*tcl-misc* *tcl-output*
+
+標準Tclコマンド "exit" と "catch" は、カスタムバージョンのものと置き換えられて
+いる。"exit" は、現在のTclスクリプトを終了してvimに戻り、Tclインタープリタを破
+棄する。その後、":tcl" が呼出されたときに、新しいTclインタープリタが作成され
+る。"exit" は、vimを終了させることはない！ "catch" は、"exit" でのスクリプトの
+終了を妨げることがない点を除けば、標準のものと同じである。終了コードが0でない
+とき(exit code != 0)、Tclスクリプトを呼出したexコマンドはエラーを返す。
+
+２つの新しいI/Oストリーム、"vimout"、"vimerr" がTclから利用可能である。これら
+に向けられた全ての出力は、それぞれvimの情報メッセージとエラーメッセージとして、
+メッセージエリアに表示される。標準Tcl出力ストリームstdoutとstderrは、普通の
+"puts" コマンドでvimにメッセージを表示できるよう、vimoutとvimerrに割当てられ
+る。
+
+==============================================================================
+7. 既知のバグと問題点					*tcl-bugs*
+
+Tcl内部から、("::vim::command" を介して)Tclのexコマンドを呼出すと、予期できな
+い副作用を起こす可能性がある。このコマンドは、"::vim::command" を安全な子イン
+タープリタ内で利用可能にするため、その子インタープリタを不安定にして、標準のイ
+ンタープリタと同じ能力を持つ新しいインタープリタを作る。(ネストされた :tcl* 呼
+び出しをブロックしたり、安全なインタープリタから新しい安全なインタープリタのみ
+を呼出すよう保証することは簡単なことだが、それは不適切である - vimの設定によ
+り、"::vim::command" は他の多くのスクリプト言語の任意のコードを実行することがで
+きるからである。)この新しいインタープリタ内での "exit" 呼出しは、古いインタープ
+リタには影響しない; 新しいインタープリタのみを終了し、スクリプト処理は古いイン
+タープリタで正常に続けられる。
+
+stdinからの入力は、今のところサポートされていない。
+
+==============================================================================
+8. 例:							*tcl-examples*
+
+いくつかの小さな(そして、たぶん役に立つ)Tclスクリプトを紹介しよう。
+
+このスクリプトはバッファ全体の行をソートする(名前のリストとか、そのようなも
+のであると仮定する):
+	set buf $::vim::current(buffer)
+	set lines [$buf get top bottom]
+	set lines [lsort -dictionary $lines]
+	$buf set top bottom $lines
+
+このスクリプトは、バッファ内の行を反転する。"::vim::lbase" と "$buf last" は、
+どんな行番号の設定でも機能することに注目。
+	set buf $::vim::current(buffer)
+	set t $::vim::lbase
+	set b [$buf last]
+	while { $t < $b } {
+		set tl [$buf get $t]
+		set bl [$buf get $b]
+		$buf set $t $bl
+		$buf set $b $tl
+		incr t
+		incr b -1
+	}
+
+このスクリプトは、現在の範囲の各行に連続した番号を付け加える:
+	set buf $::vim::current(buffer)
+	set i $::vim::range(start)
+	set n 1
+	while { $i <= $::vim::range(end) } {
+		set line [$buf get $i]
+		$buf set $i "$n\t$line"
+		incr i ; incr n
+	}
+
+同じことが、":tcldo" による２つのexコマンドで、より迅速に行える:
+	:tcl set n 1
+	:[range]tcldo set line "$n\t$line" ; incr n
+
+このプロシージャは、各バッファでexコマンドを走らせる(Ron Aaron氏のアイディア):
+	proc eachbuf { cmd } {
+		foreach b [::vim::buffer list] {
+			$b command $cmd
+		}
+	}
+こんな風に使う:
+	:tcl eachbuf %s/foo/bar/g
+Tclの文字列とバックスラッシュの置換には気をつけてほしい。疑わしいときは、丸括
+弧でexコマンドを括っておくとよい。
+
+
+いくつかのTclコマンドをずっとvimで使いたいというなら、それらをファイル(例えば
+Unixマシンでは "~/.vimrc.tcl" など)に入れておき、スタートアップファイル(Unixマ
+シンなら標準で "~/.vimrc")に以下の行を付け加える:
+	if has("tcl")
+		tclfile ~/.vimrc.tcl
+	endif
+
+==============================================================================
+9. 動的ローディング					*tcl-dynamic*
+
+MS-WindowsではTclライブラリを動的に読み込むことが可能である。これを行うと
+|:version|の出力に|+tcl/dyn|が含まれるようになる。
+
+この場合、Vimは必要なときだけTclのDLLファイルを検索する。Tclインターフェ
+イスを使わないときはDLLを必要としないので、DLLなしでVimを使うことができる。
+
+Tclインターフェイスを使うにはTclのDLLが検索パス内に存在しなければならない。
+コンソールウィンドウで "path" とタイプすると、どのディレクトリが検索パスとなる
+か表示することができる。
+
+DLLの名前はVimをコンパイルした時のTclのバージョンに一致しなければならない。
+現在その名前は "tcl83.dll" である。これはTcl8.3用である。これを確かめるには、
+"gvim.exe" を開き、"tcl\d*.dll\c" を検索する。
+
+==============================================================================
+ vim:tw=78:ts=8:ft=help:norl:

@@ -1,0 +1,330 @@
+*os_beos.txt*	For Vim バージョン 7.3.  Last change: 2010 Aug 14
+
+
+		VIMリファレンスマニュアル    by Bram Moolenaar
+
+
+							*BeOS* *BeBox*
+これはVim 5.1のBeOS Preview Release 2 (PR2として知られている)以降への移植であ
+る。
+{訳注: どうやらこのファイルの内容は長いことメンテナンスされていないらしい。BeOS
+自体が廃れてしまったOSであるから致し方ないところか}
+
+このファイルにはBeBox/BeOS向けのVimについての詳細が含まれている。このファイル
+で議論されていないことについては、VimはUNIX|os_unix.txt|版とほとんど同じように
+動作する。
+
+ 1. 概要			|beos-general|
+ 2. Vimのコンパイル		|beos-compiling|
+ 3. Terminalでのタイムアウト	|beos-timeout|
+ 4. Unicode vs. Latin1		|beos-unicode|
+ 5. BeOSのGUI			|beos-gui|
+ 6. $VIMディレクトリ		|beos-vimdir|
+ 7. ドラッグ&ドロップ		|beos-dragndrop|
+ 8. Single Launch vs. Multiple
+    Launch			|beos-launch|
+ 9. フォント			|beos-fonts|
+10. メタキー			|beos-meta|
+11. マウスキーマッピング	|beos-mouse|
+12. 色の名前			|beos-colors|
+13. Perl機能をコンパイル	|beos-perl|
+
+
+==============================================================================
+1. 概要							*beos-general*
+
+デフォルトの構文強調は大抵は強調する単位ごとに異なる前景色になる。これは
+Terminalウィンドウの背景色を暗く、文字色を明るく設定した時に一番見栄えがする。
+中間くらいの灰色 ((R,G,B)=(168,168,168) くらいのもの) の背景と黒い文字でも素晴
+らしく見栄えがする。デフォルトの明るい背景に暗い文字を使っているならば、前景色
+と背景色の設定を単純に反転すればより良く見えるようになるだろう。これを行うに
+は、次の設定をファイル .vimrc に追加する (例中の <Esc> はエスケープキャラクタ
+で置き換える必要がある): >
+
+  :if &term == "beos-ansi"
+  :    set t_AB=<Esc>[3%dm
+  :    set t_AF=<Esc>[4%dm
+  :endif
+
+==============================================================================
+2. Vimのコンパイル					*beos-compiling*
+
+Advanced Access Preview Release (AAPR) 以降で、Vimは標準のconfigureスクリプト
+で構成できるようになった。コンパイラを取得し、正しいフラグを設定するために次の
+コマンドをシェルで実行する(カット&ペーストすることができる)。
+
+CC=$BE_C_COMPILER CFLAGS="$BE_DEFAULT_C_FLAGS -O7" \
+    ./configure --prefix=/boot/home/config
+
+$BE_C_COMPILERは通常 "mwcc" で、$BE_DEFAULT_C_FLAGSは "-I- -I." になる。
+
+configureを実行する時に、GUIサポートを有効化したいならば、config.mkを編集して
+GUI_xxxが$(NONE_xxx)ではなく$(BEOSGUI_xxx)を参照するように変更する必要がある。
+代わりにMakefileをこのように変更することもできる; そのほうが普遍的な影響を持
+つ。"NONE_" を検索すると良い。
+
+コンパイルした後でバイナリにリソースを追加する必要がある。次の行をスクリプト
+link.sh の終わり ("exit $exit_value" の手前) 近くに付け加え、これを自動的に行
+うようにする。 >
+
+    rmattr BEOS:TYPE vim
+    copyres os_beos.rsrc vim
+    mimeset vim
+
+"strip" のダミーファイルも作る: >
+
+    #!/bin/sh
+    mimeset $1
+    exit 0
+
+これは "make install" でVimをインストールする時に必要になる。
+
+Vimをコンパイルするために "make" とタイプし、インストールのために "make intall"
+とする。
+
+Vimを手動でインストールするならば、Vimを$HOME/config/binにコピーし、一連の
+symlink({g,r,rg}{vim,ex,view})を作成しなければならない。その上Vimの構成ファイ
+ル: vims-5.0s/{*.vim,doc,syntax}を$HOME/config/share/vimにコピーしなければなら
+ない。完全にするためにはnroffのmanページも$HOME/config/man/man1にコピーする必
+要がある。それとctags/ctagsとxxd/xxdも忘れないように!
+
+明白だがVimを実際にリンクするには制限されていないリンカが必要だ。BeOS用の
+CodeWarriorコンパイラを購入するならばhttp://www.metrowerks.com/を参照。現在の
+ところをそれをこなせるほかのリンカは存在しない。
+
+ただしそのリンカでは、PerlやPythonが正しくインストールされていたとしても、それ
+らのインターフェースをVimに含めることはできない。 |beos-perl|
+
+==============================================================================
+3. Terminalでのタイムアウト				*beos-timeout*
+
+{訳注: 恐らくTerminalとはアプリケーション名であるから端末と呼ぶのは不適切}
+幾つかのPOSIX/UNIXの機能が未だ実装されていない[1]からBeOSは、Terminalにおいて
+タイムアウトを伴う読み込みを行うことを、直接にサポートはしていない。そのため
+に: >
+    :set notimeout
+をしない限り、1文字以上のキーをマップすることができないということに遭遇するだ
+ろう。 ('timeout' 参照)
+
+この問題を回避するために、1文字先を読み込む特別なスレッドを使用して、必要なタ
+イムアウト付き入力を用意するワークアラウンドを追加した。その副作用として、
+Terminalウィンドウのサイズが変わった時 {訳注: 最小化など通常はキーボードフォー
+カスが失われる場合} でもVimはキー入力を認識するようになった。
+
+Terminalではファンクションキーは非常に独特のキーシーケンスを生成するのでサポー
+トしていない。
+
+これらの問題はGUI版には存在しない。
+
+[1]: ファイルディスクリプタに使えるselect()が無い; termiosのVMINとVTIMEの設定
+も正しく動作していないようだ。この問題はDR7から存在しPR2に至るまで修正されてい
+ない。
+
+==============================================================================
+							*beos-unicode*
+4. Unicode vs. Latin1					*beos-utf8*
+
+BeOSは文字列にUnicodeとUTF-8を(16ビット文字を8ビット文字にエンコードして)使っ
+ている。VimはISO-Latin1かその他の8ビットエンコーディングを前提としている。その
+ため非ASCII文字に対して望む結果は得られない。それを確認するにはコマンド
+:digraphs を試すことができる。ISO-Latin1の文字コード128-255の文字が乱れて表示
+されてしまうならば、 :set isprint=@ を使うと(ほんの少し)改善されるかもしれな
+い。これにはGUIの方が良く、また使用しているフォントによって改善具合は異なる(以
+下も参照)。
+
+ファイルをUTF-8とISO-Latin1の間でコンバートするのにはコマンド/boot/bin/xtouを
+使う。xtou -f iso1 filename でUTF-8へ、逆に xtou -t iso1 filename でISO-Latin1
+へコンバートできる。
+
+==============================================================================
+5. BeOSのGUI						*beos-gui*
+
+BeOS GUI は削除された。しばらくメンテナンスされておらず、おそらく機能していな
+かった。どうしても使いたい場合は Vim 6.x バージョンから機能を取り出してマージ
+していただきたい。
+
+==============================================================================
+6. $VIMディレクトリ					*beos-vimdir*
+
+$VIMにはVim支援ファイルの格納場所が記憶されている。$VIMのデフォルトはコンパイ
+ル時に設定され次のコマンドで確認することができる: >
+
+  :version
+
+通常の値は/boot/home/config/share/vimである。これが気に入らなければ環境変数VIM
+を設定することでこれを上書するか、.vimrcで 'helpfile' を設定する: >
+
+  :if version >= 500
+  :    set helpfile=~/vim/vim54/doc/help.txt
+  :    syntax on
+  :endif
+
+==============================================================================
+7. ドラッグ&ドロップ					*beos-dragndrop*
+
+Vimのアイコン、ウィンドウどちらにでもファイルやディレクトリをドロップすること
+ができる。アイコンにドロップした際には、アプリケーションFile Typeを使ってVimに
+"Single Launch" を割り当てなくとも新しいVimが起動する。ウィンドウの場合はその
+ファイルの編集が開始される。フォルダをドロップするとVimの現在の作業ディレクト
+リがそのフォルダへ変更される。|:cd|や|:pwd|を参照。<Shift>を押しながらファイル
+をドロップしたならば、ドロップされた最初のファイルのあるディレクトリに変更す
+る。ドロップによりVimを起動する時には<Shift>は必要ない: Vimは自動的に移動する
+から。
+
+ファイルがドロップされると現在の引数リストが設定される。|argument-list|
+
+==============================================================================
+8. Single Launch vs. Multiple Launch			*beos-launch*
+
+Vimのアプリケーションフラグ(FileTypesの設定に見られる)はMultiple Launchに設定
+される。望むならSingle Launchに設定することもできる。それにより既に起動してい
+るVimでファイルを開くのではなく2つ目のVimを起動するようになる。これはTrackerか
+ら起動した場合にのみ適用され、コマンドラインにも適用される。その後者の場合、
+ファイル(やオプション)を設定しない起動はサポートされない
+
+NB: GUI版だけがBApplicationを持つ(だからアプリケーションフラグがある)。この非
+GUI版にはこのセクションは無いので、コンパイル時に設定する必要がある。
+
+==============================================================================
+9. フォント						*beos-fonts*
+
+フォントは次のように設定する: >
+
+  :set guifont=Courier10_BT/Roman/10
+
+指定するフォント名はフォントファミリ、スタイル、大きさの3つの部分から構成され
+る。ファミリ名とスタイル名の中のスペースはアンダースコア('_')で置き換えて使用
+する。
+
+(Courierのような)等幅フォントを指定すると一番良い結果が得られる。Vimは全ての
+フォントをB_FIXED_SPACINGモードで使用するよう試みるが、どうやらプロポーショナ
+ルフォントについては(BeBookに書かれているにも関わらず)動作しない。
+
+VimはISO Latin 1を意味するB_ISO8859_1エンコードを使用するようにも試みる。これ
+も全てのフォントについては動作しない。Courierには動作するが、なんとも不思議だ
+がProFontISOLatin1/Regularには動作しない。次のコマンドでこれを確かめることがで
+きる: >
+
+  :digraphs
+
+このコマンドはISO Latin 1エンコーディングで表現される文字の集合を表示する。例
+えばそれらの中に四角い文字があった場合や、最後の文字が点の付いたyでなかった場
+合には、そのフォントとエンコーディングの組み合わせは使えないことを意味する。
+
+指定したフォントが存在しない場合、システムの固定幅フォントが利用される。
+
+標準的な固定幅のシステムフォントは以下の通り:
+
+	      ProFontISOLatin1/Regular
+		  Courier10_BT/Roman
+		  Courier10_BT/Italic
+		  Courier10_BT/Bold
+		  Courier10_BT/Bold_Italic
+
+標準的なプロポーショナルシステムフォントは以下の通り:
+
+		    Swis721_BT/Roman
+		    Swis721_BT/Italic
+		    Swis721_BT/Bold
+		    Swis721_BT/Bold_Italic
+		Dutch801_Rm_BT/Roman
+		Dutch801_Rm_BT/Italic
+		Dutch801_Rm_BT/Bold
+		Dutch801_Rm_BT/Bold_Italic
+		   Baskerville/Roman
+		   Baskerville/Italic
+		   Baskerville/Bold
+		   Baskerville/Bold_Italic
+		 SymbolProp_BT/Regular
+
+幾つか試してみると面白いだろう。
+
+==============================================================================
+10. メタキー						*beos-meta*
+
+META修飾キーは左右のOPTIONSによって代用される。これはALT(別名COMMAND)キーがア
+プリケーションからは使えないための措置である。
+
+==============================================================================
+11. マウスキーマッピング				*beos-mouse*
+
+Vimは各マウスボタンをLeftMouse, MiddleMouseそしてRightMouseと呼んでいる。
+デフォルトのマウス設定で使用しているならば、これらの名前はそのボタンの位置を正
+確に反映している。Vimは次のマッピングを行っている:
+
+    Button 1 -> LeftMouse,
+    Button 2 -> RightMouse,
+    Button 3 -> MiddleMouse.
+
+使っているマウスのボタンが3つより少ない場合には、クリックを修飾操作と同時に行
+なうことでそのボタンを利用できる。例としてはファイル
+vim-5.x/macros/swapmous.vimを参照すること。		|gui-mouse-mapping|
+
+==============================================================================
+12. 色の名前						*beos-colors*
+
+Vimには多くの色の名前が組み込まれている。さらに$VIMRUNTIME/rgb.txtが存在してい
+れば、そこから追加の名前が読み込まれる。このファイルは基本的にX11の色データ
+ベースである。このファイルの中にある名前は実行速度を確保するためにキャッシュさ
+れる。
+
+==============================================================================
+13. Perl機能をコンパイル				*beos-perl*
+
+Perlをサポートするようコンパイルするには少しトリックが必要である。Metrowerksの
+コンパイラにはインクルード文のファイルを探す場所について幾つかおかしな趣向があ
+る。Perlのインクルードファイルには幾つかVimのヘッダファイルと同じ名前のものが
+あり、間違ったものがインクルードされてしまう。これを修正するには、次のPerlスク
+リプトをディレクトリvim-5.0/srcで実行する: >
+
+   preproc.pl > perl.h
+
+    #!/bin/env perl
+    # Simple #include expander, just good enough for the Perl header files.
+
+    use strict;
+    use IO::File;
+    use Config;
+
+    sub doinclude
+    {
+	my $filename = $_[0];
+	my $fh = new IO::File($filename, "r");
+	if (defined $fh) {
+	    print "/* Start of $filename */\n";
+
+	    while (<$fh>) {
+		if (/^#include "(.*)"/) {
+		    doinclude($1);
+		    print "/* Back in $filename */\n";
+		} else {
+		    print $_;
+		}
+	    }
+	    print "/* End of $filename */\n";
+
+	    undef $fh;
+	} else {
+	    print "/* Cannot open $filename */\n";
+	    print "#include \"$filename\"\n";
+	}
+    }
+
+    chdir     $Config{installarchlib}."/CORE";
+    doinclude "perl.h";
+
+これはヘッダーファイル "perl.h" を、その他のPerl用ファイルを使って展開する。
+
+これで--enable-perlinterpオプションをつけてconfigureとmakeをすることができる。
+これはVimのサイズを約616KB増やしてしまうことに注意! Perlを追加しなければ、デ
+フォルトの機能とGUIを備えたPerlは約575KBで、Perlを追加したものは約1191KBであ
+る。
+
+-Olaf Seibert
+
+[Note: これらのアドレスはもう機能していない]
+<rhialto@polder.ubc.kun.nl>
+http://polder.ubc.kun.nl/~rhialto/be
+
+==============================================================================
+ vim:tw=78:ts=8:ft=help:norl:

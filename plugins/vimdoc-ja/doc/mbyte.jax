@@ -1,0 +1,1400 @@
+*mbyte.txt*     For Vim バージョン 7.3.  Last change: 2013 May 18
+
+		  VIMリファレンスマニュアル	  by Bram Moolenaar et al.
+
+
+マルチバイトサポート				*multibyte* *multi-byte*
+						*Chinese* *Japanese* *Korean*
+このファイルでは、中国語、日本語、韓国語などの、1バイト(オクテット)では表現す
+ることができないほど多くの文字を持つ言語の、テキストの編集について説明する。
+Unicodeについても説明する。
+
+ユーザマニュアルの|usr_45.txt|で、共通する事柄を簡単に紹介している。
+メッセージやメニューの言語を変更するには|mlang.txt|を参照。
+
+{|+multi_byte|が有効な場合のみ利用可能}
+
+
+1.  はじめに				|mbyte-first|
+2.  ロケール				|mbyte-locale|
+3.  エンコーディング			|mbyte-encoding|
+4.  端末の使用				|mbyte-terminal|
+5.  X11のフォント			|mbyte-fonts-X11|
+6.  MS-Windowsのフォント		|mbyte-fonts-MSwin|
+7.  X11での入力				|mbyte-XIM|
+8.  MS-Windowsでの入力			|mbyte-IME|
+9.  キーマップを使用した入力		|mbyte-keymap|
+10. UTF-8を使う				|mbyte-utf8|
+11. 主なオプション			|mbyte-options|
+
+NOTE: このファイルにはUnicodeの文字が含まれている。他のエンコーディングを使用
+している場合は、変な文字、あるいは四角形として表示されるかもしれない。
+
+==============================================================================
+1. はじめに (Getting started)				*mbyte-first*
+
+Vimのマルチバイト機能を簡単に紹介する。運が良ければ、説明したことがそのまま機
+能して、なんのトラブルもなしにVimを使い始めることができる。そうでない場合は、
+このファイルをさらに読み進める必要がある。Vimのマルチバイト機能を使用できるよ
+うにするために、多少の手間や試行錯誤が必要であっても驚かないで欲しい。不幸なこ
+とに、すべてのシステムはそれぞれ独自の方法でマルチバイト言語を扱っていて、それ
+は実に複雑である。
+
+
+コンパイル
+
+コンパイル済みのVimをすでに持っているなら、|+multi_byte|機能が含まれているかど
+うか確認する。|:version|コマンドで確認できる。
+
+|+multi_byte|が含まれていないときは、Vimを "normal" か "big" か "huge" 構成で
+コンパイルする必要がある。コンパイルの際には、どの機能を含めるのか調整すること
+ができる。ソースディレクトリのINSTALLファイルを参照。
+
+
+ロケール
+
+まずは、ロケールが正く設定されていることを確認する。システムの言語が正しく設定
+されていれば、マルチバイト機能をすぐに使用することができる。設定されてなくて
+も、環境変数$LANGをシェルから設定すれば、大抵は使用できるようになる: >
+
+	setenv LANG ja_JP.EUC
+
+不幸なことに、ロケールの名前はシステムごとに違う。日本語なら "ja_JP.EUCjp" や
+"ja" などがある。現在の設定を確認するには: >
+
+	:language
+
+Vimが内部で使用するロケールを変更するには: >
+
+	:language ja_JP.EUC
+
+その設定が機能しない場合はエラーメッセージが表示される。使用したい言語のロケー
+ル名を見付けるためにいくつか試してみると良い。しかし、Vimは起動時にシステムの
+ロケールを適切に使用するので、シェルでロケールを設定するのが無難である。
+
+詳細は|mbyte-locale|を参照。
+
+
+エンコーディング
+
+ロケールが適切に設定されていれば、オプション 'encoding' はそれに応じた値に設定
+される。それが機能しないときは、自分で設定しなおすこともできる: >
+
+	:set encoding=utf-8
+
+設定できる値の一覧は|encoding-values|を参照。
+
+この設定はVim内部でテキストを保持するためのエンコーディングとして使用される。
+バッファのテキストだけでなく、レジスタや変数のエンコーディングとしても使用され
+る。そのため、'encoding' の設定を変更すると、すでに内部にあるテキストは不正な
+テキストになってしまう。テキストは新しいエンコーディングに変換されず、間違った
+状態で表示される。
+
+'encoding' に設定されたのとは違うエンコーディングのファイルも編集することがで
+きる。Vimはファイルを開くときにエンコーディングを変換し、保存するときに元に戻
+す。'fileencoding'、'fileencodings'、|++enc|を参照。
+
+
+表示とフォント
+
+端末(のエミュレータ)で作業しているなら、端末が、Vimと同じエンコーディングを使
+用することを確認する。違うなら、オプション 'termencoding' を設定して、テキスト
+が自動的に変換されるようにする。
+
+GUIで作業しているなら、'encoding' に設定されたエンコーディングに対応したフォン
+トを選択する必要がある。フォントの設定は難しい。使用しているシステムやロケール
+などに依存している。X-Window環境なら|mbyte-fonts-X11|、MS-Windowsなら
+|mbyte-fonts-MSwin|を参照。
+
+GTK+ 2を使っているなら、今読んでいるこの項目はほとんど読まなくて良い。オプショ
+ン 'guifontset' はもう存在しない。'guifont' を設定するだけですべてうまく機能す
+る。システムにXft2とfontconfigが用意されているなら、選択したフォントが何かのグ
+リフを含んでいないときは、自動的に他の利用可能なフォントが使用される。オプショ
+ン 'guifontwide' はまだサポートされているが通常は必要ない。自動的に選択される
+フォントが適切でない場合のみ設定する必要がある。
+
+X11ではオプション 'guifontset' に複数のフォントを設定して、さまざまな文字を扱
+えるようにする。韓国語での設定例: >
+
+	:set guifontset=k12,r12
+
+代わりに 'guifont' と 'guifontwide' を設定することもできる。'guifont' は半角文
+字、'guifontwide' は全角文字のためのフォントである。'guifontwide' のフォントは
+'guifont' のちょうど2倍の幅でなければならない。
+UTF-8使用時の設定例: >
+
+	:set guifont=-misc-fixed-medium-r-normal-*-18-120-100-100-c-90-iso10646-1
+	:set guifontwide=-misc-fixed-medium-r-normal-*-18-120-100-100-c-180-iso10646-1
+
+'guifont' だけを設定した場合、Vimは 'guifontwide' として使用できるフォントを見
+付けようとする。
+
+
+入力
+
+マルチバイト文字を入力するにはいくつかの方法がある:
+- X11ではXIMを使用できる。|XIM|を参照。
+- MS-WindowsではIMEを使用できる。|IME|を参照。
+- すべてのシステムでキーマップを使用できる。|mbyte-keymap|を参照。
+
+オプション 'iminsert'、'imsearch'、'imcmdline' を使用して、別の入力方法に切り
+替えたり、インプットメソッドを一時的に無効にしたりできる。
+
+==============================================================================
+2.  ロケール (Locale)					*mbyte-locale*
+
+最も簡単なのは、システム全体のロケールを設定することである。しかし、作業してい
+るシェルのみロケールを変更したり、Vimだけが特定のロケールを使用するようにも設
+定できる。
+
+
+ロケールってなに？					*locale*
+
+世界にはたくさんの言語があり、少なくとも、それと同じ数だけ文化や環境がある。地
+域に対応した言語環境のことをロケール(locale)という。ロケールは、言語、文字セッ
+ト、文字の整列順、日付の書式、通貨の書式、などの情報を含んでいる。Vimにとって
+は言語と文字セットの情報だけが重要である。
+
+システムがサポートしているロケールのみ使用することができる。(特にアメリカなど
+では)ほんの少しのロケールしか持っていないシステムもある。そのため、望みの言語
+を使用することができないかもしれない。追加パッケージでロケールをインストールで
+きることもあるので、システムのドキュメントを確認すること。
+
+ロケールがインストールされている場所はシステムによりさまざまである。例えば
+"/usr/share/locale" や "/usr/lib/locale" などにある場合がある。システムのマニュ
+アルのsetlocale()を参照。
+
+ロケールがインストールされているディレクトリを見ればロケールの正しい名前がわか
+る。ほとんどの場合、大文字と小文字は区別されるので、例えば "ja_JP.EUC" と
+"ja_jp.euc" は異なる。いくつかのシステムはlocale.aliasというファイルを持ってい
+て、"nl" のような短い名前を使って "nl_NL.ISO_8859-1" という完全な名前を指定で
+きる。
+
+Note: X-Windowは独自のロケール機構を持っている。そして不幸なことに、他で使用さ
+れているものとは違うロケール名を使用する。これは混乱の元である。Vimにとっては
+関数setlocale()が使用するものが重要であり、それは通常、X-Windowのものではな
+い。何が実際に機能するのか、実験してみる必要があるかもしれない。
+
+							*locale-name*
+ロケール|locale|の名前の(簡単な)書式は:
+
+	言語			(language)
+or	言語_地域		(language_territory)
+or	言語_地域.コードセット	(language_territory.codeset)
+
+地域は国を意味する(あるいはその地方)。コードセットは|charset|のこと。例えば、
+ロケール名 "ja_JP.eucJP" の意味は:
+	ja	言語は日本語(Japanese)
+	JP	国は日本(Japan)
+	eucJP	コードセットはEUC-JP
+同じ意味でも "ja"、"ja_JP.EUC"、"ja_JP.ujis" などの名前のこともある。不幸なこ
+とに、言語、地域、コードセット、を表す名前は統一されておらず、システムによって
+異なる。
+
+ロケール名の例:
+    charset	    language		  locale name ~
+    GB2312	    中国語 (簡体字)	  zh_CN.EUC, zh_CN.GB2312
+    Big5	    中国語 (繁体字)	  zh_TW.BIG5, zh_TW.Big5
+    CNS-11643	    中国語 (繁体字)	  zh_TW
+    EUC-JP	    日本語		  ja, ja_JP.EUC, ja_JP.ujis, ja_JP.eucJP
+    Shift_JIS	    日本語		  ja_JP.SJIS, ja_JP.Shift_JIS
+    EUC-KR	    韓国語		  ko, ko_KR.EUC
+
+
+ロケールを使用する
+
+システム全体のロケールを設定するには、システムのドキュメントを参照。恐らく、
+"/etc" 内の設定ファイルを編集する必要がある。
+
+シェルのロケールを設定するには、環境変数$LANGを設定する。例えば、韓国語を使用
+するとき、ロケール|locale|の名前が "ko" なら、このように設定する:
+
+    sh:    export LANG=ko
+    csh:   setenv LANG ko
+
+これを~/.profileや~/.cshrcに書いておけばいつでも設定された状態にできる。
+
+Vimが使用するロケールだけ設定するには|:language|コマンドを使う: >
+
+	:language ko
+
+これを~/.vimrcに書いておけばいつでも設定された状態にできる。
+
+あるいは、特定の$LANGを設定した状態でVimを起動するには:
+
+   sh:    LANG=ko vim {vim-arguments}
+   csh:	  env LANG=ko vim {vim-arguments}
+
+このために、小さなシェルスクリプトを作成することもできる。
+
+==============================================================================
+3.  エンコーディング (Encoding)		*mbyte-encoding*
+
+Vimはオプション 'encoding' をVim内部で使用するエンコーディングとして使用する。
+バッファ(メモリに読み込まれたファイル)やレジスタ、変数など、すべてのテキストは
+このエンコーディングでメモリに保存される。
+
+							*charset* *codeset*
+文字セット(Charset)とコードセット(codeset)は「エンコーディング」の別名である。
+正確には違うのだが、Vimを使用する上でそれは重要ではない。
+
+文字は1バイト以上のバイトでエンコードされる。すべての文字が1バイトでエンコード
+されるものを私達はシングルバイトエンコーディングと呼ぶ。そのようなエンコーディ
+ングとしては "latin1" がよく使用される。これは256文字を表現することができる。
+それには制御文字も含むので、テキストとして使用できる文字はそれより少ない。
+
+2バイト以上を使って文字を表現するものを、私達はマルチバイトエンコーディングと
+呼ぶ。これは256文字よりもっと多くの文字を表現することができ、ほとんどの東アジ
+アの言語はこれを必要とする。
+
+ほとんどのマルチバイトエンコーディングは127文字(ASCII文字の範囲)を1バイトで表
+現するため、使用する言語に関係なく、ASCII文字だけのテキストをやり取りすること
+が簡単になっている。したがって、間違ったエンコーディングが設定されていても、そ
+れを読むことができるだろう。
+
+							*encoding-names*
+多くのエンコーディングを使用することができる。大きく3つに分類すると:
+
+1   8bit	シングルバイトエンコーディング。256文字を表現できる。アメリカ
+		やヨーロッパで使用される。例: ISO-8859-1 (Latin1)。すべての文
+		字は1つ分の表示幅で表示される。(いわゆる半角)
+
+2   2byte	ダブルバイトエンコーディング。10000以上の文字を表現できる。ア
+		ジアの国々で使用される。例: euc-kr (韓国語)。文字のバイト数と
+		同じ数の表示幅で表示される。(2バイトならいわゆる全角)
+		(euc-jpの1バイト目が0x8eの文字(半角カナ)は例外)
+
+u   Unicode	ユニバーサルエンコーディング。他のエンコーディングを統合するも
+		の。ISO 10646。100万以上の文字を表現できる。例: UTF-8。文字が
+		使用するバイト数と表示幅の関係は複雑。
+
+他のエンコーディングはVim内部のエンコーディングとして使用することはできない
+が、そのようなエンコーディングのファイルを編集することはできる。'fileencoding'
+を参照。
+Note: すべてのエンコーディングは0から128までの文字がASCII文字と同じでなければ
+ならない(EBCDIC用にコンパイルした場合は除く)。
+
+'encoding' に設定できる値:				*encoding-values*
+1   latin1	8ビット文字 (ISO 8859-1 及び cp1252)
+1   iso-8859-n	ISO_8859 シリーズ (n = 2 to 15)
+1   koi8-r	ロシア語
+1   koi8-u	ウクライナ語
+1   macroman    MacRoman (Macintoshのエンコーディング)
+1   8bit-{name} 8ビットエンコーディングのどれか (Vim特有の名前)
+1   cp437	iso-8859-1に類似
+1   cp737	iso-8859-7に類似
+1   cp775	バルト語
+1   cp850	iso-8859-4に類似
+1   cp852	iso-8859-1に類似
+1   cp855	iso-8859-2に類似
+1   cp857	iso-8859-5に類似
+1   cp860	iso-8859-9に類似
+1   cp861	iso-8859-1に類似
+1   cp862	iso-8859-1に類似
+1   cp863	iso-8859-8に類似
+1   cp865	iso-8859-1に類似
+1   cp866	iso-8859-5に類似
+1   cp869	iso-8859-7に類似
+1   cp874	タイ語
+1   cp1250	チェコ語、ポーランド語など
+1   cp1251	キリル語
+1   cp1253	ギリシャ語
+1   cp1254	トルコ語
+1   cp1255	ヘブライ語
+1   cp1256	アラビア語
+1   cp1257	バルト語
+1   cp1258	ベトナム語
+1   cp{number}	MS-Windows: インストールされているシングルバイトのコードページ
+2   cp932	日本語 (Windows only)
+2   euc-jp	日本語 (Unix only)
+2   sjis	日本語 (Unix only)
+2   cp949	韓国語 (Unix and Windows)
+2   euc-kr	韓国語 (Unix only)
+2   cp936	簡体中国語 (Windows only)
+2   euc-cn	簡体中国語 (Unix only)
+2   cp950	繁体中国語 (on Unix alias for big5)
+2   big5	繁体中国語 (on Windows alias for cp950)
+2   euc-tw	繁体中国語 (Unix only)
+2   2byte-{name} Unix: ダブルバイトエンコーディングのどれか (Vim特有の名前)
+2   cp{number}	MS-Windows: インストールされているダブルバイトのコードページ
+u   utf-8	UTF-8にエンコードされた32ビットのUnicode (ISO/IEC 10646-1)
+u   ucs-2	UCS-2にエンコードされた16ビットのUnicode (ISO/IEC 10646-1)
+u   ucs-2le	リトルエンディアンのucs-2
+u   utf-16	ucs-2を拡張してさらに多くの文字を表現できるようにしたもの
+u   utf-16le	リトルエンディアンのutf-16
+u   ucs-4	UCS-4にエンコードされた32ビットのUnicode (ISO/IEC 10646-1)
+u   ucs-4le	リトルエンディアンのucs-4
+
+{name}にはシステムがサポートしているエンコーディングの名前を入れることができ
+る。これらの名前はファイルのエンコーディングとロケールのエンコーディングを変換
+するときにiconv()に渡される。MS-Windowsでは "cp{number}" はコードページ番号で
+ある。
+例: >
+		:set encoding=8bit-cp1252
+		:set encoding=2byte-cp932
+
+MS-Windows のコードページ 1252 は latin1 と良く似ている。実用的な理由から、二
+つは同じエンコーディングとして扱われ、latin1 と呼ばれる。0x80 - 0xA0 の文字を
+表示するかしないかは 'isprint' で設定できる。
+
+いくつかの別名を使用できる。別名は上記の名前のどれかとして解釈される。
+完全ではないが一覧を示す:
+
+1   ansi	latin1と同じ (廃止。後方互換性のために残されている)
+2   japan	日本語: Unixではeuc-jp、MS-Windowsではcp932
+2   korea	韓国語: Unixではeuc-kr、MS-Windowsではcp949
+2   prc		簡体中国語: Unixではeuc-cn、MS-Windowsではcp936
+2   chinese     prcと同じ
+2   taiwan	繁体中国語: Unixではeuc-tw、MS-Windowsではcp950
+u   utf8	utf-8と同じ
+u   unicode	ucs-2と同じ
+u   ucs2be	ucs-2と同じ (ビッグエンディアン)
+u   ucs-2be	ucs-2と同じ (ビッグエンディアン)
+u   ucs-4be	ucs-4と同じ (ビッグエンディアン)
+u   utf-32	ucs-4と同じ
+u   utf-32le	ucs-4leと同じ
+    default     'encoding' のデフォルト値を意味する。環境に依存する。
+
+UCSコードにはバイト順の問題がある。これは扱いが難しいので、可能なときにはいつ
+でもUTF-8を使用した方が良い。指定がなければビッグエンディアンを使用する(最上位
+バイトが最初にくる):
+	    名前	バイト列	文字 ~
+	    ucs-2	      11 22	    1122
+	    ucs-2le	      22 11	    1122
+	    ucs-4	11 22 33 44	11223344
+	    ucs-4le	44 33 22 11	11223344
+
+MS-WindowsはリトルエンディアンのUCS-2を使用するので、MS-Windowsでは主に
+"ucs-2le" を使う。
+
+良く似ているが区別されているエンコーディングがある。Vimはそれらを別のエンコー
+ディングとして扱うため、エンコーディングの変換が行われる。エンコーディングの変
+換ができないときや、よけいな変換を防ぎたいときは、他の名前を使う必要があるかも
+しれない:
+
+	cp932, shift-jis, sjis
+	cp936, euc-cn
+
+							*encoding-table*
+通常、'encoding' はロケールと同じ設定で、'termencoding' は空になっている。その
+場合、文字の入力と表示はそのロケールでエンコードされる。Vim内部でも同じ文字表
+現を使う。
+
+オプション 'encoding' を設定して、Vim内部で使用するエンコーディングを変更する
+ことができるが、入力と表示にはロケールが使用されるので、エンコーディングの変換
+が必要になる。そのときは 'termencoding' がロケールのエンコーディングとして使用
+される。Vimは 'encoding' と 'termencoding' の間でエンコーディングを変換する。
+例: >
+	:let &termencoding = &encoding
+	:set encoding=utf-8
+
+すべてのエンコーディングの組み合わせが利用できるわけではない。下記の表にどのよ
+うなものが機能するか示す。すべての変換が可能なわけではなく、iconv()が常に使用
+できるとは限らないので、利用できないものもある。これはシステムに依存することな
+ので細部まで説明することはできない。
+
+('tenc' は 'termencoding' の省略、'enc' は 'encoding' の省略)
+
+'tenc'	    'enc'	説明 ~
+
+ 8bit	    8bit	機能する。'termencoding' と 'encoding' が違うときは、
+			変換することができないいくつかの文字は入力と表示が正し
+			く行われない。(そのような文字を得るには 'encoding' を
+			'utf-8' に設定する)
+ 8bit      2byte	MS-Windows: インストールされているすべてのコードページ
+			で機能する。8ビットの文字だけ入力することができる。
+			他のシステム: 機能しない。
+ 8bit	   Unicode	機能するが、8ビット文字しか直接入力できない(他の文字は
+			DIGRAPH、キーマップなどで入力できる)。端末には8ビット
+			文字しか表示できない。GUIでは 'guifont' がサポートして
+			いる文字であれば表示できる。
+
+ 2byte	    8bit	機能するが、非ASCII文字を入力するには問題がある。
+ 2byte	   2byte	MS-Windows: インストールされているすべてのコードページ
+			で機能する。'encoding' をロケールと違う設定にすると入
+			力に問題あり。
+			他のシステム: 'termencoding' と 'encoding' が同じ場合
+			のみ機能する。'termencoding' は空にしておいたほうが良
+			い。
+ 2byte	   Unicode	機能する。Vimは入力された文字を変換する。
+
+ Unicode    8bit	機能する。(普通はこうしない)
+ Unicode    2byte	機能しない。
+ Unicode   Unicode	問題なく機能する。(Vim内部ではUnicodeはすべてUTF-8で扱
+			われるため、'termencoding' が空でも同じく機能する)
+
+エンコーディングの変換					*charset-conversion*
+
+Vimはいろいろな場面で自動的にエンコーディングを変換する:
+- ファイルを読み込むとき、'fileencoding' と 'encoding' が違う場合
+- ファイルを書き込むとき、'fileencoding' と 'encoding' が違う場合
+- 文字を表示するとき、'termencoding' と 'encoding' が違う場合
+- 入力を受け取るとき、'termencoding' と 'encoding' が違う場合
+- メッセージを表示するとき、LC_MESSAGESのエンコーディングが 'encoding' と違う
+  場合(gettextのサポートが必要)。
+- Vimスクリプトを読み込むとき、|:scriptencoding|が 'encoding' と違う場合
+- |viminfo|ファイルを読み書きするとき
+ほとんどの変換は|+iconv|の機能が必要である。ファイルを読み書きするときの変換の
+動作はオプション 'charconvert' での指定もできる。
+
+エンコーディングを変換するための便利なユーティリティ:
+    All:	    iconv
+	GNU iconvはほぼすべてのエンコーディングを変換できる。変換の中間層に
+	Unicodeを使用することで、多くの変換を可能にしている。
+	http://www.gnu.org/directory/libiconv.html を参照。
+
+    日本語:	    nkf
+	"Network Kanji code conversion Filter"。最も特徴的なnkfの機能は漢字
+	コードの自動認識である。そのため、ファイルのエンコーディング|charset|
+	を知る必要がない。ISO-2022-JPやShift_JISをEUC-JPに変換するには、Vimか
+	らこのようなコマンドを単に実行すれば良い:
+	    :%!nkf -e
+	Nkfはここから入手できる:
+	http://www.sfc.wide.ad.jp/~max/FreeBSD/ports/distfiles/nkf-1.62.tar.gz
+{訳注: utf-8対応などの機能が追加されているもの
+       http://sourceforge.jp/projects/nkf/ }
+
+    中国語:	    hc
+	"Hanzi Converter"。HcはGBからBig5へ、Big5からGBへ、の変換をする。Hcは
+	ここから入手できる:
+	ftp://ftp.cuhk.hk/pub/chinese/ifcss/software/unix/convert/hc-30.tar.gz
+
+    韓国語:	    hmconv
+	HmconvはE-mailを扱うことに特化した韓国語エンコーディング変換ユーティリ
+	ティである。EUC-KRとISO-2022-KRの間の変換ができる。Hmconvはここから入
+	手できる:
+	ftp://ftp.kaist.ac.kr/pub/hangul/code/hmconv/
+
+    多国語:	    lv
+	Lvは高性能な多言語ファイルビューアである。そして、エンコーディングの変
+	換もできる。サポートしているエンコーディング|charset|は:ISO-2022-CN、
+	ISO-2022-JP、ISO-2022-KR、EUC-CN、EUC-JP、EUC-KR、EUC-TW、UTF-7、
+	UTF-8、ISO-8859シリーズ、Shift_JIS、Big5、HZ。Lvはここから入手できる:
+	http://www.ff.iij4u.or.jp/~nrt/lv/index.html
+
+
+							*mbyte-conversion*
+'encoding' の設定と違うエンコーディングのファイルを読み書きするときは、エンコー
+ディングを変換する必要がある。次の変換がサポートされている:
+- Latin-1 (ISO-8859-1)、UTF-8、UCS-2、UCS-4の間の変換はVimが自前で行う。
+- MS-Windowsでは、'encoding' がUnicodeなら各コードページとの変換は機能する。
+- 'charconvert' による変換。
+- 可能であれば、iconvライブラリを使用して変換することができる。
+	古いバージョンのGNU iconv()では変換が失敗することがある(Vimが用意する
+	バッファよりも、はるかに大きなバッファを要求するため)。
+	その場合は他のiconv()実装を試すこと。
+
+							*iconv-dynamic*
+MS-Windowsでは|+iconv/dyn|機能つきでVimをコンパイルすることができる。そうする
+とVimは "iconv.dll" と "libiconv.dll" を検索するようになる。どちらも見つからな
+い場合でもVimは動作するが、変換ができなくなる。
+
+==============================================================================
+4. 端末の使用 (Using a terminal)			*mbyte-terminal*
+
+GUIではマルチバイト文字を完全にサポートしている。端末を使う場合でも、Vimが使用
+するエンコーディングをサポートしていればマルチバイト文字を扱えるが、少し不便な
+こともある。
+
+マルチバイト(と|XIM|)をサポートしているxtermでVimを使用することができる。他に
+もkterm(Kanji term)、hanterm(韓国語用)、Eterm(Enlightened terminal)、rxvt、な
+どが使用できる。
+
+端末が適切なエンコーディングをサポートしていない場合はオプション 'termencoding'
+を設定する。Vimは入力された文字を 'termencoding' から 'encoding' へと変換する。
+そして表示するときに 'encoding' から 'termencoding' へと変換する。端末のエン
+コーディングに、Vimが取り扱う文字がすべて含まれていない場合、文字の情報が失な
+われてしまう。下記で説明しているxtermのように、Unicodeをサポートしている端末な
+ら問題はない。ほぼすべての文字セットは情報を失なわずにUnicodeに変換できるから
+である。
+
+
+UTF-8をXFree86 xtermで使う				*UTF8-xterm*
+
+{訳注: 最近の環境なら標準で使えるようになっている。}
+
+これは Thomas Dickey によって提供される XFree86 xterm で、どのようにしてUTF-8
+エンコードされた文字を利用するかについての簡単な説明である(文: Markus Kuhn)。
+
+UTF-8 をサポートしている最新の xterm を入手すること:
+
+	http://invisible-island.net/xterm/xterm.html
+
+"./configure --enable-wide-chars ; make" としてコンパイルすること。
+
+また ISO 10646-1 バージョンのフォントを入手すること:
+
+	http://www.cl.cam.ac.uk/~mgk25/download/ucs-fonts.tar.gz
+
+それから README ファイルの記述に従ってフォントをインストールすること。
+
+そして xterm を起動する。 >
+
+  xterm -u8 -fn -misc-fixed-medium-r-semicondensed--13-120-75-75-c-60-iso10646-1
+大きな文字を使うときは: >
+  xterm -u8 -fn -misc-fixed-medium-r-normal--15-140-75-75-c-90-iso10646-1
+
+そうするとUTF-8端末エミュレータが動作するだろう。
+ucs-fonts.tar.gz に含まれている次の両方のデモ・ファイルを試して: >
+
+   cat utf-8-demo.txt
+   vim utf-8-demo.txt
+
+xtermでUTF-8が問題なく動作しているかどうか確認すること。
+
+Vimの 'encoding' を 'utf-8' に設定する必要がある。
+
+==============================================================================
+5.  X11のフォント (Fonts on X11)			*mbyte-fonts-X11*
+
+X11でのフォントの取り扱いは難しい。シングルバイトフォントの名前は長い文字列で
+ある。マルチバイトフォントを使うにはさらにいくつか考慮することがある。
+
+Note: この説明のほとんどはGTK+ 2にとっては関係ない。XLFDを用いたフォントの指定
+はサポートされていない。フォントの設定例は 'guifont' を参照。下記の項|XLFD|
+と|xfontset|は読んでも読まなくても良い。
+
+Vimは固定幅のフォントだけを扱うことができる。プロポーショナルフォントを使用す
+ることはできない。そのため多くの(見た目の良い)フォントは使用できない。しかし、
+メニューやツールチップにはどのフォントでも使用することができる。
+
+Note: 表示と入力は独立している。入力したい言語のインプットメソッドがなくても、
+表示することはできる。
+
+メニューやツールチップは標準設定のフォントでも機能するが、おそらくそれは、あま
+り見た目が良くない。より良いフォントを選ぶには下記の説明を参照。
+
+
+X論理フォント名 (X LOGICAL FONT DESCRIPTION (XLFD))
+							*XLFD*
+XLFDはXのフォント名であり、フォントサイズや文字セットなどの情報を含んでいる。
+名前はこのような書式になっている:
+
+FOUNDRY-FAMILY-WEIGHT-SLANT-WIDTH-STYLE-PIXEL-POINT-X-Y-SPACE-AVE-CR-CE
+
+各フィールドの意味:
+
+- FOUNDRY:  FOUNDRY フィールド。フォントを作成、提供した組織名。
+- FAMILY:   FAMILY_NAME フィールド。フォントファミリーの名前(書体名)
+	    (helvetica、gothic、times、など)
+- WEIGHT:   WEIGHT_NAME フィールド。文字の太さ。(light、medium、bold、など)
+- SLANT:    SLANT フィールド (文字の傾き)
+		r:  Roman (ローマン体。正字体。傾きなし)
+		i:  Italic (イタリック体)
+		o:  Oblique (斜体)
+		ri: Reverse Italic (逆傾きのイタリック体)
+		ro: Reverse Oblique (逆傾きの斜体)
+		ot: Other (その他)
+		number:	Scaled font (傾きの角度)
+- WIDTH:    SETWIDTH_NAME フィールド。文字幅。
+	    (normal、condensed、narrow、double wide)
+- STYLE:    ADD_STYLE_NAME フィールド。フォントの追加情報。
+	    (Serif、Sans Serif、Informal、Decorated、など)
+- PIXEL:    PIXEL_SIZE フィールド。ピクセル単位の文字の高さ。
+- POINT:    POINT_SIZE フィールド。ポイント単位の文字の高さを10倍した値。
+- X:	    RESOLUTION_X フィールド。X軸方向の解像度(1インチあたりのドット数)
+- Y:	    RESOLUTION_Y フィールド。Y軸方向の解像度(1インチあたりのドット数)
+- SPACE:    SPACING フィールド。 (文字送り)
+		p:  Proportional (プロポーショナル、可変幅)
+		m:  Monospaced   (モノスペース、固定幅)
+		c:  CharCell     (文字セル)
+- AVE:	    AVERAGE_WIDTH フィールド。ピクセル単位の文字幅の平均値を10倍した値。
+- CR:	    CHARSET_REGISTRY フィールド。文字セットの名前。
+- CE:	    CHARSET_ENCODING フィールド。文字セットの追加情報。JIS X 0208のよ
+	    うな文字セットは、このフィールドが0ならコードポイントはGLと同じ値
+	    を持つ。1ならGRと同じ。
+{訳注: jisx0208の場合、CHARSET_ENCODING=0なら7ビットJISコード、1ならEUC-JP、の
+       番号で、文字がフォントに収録されている。}
+
+例えば、JIS X 0208に対応する16ドットのフォントは次のように書く:
+    -misc-fixed-medium-r-normal--16-110-100-100-c-160-jisx0208.1990-0
+
+
+X フォントセット (X FONTSET)
+						*fontset* *xfontset*
+シングルバイト文字セットは一般的に一つのフォントに関連付けられている。マルチバ
+イト文字セットはほとんどの場合、複数のフォントの組合せを使用する。そして表示す
+る文字に合ったフォントが選択されて使用される。そのようなフォントの集合をフォン
+トセットと呼ぶ。
+
+ロケールによって必要なフォントは異なる。X-Windowはロケールに必要な文字セットの
+表を管理している。ロケールが必要とする全てのフォントをオプション 'guifontset'
+に設定しなければならない。
+
+NOTE: 'encoding' が、ロケールとは違う文字セットに設定されていても、フォントセッ
+トは常にロケールを使用する。そういう場合は 'guifontset' ではなく 'guifont' と
+'guifontwide' を使用する。
+
+例:
+    |charset| language		    "groups of characters" ~
+    GB2312    簡体中国語	    ISO-8859-1 and GB 2312
+    Big5      繁体中国語	    ISO-8859-1 and Big5
+    CNS-11643 繁体中国語	    ISO-8859-1, CNS 11643-1 and CNS 11643-2
+    EUC-JP    日本語		    JIS X 0201 and JIS X 0208
+    EUC-KR    韓国語		    ISO-8859-1 and KS C 5601 (KS X 1001)
+
+xlsfontsコマンドを使ってフォントを検索できる。例えば、KS C 5601のフォントを探
+すには: >
+    xlsfonts | grep ksc5601
+
+これは複雑で混乱しやすいことなので、分からないことはX-Windowのドキュメントで調
+べること。
+
+						*base_font_name_list*
+使用したいフォントの名前を見付けたらオプション 'guifontset' を設定する。設定は
+フォントの名前をコンマで区切って指定する。
+
+例えば、ja_JP.eucJPロケールの場合、JIS X 0201とJIS X 0208が必要である。次のよ
+うに文字セットを明示的に指定してフォントを設定する: >
+
+ :set guifontset=-misc-fixed-medium-r-normal--14-130-75-75-c-140-jisx0208.1983-0,
+	\-misc-fixed-medium-r-normal--14-130-75-75-c-70-jisx0201.1976-0
+
+文字セットの名前を省略した場合、X-Windowが、ロケールに必要なフォントを選択す
+る。例: >
+
+ :set guifontset=-misc-fixed-medium-r-normal--14-130-75-75-c-140,
+	\-misc-fixed-medium-r-normal--14-130-75-75-c-70
+
+基本となるフォントの名前を一つだけ指定して、利用可能なすべてのフォントの中から
+選択させることもできる。例: >
+
+ :set guifontset=-misc-fixed-medium-r-normal--14-*
+
+フォントの別名を指定することもできる。フォントディレクトリ(例えば
+/usr/X11R6/lib/X11/fonts/)のファイルfonts.aliasを見ること。例: >
+
+ :set guifontset=k14,r14
+<
+							*E253*
+Note 東アジアのフォントは、基本的には正四角形の範囲で表示される。ラテンフォン
+トと東アジアのフォントを組み合わせた場合、東アジアのフォントはラテンフォントの
+2倍の幅で表示される。
+
+'guifontset' が空の場合、コマンド|:highlight|の "font" 引数はフォントセットと
+して解釈される。例えばこのように使用する: >
+	:hi Comment font=english_font,your_font
+間違った "font" 引数を使用するとエラーメッセージが表示される。事前に
+'guifontset' を設定して確認すること。
+
+
+リソースファイルを使う (USING RESOURCE FILES)
+
+'guifontset' を設定する代わりにX11のリソースを設定すれば、Vimはそれを使用する。
+これはXのリソースファイルの働きを知っている人向けである。
+
+MotifとAthenaではファイル$HOME/.Xdefaultsにこの3行を追加する:
+
+	Vim.font: |base_font_name_list|
+	Vim*fontSet: |base_font_name_list|
+	Vim*fontList: your_language_font
+
+Note: Vim.font はテキストエリアの設定
+      Vim*fontSet はメニューの設定
+      Vim*fontList はメニューの設定(Motif GUI用)
+
+例えば、14ドットの日本語フォントを使うには: >
+
+	Vim.font: -misc-fixed-medium-r-normal--14-*
+	Vim*fontSet: -misc-fixed-medium-r-normal--14-*
+	Vim*fontList: -misc-fixed-medium-r-normal--14-*
+<
+もしくは: >
+
+	Vim*font: k14,r14
+	Vim*fontSet: k14,r14
+	Vim*fontList: k14,r14
+<
+この設定をすぐに反映させるには >
+
+	xrdb -merge ~/.Xdefaults
+
+もしくはXサーバを停止して再起動する。
+
+
+GTK+版のVimは.Xdefaultsを使わず~/.gtkrcの設定を使用する。初期設定は恐らくうま
+く機能するが、メニューのフォントは変更した方がいいかもしれない。例: >
+
+	style "default"
+	{
+		fontset="-*-*-medium-r-normal--14-*-*-*-c-*-*-*"
+	}
+	widget_class "*" style "default"
+
+==============================================================================
+6.  MS-Windowsのフォント (Fonts on MS-Windows)	*mbyte-fonts-MSwin*
+
+最も簡単なのは、フォント選択ダイアロクを使ってフォントを選択して、試してみるこ
+とである。メニューの "Edit/Select Font..." (編集/フォント設定)を使用する。ちょ
+うどいいフォントを見付けたら、このコマンドでフォントの名前を確認する: >
+
+	:set guifont
+
+そして、'guifont' を設定するコマンドを|gvimrc|に追加する: >
+
+	:set guifont=courier_new:h12
+
+==============================================================================
+7.  X11での入力 (Input on X11)			*mbyte-XIM*
+
+X INPUT METHOD (XIM) の基礎知識			*XIM* *xim* *x-input-method*
+
+XIMはXの国際化入力機構である。Xlibユニット型と|IM-server| (Input-Method
+server) 型の2種類がある。|IM-server|型はCJK(日中韓)で使われるような複雑な入力
+方式に適している。
+
+- インプットメソッドサーバ (IM-server)
+							*IM-server*
+  |IM-server|型の入力方式では、FrontEndシステムかBackEndシステムのどちらかの方
+  法で入力イベントを処理する。FrontEndシステムでは、まず|IM-server|が入力イベ
+  ントを取得し、そして入力の結果を|IM-server|からアプリケーションへ渡す。
+  BackEndシステムではその逆の順番で処理される。MS WindowsはBackEndシステムを採
+  用している。Xでは、ほとんどの|IM-server|がFrontEndシステムを採用している。
+  BackEndシステムには通信のオーバーヘッドが大きく掛かるというデメリットはある
+  が、アプリケーションに制限を加えず、安全に同期することができる。
+
+  たとえばxwnmoとkinput2という日本語インプットメソッドサーバがあるが、両方とも
+  FrontEndシステムである。xwnmoはWnn(下記参照)と一緒に提供されている。kinput2
+  はここから入手できる: ftp://ftp.sra.co.jp/pub/x11/kinput2/
+
+  中国語用には、"xcin" というよくできたXIMサーバがあり、簡体中国語と繁体中国語
+  の両方を入力できる。適切な入力テーブルを作成すれば、他のロケールも受け付け
+  る。Xcinはここから入手できる: http://cle.linux.org.tw/xcin/
+  他にはscim: http://scim.freedesktop.org/ と fcitx:
+  http://www.fcitx.org/ がある。
+
+- 変換サーバ (Conversion Server)
+							*conversion-server*
+  いくつかのシステムではさらに、変換サーバが必要である。ほとんどの日本語イン
+  プットメソッドサーバは仮名漢字変換サーバを必要とする。中国語の入力では、入力
+  方式に依存する。いくつかの方式では、PinYinやZhuYinからHanZiへの変換サーバが
+  必要である。韓国語の入力では、Hanjaを入力するには、Hangul-Hanja変換サーバが
+  必要である。
+
+  例えば、日本語の入力は2段階に分けられる。最初に平仮名を入力し、次に漢字へ変
+  換する。多くの漢字(JIS X 0208には6349文字が定義されている)と76文字の平仮名が
+  あるため、まず平仮名を入力し、必要なら、それを漢字や片仮名に変換する。仮名漢
+  字変換サーバにはjserver(Wnnと一緒に提供されている。下記参照)やcannaなどがあ
+  る。Cannaはここから入手できる:
+  http://canna.sourceforge.jp/
+
+Wnn4.2というよくできた入力システムがある。Wnn4.2は以下のものを含んでいる。
+    xwnmo (|IM-server|)
+    jserver (日本語仮名漢字変換サーバ)
+    cserver (中国語のPinYin、ZhuYinから簡体漢字への変換サーバ)
+    tserver (中国語のPinYin、ZhuYinから繁体漢字への変換サーバ)
+    kserver (Hangul-Hanja変換サーバ)
+Wnn4.2は多くのシステムで動作し、インターネットのさまざまな場所で入手することが
+できる。あなたのシステム用のRPMやportを使用すること。
+
+
+- 入力スタイル (Input Style)
+							*xim-input-style*
+  CJK(日中韓語)を入力するとき、4つの表示領域がある:
+      1. 入力途中の文字を表示する領域
+      2. 現在の入力モードを表示する領域
+      3. 変換候補を表示する領域
+      4. その他のツールを表示する領域
+
+  3番目の表示領域は変換をするときに必要である。たとえば、日本語の入力では、同
+  じ発音の漢字が複数あるので、同じ平仮名が複数の漢字に対応する。
+
+  1番目と2番目の表示領域はXの国際化入力でそれぞれ "Preedit Area"、"Status Area"
+  と定義されている。3番目と4番目の表示領域は定義されておらず、|IM-server|に任
+  されている。国際化入力ではPreedit AreaとStatus Areaの組み合せで4つの入力スタ
+  イルが定義されている: |OnTheSpot| |OffTheSpot| |OverTheSpot| |Root|。
+
+  現在、GUI Vimは|OverTheSpot|、|OffTheSpot|、|Root|の3つのスタイルをサポート
+  している。
+
+*.  on-the-spot						*OnTheSpot*
+    Preedit AreaとStatus Areaはアプリケーション領域にクライアントアプリケー
+    ションによって表示される。クライアントアプリケーションはテキストを挿入する
+    位置に未確定文字をすべて表示するように|IM-server|から指示される。クライア
+    ントは、コールバック関数を登録して、未確定文字の入力中にインプットメソッド
+    から呼び出してもらう。
+*.  over-the-spot					*OverTheSpot*
+    Status Areaはアプリケーション領域の固定位置に作成される。Vimの場合は、ス
+    テータスライン付近である。Preedit Areaはアプリケーションの入力している位置
+    に作成される。インプットメソッドは、テキストが挿入される位置にあるウィンド
+    ウに未確定文字を表示する。
+*.  off-the-spot					*OffTheSpot*
+    Preedit AreaとStatus Areaはアプリケーション領域に表示される。Vimの場合は、
+    ステータスライン付近である。クライアントアプリケーションは表示ウィンドウを
+    提供し、インプットメソッドが直接そこに未確定文字を表示する。
+*.  root-window						*Root*
+    Preedit AreaとStatus Areaはアプリケーションの外側に表示される。インプット
+    メソッドは別に用意した自分のウィンドウに未確定文字をすべて表示する。
+
+
+XIMを使用する (USING XIM)	*multibyte-input* *E284* *E286* *E287* *E288*
+				*E285* *E289*
+
+Note 表示と入力は独立している。インプットメソッドがなくてもあなたの言語を見る
+ことができる。しかし、表示方法とインプットメソッドが合わないと、テキストは間
+違って表示される。
+
+	Note: 'guifontset' を設定しないとインプットメソッドを使用できない。従っ
+	て、ラテン語のユーザも、インプットメソッドを使用するなら、'guifontset'
+	を設定しなければならない。
+
+あなたの言語を入力するには、その言語をサポートしているインプットメソッドサーバ
+|IM-server|を実行する。必要なら変換サーバ|conversion-server|も実行する。
+
+次の3行を~/.Xdefaultsファイルに書き込む。これは|XIM|を使用するすべてのXアプリ
+ケーションに共通する設定である。すでに|XIM|を使用している場合は、これを読み飛
+ばすこと。 >
+
+	*international: True
+	*.inputMethod: your_input_server_name
+	*.preeditType: your_input_style
+<
+input_server_name	インプットサーバ|IM-server|の名前。(|IM-server|のマ
+			ニュアルを確認すること)。
+your_input_style	|OverTheSpot|、|OffTheSpot|、|Root|のどれか。
+			|xim-input-style|を参照。
+
+X11R6を使用している場合、*internationalは必要ない。
+また、*.inputMethodと*.preeditTypeの指定は任意。
+
+kinput2を|IM-server|として使う場合の例: >
+
+	*international: True
+	*.inputMethod: kinput2
+	*.preeditType: OverTheSpot
+<
+|OverTheSpot|を使用する場合、GUI Vimはノーマルモードでも常にインプットメソッド
+サーバに接続する。そのため "f" や "r" コマンドであなたの言語を入力することがで
+きる。しかし、他の入力スタイルの場合は、GUI Vimはノーマルモードのときにはイン
+プットメソッドサーバに接続しない。
+
+インプットメソッドサーバが|OverTheSpot|をサポートしていない場合、"f" や "r" な
+どのノーマルモードコマンドであなたの言語を使用するには、ローカライズされた
+xtermか、|XIM|をサポートしたxtermを使用する。
+
+必要なら、環境変数XMODIFIERSを設定する:
+
+	sh:  export XMODIFIERS="@im=input_server_name"
+	csh: setenv XMODIFIERS "@im=input_server_name"
+
+インプットメソッドサーバにkinput2を使用する場合のshでの設定例: >
+
+	export XMODIFIERS="@im=kinput2"
+<
+
+XIMの制御 (FULLY CONTROLLED XIM)
+
+MS-WindowsのIME(|multibyte-ime|参照)のように、XIMを制御することができる。
+この機能は現在GTK GUIでのみ利用可能。
+
+XIMを制御するには、使用しているインプットメソッドのトグルキーを、オプション
+'imactivatekey' に設定する必要がある。たとえば、インプットメソッドサーバに
+kinput2 + cannaの組み合せを使用している場合、トグルキーは恐らくShift+Spaceなの
+で、このように設定する: >
+
+	:set imactivatekey=S-space
+
+設定の書式は 'imactivatekey' を参照。
+
+==============================================================================
+8.  MS-Windowsでの入力 (Input on MS-Windows)		*mbyte-IME*
+
+(Windows IME support)				*multibyte-ime* *IME*
+
+{WindowsのGUI環境で|+multi_byte_ime|が有効な場合のみ利用可能}
+
+Windowsではマルチバイト文字の入力に Input Method Editor (IME) を使うことができ
+る。IMEを使ったテキストの入力では、IMEの状態をオンにしたりオフにしたり、何度も
+何度も切り替えなければならない。そうしないと、IMEの状態がオンのときには、キー
+入力はすべてIMEに取られてしまうので、'j' や 'k' などほぼすべてのキーを、直接
+Vimに入力することができない。
+
+|+multi_byte_ime|機能はそれを手助けし、IMEを手動で切り替える手間を減少させる。
+マルチバイトテキストを編集しているときでも、ノーマルモードでIMEを必要とするこ
+とはほとんどない。そこで、ESCで挿入モードを抜けるときに、VimはIMEの状態を記録
+してから、IMEを強制的にオフにする。そして、次に挿入モードに入ったときに自動的
+に、記録しておいた状態に戻す。
+
+これは挿入モードとノーマルモードの間だけでなく、コマンドラインや検索コマンドの
+入力時や置換モードでも同じである。
+オプション 'iminsert'、'imsearch'、'imcmdline' を設定して、それぞれ別々に入力
+方法を選択したり、無効にしたりできる。
+
+IMEについて (WHAT IS IME)
+    IMEは東アジア向けのWindowsの一部で、マルチバイト文字を入力するためのもので
+    ある。 英語などの言語用のWindowsにはIMEは搭載されていない(普通は必要ない)。
+    しかし、Microsoft Global IMEというものがある。これはInternet Explorer4.0以
+    上に含まれている。詳しいことは下記のURLを参照。
+
+GLOBAL IMEについて (WHAT IS GLOBAL IME)			*global-ime*
+    Global IMEはWindows 95、Windows 98、Windows NT 4.0のどの言語用のバージョン
+    でも利用可能で、中国語、日本語、韓国語のテキストをVimに入力することができ
+    る。
+    Windows 2000やXpでも問題なく使用できる(ダウンロードは必要ない)。
+    Windows 2000 ProfessionalにはGlobal IMEが組み込まれており、コントロールパ
+    ネルの地域と言語のオプション/言語タブ/テキストサービスと入力言語の詳細ボタ
+    ンから入力言語を追加できる。
+    Global IMEの詳細は下記のURLを参照。リンク先にはGlobal IMEの各国語用のバー
+    ジョンもある。
+
+    - Global IME detailed information.
+	http://search.microsoft.com/results.aspx?q=global+ime
+
+    - Active Input Method Manager (Global IME)
+	http://msdn.microsoft.com/en-us/library/aa741221(v=VS.85).aspx
+
+    Global IMEのサポートは実験的な機能である。
+
+NOTE: IMEを使用するには入力したい言語をシステムに追加する必要がある。正確な設
+定方法はWindowsのバージョンによって違う。Windows XPの場合は:
+1. コントロールパネルを開く
+2. 地域と言語のオプションを開く
+3. 言語タブを選択
+4. [テキストサービスと入力言語]エリアの詳細ボタンをクリック
+5. 追加ボタンをクリック
+
+
+IMEやXIMがオンのときのカーソルの色				*CursorIM*
+    IMEの状態に応じてカーソルの色を変えることができる。通常、IMEの状態はデスク
+    トップの隅(やタスクバー)に表示されているが、これはあまり確認しやすくないの
+    で、この機能が役に立つ。
+    これはXIMでも同じように機能する。
+
+    強調グループのCursorIMを設定して、IMEの状態がオンのときの色を選べる。
+    たとえば、次の行を|gvimrc|に追加する: >
+
+	if has('multi_byte_ime')
+	    highlight Cursor guifg=NONE guibg=Green
+	    highlight CursorIM guifg=NONE guibg=Purple
+	endif
+<
+    これで、IMEがオフならカーソルは緑、オンなら紫になる。
+
+==============================================================================
+9. キーマップでの入力 (Input with a keymap)		*mbyte-keymap*
+
+キーボードから入力できない文字がある場合にはオプション 'keymap' を使う。一つ以
+上の(英語の)文字を入力することで、別の(非英語の)文字を入力することができる。こ
+の機能はテキストを入力するときだけ作用する。Vimコマンドを入力するときには作用
+しない。そのため、キーボードの設定を切り替える手間がない。
+
+オプション 'keymap' に、使用したいキーマップファイルを指定する。ファイルの名前
+は次の二つのうちのどちらか:
+
+	keymap/{keymap}_{encoding}.vim
+	keymap/{keymap}.vim
+
+{keymap}はオプション 'keymap' に設定する値、{encoding}はオプション 'encoding'
+の値。{encoding}付きのファイル名が優先して使われる。
+
+キーマップファイルを探すために 'runtimepath' が使われる。利用可能なすべてのキー
+マップファイルを一覧するには、このようにする: >
+	:echo globpath(&rtp, "keymap/*.vim")
+
+挿入モードとコマンドラインモードでは、CTRL-^を使ってキーマップを使用するかどう
+かを切り換えることができる。|i_CTRL-^| |c_CTRL-^|
+挿入モードでは、キーマップの状態はオプション 'iminsert' に記憶される。挿入モー
+ドから抜けて、再び挿入モードに入ったときに、以前の状態が使われる。|f| や |r|
+などの一つの文字を引数に取るコマンドでも同じ値が使われる。
+コマンドラインモードでは、キーマップの状態は記憶されない。コマンドラインモー
+ドに入るとまず、(ASCII文字の)Exコマンドを入力するはずだからである。
+検索パターンの入力では、オプション 'imsearch' が使われる。'iminsert' と設定を
+共有するように設定することもできる。
+								*lCursor*
+キーマップ(言語マップ)を使用中に、GUIカーソルの色を変えることができる。もし
+も、非標準な背景色を使用していた場合にカーソルが見えなくなることがないように、
+初期状態ではこの機能は無効になっている。次の例では、カーソルの色が明るくなるよ
+うにしている: >
+	:highlight Cursor guifg=NONE guibg=Green
+	:highlight lCursor guifg=NONE guibg=Cyan
+<
+		*keymap-file-format* *:loadk* *:loadkeymap* *E105* *E791*
+キーマップファイルはこのような構成になっている: >
+
+	" Maintainer:	name <email@address>
+	" Last Changed:	2001 Jan 1
+
+	let b:keymap_name = "short"
+
+	loadkeymap
+	a	A
+	b	B	comment
+
+「"」で始まる行はコメントなので無視される。空白行も無視される。マップを定義す
+る行には役に立つコメントを書くことができる。
+
+"b:keymap_name" にはステータスラインに表示される短い名前を設定できる。'keymap'
+の値は、言語の違いやキーボードやエンコーディングの違いを区別するために長くなり
+がちだが、ステータスラインに表示できる文字には限りがあるので、この変数を使う。
+
+実際のマップは "loadkeymap" 以下に書く。上の例では、"a" は "A" に、"b" は "B"
+にマップされる。このように、一番目のものが二番目にマップされる。そして、ファイ
+ルの末尾まで同じように処理される。
+このように設定したマップは、|:lnoremap|に "<buffer>" を指定したバッファローカ
+ルなマップとまったく同じである。
+それはこのコマンドで確認できる: >
+	:lmap
+二つの項目は空白で区切る。マップに空白を含めるには、"<Tab>"、"<Space>" という
+特別な表記を使う。二つの項目の文字の長さは、合わせて200バイトを超えてはいけな
+い。
+
+一番目の項目に複数の文字を指定することができる。これはデッドキーのような作用を
+する。例: >
+	'a	á
+クォートの入力があったとき、次に "a" が入力されるかどうかわからないので、Vimは
+次の文字が入力されるまで待機する。シングルクォートを入力できるようにするには、
+次の行も加える: >
+	''	'
+マップは|:lnoremap|で定義されるので、結果のクォート文字は、他のマップの開始文
+字としては扱われない。
+{訳注: > シングルクォートを入力できるようにするには...
+       'timeout' も参照。}
+"accents" キーマップはこれを使用する。				*keymap-accents*
+
+最初の列は |<>| 表記で書くこともできる:
+	<C-c>		Ctrl-C
+	<A-c>		Alt-c
+	<A-C>		Alt-C
+Note: Alt マッピングは機能しないことがある。それはキーボードや端末に依存する。
+
+二番目の項目に複数の文字を指定することもできるが、一般的ではない。しか
+し、文字を指定するのにいろいろな方法を使用して構わない: >
+	A	a		literal character
+	A	<char-97>	decimal value
+	A	<char-0x61>	hexadecimal value
+	A	<char-0141>	octal value
+	x	<Space>		special key name
+
+文字は現在の 'encoding' と同じエンコーディングであるものとして扱われる。
+":scriptencoding" でリテラル文字のエンコーディングを指定することができるが、
+<char->表記の文字には影響しない。なぜなら、キーマップファイルのエンコーディン
+グが変換されるのであって、<char->の結果の文字は変換されないからである。
+
+"loadkeymap" 以下の行は 'cpoptions' に "C" を設定した状態で解釈される。つまり、
+行の継続は使用されない。バックスラッシュは特殊文字として扱われる。例: >
+
+	" a comment line
+	\"	x	" を x へマップ
+	\\	y	\ を y へマップ
+
+他の人にも便利なキーマップファイルを作成したら、Vimの配布物に含めるために、Vim
+のメンテナに提出することを検討していただきたい:
+<maintainer@vim.org>
+
+
+ヘブライ語 キーマップ (HEBREW KEYMAP)			*keymap-hebrew*
+
+このファイルはUTF-8とCP1255のエンコーディングで利用可能な文字と、その文字を入
+力するためのキーマップを説明している:
+
+glyph   encoding	   keymap ~
+Char   utf-8 cp1255  hebrew  hebrewp  name ~
+א    0x5d0  0xe0     t	      a     'alef
+ב    0x5d1  0xe1     c	      b     bet
+ג    0x5d2  0xe2     d	      g     gimel
+ד    0x5d3  0xe3     s	      d     dalet
+ה    0x5d4  0xe4     v	      h     he
+ו    0x5d5  0xe5     u	      v     vav
+ז    0x5d6  0xe6     z	      z     zayin
+ח    0x5d7  0xe7     j	      j     het
+ט    0x5d8  0xe8     y	      T     tet
+י    0x5d9  0xe9     h	      y     yod
+ך    0x5da  0xea     l	      K     kaf sofit
+כ    0x5db  0xeb     f	      k     kaf
+ל    0x5dc  0xec     k	      l     lamed
+ם    0x5dd  0xed     o	      M     mem sofit
+מ    0x5de  0xee     n	      m     mem
+ן    0x5df  0xef     i	      N     nun sofit
+נ    0x5e0  0xf0     b	      n     nun
+ס    0x5e1  0xf1     x	      s     samech
+ע    0x5e2  0xf2     g	      u     `ayin
+ף    0x5e3  0xf3     ;	      P     pe sofit
+פ    0x5e4  0xf4     p	      p     pe
+ץ    0x5e5  0xf5     .	      X     tsadi sofit
+צ    0x5e6  0xf6     m	      x     tsadi
+ק    0x5e7  0xf7     e	      q     qof
+ר    0x5e8  0xf8     r	      r     resh
+ש    0x5e9  0xf9     a	      w     shin
+ת    0x5ea  0xfa     ,	      t     tav
+
+Vowel marks and special punctuation:
+הְ    0x5b0  0xc0     A:      A:   sheva
+הֱ    0x5b1  0xc1     HE      HE   hataf segol
+הֲ    0x5b2  0xc2     HA      HA   hataf patah
+הֳ    0x5b3  0xc3     HO      HO   hataf qamats
+הִ    0x5b4  0xc4     I       I    hiriq
+הֵ    0x5b5  0xc5     AY      AY   tsere
+הֶ    0x5b6  0xc6     E       E    segol
+הַ    0x5b7  0xc7     AA      AA   patah
+הָ    0x5b8  0xc8     AO      AO   qamats
+הֹ    0x5b9  0xc9     O       O    holam
+הֻ    0x5bb  0xcb     U       U    qubuts
+כּ    0x5bc  0xcc     D       D    dagesh
+הֽ    0x5bd  0xcd     ]T      ]T   meteg
+ה־   0x5be  0xce     ]Q      ]Q   maqaf
+בֿ    0x5bf  0xcf     ]R      ]R   rafe
+ב׀   0x5c0  0xd0     ]p      ]p   paseq
+שׁ    0x5c1  0xd1     SR      SR   shin-dot
+שׂ    0x5c2  0xd2     SL      SL   sin-dot
+׃    0x5c3  0xd3     ]P      ]P   sof-pasuq
+װ    0x5f0  0xd4     VV      VV   double-vav
+ױ    0x5f1  0xd5     VY      VY   vav-yod
+ײ    0x5f2  0xd6     YY      YY   yod-yod
+
+The following are only available in utf-8
+
+Cantillation marks:
+glyph
+Char utf-8 hebrew name
+ב֑    0x591   C:   etnahta
+ב֒    0x592   Cs   segol
+ב֓    0x593   CS   shalshelet
+ב֔    0x594   Cz   zaqef qatan
+ב֕    0x595   CZ   zaqef gadol
+ב֖    0x596   Ct   tipeha
+ב֗    0x597   Cr   revia
+ב֘    0x598   Cq   zarqa
+ב֙    0x599   Cp   pashta
+ב֚    0x59a   C!   yetiv
+ב֛    0x59b   Cv   tevir
+ב֜    0x59c   Cg   geresh
+ב֝    0x59d   C*   geresh qadim
+ב֞    0x59e   CG   gershayim
+ב֟    0x59f   CP   qarnei-parah
+ב֪    0x5aa   Cy   yerach-ben-yomo
+ב֫    0x5ab   Co   ole
+ב֬    0x5ac   Ci   iluy
+ב֭    0x5ad   Cd   dehi
+ב֮    0x5ae   Cn   zinor
+ב֯    0x5af   CC   masora circle
+
+Combining forms:
+ﬠ    0xfb20  X`   Alternative `ayin
+ﬡ    0xfb21  X'   Alternative 'alef
+ﬢ    0xfb22  X-d  Alternative dalet
+ﬣ    0xfb23  X-h  Alternative he
+ﬤ    0xfb24  X-k  Alternative kaf
+ﬥ    0xfb25  X-l  Alternative lamed
+ﬦ    0xfb26  X-m  Alternative mem-sofit
+ﬧ    0xfb27  X-r  Alternative resh
+ﬨ    0xfb28  X-t  Alternative tav
+﬩    0xfb29  X-+  Alternative plus
+שׁ    0xfb2a  XW   shin+shin-dot
+שׂ    0xfb2b  Xw   shin+sin-dot
+שּׁ    0xfb2c  X..W  shin+shin-dot+dagesh
+שּׂ    0xfb2d  X..w  shin+sin-dot+dagesh
+אַ    0xfb2e  XA   alef+patah
+אָ    0xfb2f  XO   alef+qamats
+אּ    0xfb30  XI   alef+hiriq (mapiq)
+בּ    0xfb31  X.b  bet+dagesh
+גּ    0xfb32  X.g  gimel+dagesh
+דּ    0xfb33  X.d  dalet+dagesh
+הּ    0xfb34  X.h  he+dagesh
+וּ    0xfb35  Xu  vav+dagesh
+זּ    0xfb36  X.z  zayin+dagesh
+טּ    0xfb38  X.T  tet+dagesh
+יּ    0xfb39  X.y  yud+dagesh
+ךּ    0xfb3a  X.K  kaf sofit+dagesh
+כּ    0xfb3b  X.k  kaf+dagesh
+לּ    0xfb3c  X.l  lamed+dagesh
+מּ    0xfb3e  X.m  mem+dagesh
+נּ    0xfb40  X.n  nun+dagesh
+סּ    0xfb41  X.s  samech+dagesh
+ףּ    0xfb43  X.P  pe sofit+dagesh
+פּ    0xfb44  X.p  pe+dagesh
+צּ    0xfb46  X.x  tsadi+dagesh
+קּ    0xfb47  X.q  qof+dagesh
+רּ    0xfb48  X.r  resh+dagesh
+שּ    0xfb49  X.w  shin+dagesh
+תּ    0xfb4a  X.t  tav+dagesh
+וֹ    0xfb4b  Xo   vav+holam
+בֿ    0xfb4c  XRb  bet+rafe
+כֿ    0xfb4d  XRk  kaf+rafe
+פֿ    0xfb4e  XRp  pe+rafe
+ﭏ    0xfb4f  Xal  alef-lamed
+
+==============================================================================
+10. UTF-8を使う (Using UTF-8)		*mbyte-utf8* *UTF-8* *utf-8* *utf8*
+							*Unicode* *unicode*
+Unicodeは、他の文字セットをすべて含むように設計された。そのため、どんな言語の
+テキストでもUnicodeを使って書くことができる(希少な言語を除く)。そして、他のエ
+ンコーディングでは混在させることが不可能な言語でも、一つのファイルに混在させる
+ことが可能である。
+
+Unicodeにはいくつかのエンコード法がある。もっとも一般的なのは、1文字を 1 また
+は複数バイトで表わすUTF-8であり、ASCII と後方互換性がある。MS-Windowsでは
+UTF-16 も使われる(以前は UCS-2 と呼ばれていた)。こちらは 16 ビットを基本単位と
+する。Vimはこれらのエンコーディングすべてをサポートしているが、Vim で Unicode
+を使う場合、内部では常に UTF-8 が使われている。
+
+Vimは幅広くUTF-8をサポートしており、それは以下の環境で機能する:
+- utf-8サポートが有効になっているxterm
+- Athena、Motif、GTK、のGUI
+- MS-Windows GUI
+- その他いくつかのプラットフォーム
+
+全角文字は 'guifontwide' や 'guifontset' を使うと最もうまく表示することができ
+る。'guifont' だけを設定している場合は、全角文字は通常の幅で描画され、足りない
+幅が空白で埋められる。Note: オプション 'guifontset' はGTK+ 2 GUIでは使用しな
+い。
+
+							*bom-bytes*
+ファイルを読み込むとき、BOM (Byte Order Mark)があれば、そのUnicodeエンコーディ
+ングを判別するのに使われる:
+	EF BB BF     utf-8
+	FE FF        utf-16 big endian
+	FF FE        utf-16 little endian
+	00 00 FE FF  utf-32 big endian
+	FF FE 00 00  utf-32 little endian
+
+UTF-8 が推奨されているエンコーディングである。UTF-16 と UTF-32 を区別するのは
+難しい。Windows ではUTF-16 がしばしば使われる。UTF-32 はファイルフォーマットと
+しては広く使われていない。
+
+
+					*mbyte-combining* *mbyte-composing*
+合成文字や結合文字を使うと、先行文字の意味を変えることができる。結合文字は先行
+文字に重ねて描画される。
+デフォルトで2文字までの結合文字を扱うことができる。この値はオプション
+'maxcombine' で変更できる。
+テキストの編集中は、合成文字は先行文字の一部として扱われる。例えば、初期設定で
+は、"x" は文字を削除するときに、連なる合成文字をいっぺんに削除する。オプション
+'delcombine' がオンのときには、'x' は1回に1文字の結合文字を削除して、最後に基
+底文字を削除する。入力するときには、まず1文字目を入力して、そして合成文字を入
+力する。すると、文字が合成される。"r" コマンドを使って結合文字を入力することは
+できない。結合文字がさらに入力されるかどうか知ることができないからである。代わ
+りに "R" を使う。
+{訳注: combining character 結合文字
+       composing character 合成文字
+       base character      基底文字
+       preceding character 先行文字？}
+
+UTF-8として不正なバイト列はそれぞれ1バイトの文字として扱われ、<xx>と表示され
+る。この "xx" はそのバイトの16進数である。
+
+Overlong sequenceに対して特別な処理はされない。通常の文字と同じように表示され
+る。Overlong sequenceはどんな検索パターンにもマッチしないかもしれない。
+(Overlong sequenceとは、文字を表すために必要なバイトよりも多くのバイトでその文
+字を表現しているバイト列のこと。) "<00>" と表示されているNUL(zero)は例外。
+{訳注: たぶん、"<00>" と表示されてるOverlong sequenceだけはたとえ|/\_.|でもマッ
+       チしないということ。}
+
+ファイルやバッファには、Unicodeで表現できる範囲(31ビット)の文字をすべて書くこ
+とができる。ただし、それを表示できるのは使用フォントがその文字を提供している場
+合のみ。
+
+便利なコマンド:
+- "ga" はカーソル位置の文字のコードを10進数、16進数、8進数で表示する。合成文字
+  も表示される。(表示が途切れてしまった場合は、":messages" を使う)。
+- "g8" は文字のUTF-8コードを16進数で表示する。合成文字も表示される。
+- ":set encoding=utf-8 fileencodings=" とすると、すべてのファイルでUTF-8を使う
+  ように強制できる。'encoding' を現在のロケールに合わせて設定し、
+  'fileencodings' によって自動的にファイルのエンコーディングを判定するように設
+  定するのがデフォルトである。
+
+
+VimをUTF-8モードで起動する (STARTING VIM)
+
+ロケールがUTF-8の場合、Vimは自動的にUTF-8モードで起動する。
+
+UTF-8以外のロケールを使っている場合はこのようにする: >
+
+	set encoding=utf-8
+
+メニューに使われるフォントを変える必要があるかもしれない。残念ながら、これはい
+つもうまくいくとは限らない。システムに依存する説明は下記、または 'langmenu' を
+参照。
+
+
+X-WindowでUTF-8を使う (USING UTF-8 IN X-Windows)	*utf-8-in-xwindows*
+
+Note: この項はGTK+ 2 GUIには当てはまらない。
+
+使用するフォントを選択する必要がある。全角文字を表示するにはさらに別のフォント
+が必要。設定するには次の三つの方法がある:
+
+1. 'guifont' を設定して、'guifontwide' はVimに設定させる
+2. 'guifont' と 'guifontwide' を設定する
+3. 'guifontset' を設定する
+
+詳細は各オプションの説明を参照。例: >
+
+   :set guifont=-misc-fixed-medium-r-normal--15-140-75-75-c-90-iso10646-1
+
+メニューで使用されるフォントも変更することができる。これはMotifでのみ機能す
+る。":hi Menu font={fontname}" コマンドを使って設定する。|:highlight|
+
+
+UTF-8を入力する (TYPING UTF-8)				*utf-8-typing*
+
+X-Windowを使っているなら、UTF-8をサポートしているインプットメソッド使用する。
+
+システムがUTF-8の入力をサポートしていない場合でも、'keymap' を使って入力するこ
+とができる。ASCII文字を複数入力することでUTF-8の文字を入力するようなキーマップ
+ファイルを作ることができる。|mbyte-keymap|を参照。
+
+他にも、XIMを利用することができる言語に、ロケールを設定する方法がある。その場
+合は、'termencoding' をその言語に設定する。Vimは入力された文字を 'termencoding'
+から 'encoding' へ変換する。
+
+すべての方法が使えなくても、4文字の16進数で文字コードを直接入力することができ
+る: >
+
+	CTRL-V u 1234
+
+"1234" は16進数として解釈される。正しく4文字を入力しなくてはいけない。必要であ
+ればゼロを前置する。
+
+コマンド引数 (COMMAND ARGUMENTS)			*utf-8-char-arg*
+
+|f|、|F|、|t|、|r|のようなコマンドは一つの文字を引数に取る。UTF-8では一文字か
+二文字の合成文字の場合がある。Vimは合成文字の入力かどうかを調べるために次の入
+力を待ったりはしないため、合成文字は基底文字と同時に入力する必要がある。そのよ
+うな文字は 'keymap' や|:lmap|を使うと簡単に入力することができる。
+
+行内検索をするコマンド(|f|など)は合成文字を次のように処理する。非合成文字を検
+索するときは、合成されている文字とされていない文字の両方がマッチする。合成文字
+を検索するときは、合成文字だけがマッチする。すべての人が合成文字を入力できるわ
+けではないので、このようになっている。
+{訳注: 例えば、か(U+304B) + 濁点(U+3099) という合成文字は "fか" でマッチする}
+
+
+==============================================================================
+11. 主なオプション (Overview of options)		*mbyte-options*
+
+これらのオプションはマルチバイトテキストのファイルの編集に関係する。詳細は
+options.txtの説明を参照。
+
+'encoding'	キーボード入力や表示に使われるエンコーディング。これは新規ファ
+		イルのエンコーディングの初期設定でもある。
+
+'fileencoding'	ファイルのエンコーディング。'encoding' と違う場合、ファイルの
+		読み書き時にエンコーディングが変換される。
+
+'fileencodings'	ファイルに使うことができるエンコーディングのリスト。ファイルを
+		開くとき、リストの先頭から順番に変換を試して、エラーが起きな
+		かった最初のものが 'fileencoding' として使われる。
+
+'charconvert'	あるエンコーディングから別のエンコーディングへファイルを変換す
+		る式。
+
+'formatoptions' このオプションにフラグ 'm' を含めると、フォーマット時に、(文字
+		のコードが256以上の)マルチバイト文字のところで改行することがで
+		きる。これは、どこでも改行することができる言語を編集するときに
+		便利である。
+
+'guifontset'	マルチバイトエンコーディングの文字に使うフォントのリスト。この
+		オプションが設定されていれば 'guifont' の代わりに使用される。
+
+'keymap'	キーボードマッピングの名前を指定する。
+
+==============================================================================
+
+マルチバイト機能は、特に以下の方々の貢献による:
+	Chi-Deok Hwang <hwang@mizi.co.kr>
+	SungHyun Nam <goweol@gmail.com>
+	K.Nagano <nagano@atese.advantest.co.jp>
+	Taro Muraoka  <koron@tka.att.ne.jp>
+	Yasuhiro Matsumoto <mattn@mail.goo.ne.jp>
+
+ vim:tw=78:ts=8:ft=help:norl:

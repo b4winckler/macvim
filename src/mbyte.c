@@ -113,6 +113,12 @@
 # include <wchar.h>
 #endif
 
+#if defined(FEAT_UIMFEP) || defined(PROTO)
+static int uimfep_lastmode = 1;
+static void uimfep_set_active __ARGS((int active));
+static int uimfep_get_status __ARGS((void));
+#endif
+
 #if 0
 /* This has been disabled, because several people reported problems with the
  * wcwidth() and iswprint() library functions, esp. for Hebrew. */
@@ -1459,6 +1465,19 @@ utf_char2cells(c)
 	{0xf0000, 0xffffd},
 	{0x100000, 0x10fffd}
     };
+
+#ifdef USE_AMBIWIDTH_AUTO
+    if (gui.in_use && *p_ambw == 'a')
+    {
+	int cell;
+
+	/* This is required by screen.c implicitly. */
+	if (c == 0)
+	    return 1;
+	if ((cell = gui_mch_get_charwidth(c)) > 0)
+	    return cell;
+    }
+#endif
 
     if (c >= 0x100)
     {
@@ -4447,6 +4466,14 @@ im_set_active(int active)
 {
     int was_active;
 
+#ifdef FEAT_UIMFEP
+    if (!gui.in_use)
+    {
+	uimfep_set_active(active);
+	return;
+    }
+#endif
+
     was_active = !!im_is_active;
     im_is_active = (active && !p_imdisable);
 
@@ -5268,6 +5295,10 @@ xim_queue_key_press_event(GdkEventKey *event, int down)
     int
 im_get_status(void)
 {
+#ifdef FEAT_UIMFEP
+    if (!gui.in_use)
+	return uimfep_get_status();
+#endif
     return im_is_active;
 }
 
@@ -5301,7 +5332,13 @@ im_set_active(active)
     int		active;
 {
     if (xic == NULL)
+    {
+#ifdef FEAT_UIMFEP
+	if (!gui.in_use)
+	    uimfep_set_active(active);
+#endif
 	return;
+    }
 
     /* If 'imdisable' is set, XIM is never active. */
     if (p_imdisable)
@@ -5736,6 +5773,11 @@ xim_real_init(x11_window, x11_display)
     int
 im_get_status()
 {
+#ifdef FEAT_UIMFEP
+    if (!gui.in_use)
+	return uimfep_get_status();
+#endif
+
     return xim_has_focus;
 }
 
@@ -6308,3 +6350,66 @@ string_convert_ext(vcp, ptr, lenp, unconvlenp)
     return retval;
 }
 #endif
+
+#if defined(FEAT_UIMFEP)
+    static void
+uimfep_set_active(int active)
+{
+    int mustfree = 0;
+    char_u *setmode;
+    setmode = vim_getenv("UIM_FEP_SETMODE", &mustfree);
+    if (setmode != NULL)
+    {
+	FILE *fp = fopen(setmode, "w");
+	if (fp)
+	{
+	    fprintf(fp, "%d\n", active ? uimfep_lastmode : 0);
+	    fflush(fp);
+	    fclose(fp);
+	}
+    }
+    if (mustfree)
+	vim_free(setmode);
+}
+
+    static int
+uimfep_get_status(void)
+{
+    int mustfree = 0;
+    int mode = 0;
+    char_u *getmode;
+    getmode = vim_getenv("UIM_FEP_GETMODE", &mustfree);
+    if (getmode != NULL)
+    {
+	FILE *fp = fopen(getmode, "r");
+	if (fp)
+	{
+	    char_u buf[99];
+	    if (fgets(buf, sizeof(buf), fp))
+		mode = atoi(buf);
+	    fclose(fp);
+	}
+    }
+    if (mustfree)
+	vim_free(getmode);
+    if (mode != 0)
+	uimfep_lastmode = mode;
+    return mode != 0;
+}
+
+# if defined(USE_IM_CONTROL) && (!defined(FEAT_XIM) \
+	&& !defined(FEAT_MBYTE_IME) && !defined(GLOBAL_IME))
+    void
+im_set_active(int active)
+{
+    uimfep_set_active(active);
+}
+
+    int
+im_get_status(void)
+{
+    return uimfep_get_status();
+}
+# endif
+
+#endif /* defined(FEAT_UIMFEP) */

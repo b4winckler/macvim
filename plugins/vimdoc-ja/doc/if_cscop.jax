@@ -1,0 +1,483 @@
+*if_cscop.txt*  For Vim バージョン 7.3.  Last change: 2011 Jun 12
+
+
+		  VIMリファレンスマニュアル    by Andy Kahn
+
+
+							*cscope* *Cscope*
+この文章はVimにおけるcscopeインターフェースの使い方について述べている。
+
+cscopeはctagsのようなツールであるが、ctagsよりも多くの機能が提供されるので
+ctagsの代わりとみなせる。Vimではタグにジャンプするように、cscopeクエリの結果へ
+ジャンプすることができる; ジャンプの履歴はタグスタックに保存されいつものキー
+マッピングにより、普段|tags|でやるように関数の間を行ったり来たりできる。
+
+1. Cscopeの紹介			|cscope-intro|
+2. Cscopeに関係するコマンド	|cscope-commands|
+3. Cscopeオプション		|cscope-options|
+4. Vimでのcscopeの使い方	|cscope-howtouse|
+5. 制限事項			|cscope-limitations|
+6. 使い方の提案			|cscope-suggestions|
+7. 入手法と情報			|cscope-info|
+
+現在のところUNIXとWin32で使える。
+{Vi にはこれらのコマンドはない}
+
+==============================================================================
+1. Cscopeの紹介						*cscope-intro*
+
+以下の文章はあるバージョンのcscopeのマニュアルから引用した:
+
+				    -----
+
+  cscopeは貴方を助けるインタラクティブなスクリーン指向のツールです:
+
+       いつ終わるかわからない厚いソースリストのぺージをめくることなく、Cプログ
+       ラムがどのように働くかを知る。
+
+       プログラム全体を知らなくても、バグを修正するために変更すべきコードの位
+       置を見つける。
+
+       列挙変数(enum)に値を追加するといった提案された変更の影響を検証する。
+
+       既存の関数に引数を追加したというような全部のソースファイルに施された変
+       更を検証する。
+
+       全部のソースファイルのグローバル変数の名前を変える。
+
+       ファイルの指定された行にある定数をプリプロセッサのシンボルに変更する。
+
+  これは次のような質問に答えるように意図されている:
+       どこでこのシンボルが使われたのか?
+       それがどこで定義されたのか?
+       この変数がどこでその値を得たのか?
+       このグローバルシンボルの定義は何か?
+       この関数はどのソースファイルのどこにあるのか?
+       どの関数がこの関数を呼んでいるのか?
+       どの関数がこの関数から呼ばれているか?
+       "メモリが足りない" というメッセージはどこから来たのか?
+       このソースファイルはディレクトリのどこにあるのか?
+       どんなファイルがこのヘッダーファイルをインクルードしているのか?
+
+  cscopeは起動すると最初に1度だけソースファイルからシンボルデータベースを作成
+  し、このデータベースを用いてこれらの質問に答える。2度目以降の起動では、ソー
+  スファイルが変更されたかソースファイルのリストが異なる時にだけデータベースが
+  再構築される。データベースが再構築される時でも変更されていないファイルについ
+  ては過去のデータベースよりコピーされるので、初めから構築し直すよりも高速に
+  構築できる。
+
+				    -----
+
+通常cscopeを起動すると、上のような問い合わせ(クエリ)を入力できるフルスクリーン
+の選択画面が表示される。しかしながら、一度クエリが見つかりマッチを含むソース
+ファイルを編集するためのエディタを指定してあると、普段viでCtrl-]や:tagコマンド
+でやっているようなタグからタグへの単純なジャンプはできなくなる。
+
+Vimのcscopeインターフェースはcscopeの行指向インターフェースを利用することでこ
+れを行い、実クエリに対する出力を解釈する。cscopeのクエリの結果は最終的に通常の
+tagsのようになるので、普通のタグのようなジャンプ操作 (Ctrl-]や:tag) を行うこと
+ができ、タグスタックをCtrl-Tで逆に辿ることも可能になる。(しかしキーマップの再
+定義やコマンドやオプションの設定をしないで、まったく単純にCtrl-]や:tagと同じよ
+うにジャンプできるわけではないことに注意して欲しい。cscopeインターフェースがど
+のように働くのか、どういう使い方が提案されているのかは残りのセクションを参
+照。)
+
+
+==============================================================================
+2. Cscopeに関係するコマンド				*cscope-commands*
+
+		*:cscope* *:cs* *:scs* *:scscope* *E259* *E262* *E561* *E560*
+全てのcscopeのコマンドはメインコマンド ":cscope" のサブコマンドとしてアクセス
+することができる。最も短い省略形は ":cs" である。":scscope" コマンドはウィンド
+ウ分割を伴って同じ事を行う (省略形: "scs")。
+
+利用可能なサブコマンドは:
+
+			*E563* *E564* *E566* *E568* *E569* *E622* *E623*
+			*E625* *E626* *E609*
+    add   : 新しいcscopeデータベース/接続を追加する。
+
+	使用法	:cs add {file|dir} [pre-path] [flags]
+
+	    [pre-path] cscopeに-Pコマンドで渡されるパス名
+
+	    [flags] cscopeに引き渡す追加フラグ
+
+	例 >
+	    :cscope add /usr/local/cdb/cscope.out
+	    :cscope add /projects/vim/cscope.out /usr/local/vim
+	    :cscope add cscope.out /usr/local/vim -C
+<
+				      *cscope-find* *cs-find* *E567*
+    find  : cscopeに問い合わせる。#5オプション(grepパターンを変更する)以外の全
+	    cscopeクエリオプションが使用可能。
+
+	使用法	:cs find {querytype} {name}
+
+	    {querytype}は実際のcscopeのラインインターフェース
+	    の番号(デフォルトのnviコマンド)に対応する:
+
+		0 or s: Cのシンボルを検索
+		1 or g: 定義を検索
+		2 or d: この関数から呼ばれる関数を検索
+		3 or c: この関数を呼んでいる関数を検索
+		4 or t: 文字列を検索
+		6 or e: egrepパターンを検索
+		7 or f: このファイルを検索
+		8 or i: このファイルを参照(#include)しているファイルを検索
+	
+	4 と 6 以外のタイプでは、{name} における先頭のスペースは取り除かれ
+	る。4 と 6 では {querytype} と {name} の間にちょうど 1 個のスペースが
+	挿入される。
+
+	例 >
+	    :cscope find c vim_free
+	    :cscope find 3  vim_free
+<
+	    この2つの例は、同じクエリ("vim_free" を呼び出している関数を検索)を
+	    実行する。 >
+
+	    :cscope find t initOnce
+	    :cscope find t  initOnce
+
+	    この例の上の方は、"initOnce" というテキストを検索し、下の方は
+	    "initOnce" を検索する。 >
+
+	    :cscope find 0 DEFAULT_TERM
+<
+	    この例を Vim 5.1 のソースコードに対して行うと、以下の出力を生成す
+	    る。
+
+
+	    Cscope tag: DEFAULT_TERM
+	       #   line  filename / context / line
+	       1   1009  vim-5.1-gtk/src/term.c <<GLOBAL>>
+			 #define DEFAULT_TERM (char_u *)"amiga"
+	       2   1013  vim-5.1-gtk/src/term.c <<GLOBAL>>
+			 #define DEFAULT_TERM (char_u *)"win32"
+	       3   1017  vim-5.1-gtk/src/term.c <<GLOBAL>>
+			 #define DEFAULT_TERM (char_u *)"pcterm"
+	       4   1021  vim-5.1-gtk/src/term.c <<GLOBAL>>
+			 #define DEFAULT_TERM (char_u *)"ansi"
+	       5   1025  vim-5.1-gtk/src/term.c <<GLOBAL>>
+			 #define DEFAULT_TERM (char_u *)"vt52"
+	       6   1029  vim-5.1-gtk/src/term.c <<GLOBAL>>
+			 #define DEFAULT_TERM (char_u *)"os2ansi"
+	       7   1033  vim-5.1-gtk/src/term.c <<GLOBAL>>
+			 #define DEFAULT_TERM (char_u *)"ansi"
+	       8   1037  vim-5.1-gtk/src/term.c <<GLOBAL>>
+			 # undef DEFAULT_TERM
+	       9   1038  vim-5.1-gtk/src/term.c <<GLOBAL>>
+			 #define DEFAULT_TERM (char_u *)"beos-ansi"
+	      10   1042  vim-5.1-gtk/src/term.c <<GLOBAL>>
+			 #define DEFAULT_TERM (char_u *)"mac-ansi"
+	      11   1335  vim-5.1-gtk/src/term.c <<set_termname>>
+			 term = DEFAULT_TERM;
+	      12   1459  vim-5.1-gtk/src/term.c <<set_termname>>
+			 if (STRCMP(term, DEFAULT_TERM))
+	      13   1826  vim-5.1-gtk/src/term.c <<termcapinit>>
+			 term = DEFAULT_TERM;
+	      14   1833  vim-5.1-gtk/src/term.c <<termcapinit>>
+			 term = DEFAULT_TERM;
+	      15   3635  vim-5.1-gtk/src/term.c <<update_tcap>>
+			 p = find_builtin_term(DEFAULT_TERM);
+	    Enter nr of choice (<CR> to abort):
+
+	    出力には幾つかの情報を示している:
+	    1. タグの数(例には15個ある)
+	    2. タグが在る行番号
+	    3. タグの在るファイル名
+	    4. タグのコンテキスト(例えばグローバルか関数名か)
+	    5. ファイルの該当行そのもの
+
+    help  : 短い解説を表示する。
+
+	    使用法  :cs help
+
+							*E261*
+    kill  : cscopeとの接続を切断する(もしくは全ての接続を切断する)。
+
+	    使用法  :cs kill {num|partial_name}
+
+	    cscopeとの接続を切断するには、接続番号か部分的な名前を指定しなけれ
+	    ばならない。「部分的名前」とは単純にcscopeデータベースのパス名の一
+	    部である。部分的名前を使用してcscope接続を切断する時には注意するこ
+	    と!
+
+	    接続番号-1を指定すると、全てのcscope接続が切断される。
+
+    reset : 全てのcscope接続を再初期化する。
+
+	    使用法  :cs reset
+
+    show  : cscope接続を表示する。
+
+	    使用法  :cs show
+
+							*:lcscope* *:lcs*
+このコマンドは ":cscope" とほぼ同じだが、オプション 'cscopequickfix' がオンに
+なっている場合、QuickFix リストでなくカレントウィンドウのロケーションリストで
+cscope の結果を表示する。
+
+						*:cstag* *E257* *E562*
+ctagsとcscopeを同じように使うのならば、両方を順に検索してジャンプを行うのに
+|:cstag|が利用できる。例えば、最初にcscopeデータベースを検索し、見つからなかっ
+た時には、tagsファイルを検索することができる。どちらを先に検索するかは|csto|の
+値で決まる。詳細は|cscope-options|を参照。
+
+|:cstag|がcscopeデータベースを検索する時には、識別子に対して ":cs find g" と同
+じように働く。
+
+|:cstag|がtagsファイルを検索する時には、識別子に対して|:tjump|と同じように働
+く。
+
+
+==============================================================================
+3. Cscopeオプション					*cscope-options*
+
+全てのcscopeのオプションは|:set|コマンドによって設定できる。理想的には起動ファ
+イルのどれか1つ (例: .vimrc) で行うであろう。cscopeに関係する幾つかの変数は
+|.vimrc|の中だけで有効である。Vimが起動した後にそれらの変数を変更しても効果が
+無い!
+
+							*cscopeprg* *csprg*
+'cscopeprg' にはcscopeを実行するコマンドを指定する。省略値は "cscope"。例: >
+	:set csprg=/usr/local/bin/cscope
+<
+					    *cscopequickfix* *csqf* *E469*
+{|+quickfix|付きでコンパイルしないと利用できない}
+'cscopequickfix' はcscopeの結果を表示するためにクイックフィックスウィンドウを
+使うかどうかを決める。これはコンマ区切りのリストである。要素は|cscope-find|
+コマンド(s, g, d, c, t, e, f or i)とフラグ(+, - or 0)から成っている。
+'+' は結果がクイックフィックスウィンドウに追加されることを示す。
+'-' はそれ以前の結果を消すことを意味する。'0' や何も指定していないコマンドは
+クイックフィックスウィンドウを使わない。探索は始まりから最初のコマンドを見つ
+けるまで実行される。
+デフォルトの値は "" (クイックフィックスを使わない)。次の値が便利だろう: >
+	:set cscopequickfix=s-,c-,d-,i-,t-,e-
+<
+
+							*cscopetag* *cst*
+'cscopetag' が設定されていると、コマンド ":tags"、CTRL-]、そして "vim -t" はデ
+フォルトの:tagの代わりに、常に ":cstag" を使うようになる。事実上、tagファイル
+と同じようにcscopeデータベースを検索することができるようになるだろう。省略した
+場合はオフ。例: >
+	:set cst
+	:set nocst
+<
+							*cscoperelative* *csre*
+'cscoperelative' が設定されていて、cscope にプレフィックスが与えられていない場
+合 (プレフィックスは cscope の -P オプションの引数である)、絶対パスを得るため
+に、cscope.out が保存されているディレクトリ (通常はプロジェクトのルート) が使
+われる。初期設定はオフである。Note: このオプションは cscope (cscopeprg) がプレ
+フィックスパス (-P) なしで初期化されている場合のみ効果がある。例: >
+	:set csre
+	:set nocsre
+<
+							*cscopetagorder* *csto*
+'csto' の値は|:cstag|が検索を実行する順序を決定する。'csto' が0に設定されてい
+るならば、先にcscopeデータベースが検索され、cscopeでは見つからなかった時にだけ
+tagファイルが検索される。'csto' が1ならば、cscopeデータベースの前にtagsファイ
+ルが検索される。省略値は0。例: >
+	:set csto=0
+	:set csto=1
+<
+						*cscopeverbose* *csverb*
+'cscopeverbose' が設定されていないと(デフォルト)、cscopeデータベースを追加した
+際の成否結果のメッセージが表示されない。理想的には、|.vimrc|の中でcscopeデータ
+ベースを追加する前にリセットし、追加し終わった後で設定すべきである。設定してお
+けば、Vim使用中にデータベースの追加に失敗した時、(望むらくは原因を特定するの
+に)役立つメッセージが表示されるだろう。例: >
+	:set csverb
+	:set nocsverb
+<
+						      *cscopepathcomp* *cspc*
+'cspc' の値はファイルパスのうち幾つの構成要素を表示するか決定する。省略値であ
+る0を設定した時には完全なパスが表示される。値として1を設定すればファイル名だけ
+が表示される。その他の値であれば、その数だけ構成要素を表示する。例: >
+	:set cspc=3
+ファイルパスのうち最後の3つ(ファイル名と2段上までのディレクトリ名)を表示する。
+
+==============================================================================
+4. Vimでのcscopeの使い方				*cscope-howtouse*
+
+最初にやらなければならないことは、ソースコードに対してcscopeデータベースを構築
+することである。最も基本的なケースでは、単純に "cscope -b" とする。詳細につい
+てはcscopeのマニュアル(manページ)を参照して欲しい。
+
+cscopeデータベースがあるならば、次にそのデータベースをVimへ "add" しなければな
+らない。これはcscopeとの "接続" を確立し、それをVimが使えるような状態にする。
+これは.vimrcや、vim起動後に手動で行うことができる。例えば、cscopeデータベース
+"cscope.out" を追加するには、次のようにする: >
+
+	:cs add cscope.out
+<
+この結果は ":cs show" を実行することでもう一度チェックすることができる。これは
+次のような出力を生成する: >
+
+ # pid	  database name			      prepend path
+ 0 28806  cscope.out			      <none>
+
+Note:
+Microsoftのランタイムライブラリの制限により、Win32バージョンでは本当のプロセス
+IDではなく0が表示される。
+
+一旦cscope接続が確立されれば、cscopeへクエリを送信でき、その結果を表示すること
+ができる。クエリは ":cs find" コマンドにより生成される。例: >
+
+	:cs find g ALIGN_SIZE
+<
+これは最終的に結構な量のタイプを必要とするのでやっかいである。しかしながら、
+ショートカットキーをマッピングしてこれを避ける方法がある。その方法については
+|cscope-suggestions|を参照のこと。
+
+一致する項目が1つしかなければ、自動的にその場所へ移動する。複数の結果が得られ
+た場合には、行きたい項目を選択できる画面が表示される。新しい場所へ移動した後
+は、単にCTRL-Tをタイプすることで以前の位置へ戻ることができる。
+
+
+==============================================================================
+5. 制限事項						*cscope-limitations*
+
+Vimのcscope機能は4つのシステムコール:fork(), pipe(), execl(), waitpid() をサ
+ポートしているシステムでのみ利用可能である。これはほとんどUNIXシステムだけに限
+られることを意味している。
+
+加えて、CscopeはWin32でも動く。Win32で動くcscopeについて詳しくは次のサイトを見
+ること。
+
+	http://iamphet.nm.ru/cscope/index.html
+
+http://cscope.sourceforge.net でダウンロードできる、 DJGPP でビルドしたバージョ
+ンは、Vim では動かないことがわかっている。
+
+ハードコードされた限界:
+|:cstag| がタグファイルを検索するときの |:tjump| の動作はカスタマイズできな
+い(例: tjump でなく tselect を使うことができない)。
+
+==============================================================================
+6. 使い方の提案						*cscope-suggestions*
+
+次のエントリを.vimrcに記述する(パス名は環境にあわせて然るべく変更すること): >
+
+	if has("cscope")
+		set csprg=/usr/local/bin/cscope
+		set csto=0
+		set cst
+		set nocsverb
+		" add any database in current directory
+		if filereadable("cscope.out")
+		    cs add cscope.out
+		" else add database pointed to by environment
+		elseif $CSCOPE_DB != ""
+		    cs add $CSCOPE_DB
+		endif
+		set csverb
+	endif
+
+'cscopetag' を設定することで、:tag コマンドの実体を :cstag で効率的に置き換え
+ている。これには :tags, CTRL-], そして "vim -t" も含まれる。こうすることで、通
+常のtagコマンドはctagsが生成したtagファイルだけでなく、cscopeデータベースも検
+索するようになる。
+
+あるユーザは通常のtagの振る舞いはそのままに、:cstagへアクセスする異なった
+ショートカットを望むかもしれない。例えば次のコマンドでCTRL-_(アンダースコア)
+に:cstagをマップできる: >
+
+	map <C-_> :cstag <C-R>=expand("<cword>")<CR><CR>
+
+良く使われる2つのcscopeのクエリ(":cs find" を使う)は、ある関数を読んでいる全て
+の関数を探すのと、あるCのシンボルを使用している箇所全てを探すものである。これ
+を行うには、例としてこのようなマップを使うことができる: >
+
+	map g<C-]> :cs find 3 <C-R>=expand("<cword>")<CR><CR>
+	map g<C-\> :cs find 0 <C-R>=expand("<cword>")<CR><CR>
+
+このマッピングによりCTRL-] (右角カッコ)とCTRL-\ (バックスラッシュ)を、カーソル
+の下にある関数名やCシンボルを素早くcscopeに問い合わせ結果を得るのに利用できる
+ようになる。
+
+もしくは次の仕組みを使うこともできる。これは Vim/Cscope のチュートリアルに影響
+を受けました(http://cscope.sourceforge.net/)。 >
+
+	nmap <C-_>s :cs find s <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-_>g :cs find g <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-_>c :cs find c <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-_>t :cs find t <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-_>e :cs find e <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-_>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
+	nmap <C-_>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+	nmap <C-_>d :cs find d <C-R>=expand("<cword>")<CR><CR>
+
+	" 'CTRL-spacebar' を使うと結果を新しいウィンドウで表示する。
+
+	nmap <C-Space>s :scs find s <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-Space>g :scs find g <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-Space>c :scs find c <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-Space>t :scs find t <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-Space>e :scs find e <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-Space>f :scs find f <C-R>=expand("<cfile>")<CR><CR>
+	nmap <C-Space>i :scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+	nmap <C-Space>d :scs find d <C-R>=expand("<cword>")<CR><CR>
+
+	" CTRL-space を２回連続して押すとウィンドウを縦に開く
+
+	nmap <C-Space><C-Space>s
+		\:vert scs find s <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-Space><C-Space>g
+		\:vert scs find g <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-Space><C-Space>c
+		\:vert scs find c <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-Space><C-Space>t
+		\:vert scs find t <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-Space><C-Space>e
+		\:vert scs find e <C-R>=expand("<cword>")<CR><CR>
+	nmap <C-Space><C-Space>i
+		\:vert scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+	nmap <C-Space><C-Space>d
+		\:vert scs find d <C-R>=expand("<cword>")<CR><CR>
+
+==============================================================================
+7. 入手法と情報						*cscope-info*
+
+まだcscopeを持っていない(あなたのコンパイラのライセンスやOSのディストリビュー
+ションに含まれてない)のならば、次の場所から無料で入手できる:
+	http://cscope.sourceforge.net/
+cscopeはSCOによりBSDラインセンスの基づいて配布されている。
+
+より新しいバージョンのcscopeを入手したいのならば、恐らく購入する必要があるだろ
+う。(古い)nviのドキュメントによれば:
+
+	バージョン13.3の無制限ライセンス付きのソースコードが、AT&Tソフトウェア
+	ソリューション(電話番号+1-800-462-8146)から400ドルで購入できる。
+
+また cscope 13.x や mlcscope 14.x (他国後バージョンのcscopeで、C, C++, Java,
+lex, yacc, breakpoint listing, Ingres, and SDL をサポートしている) を次のサイ
+トからダウンロードできる。
+	World-Wide Exptools Open Source packages page:
+	http://www.bell-labs.com/project/wwexptools/packages.html
+
+Solaris 2.xでは、Cコンパイラのライセンスを入手していれば、cscopeも入手している
+だろう。どちらも通常は/opt/SUNWspro/binに格納される。
+
+SGIの開発者もまた入手可能である。このページからCscopeを検索すること
+	http://freeware.sgi.com/index-by-alpha.html
+	https://toolbox.sgi.com/toolbox/utilities/cscope/
+2番目のアドレスはSGIツールボックスのパスワードを持っているユーザ用である。
+
+古いcscopeのクローン("cs" という名)のソースコードがネットで入手可能である。た
+だし様々な理由で、これはVimではサポートされない。
+
+オリジナルのcscopeインターフェース/サポートはAndy Kahn <ackahn@netapp.com>に
+よって書かれた。元となった構造(かなり小さいコードだった)はnviのcscopeインター
+フェースから改作された。問題、提案、パッチそのほか何でも、Vimでcscopeを使うの
+に何か持っているものがあれば彼に送って欲しい。
+{訳注: もちろん日本語では送らないで下さい}
+							*cscope-win32*
+Win32バージョンのcscopeについてはこのサイトを参照すること
+	http://code.google.com/p/cscope-win32/
+
+Win32への対応は Sergey Khorev <khorev@softlab.ru> がしてくれた。Win32に固有の
+問題については彼に問い合わせていただきたい。
+
+ vim:tw=78:ts=8:ft=help:norl:

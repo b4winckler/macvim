@@ -1,0 +1,111 @@
+Test for fo=2.
+
+
+Results of todo:
+
+STARTTEST
+:set fo=2 noai tw=10
+/^{/+1
+:set formatexpr=
+j2gqgq2j3gqgq
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+j2gqgq2j3gqgq
+ENDTEST
+
+case1
+{
+
+    aa bb cc
+  dd ee ff
+
+aa bb cc
+    dd ee ff
+  gg hh ii
+
+}
+{
+
+    aa bb cc
+  dd ee ff
+
+aa bb cc
+    dd ee ff
+  gg hh ii
+
+}
+
+STARTTEST
+:set fo=2 noai tw=20
+/^{/+1
+:set formatexpr=
+j2gqgq2j2gqgq
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+j2gqgq2j2gqgq
+ENDTEST
+
+case2
+{
+
+		aa bb cc
+	    dd ee ff
+
+		aa bb cc
+            dd ee ff
+
+}
+{
+
+		aa bb cc
+	    dd ee ff
+
+		aa bb cc
+            dd ee ff
+
+}
+
+STARTTEST
+:set fo=t2 noai tw=10
+/^{/+1
+:set formatexpr=
+A xx yy
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+A xx yy
+ENDTEST
+
+case3
+{
+    aa bb
+  cc dd ee
+}
+{
+    aa bb
+  cc dd ee
+}
+
+STARTTEST
+:set fo=t2 ai tw=10
+/^{/+1
+:set formatexpr=
+A xx yy
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+A xx yy
+ENDTEST
+
+case4
+{
+    aa bb
+  cc dd ee
+}
+{
+    aa bb
+  cc dd ee
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST

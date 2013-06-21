@@ -1,0 +1,1034 @@
+*indent.txt*    For Vim バージョン 7.3.  Last change: 2013 May 20
+
+
+		VIMリファレンスマニュアル    by Bram Moolenaar
+
+
+このファイルにはCソースコードとその他のファイルのインデント(字下げ)について書
+かれている。
+
+1. Cスタイルのソースコードのインデント	|C-indenting|
+2. スクリプトを用いたインデント		|indent-expression|
+
+==============================================================================
+1. Cソースコードのインデント				*C-indenting*
+
+C言語(以下、単に「C」)スタイルのソースコード用インデントの基本はユーザマニュア
+ルの|30.2|節で説明されている。
+
+VimにはCスタイルの言語を自動的にインデントするためのオプションがある。Cスタイ
+ルの言語とは、Java や C++ など、C によく似た書式の言語のことである。これらのオ
+プションはインデントだけに影響し、その他の整形は行わない。その他の整形について
+は、|format-comments|, |fo-table|, |gq|, |formatting| を参照。
+
+コンパイル時に|+smartindent| か |+cindent|機能を無効にした時には、これが動作し
+ないことに注意。
+
+実際のところインデントには4つの主な方法がある。後のものが有効にされると、前の
+ものより優先される('indentexpr' は空でない文字列がセットされたとき)。
+'autoindent'	一つ前の行に基づくインデント
+'smartindent'	'autoindent' と同様だが幾つかのC構文を認識し、適切な箇所のイン
+		デントを増減させる。
+'cindent'	他の2つの方法よりも賢く動作し、設定することで異なるインデント
+		スタイルにも対応できる。
+'indentexpr'	この中で一番融通が利く: ある行のインデントを計算するのにVimス
+		クリプトを実行する。この方法が有効である(空でない)時にはその他
+		のインデントは抑制される。|indent-expression|参照
+この節の残りはオプション 'cindent' について述べる。
+
+'cindent' はあらゆるCソースを正しくインデントできるわけではないことに注意。Vim
+はCコンパイラではない: だから全ての構文は認識できない。1つの要求事項は、トップ
+レベル関数が第1桁が '{' で始まっていることである。そうなっていないと宣言との区
+別が困難である。
+
+Cのインデントはこの4つのオプションで制御されている:
+'cindent'	Cの自動インデントを有効化する。
+'cinkeys'	再インデントの引金となる挿入モードでのキーを指定する。
+'cinoptions'	好みのインデントスタイルを設定する。
+'cinwords'	次の行から特別なインデントを開始するキーワードを定義する。
+
+オプション 'lisp' がオフで 'equalprg' が空ならば、オペレータ "=" は外部プログ
+ラムではなくVimの内蔵アルゴリズムを使用してインデントを行う。
+
+Cのファイルに対して自動的に 'cindent' をオンにしてそれ以外のファイルに対しては
+オフにする方法は|autocommand|を参照。
+{訳注: バージョン6.0以降はファイル形式プラグイン(|filetype|参照)とバッファロー
+       カルオプション(|:setlocal|)を使うことが推奨される。VimにはデフォルトでC
+       用のファイル形式プラグイン($VIMRUNTIME/ftplug/c.vim)が付属しているから、
+       これを行いたい時は単にファイル形式プラグインを有効化するだけで良い。}
+
+					*cinkeys-format* *indentkeys-format*
+オプション 'cinkeys' はVimのインデントを制御する文字列で、どの文字がタイプされ
+た時に、どのような状況下でコマンドが実行されたかに応じてインデントを行うかを定
+義する。これがCインデントの唯一の引金ではないことには注意する。'indentexpr' が
+空でない時には代わりに 'indentkeys' が使われる。'cinkeys' と 'indentkeys' の書
+式は同じ。
+
+デフォルトは "0{,0},0),:,0#,!^F,o,O,e" で、これにより次のような時にインデント
+が行われる:
+
+	"0{"	行の先頭で '{' をタイプした時
+	"0}"	行の先頭で '}' をタイプした時
+	"0)"	行の先頭で ')' をタイプした時
+	":"	ラベルやcase文のあとで ':' をタイプした時
+	"0#"	行の先頭で '#' をタイプした時
+	"!^F"	CTRL-Fをタイプした時 (CTRL-F自体は入力されない)
+	"o"	挿入モードで<CR>をタイプした後、及びノーマルモードで "o" コマ
+		ンドを使用した時
+	"O"	ノーマルモードで "O" コマンドを使用した時
+	"e"	行の先頭で "else" の2つ目の 'e' をタイプした時
+
+各キーの前に置くことのできる文字は次の通り:			 *i_CTRL-F*
+!	'!' をキーの前に置くと、Vimはそのキーを挿入するのではなく替わりに現在
+	の行のインデントを再調整する。これにより現在の行の再調整するためのコマ
+	ンドキーを定義することができる。CTRL-Fはそのデフォルトキーである。
+	CTRL-Iは<Tab>のASCIIコードだから、CTRL-Iを定義する際に気をつけること。
+*	'*' をキーの前に置くと、Vimはインデント再調整を行ってからそのキーを挿
+	入する。'cinkeys' に "*<Return>" が含まれている時には、Vimは新しい行を
+	作成する前に現在行のインデントを再調整する。
+0	'0' をキーの前 ('!' や '*' の後ということはあるが) に置くと、Vimはその
+	キーが行の先頭で入力された時だけインデント再調整を行う。"=" の前に使わ
+	れた時にはVimはその単語の前に空白文字しか無い時にだけ再調整が行われる。
+
+'!' と '*' のいずれもキーの前に置かれていない時は、Vimはそのキーがタイプされた
+時にインデント再調整を行う。だから ';' を含めれば ';' が入力された行のインデ
+ントが調整される。
+
+特別なキーの名称:
+<>	折カッコは書き下されたキーの名前を意味する。例: "<Up>" や "<Ins>"
+	(|key-notation|参照)。
+^	キャレット(^)が前に置かれた文字はコントロール文字。例: "^F" はCTRL-F
+o	"o" コマンドを使用した時もしくはVimが現在の行の下に新しい行を作成した
+	時にインデント再調整をする(例えば、挿入モードで<Enter>をタイプした時)。
+O	"O" コマンドを使用した時にインデント再調整をする。
+e	"else" で始まる行の2つ目の 'e' をタイプした時にインデント再調整をする。
+:	ラベルやcase文の後に ':' をタイプした時にインデント再調整をする。C++の
+	"class::method" 内の ":" では再調整しない。どんな ":" でもインデントす
+	るには "<:>" を使用する。
+=word	"word" の最後の文字をタイプした時にインデント再調整をする。"word" は実
+	際は別の単語の一部かもしれない。"=end" のように設定すれば "endif" や
+	"endwhile" の "d" をタイプした時に再調整が起こる。しかし "bend" では起
+	こらない。補完により "word" で始まる単語が提示された時にも再調整は起こ
+	る。
+	"0=word" は単語の前に空白文字しかない時に再調整を行う。
+=~word は =wordに似ているが、大文字小文字の区別がされない。
+
+キー 'o', 'O', 'e', '0', '<', '>', '*', ':' それに '!' そのものを入力した時に
+インデント再調整を行いたいのならば、それぞれ "<o>", "<O>", "<e>", "<0>", "<<>",
+"<>>", "<*>", "<:>" そして "<!>" を使用する。
+
+Enterを押す度ではなくemacsのようにTabキーを押した時にだけインデントを行うよう
+にするには、次の設定を提案する: >
+	:set cinkeys=0{,0},:,0#,!<Tab>,!^F
+その時には 'autoindent' もオフにしたほうが良いかもしれない。
+
+NOTE: 現在の行のインデントを手動で変更すれば、Vimはその行についてはcindentの設
+定を無視する。これによりインデントの中で<BS>, <Tab> や <Space>を入力したり、
+CTRL-TやCTRL-Dを使用してインデントを変更した後では、Vimはインデントの再調整を
+行わなくなる。
+
+						*cinoptions-values*
+オプション 'cinoptions' ではVimがどのようなインデントを行うのかを設定する。オ
+プション文字の後ろは次のような形式で指定できる (N は任意の数字):
+	N	N スペースインデント
+	-N	N スペースインデント (左方向に)
+	Ns	'shiftwidth' の N 倍のスペース
+	-Ns	'shiftwidth' の N 倍のスペース (左方向に)
+
+以下のリストでは、"N" は指定したい数値を意味する(数値は負でも良い)。数値のあと
+に 's' がある時には、数値に 'shiftwidth' の数を掛算して使用する: "1s" は
+'shiftwidth' に等しく、"2s" は 'shiftwidth' の2倍になり、以下同様。
+
+小数を使うこともできる: "-0.5s" は 'shiftwidth' の半分の負の数である。以下の例
+では 'shiftwidth' は4 と想定している。
+							*cino->*
+	>N    通常のインデントで追加される量。インデントを増やすべき行(ifで始
+	      まる行や、開き波カッコ等)の直後で使用される。
+	      (省略値 'shiftwidth')
+
+		cino=		    cino=>2		cino=>2s >
+		  if (cond)	      if (cond)		  if (cond)
+		  {		      {			  {
+		      foo;		foo;			  foo;
+		  }		      }			  }
+<
+							*cino-e*
+	eN    開き波カッコが行末にある(正確には行頭ではない)時に、カッコ内のイ
+	      ンデントを通常よりも N 追加する。'{' が行頭ある場合と行末にある
+	      場合とでインデント量を変更したい時に便利。
+	      (省略値 0)
+
+		cino=		    cino=e2		cino=e-2 >
+		  if (cond) {	      if (cond) {	  if (cond) {
+		      foo;		    foo;	    foo;
+		  }		      }			  }
+		  else		      else		  else
+		  {		      {			  {
+		      bar;		  bar;		      bar;
+		  }		      }			  }
+<
+							*cino-n*
+	nN    "if", "while" その他の直後、波カッコのセットに囲まれていないなら
+	      ば、その文のインデントを現行よりも N 追加する。文の前に '{' が無
+	      い時と有る時とでインデント量を変更したい時に便利。
+	      (省略値 0)
+
+		cino=		    cino=n2		cino=n-2 >
+		  if (cond)	      if (cond)		  if (cond)
+		      foo;		    foo;	    foo;
+		  else		      else		  else
+		  {		      {			  {
+		      bar;		  bar;		      bar;
+		  }		      }			  }
+<
+							*cino-f*
+	fN    関数やその他のブロックを示す開き波カッコを N 列目に配置する。こ
+	      れは他の波カッコの内側ではなく、かつ行頭である開き波カッコだけに
+	      適用される。波カッコの後の続くものはこの波カッコと相対的な位置に
+	      配置される。
+	      (省略値 0)
+
+		cino=		    cino=f.5s		cino=f1s >
+		  func()	      func()		  func()
+		  {			{		      {
+		      int foo;		    int foo;		  int foo;
+<
+							*cino-{*
+	{N    開き波カッコを現行のインデントから N の位置に配置する。これは他
+	      の波カッコの内側にある開き波カッコにのみ適用される。
+	      (省略値 0)
+
+		cino=		    cino={.5s		cino={1s >
+		  if (cond)	      if (cond)		  if (cond)
+		  {			{		      {
+		      foo;		  foo;		      foo;
+<
+							*cino-}*
+	}N    閉じ波カッコを対応する開き波カッコから N の位置に配置する。
+	      (省略値 0)
+
+		cino=		    cino={2,}-0.5s	cino=}2 >
+		  if (cond)	      if (cond)		  if (cond)
+		  {			{		  {
+		      foo;		  foo;		      foo;
+		  }		      }			    }
+<
+							*cino-^*
+	^N    開き波カッコが 0 列目にある波カッコセットの内側のインデントを現
+	      行よりも N 追加する。これにより関数全体には異なるインデント量を
+	      指定することができる。
+	      (省略値 0)
+
+		cino=		    cino=^-2		cino=^-s >
+		  func()	      func()		  func()
+		  {		      {			  {
+		      if (cond)		if (cond)	  if (cond)
+		      {			{		  {
+			  a = b;	    a = b;	      a = b;
+		      }			}		  }
+		  }		      }			  }
+<
+							*cino-L*
+	LN    ジャンプラベルの位置を制御する。N が負数ならラベルは 1 列目に置
+	      かれる。N が正数ならラベルはインデントから N を引いた位置に置か
+	      れる。(省略値 -1)。
+
+		cino=               cino=L2             cino=Ls >
+		  func()              func()              func()
+		  {                   {                   {
+		      {                   {                   {
+		          stmt;               stmt;               stmt;
+		  LABEL:                    LABEL:            LABEL:
+		      }                   }                   }
+		  }                   }                   }
+<
+							*cino-:*
+	:N    caseラベルをswitch()のインデントから N の位置に配置する。
+	      (省略値 'shiftwidth')
+
+		cino=		    cino=:0 >
+		  switch (x)	      switch(x)
+		  {		      {
+		      case 1:	      case 1:
+			  a = b;	  a = b;
+		      default:	      default:
+		  }		      }
+<
+							*cino-=*
+	=N    caseラベル後に現れる文をラベルのインデントから N の位置に配置す
+	      る。
+	      (省略値 'shiftwidth')
+
+		cino=		    cino==10 >
+		   case 11:		case 11:  a = a + 1;
+		       a = a + 1;		  b = b + 1;
+<
+							*cino-l*
+	lN    N が 0 でなければVimはcaseラベル後の文の替わりに、caseラベルそ
+	      のものを基本にして配置を行う。
+	      (省略値 0)
+
+		cino=			    cino=l1 >
+		    switch (a) {	      switch (a) {
+			case 1: {		  case 1: {
+				    break;	      break;
+				}		  }
+<
+							*cino-b*
+	bN    N が 0 でなければ、末尾の "break" を case ラベルに合わせて整列
+	      し、case..break がブロックのように見えるようにする。
+	      (省略値 0)。
+	      1 に設定するときは、'cinkeys' に "0=break" を追加するとよいだろ
+	      う。
+
+		cino=		    cino=b1 >
+		  switch (x)	      switch(x)
+		  {		      {
+		      case 1:		  case 1:
+			  a = b;	      a = b;
+			  break;	  break;
+
+		      default:		  default:
+			  a = 0;	      a = 0;
+			  break;	  break;
+		  }		      }
+<
+							*cino-g*
+	gN    C++のスコープ宣言をそれが含まれるブロックのインデントから N の位
+	      置へ配置する。"public:", "protected:", "private:" がスコープ宣言
+	      になり得る。
+	      (省略値 'shiftwidth')
+
+		cino=		    cino=g0 >
+		  {		      {
+		      public:	      public:
+			  a = b;	  a = b;
+		      private:	      private:
+		  }		      }
+<
+							*cino-h*
+	hN    C++スコープ宣言後に現れる文をそのラベルのインデントから N の位置
+	      に配置する。
+	      (省略値 'shiftwidth')
+
+		cino=		    cino=h10 >
+		   public:		public:   a = a + 1;
+		       a = a + 1;		  b = b + 1;
+<
+							*cino-N*
+	NN    C++ ネームスペースの中を通常のブロックに加えて N 文字インデント
+	      する。 (省略値 0)。
+
+		cino=			   cino=N-s >
+		  namespace {                namespace {
+		      void function();       void function();
+		  }                          }
+
+		  namespace my               namespace my
+		  {                          {
+		      void function();       void function();
+		  }                          }
+<
+							*cino-p*
+	pN    K&Rスタイルの関数宣言の引数宣言を N 文字インデントする。
+	      (省略値 'shiftwidth')
+
+		cino=		    cino=p0		cino=p2s >
+		  func(a, b)	      func(a, b)	  func(a, b)
+		      int a;	      int a;			  int a;
+		      char b;	      char b;			  char b;
+<
+							*cino-t*
+	tN    関数の戻り型の宣言を N 文字インデントする。
+	      (省略値 'shiftwidth')
+
+		cino=		    cino=t0		cino=t7 >
+		      int	      int			 int
+		  func()	      func()		  func()
+<
+							*cino-i*
+	iN    C++の基底クラスの宣言やコンストラクタが新しい行で始まる時に N 文
+	      字インデントする(そうでない時には右端の ':' を基準にする)。
+	      (省略値 'shiftwidth')
+
+		cino=			  cino=i0 >
+		  class MyClass :	    class MyClass :
+		      public BaseClass      public BaseClass
+		  {}			    {}
+		  MyClass::MyClass() :	    MyClass::MyClass() :
+		      BaseClass(3)	    BaseClass(3)
+		  {}			    {}
+<
+							*cino-+*
+	+N    関数の内側の継続行 (次の行へと分割された行) を N 文字分インデン
+	      トする。 (省略値 'shiftwidth')
+	      関数の外側では、直前の行の末尾にバックスラッシュがあるときは
+	      2 * N が使われる。
+
+		cino=			  cino=+10 >
+		  a = b + 9 *		    a = b + 9 *
+		      c;			      c;
+<
+							*cino-c*
+	cN    コメント開始子の後のコメント本文を、配置すべきその他のテキストが
+	      無ければ、コメント開始子から N 文字でインデントする。
+	      (省略値 3) |format-comments|も参照。
+
+		cino=			  cino=c5 >
+		  /*			    /*
+		     text.			 text.
+		   */			     */
+<
+							*cino-C*
+	CN    N が0でなければ、コメント開始子の後に他のテキストがある場合で
+	      も、コメントの行に c フラグで指定した量でインデントがされる。
+	      (省略値 0)
+
+		cino=c0			  cino=c0,C1 >
+		  /********		    /********
+		    text.		    text.
+		  ********/		    ********/
+<	      (":set comments& comments-=s1:/* comments^=s0:/*" を同時に設定)
+
+							*cino-/*
+	/N    コメント行を N 文字インデントする。
+	      (省略値 0)
+
+		cino=			  cino=/4 >
+		  a = b;		    a = b;
+		  /* comment */			/* comment */
+		  c = d;		    c = d;
+<
+							*cino-(*
+	(N    閉じていない丸カッコ内では開き丸カッコのあるラインより N 文字イ
+	      ンデントする。インデント量は1つの丸カッコにつき 'shiftwidth' ず
+	      つ増える。N が 0 であるか、閉じていない丸カッコが行頭にある時は、
+	      インデント位置はそのカッコ後の非空白文字の位置になる。
+	      (省略値 'shiftwidth' * 2)
+
+		cino=			  cino=(0 >
+		  if (c1 && (c2 ||	    if (c1 && (c2 ||
+			      c3))		       c3))
+		      foo;			foo;
+		  if (c1 &&		    if (c1 &&
+			  (c2 || c3))		(c2 || c3))
+		     {			       {
+<
+							*cino-u*
+	uN    (N と同じだが、一段階内側の丸カッコについての設定。
+	      (省略値 'shiftwidth')
+
+		cino=			  cino=u2 >
+		  if (c123456789	    if (c123456789
+			  && (c22345		    && (c22345
+			      || c3))		      || c3))
+<
+							*cino-U*
+	UN    N が 0 ではない時には、閉じていない丸カッコが行頭にある場合でも
+	      ( や u で指定したインデントを無視しない。
+	      (省略値 0)
+
+		cino= or cino=(s	  cino=(s,U1 >
+		  c = c1 &&		    c = c1 &&
+		      (				(
+		       c2 ||			    c2 ||
+		       c3			    c3
+		      ) && c4;			) && c4;
+<
+							*cino-w*
+	wN    N が 0 ではなければ次に示すような場合の、閉じていない丸カッコ後
+	      の非空白文字ではなく、カッコ直後の位置がインデントに使用される:
+		  - "(0" を使用している時の閉じていない丸カッコ
+		  - "u0" を使用している時の閉じていない丸カッコ
+		  - "U0" を使用している時の行頭の閉じていない丸カッコ
+	      (省略値 0)
+
+		cino=(0			  cino=(0,w1 >
+		  if (   c1		    if (   c1
+			 && (   c2		&& (   c2
+				|| c3))		    || c3))
+		      foo;			foo;
+<
+							*cino-W*
+	WN    N が 0 でない時に、丸カッコが閉じていなくて、"(0" か "u0" のどち
+	      らかが使われていて閉じていない開き丸カッコが行末にある時、続く行
+	      を最初の行から相対的にインデントする。
+	      (省略値 0)
+
+		cino=(0			   cino=(0,W4 >
+		  a_long_line(		    a_long_line(
+			      argument,		argument,
+			      argument);	argument);
+		  a_short_line(argument,    a_short_line(argument,
+			       argument);		 argument);
+<
+							*cino-k*
+	kN    "if", "for", "while" の後の丸カッコが閉じていなくて、N が 0 でな
+	      い時、"(N" で指定される挙動を上書きする。これにより、外側の文脈
+	      (例えば、"if", "for", "while" がある行) に対して N 文字インデン
+	      トとされる。より深いレベルのネストに対しては効果はない。"wN" の
+	      ように働くが、"if", "for", "while" の条件のみに働く。N が 0 の場
+	      合は "(N" フラグで指定された挙動となる。(省略値 0)
+
+		cino=(0			   cino=(0,ks >
+		  if (condition1	    if (condition1
+		      && condition2)		    && condition2)
+		      action();			action();
+		  function(argument1	    function(argument1
+			   && argument2);	     && argument2);
+<
+							*cino-m*
+	mN    N が 0 でない時には、閉じ丸カッコで始まる行を対応する開き丸カッ
+	      コのある行頭に並べる。
+	      (省略値 0)
+
+		cino=(s			  cino=(s,m1 >
+		  c = c1 && (		    c = c1 && (
+		      c2 ||			c2 ||
+		      c3			c3
+		      ) && c4;		    ) && c4;
+		  if (			    if (
+		      c1 && c2			c1 && c2
+		     )			    )
+		      foo;			foo;
+<
+							*cino-M*
+	MN    N が非ゼロのとき、閉じ括弧で始まる行のインデントを前の行の最初の
+	      文字と同じ位置にする(省略値 0)。
+
+		cino=			  cino=M1 >
+		  if (cond1 &&		    if (cond1 &&
+			 cond2			   cond2
+		     )				   )
+<
+				*java-cinoptions* *java-indenting* *cino-j*
+	jN    Javaの無名クラスを正しくインデントする。Javascript に対しても機
+	      能する。値 'N' は現在のところ使われていないが 0 以外(例 'j1')に
+	      しなければならない。'j1' にすることで例えば次のようなコードが正
+	      しくインデントされる: >
+
+		object.add(new ChangeListener() {
+		    public void stateChanged(ChangeEvent e) {
+			do_something();
+		    }
+		});
+<
+			*javascript-cinoptions* *javascript-indenting* *cino-J*
+	JN    JavaScript のオブジェクト定義を (ラベルと混同せずに) 適切にイン
+	      デントする。'N' は今のところ使用されていないが非ゼロを指定する必
+	      要がある (例: 'J1')。このオプションを有効にした場合、もしかした
+	      ら |cino-j| もセットしたほうがいいかもしれない。 >
+
+		var bar = {
+		    foo: {
+			that: this,
+			some: ok,
+		    },
+		    "bar":{ 
+			a : 2,
+			b: "123abc",
+			x: 4,
+			"y": 5
+		    }
+		}
+<
+								*cino-)*
+	)N    Vimは N 行まで遡って閉じていないカッコを探す。これはカッコを探す
+	      のにかかる時間を制限する。
+	      (省略値 20)
+
+								*cino-star*
+	*N    Vimは N 行まで遡って閉じられていないコメントを探す。これはコメン
+	      トの始まりを探すのにかかる時間を制限する。
+	      N 行以降で /* */ コメントがインデントされない、というときはこの
+	      オプションを設定すること。
+	      (省略値 70行)
+
+								*cino-#*
+	#N    N がゼロでないときは '#' で始まるshell/Perlのコメントを認識する。
+	      N の既定値はゼロであり、'#' のコメントを認識しない。'#' で始まる
+	      行はプリプロセッサ行としても認識されることに注意。
+
+
+省略値を全て並べるとこうなる:
+	cinoptions=>s,e0,n0,f0,{0,}0,^0,L-1,:s,=s,l0,b0,gs,hs,N0,ps,ts,is,+s,
+			c3,C0,/0,(2s,us,U0,w0,W0,k0,m0,j0,J0,)20,*70,#0
+
+次のような場合にはVimは行頭を1列目に持っていく:
+- 'cinkeys' が '#' を含み行が '#' (プリプロセッサ命令)で始まる場合
+- 行がラベル ("case" と "default" 以外のキーワードの後に ':' があるもの) で始
+  まり、'cinoptions' に正数を持った 'L' フラグがない場合。
+- インデントの組合わせの結果、その行のインデント量が0以下になった場合。
+
+==============================================================================
+2. スクリプトを用いたインデント				*indent-expression*
+
+融通の利くインデントの基本はユーザマニュアルの|30.3|節で説明されている。
+
+独自にインデントファイルを書きたいならば、オプション 'indentexpr' を設定しなけ
+ればならない。同時にオプション 'indentkeys' を設定すると便利だろう。インデント
+ファイルの例は $VIMRUNTIME/indent ディレクトリを参照。
+
+
+インデントファイルについての覚書 ~
+
+
+CLOJURE					*ft-clojure-indent* *clojure-indent*
+
+Clojure のインデントは伝統的な Lisp とは若干異なる。それは角カッコや波カッコの
+扱いや、コミュニティーの習慣などによる。それらの習慣は普遍的ではないので、
+Clojure のインデントスクリプトは以下に挙げる設定可能オプションを用意している。
+
+使用している vim に searchpairpos() がない場合は通常の 'lisp' インデントに
+フォールバックする。その場合、以下のオプションは無視される。
+
+							*g:clojure_maxlines*
+
+searchpairpos() による検索の最大範囲を設定する。大きな値を指定すれば、フォーム
+が長い場合に、パフォーマンスと引き換えに正しい結果を得ることができる。0 を指定
+すると制限なしになる。
+>
+	" 初期設定
+	let g:clojure_maxlines = 100
+<
+
+						*g:clojure_fuzzy_indent*
+					*g:clojure_fuzzy_indent_patterns*
+					*g:clojure_fuzzy_indent_blacklist*
+
+'lispwords' オプションはカンマ区切りの単語のリストで、サブフォームをスペース 2
+個でインデントする特別なフォームを指定する。
+
+例:
+>
+	(defn bad []
+	      "Incorrect indentation")
+
+	(defn good []
+	  "Correct indentation")
+<
+'lispwords' をパターン (|pattern|) で指定したい場合は、ファジーインデント機能
+が使える:
+>
+	" 初期設定
+	let g:clojure_fuzzy_indent = 1
+	let g:clojure_fuzzy_indent_patterns = ['^with', '^def', '^let']
+	let g:clojure_fuzzy_indent_blacklist =
+		\ ['-fn$', '\v^with-%(meta|out-str|loading-context)$']
+
+	" 古い設定方法。文字列をコンマ区切りで指定する。現在は上記のリストによ
+	" る設定が推奨される。Note: パターンは暗黙的に ^ と $ で固定される。
+	let g:clojure_fuzzy_indent_patterns = 'with.*,def.*,let.*'
+<
+|g:clojure_fuzzy_indent_patterns| と |g:clojure_fuzzy_indent_blacklist| はパ
+ターンのリストで、unquoted symbol や unqualified symbol に対してマッチする。
+つまり、"^foo" というパターンは、"foobar"、"my.ns/foobar"、"#'foobar" などに
+マッチする。
+
+各単語は次の順番で検査される:
+
+	1. 単語が 'lispwords' に含まれていたら真を返す
+	2. 単語が |g:clojure_fuzzy_indent_blacklist| にマッチしたら偽を返す
+	3. 単語が |g:clojure_fuzzy_indent_patterns| にマッチしたら真を返す
+	4. それ以外は、偽を返し、通常どおりにインデントする
+
+					*g:clojure_special_indent_words*
+
+Clojure のいくつかのフォームは、'lispwords' に依らず、すべてのサブフォームがス
+ペース 2 個でインデントされる。そのような特異なインデントで扱いたい構造が他に
+もある場合は、そのシンボルを次の初期値に加えること。
+>
+	" 初期設定
+	let g:clojure_special_indent_words =
+	   \ 'deftype,defrecord,reify,proxy,extend-type,extend-protocol,letfn'
+<
+
+					*g:clojure_align_multiline_strings*
+
+複数行文字列を、クオート文字と同じ列で揃えるのではなく、クオート文字の一つ後ろ
+の列で整列させる。
+
+例:
+>
+	(def 初期設定
+	  "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+	  eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+	  enim ad minim veniam, quis nostrud exercitation ullamco laboris
+	  nisi ut aliquip ex ea commodo consequat.")
+
+	(def 整列する場合
+	  "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+	   eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+	   enim ad minim veniam, quis nostrud exercitation ullamco laboris
+	   nisi ut aliquip ex ea commodo consequat.")
+<
+このオプションは初期設定でオフになっている。
+>
+	" 初期設定
+	let g:clojure_align_multiline_strings = 0
+<
+
+
+FORTRAN							*ft-fortran-indent*
+
+Block if、select case、where、forall 構造がインデントされる。さらに type、
+interface、associate、block、enum 構造も。サブルーチン、関数、モジュール、プロ
+グラムブロックのインデントは任意。コメント、ラベル付き文、そして2行にまたがっ
+た行は、Fortranが自由形式のソースではインデントされるが、一方Fortranが固定形式
+ソースの場合には左余白が言語仕様により決定されているのでインデントされない。そ
+れ故に固定形式ソースを使っている時にはラベル付き文と2行にまたがった行について
+は手動でインデントを修正する必要がある。ソース形式の判定に使われている方法につ
+いてのさらなる議論は|ft-fortran-syntax|を参照のこと。
+
+Doループ ~
+デフォルトでは全てのdoループはインデントされない。Fortranでは、ループはラベル
+付けされたほとんど任意の型の実行可能な文で(場合によっては多重に)終わるので、do
+ループは非構造的になる。これを正しくインデントするにはコンパイラ級の構文解析が
+必要になる。任意の型の実行可能文で終わるdoループを持っていたとしても、古いコー
+ドであればTidy (http://www.unb.ca/chem/ajit/f_tidy.htm) のように念入りに作られ
+たプログラムでインデントすることはできる。構造化do/continueループも、continue
+文がdoループを終了する以外の目的でも使用されるので、インデントせずに残される。
+Tidyのようなプログラムは構造化do/continueループをdo/enddo形式に変換することが
+できる。do/enddoタイプのdoループならばインデントすることができる。do/enddoの形
+の構造化されたループしか使わないのならば、.vimrcで以下のようにfortran_do_enddo
+変数を設定してそのことを宣言するべきである: >
+
+   let fortran_do_enddo=1
+
+このようなすればdoループはインデントされる。例えば拡張子が.f90 であるファイル
+の中にある全てのループがdo/enddoタイプだけならば、このようなautocommandを使っ
+てのバッファフラグを設定することができる: >
+
+  au! BufRead,BufNewFile *.f90 let b:fortran_do_enddo=1
+
+こうすれば .f90 のファイル内の do ループはインデントし、それ以外、例えば拡張子
+が .for の Fortran のファイルのループはインデントせずに残すことができる。
+
+プログラム単位 ~
+プログラム単位 (サブルーチン、関数、モジュール、プログラムブロック) のインデン
+トは初期設定では有効になっている。軽くてスクリーン幅指向のインデントスタイルが
+好みなら無効化することができる。すべての Fortran ファイルでプログラム単位のイ
+ンデントを無効化するにはグローバル変数の fortran_indent_less を .vimrc で設定
+する。 >
+
+  let fortran_indent_less=1
+
+バッファ単位で無効化したい場合はバッファローカル変数を設定する。 >
+
+  let b:fortran_indent_less=1
+
+
+PHP				*ft-php-indent* *php-indent* *php-indenting*
+
+NOTE:	|syntax| がオンのときのみ PHP のファイルは正しくインデントされる。
+
+'fileformat' を "unix" にしている場合、文字 '\r' が改行の前にあると、インデ
+ントは正しく行われない。これらの不要な文字を削除するには次のコマンドを使う: >
+
+    :%s /\r$//g
+
+または |:let| コマンドを使って変数 PHP_removeCRwhenUnix に 1 をセットすると、
+PHP ファイルを読み込んだとき、|BufRead| のタイミングで自動的にこれらが削除され
+る(そのとき特にメッセージは表示されない)。
+
+オプション: ~
+
+下記のグローバル変数をセットすることで、PHP のインデントをカスタマイズできる。
+
+								*php-comment*
+デフォルトでは有効になっているコメントの自動整形を無効化するには
+('formatoptions' に従うようにするには)次のようにする: >
+    :let g:PHP_autoformatcomment = 0
+
+これをしない場合、'formatoptions' から 't' が除かれ、"qrowcb" が加えられる。
+詳しくは |fo-table| を参照。
+-------------
+
+一行コメントに追加のインデントを加える: >
+    :let g:PHP_outdentSLComments = N
+
+N は 'shiftwidth' に追加される値。
+
+次のような一行コメントのみ影響する: >
+    # Comment
+    // Comment
+    /* Comment */
+-------------
+
+すべての PHP の行に対しインデントを増やすには、次のようにする: >
+    :let g:PHP_default_indenting = N
+
+ここで N は整数。N 個の 'shiftwidth' 分のインデントが追加される。例として
+N = 1 の場合、次のようになる:
+>
+    <?php
+	if (!isset($History_lst_sel))
+	    if (!isset($History_lst_sel))
+		if (!isset($History_lst_sel)) {
+		    $History_lst_sel=0;
+		} else
+		    $foo="bar";
+
+	$command_hist = TRUE;
+    ?>
+(<?php タグよりコードの方が 1 段階多くインデントされている)
+-------------
+
+PHP タグを囲まれているコードとしてインデントする: >
+    :let g:PHP_outdentphpescape = 0
+-------------
+
+'fileformat' を "unix" にしているとき、自動的に '\r' を削除するには次のよう
+にする: >
+    :let g:PHP_removeCRwhenUnix = 1
+-------------
+
+波カッコ {} をその内側と同じインデントレベルにするには: >
+    :let g:PHP_BracesAtCodeLevel = 1
+    
+すると、次のようになる: >
+    if ($foo)
+	{
+	foo();
+	}
+デフォルトの場合: >
+    if ($foo)
+    {
+	foo();
+    }
+
+NOTE:	このオプションをオンにすると、最適化の一部が効かなくなるため、インデ
+	ントが少し遅くなる。
+-------------
+
+switch() ブロック内の 'case:' と 'default:' をインデントさせるには: >
+    :let g:PHP_vintage_case_default_indent = 1
+
+PHP では 'case/default' ブロックの中で波カッコは不要なので、余計なインデントを
+避けるため、'case:' と 'default:' は 'switch()' と同じレベルにインデントされ
+る。上記のオプションを使うことで古いインデント形式を使うことができる。
+
+
+PYTHON							*ft-python-indent*
+
+以下の状況のためにインデントの量を設定することができる。この例は既定である。
+後で 'shiftwidth' の値を変更するために変数に式を設定しておく。
+
+開き括弧の後のインデント: >
+	let g:pyindent_open_paren = '&sw * 2'
+ネストした括弧の後のインデント: >
+	let g:pyindent_nested_paren = '&sw'
+継続行のインデント: >
+	let g:pyindent_continue = '&sw * 2'
+
+R								*ft-r-indent*
+
+関数の引数が複数行にまたがる場合はそれらは整列される。関数の引数を整列させた
+くない場合は |vimrc| に次の設定を書くこと:
+>
+   let r_indent_align_args = 0
+<
+コメント文字 (#) で始まるすべての行は R の通常のコードと同じレベルでインデント
+される。Emacs/ESS のユーザーは 1 つの # で始まる行を 40 桁でインデントし、##
+で始まる行を R コードと同じ桁でインデントし、### で始まる行をインデントしない
+ようにしている。Emacs/ESS と同じようにインデントをしたい場合は |vimrc| に次の
+設定を書くこと:
+>
+   let r_indent_ess_comments = 1
+<
+1 つの # で始まる行の整列位置を 40 桁から変えたい場合は
+r_indent_comment_column の値を設定すること。次のようにする:
+>
+   let r_indent_comment_column = 30
+<
+行末が "<-" で終わる行に続くコードはインデントされる。Emacs/ESS ではそれがトッ
+プレベル関数ならインデントはされない。Emacs/ESS と同じようにインデントしたい場
+合は次の設定を |vimrc| に書くこと:
+>
+   let r_indent_ess_compatible = 1
+<
+このオプションを設定するかしないかで次のようにインデントが変わる:
+>
+   ### r_indent_ess_compatible = 1           ### r_indent_ess_compatible = 0
+   foo <-                                    foo <-
+       function(x)                               function(x)
+   {                                             {
+       paste(x)                                      paste(x)
+   }                                             }
+<
+
+SHELL							*ft-sh-indent*
+
+シェルファイルの様々な状況に適用されるインデント量を調整するには、|Dictionary|
+b:sh_indent_defaults の以下のキーを設定するか、またはインデント量を計算して返
+す関数への参照|Funcref|を用いる。
+
+b:sh_indent_options['default']	インデント量の既定値。
+
+b:sh_indent_options['continuation-line']
+				継続行に対して追加されるインデント量。
+				(実際には実装されていない)
+
+b:sh_indent_options['case-labels']
+				caseのラベルに対して追加されるインデント量。
+
+b:sh_indent_options['case-statements']
+				caseの文に対して追加されるインデント量。
+
+b:sh_indent_options['case-breaks']
+				caseのbreakに対して追加(あるいは削減)されるイ
+				ンデント量。
+
+VERILOG							*ft-verilog-indent*
+
+一般的なブロック文であるif, for, case, always, initial, function, specify, そ
+してbegin等などはインデントされる。moduleブロック文(最初のレベルのブロック)は
+デフォルトではインデントされない。次のように.vimrcで以下の変数を設定するとその
+インデントを有効化できる: >
+
+  let b:verilog_indent_modules = 1
+
+これによりmoduleブロックがインデントされる。これをやめるには変数を削除すれば良
+い: >
+
+  :unlet b:verilog_indent_modules
+
+Verilogのファイルにだけこの変数を設定するには、次の設定が使える: >
+
+  au BufReadPost * if exists("b:current_syntax")
+  au BufReadPost *   if b:current_syntax == "verilog"
+  au BufReadPost *     let b:verilog_indent_modules = 1
+  au BufReadPost *   endif
+  au BufReadPost * endif
+
+その上、インデントの幅を変更するのに変数b:verilog_indent_widthを設定できる
+(省略値 'shiftwidth'): >
+
+  let b:verilog_indent_width = 4
+  let b:verilog_indent_width = &sw * 2
+
+さらに、デバッグ目的でverboseモードを有効化できる: >
+
+  let b:verilog_indent_verbose = 1
+
+メッセージを表示できるようにするために、先に ":set cmdheight=2" を実行すること
+を確認すること。
+
+
+VHDL							*ft-vhdl-indent*
+
+generic/port 文の桁揃えが自動的に行われる。これによって、次のように桁揃えさ
+れる: >
+
+  ENTITY sync IS
+  PORT (
+         clk        : IN  STD_LOGIC;
+         reset_n    : IN  STD_LOGIC;
+         data_input : IN  STD_LOGIC;
+         data_out   : OUT STD_LOGIC
+       );
+  END ENTITY sync;
+
+これをオフにするには、次を .vimrc に加える >
+
+  let g:vhdl_indent_genportmap = 0
+
+すると、先ほどの例が次のように変わる: >
+
+  ENTITY sync IS
+  PORT (
+    clk        : IN  STD_LOGIC;
+    reset_n    : IN  STD_LOGIC;
+    data_input : IN  STD_LOGIC;
+    data_out   : OUT STD_LOGIC
+  );
+  END ENTITY sync;
+
+----------------------------------------
+
+デフォルトで "<=" の右辺の桁揃えが行われる。例: >
+
+  sig_out <= (bus_a(1) AND
+             (sig_b OR sig_c)) OR
+             (bus_a(0) AND sig_d);
+
+これをオフにするには次を ~/.vimrc に加える。
+
+  let g:vhdl_indent_rhsassign = 0
+
+すると先ほどの例が次のように変わる: >
+
+  sig_out <= (bus_a(1) AND
+    (sig_b OR sig_c)) OR
+    (bus_a(0) AND sig_d);
+
+----------------------------------------
+
+"-- " で始まるコメント行は、 1 行前のコメント行と同じインデントになる。
+"--" の後にスペースがついていなければならないことに注意。
+
+例: >
+
+  sig_a <= sig_b; -- start of a comment
+                  -- continuation of the comment
+                  -- more of the same comment
+
+挿入モードでは、"-- " (スペース " " に注意) をタイプしたあと、CTRL-F を押すと
+現在行の "-- " を前の行の "--" に揃えることができる。
+
+1 行前が "--" を含んでいない場合、その行は下方の「空行でもコメントでもない行」
+と同じインデントになる。
+
+以下のコードをインデントすると: >
+
+  sig_c <= sig_d; -- comment 0
+         -- comment 1
+               -- comment 2
+    --debug_code:
+    --PROCESS(debug_in)
+         --BEGIN
+            --  FOR i IN 15 DOWNTO 0 LOOP
+             --    debug_out(8*i+7 DOWNTO 8*i) <= debug_in(15-i);
+            --  END LOOP;
+     --END PROCESS debug_code;
+
+      -- comment 3
+  sig_e <= sig_f; -- comment 4
+           -- comment 5
+
+次のようになる: >
+
+  sig_c <= sig_d; -- comment 0
+                  -- comment 1
+                  -- comment 2
+  --debug_code:
+  --PROCESS(debug_in)
+  --BEGIN
+  --  FOR i IN 15 DOWNTO 0 LOOP
+  --    debug_out(8*i+7 DOWNTO 8*i) <= debug_in(15-i);
+  --  END LOOP;
+  --END PROCESS debug_code;
+
+  -- comment 3
+  sig_e <= sig_f; -- comment 4
+                  -- comment 5
+
+"--debug_code:"  は "--" の後にスペースがないため、"-- comment 2" に揃えられ
+てないことに注意。
+
+コメントをインデントする処理は、動的な性質のため 2 パスで行われる。1 パス目は
+コードがインデントされ、2 パス目は正しくインデントされたコードに沿ってコメン
+トがインデントされる。
+
+
+VIM							*ft-vim-indent*
+
+Vimスクリプトに対しては継続行(バックスラッシュで始まる行)のインデント量を指定
+する変数が1つある: >
+
+	:let g:vim_indent_cont = &sw * 3
+
+shiftwidth の 3 倍が既定値である。
+
+
+ vim:tw=78:ts=8:ft=help:norl:

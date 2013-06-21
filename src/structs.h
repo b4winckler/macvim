@@ -20,6 +20,22 @@ typedef int		colnr_T;
 typedef unsigned short	short_u;
 #endif
 
+#ifdef FEAT_JOB_BASE
+typedef int (*JOB_CHECK_END)(void *);
+typedef void (*JOB_CLOSE)(void *);
+
+typedef struct _job_T job_T;
+
+struct _job_T
+{
+    void	    *data;
+    JOB_CHECK_END   check_end;
+    JOB_CLOSE	    close;
+    int		    wait;
+    job_T	    *next;
+};
+#endif
+
 /*
  * position in file or buffer
  */
@@ -111,6 +127,26 @@ typedef struct xfilemark
     fmark_T	fmark;
     char_u	*fname;		/* file name, used when fnum == 0 */
 } xfmark_T;
+
+#ifdef FEAT_EVAL
+
+typedef struct evalmark_S emark_T;
+
+struct evalmark_S
+{
+    int		em_id;
+    pos_T	em_pos;
+    emark_T	*em_next;
+};
+
+typedef struct evalmarklist_S
+{
+    emark_T	*eml_first;
+    int_u	eml_count;
+    int_u	eml_next_id;
+} emarklist_T;
+
+#endif /* FEAT_EVAL */
 
 /*
  * The taggy struct is used to store the information about a :tag command.
@@ -1550,10 +1586,14 @@ struct file_buffer
     char_u	*b_p_key;	/* 'key' */
 #endif
     char_u	*b_p_kp;	/* 'keywordprg' */
+    int		b_p_lasteol;	/* 'lasteol' */
 #ifdef FEAT_LISP
     int		b_p_lisp;	/* 'lisp' */
 #endif
     char_u	*b_p_mps;	/* 'matchpairs' */
+#ifdef USE_MIGEMO
+    int		b_p_migemo;	/* 'migemo' */
+#endif
     int		b_p_ml;		/* 'modeline' */
     int		b_p_ml_nobin;	/* b_p_ml saved for binary mode */
     int		b_p_ma;		/* 'modifiable' */
@@ -1616,6 +1656,7 @@ struct file_buffer
 				 * write should not have an end-of-line */
 
     int		b_start_eol;	/* last line had eol when it was read */
+    int		b_start_lasteol;/* last lien had eol when it was read */
     int		b_start_ffc;	/* first char of 'ff' when edit started */
 #ifdef FEAT_MBYTE
     char_u	*b_start_fenc;	/* 'fileencoding' when edit started or NULL */
@@ -1626,6 +1667,10 @@ struct file_buffer
 #ifdef FEAT_EVAL
     dictitem_T	b_bufvar;	/* variable for "b:" Dictionary */
     dict_T	*b_vars;	/* internal variables, local to buffer */
+#endif
+
+#ifdef FEAT_EVAL
+    emarklist_T	b_emarklist;
 #endif
 
 #if defined(FEAT_BEVAL) && defined(FEAT_EVAL)

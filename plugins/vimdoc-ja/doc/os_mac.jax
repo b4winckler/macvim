@@ -1,0 +1,117 @@
+*os_mac.txt*    For Vim バージョン 7.3.  Last change: 2006 Apr 30
+
+
+		  VIMリファレンスマニュアル    by Bram Moolenaar
+
+
+					*mac* *Mac* *macintosh* *Macintosh*
+
+このファイルは、Macintosh 版の Vim に特有の事柄について書いてあります。
+
+NOTE: このファイルの内容は少し古いです。つぎのサイトで役に立つ情報が得られます
+	http://macvim.org/
+
+1. ファイル名の決まりごと	|mac-filename|
+2. .vimrc と .vim ファイル	|mac-vimfile|
+3. FAQ				|mac-faq|
+4. 知られている不足事項		|mac-lack|
+5. Mac バグレポート		|mac-bug|
+6. Vim のコンパイル		|mac-compile|
+
+以前には、Vimのバージョン3.0のMac移植版がありました。ここに以前のファイルの最
+初の数行を示します:
+
+VIM Release Notes
+Initial Macintosh release, VIM version 3.0
+19 October 1994
+
+Eric Fischer
+<enf1@midway.uchicago.edu>, <eric@jcp.uchicago.edu>, <etaoin@uchicago.edu>
+5759 N. Guilford Ave
+Indianapolis IN 46220 USA
+
+==============================================================================
+1. ファイル名の決まりごと					*mac-filename*
+
+Vim 7 からは Unix のパス区切り文字(/)しか使えないようになりました。指定された
+ファイル名がカレントフォルダからの相対パス(すなわち、"Desktop" からの相対)か、
+絶対パスかを判断するには、次のアルゴリズムが使われます:
+
+	パスが "/" から始まる場合は、絶対パス
+	パスが ":" から始まる場合は、相対パス
+	パスが "/" でも ":" でも始まらない場合、そして ":" が "/" の前にある
+	ときは、絶対パス
+>
+		:e /HD/text
+		:e HD:text
+<	ディスク "HD" のファイル "text" を編集。 >
+		:e :src:main.c
+		:e src/main.c
+<	カレントフォルダのフォルダ "src" 内のファイル "main.c" を編集。 >
+		e os_mac.c
+<	カレントフォルダのファイル "os_mac.c" を編集。
+
+変数 |$VIM|、または |$VIMRUNTIME| を使うこともできます。 >
+
+		so $VIMRUNTIME:syntax:syntax.vim
+
+==============================================================================
+2. .vimrc と .vim ファイル				*mac-vimfile*
+
+Vim スクリプトを書くときは Unix の改行文字(LF)を使うことが推奨されています。
+
+起動時に $VIMRUNTIME/macmap.vim が読み込まれ、デフォルトのコマンドキー・マップ
+が定義されます。
+
+古いシステムでは、ドット "." で始まるファイルは推奨されていません。そのため、
+rcファイルは、"vimrc" または "_vimrc"、"gvimrc" または "_gvimrc" という名前に
+なっています。これらのファイルは、mac, dos, unix のどのフォーマットでもよいで
+す。|'nocompatible'|オプションが設定されていれば、Vimはどんなファイルフォーマッ
+トも扱うことができますが、そうでなければ、macフォーマットファイルしか扱えませ
+ん。
+
+==============================================================================
+3. Mac FAQ						*mac-faq*
+
+FAQ はインターネット上でも参照できます:  http://macvim.org/OSX/index.php#FAQ
+
+Q: Apple ターミナルで非 ASCII 文字を入力できない。
+A: [ウィンドウ設定] → [エミュレーション] で「非 ASCII 文字をエスケープする」
+  のチェックを外してください。
+
+Q: コマンドラインから GUI の Vim を起動するには？
+A: Vim.app が /Applications にあるとします。その場合:
+	open /Applications/Vim.app
+   または:
+	/Applications/Vim.app/Contents/MacOS/Vim -g  {arguments}
+
+Q: GUI または open で Vim.app を起動したとき、$PATH になんらかの意味のあるもの
+   に設定するには？
+A: ほとんどのシェルで次のトリックがうまくいきます。vimrc に書き加えてくださ
+   い。macvim.org で配布されているバイナリでは、これがシステムの vimrc ファイ
+   ルに含まれています。 >
+	let s:path = system("echo echo VIMPATH'${PATH}' | $SHELL -l")
+	let $PATH = matchstr(s:path, 'VIMPATH\zs.\{-}\ze\n')
+
+==============================================================================
+4. 知られている不足事項					*mac-lack*
+
+ターミナルでは CTRL-^ は Shift-Control-6 とタイプする必要があります。CTRL-@ は
+Shift-Control-2 です。
+
+==============================================================================
+5. Mac バグ レポート					*mac-bug*
+
+Mac版の特定のバグや特性の変更をレポートするときは、vim-macメーリングリストを
+使ってください|vim-mac|。メーリングリストに登録したくないなら代わりにMacVimの
+メンテナにメッセージを送ってください。
+
+	mac@vim.org
+
+==============================================================================
+6. Vim のコンパイル					*mac-compile*
+
+ソースファイルと一緒にある "src/INSTALLmac.txt" を見てください。
+
+
+ vim:tw=78:ts=8:ft=help:norl:

@@ -1,0 +1,78 @@
+
+			    Text Formatting Plugin
+
+This is a 'formatexpr' plugin.
+
+{only works when 'encoding' is utf-8 or |+iconv| is enabled}
+
+==============================================================================
+1. Usage
+>
+  :set runtimepath+=/path/to/autofmt/
+  :set formatexpr=autofmt#compat#formatexpr()
+
+Following method can be used:
+
+  autofmt#compat#formatexpr():	  Vim compatible
+  autofmt#uax14#formatexpr():	  Implementation of UAX #14
+  autofmt#japanese#formatexpr():  Japanese
+
+UAX #14: Line Breaking Properties: http://unicode.org/reports/tr14/.
+
+==============================================================================
+2. Language
+
+If you want to create your 'formatexpr' plugin, autofmt can be used as
+framework.  You can define your language specific formatting easily.
+For example: >
+
+  set formatexpr=myfmt.formatexpr()
+
+  let s:compat = autofmt#compat#import()
+
+  let myfmt = {}
+  call extend(myfmt, s:compat)
+
+  function! myfmt.check_boundary(lst, i)
+    if a:lst[a:i].c == "x"
+      " It is possible to break a line before 'x'.
+      return "allow_break"
+    elseif a:lst[a:i].c == "y"
+      " It is impossible to break a line before 'y'.
+      return "no_break"
+    else
+      " Use default behavior.
+      return call(s:compat.check_boundary, [a:lst, a:i], self)
+    endif
+  endfunction
+<
+==============================================================================
+3. Customize Unicode Line Break Property
+
+uax14.vim is Pair Table-Based implementation of UAX #14.  It uses Unicode Line
+Break Property.  But it is not useful for all language.  You can customize it
+for your language.
+For example, line break is not allowed before LEFT DOUBLE QUOTATION MARK
+(U+201C) without space.  To change its behavior as Open Punctuation (e.g. "(",
+"{", etc...):
+>
+  " Use uax14
+  set formatexpr=autofmt#uax14#formatexpr()
+
+  " Customize Line Break Property
+  let s:unicode = unicode#import()
+  let s:orig_prop_line_break = s:unicode.prop_line_break
+  function! s:unicode.prop_line_break(char)
+    if a:char == "\u201c" || a:char == "\u2018"
+      return "OP"   " Open Punctuation
+    elseif a:char == "\u201d" || a:char == "\u2019"
+      return "CL"   " Close Punctuation
+    endif
+    return call(s:orig_prop_line_break, [a:char], self)
+  endfunction
+<
+Add this code in your vimrc.
+
+See http://unicode.org/reports/tr14/ for more information.
+
+ vim:tw=78:ts=8:ft=help:norl:

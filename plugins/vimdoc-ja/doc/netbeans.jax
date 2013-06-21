@@ -1,0 +1,997 @@
+*netbeans.txt*  For Vim バージョン 7.3.  Last change: 2012 Jan 26
+
+
+		  VIMリファレンスマニュアル    by Gordon Prieur et al.
+
+
+			*socket-interface* *netbeans* *netbeans-support*
+
+Vim NetBeans プロトコル: Vim と IDE を統合するためのソケットインターフェイス
+
+1.  はじめに					|netbeans-intro|
+2.  NetBeans インターフェイスでできること	|netbeans-integration|
+3.  NetBeans 用に configure する		|netbeans-configure|
+4.  エラーメッセージ				|netbeans-messages|
+5.  Vim を NetBeans モードで起動する		|netbeans-run|
+6.  NetBeans プロトコル				|netbeans-protocol|
+7.  NetBeans コマンド				|netbeans-commands|
+8.  既知の問題					|netbeans-problems|
+9.  NetBeans プロトコルのデバッグ		|netbeans-debugging|
+10. NetBeans External Editor
+    10.1. NetBeans をダウンロードする		|netbeans-download|
+    10.2. NetBeans のキーバインド		|netbeans-keybindings|
+    10.3. NetBeans 側の準備			|netbeans-preparation|
+    10.4. External Editor モジュールの入手	|obtaining-exted|
+    10.5. NetBeans の設定			|netbeans-setup|
+
+{Vi にはこれらの機能はありません}
+{|+netbeans_intg| 機能つきでコンパイルされたときのみ利用可能}
+
+==============================================================================
+1. はじめに						*netbeans-intro*
+
+NetBeans インターフェイスは、最初は External Editor プラグインを使って Vim と
+NetBeans Java IDE を統合するために開発されました。その NetBeans プラグインは
+今はもう NetBeans の新しいバージョンに対応しておらず、このプロトコルは任意の
+IDE と Vim を統合させるために開発されています。
+
+Vim の NetBeans プロトコルは、古典的な TCP ソケットを使った、テキストベース
+の通信プロトコルです。Java や NetBeans にはまったく依存していません。ソケッ
+トインターフェイスさえ備えていれば、どんな言語・環境でもこのプロトコルを使っ
+て Vim をコントロールできます。C, C++, Python, Java の実装がすでに存在してい
+ます。歴史的な理由により NetBeans の名前が今も残されています。
+
+NetBeans プロトコルを使ったプロジェクトは現在のところ、以下のものがあります:
+- VimIntegration, Vim の統合を行っている様々なプロジェクトの説明
+	http://www.freehackers.org/VimIntegration
+- Agide, AAP プロジェクト用の IDE。Python で書かれている。
+	http://www.a-a-p.org
+- Clewn, gdb 統合。C で書かれている。
+	http://clewn.sourceforge.net/
+- Pyclewn, gdb 統合。 Python で書かれている。
+	http://pyclewn.sourceforge.net/
+- VimPlugin, Eclipse の内部に Vim を取り込む。
+	http://vimplugin.sourceforge.net/wiki/pmwiki.php
+- PIDA, Python で書かれた IDE。
+	http://pida.co.uk/
+- VimWrapper, Vim と IDE を簡単に統合するためのライブラリ
+	http://www.freehackers.org/VimWrapper
+
+詳しくは、それぞれのプロジェクトページを参照してください。
+
+このヘルプページの以降の部分で、NetBeans ソケットインターフェイスを使って Vim
+をコントロールするプログラムのことを「Vim コントローラ」と呼びます。
+
+
+NetBeans IDE について ~
+
+NetBeans は、Sun Microsystems, Inc. と netbeans.org の開発者コミュニティが合
+同で開発しているオープンソースの統合開発環境(IDE)です。最初は Java の IDE で
+したが、今では C, C++, Fortran もサポートするようになっています。
+
+NetBeans に関してより詳しくは http://www.netbeans.org を参照してください。
+The External Editor は残念なことに obsolete と宣言されています。
+ http://externaleditor.netbeans.org
+
+Sun Microsystems, Inc. は NetBeans を Sun ONE Studio という名前でもリリース
+しています。Sun ONE Studio に関しては http://www.sun.com を参照してくださ
+い。
+
+現在のところ、NetBeans は Java を完全サポート、C, C++, Fortran を限定的にサ
+ポートしています。Sun ONE Studio は Java, C, C++, Fortran を完全サポートして
+います。
+
+==============================================================================
+2. NetBeans インターフェイスでできること	*netbeans-integration*
+
+Vim の NetBeans ソケットインターフェイスを使うと、Vim から情報を引き出した
+り、Vim に指定の動作をさせることができます:
+- バッファに関する情報を取得する: バッファ名、カーソル位置、バッファの内容、
+  など
+- バッファが開く・閉じるとき通知してもらう
+- バッファの内容がどのように変わったかを通知してもらう
+- ファイルを読み込む・保存する
+- バッファの内容を修正する
+- 特殊なキーバインドをインストールする
+- ウィンドウを前面に出す。ウィンドウの位置・サイズを調整する
+
+Vim にキーストロークを送ったり、Vim の中で関数を評価するには |clientserver|
+インターフェイスを使う必要があります。
+
+
+==============================================================================
+3. NetBeans 用に configure する			*netbeans-configure*
+
+Vim のインストールについてより詳しくは、ユーザーマニュアルの |usr_90.txt| を
+読んでください。
+
+
+Unix では:
+----------
+
+configure を引数なしで起動した場合、NetBeans インターフェイスを有効にできる
+か configure がチェックし、可能なら有効にします。
+
+NetBeans インターフェイスを有効にしたくない場合は、Makefile の中の
+"--disable-netbeans" の行のコメントアウトを解除すれば無効にできます。
+
+現在 NetBeans インターフェースは端末動作の Vim と GUI (GTK, GNOME, Windows,
+Athena, Motif) の GVim でのみサポートされています。
+
+Motif をサポートするためには XPM ライブラリが必要です。XPM の最新バージョン
+を入手する方法については |workshop-xpm| を参照してください。
+
+
+MS-Windows では:
+----------------
+
+Win32 サポートは現在ベータ版の段階です。
+
+Win32 で XPM signs を使う(NetBeans と使う場合など)ためには、XPM を自分自身で
+コンパイルするか、コンパイル済みライブラリを使う必要があります。
+http://iamphet.nm.ru/misc/ (MS Visual C++ 用)
+http://gnuwin32.sourceforge.net (MinGW 用)
+
+デバッグを有効化する:
+---------------------
+
+Vim と NetBeans プロトコルのデバッグを有効化するには、"NBDEBUG" マクロを定義
+する必要があります。お使いのプラットフォーム用の Makefile の中から "NBDEBUG"
+を検索し、どの行のコメントを解除すればよいかを調べてください。そうすればコン
+パイルコマンドに "-DNBDEBUG" が追加されます。|netbeans-debugging| も参照して
+ください。
+
+==============================================================================
+4. エラーメッセージ					*netbeans-messages*
+
+以下のエラーメッセージは NetBeans ソケットプロトコルのものです:
+
+							*E463*
+Region is guarded, cannot modify
+日本語版:領域が保護されているので, 変更できません
+		Vim コントローラがテキスト中に保護領域を設定しており、そこを
+		変更することはできません。必要に応じてカレントバッファもセッ
+		トします。
+
+							*E532*
+The defineAnnoType highlighting color name is too long
+		defineAnnoType コマンドの "fg" と "bg" の色指定引数の最大長は
+		32 文字です。
+		バージョン 2.5 で新たに追加された仕様。
+
+							*E656*
+Writes of unmodified buffers forbidden
+		Vim コントローラによって開かれている変更されていないバッファ
+		を書き出すことはできません。
+
+							*E657*
+Partial writes disallowed
+		Vim コントローラによって開かれているバッファの部分的な書き出
+		しはできません。
+
+							*E658*
+Connection lost for this buffer
+日本語版:バッファの NetBeans 接続が失われました
+		Vim コントローラがこのファイルの状態について混乱してしまいま
+		した。データを破損する危険を冒すよりも、このファイルに対する
+		接続を切断することを選びました。このファイルに対する変更を保
+		存する責任は Vim が引き継ぎ、Vim コントローラはもうそれらに
+		ついて関知しません。
+
+							*E744*
+Read-only file
+日本語版:NetBeans は読込専用ファイルを変更することを許しません
+		通常の Vim では、読み込み専用ファイルを変更することはでき、
+		ファイルを書き出すときだけ読み込み専用のルールが適用されま
+		す。しかし、NetBeans はユーザーが読み込み専用ファイルに変更
+		を施すことを許可しません。そのため、Vim が読み込み専用ファイ
+		ルを変更すると混乱してしまいます。そのため、NetBeans モード
+		で動作しているときは、Vim でもファイルへの変更を許可しないよ
+		うにしています。
+
+==============================================================================
+5. Vim を NetBeans モードで起動する			*netbeans-run*
+
+Vim を NetBeans モードで実行するには二つの方法があります:
+
+	+ IDE から起動するときなどに Vim に |-nb| 引数を付けて起動する
+	+ Vim の中で |:nbstart| コマンドを使って開始する
+
+							*netbeans-parameters*
+NetBeans 接続情報を指定する形式は三通りあります。
+コマンドラインで |-nb| 引数を指定するときは次のように指定します:
+
+	-nb={fname}				ファイルから
+	-nb:{hostname}:{addr}:{password}	直接指定
+	-nb					ファイルまたは環境変数から
+
+Vim の中で |:nbstart| コマンドの引数として指定するときは次のように指定します:
+
+	={fname}				from a file
+	:{hostname}:{addr}:{password}	        directly
+	<MISSING ARGUMENT>			from a file or environment
+
+							*E660* *E668*
+NetBeans の開始をコマンドラインで指定するとき、セキュリティ上の理由からベスト
+な方法は、情報をファイルに書き、自分だけが読めるようにしておくことです。ファイ
+ル名は "-nb={fname}" で渡すか、または "-nb" をパラメータなしで使うと環境変数
+"__NETBEANS_CONINFO" が使われます。このファイルは以下の三行を含んでいなければ
+なりません(順序は問わない): >
+
+	host={hostname}
+	port={addr}
+	auth={password}
+
+これ以外の行は無視されます。Vim コントローラが終了後にこのファイルを削除する責
+任を負います。
+
+{hostname} は Vim コントローラが動作するマシンの名前です。省略されたときは、
+環境変数 "__NETBEANS_HOST" または既定値の "localhost" が使われます。
+
+{addr} は NetBeans インターフェイスのポート番号です。省略されたときは、環境
+変数 "__NETBEANS_SOCKET" または既定値の 3219 が使われます。
+
+{password} は NetBeans への接続のパスワードです。省略されたときは、環境変数
+"__NETBEANS_VIM_PASSWORD" または "changeme" が使われます。
+
+Vim は起動時に、指定されたホスト・ポートへのソケット接続(クライアント側)を
+初期化します。接続が確立されると、AUTH イベントによりパスワードが送信されま
+す。
+
+
+==============================================================================
+6. NetBeans プロトコル					*netbeans-protocol*
+
+Vim コントローラと Vim の通信にはプレインテキストのメッセージが使われます。
+このプロトコルは、最初は NetBeans の External Editor モジュールと協調して動作
+するように設計されました。その後、Agide (A-A-P GUI IDE, http://www.a-a-p.org
+を参照)と、そして他の IDE とも動作するように拡張されました。この拡張は
+"version 2.1" とバージョンづけられています。
+
+プロトコル version 2.2 は小さな変更で、NetBeans ユーザーにのみ影響し、Agide
+ユーザーには無関係なはずでした。しかし、あるバグが修正されました。
+netbeans_saved() 関数が "save" プロトコルコマンドを送信するのですが、プロト
+コル version 2.1 とそれ以前では、それが書き込みが行われたことの通知であると
+誤解されていました。実際は NetBeans に対して保存するよう通知するものだったの
+で、複数の書き込みが行われました。これが様々な問題を引き起こし、2.2 で修正さ
+れました。以降、同じ間違いが起こらないようにするため、netbeans_saved() は
+netbeans_save_buffer() と名前が変更されました。
+
+現在のバージョンは 2.5 です。2.4 と 2.5 の違いは下記文章から "2.5" を検索して
+ください。
+
+メッセージはソケットを通じて送られます。メッセージは UTF-8 のプレインテキス
+トなので、このプロトコルは他のどんな通信メカニズムでも使えます。
+
+Netbeans メッセージは Vim がユーザー入力待ちでアイドル状態のときに処理されま
+す。Vim が非対話モードのとき (例えば Vim スクリプトによる自動テストを実効して
+いるときなど) は、アイドルループは頻繁には呼ばれないのでメッセージ処理が追いつ
+かないかもしれません。その場合は Vim スクリプトに |:sleep| コマンドを入れてく
+ださい。|:sleep| コマンドは Netbeans メッセージの処理を呼び出します。
+
+6.1 メッセージの種類		|nb-messages|
+6.2 用語			|nb-terms|
+6.3 コマンド			|nb-commands|
+6.4 関数と応答			|nb-functions|
+6.5 イベント			|nb-events|
+6.6 特別なメッセージ		|nb-special|
+6.7 プロトコルエラー		|nb-protocol_errors|
+
+
+6.1 メッセージの種類					*nb-messages*
+
+メッセージには四つの種類があります:
+
+種類		方向		コメント ~
+コマンド	IDE -> editor	応答は必要ない
+関数		IDE -> editor	エディタは応答を送信しなければならない
+応答		editor -> IDE	関数への応答としてのみ送られる
+イベント	editor -> IDE	応答は必要ない
+
+メッセージは、改行文字で終わる一行として送られます。引数は一つのスペースで区
+切られます。メッセージの最初の要素はメッセージの種類に依存します:
+
+種類		最初の要素		例 ~
+コマンド	bufID:name!seqno	11:showBalloon!123 "text"
+関数		bufID:name/seqno	11:getLength/123
+応答		seqno			123 5000
+イベント	bufID:name=seqno	11:keyCommand=123 "S-F2"
+
+
+
+6.2 用語						*nb-terms*
+
+bufID		バッファ ID。メッセージは特定のバッファ向けの場合も、全体用の
+		場合もあります。全体用のメッセージは bufID 0 を使います。
+		NOTE: このバッファ ID は IDE によって割り当てられるもので、
+		Vim のバッファ番号とは異なります。bufID は連続して増加する番
+		号で、1 から始まります。
+
+seqno		IDE が Vim にコマンド・関数を発行するときつけられる連続する番
+		号です。応答は、その元メッセージと同じシーケンス番号を使わねば
+		なりません。シーケンス番号 0 はイベント用に使われます(最後に受
+		け取ったコマンドまたは関数のシーケンス番号が使われることもあり
+		ます)。
+
+string		ダブルクォートで囲まれた文字列。UTF-8 でエンコードされます。
+		よって ASCII 文字はそのままとなります。特殊文字はバックスラッ
+		シュをつけて表現されます:
+			\"	ダブルクォート
+			\n	改行
+			\r	復帰
+			\t	タブ (任意。そのままでも使えます)
+			\\	バックスラッシュ
+		NUL 文字は使用できません。
+
+boolean		次の二つの値のどちらかとなります。
+			T	true
+			F	false
+
+number		10 進数の数値。
+
+color		10 進数の数値か "none" (クォートなし) か色の名前 (クォートな
+		し) のいずれか。色の名前は |highlight-ctermfg| と |gui-colors|
+		で定義されている名前。
+		バージョン 2.5 で新たに追加された仕様。
+
+offset		バッファ中のバイト位置を示す数値。第 1 バイト目のオフセットは
+		0 となります。改行は、ファイル中での表現と同じくカウントされ
+		ます(CR/LF は 2 バイト)。
+		Note: マルチバイト文字は、そのバイト数カウントされます。
+
+lnum/col	行番号と桁番号。行番号は 1 から始まり、桁番号は 0 から始まる
+		バイト位置となります。Note: マルチバイト文字は 2 桁以上を占
+		めることに注意してください。
+
+pathname	文字列: フルパスでのファイル名
+
+
+6.3 コマンド						*nb-commands*
+
+actionMenuItem	未実装。
+
+actionSensitivity
+		未実装。
+
+addAnno serNum typeNum off len
+		このバッファに annotation をつけます。
+		引数:
+		   serNum	number	この annotation の通し番号。削除する
+					ときに使われます。
+		   typeNum	number	このバッファに対して defineAnnoType
+					で定義された annotation タイプの番号。
+		   off		number	annotation をつける位置のオフセット
+		   len		number	未使用
+		version 2.1 では "off" の代わりに "lnum/col" が使えます。
+
+balloonResult text
+		未実装。
+
+close		バッファを閉じます。これを使うとカレントバッファがない状態に
+		なります。非常に危険です!
+
+create		名前をつけてバッファを作成します。作成されたバッファがカレン
+		トバッファになります(元のバッファは、変更されていれば hidden
+		状態になります)。
+		Vim コントローラは、開いているファイルに対する最初のコマンド
+		としてこのコマンドを使うべきです。一連のコマンドの例は次のよ
+		うになります:
+			create
+			setCaretListener	(無視される)
+			setModified		(効果なし)
+			setContentType		(無視される)
+			startDocumentListen
+			setTitle
+			setFullName
+
+defineAnnoType typeNum typeName tooltip glyphFile fg bg
+		このバッファに対する annotation のタイプを定義します。
+		引数:
+		   typeNum	number	シーケンス番号(実際には使われない)
+		   typeName	string	この annotation を識別するための名前
+		   tooltip	string	未使用
+		   glyphFile	string	アイコンのファイル名
+		   fg		color	行の文字色
+		   bg		color	行の背景色
+		Vim はこの annotation に対して目印を定義します。
+		色を数値で指定するときは "#rrggbb" で赤緑青での色指定になり
+		(|gui-colors| 参照) GVim でのみ定義されます。
+		色を名前で指定するときはその色はカラー端末上で動作する Vim と
+		GVim の両方で定義されたものです。
+		"fg" と "bg" が両方とも "none" の場合、行は強調されません
+		(version 2.1 から)。
+		"glyphFile" が空の場合、テキストの目印は使われません
+		(version 2.1 から)。
+		"glyphFile" が 1 または 2 文字である場合、テキストの目印が定
+		義されます(version 2.1 から)。
+		Note: annotation にはシーケンス番号がつけられ、その番号は
+		addAnno で使われます。
+
+editFile pathname
+		バッファの名前をセットし、ファイル "pathname" を開きます。
+		IDE が開くファイルをエディタに伝える通常の方法です。
+
+		バッファに bufID を割り当てるため、このコマンドに対する
+		bufID は 0 以外の値にしなければなりません。bufID 0 でイベン
+		ト fileOpened が発生しますが、バッファは割り当てられていま
+		す。
+
+		IDE からエディタにファイルのテキストを渡したい場合には、代わ
+		りに次のコマンドを使ってください:
+			setFullName
+			insert
+			initDone
+		version 2.1 から。
+
+enableBalloonEval
+		未実装。
+
+endAtomic	アトミックな操作を終了します。"startAtomic" と "endAtomic"
+		の間に行われた変更は一つの操作として undo されます。しかし
+		現在は未実装です。必要に応じて再描画をしてください。
+
+guard off len
+		バッファ内の領域を保護します。保護された領域を変更することは
+		できません。"off" と "len" は number で、保護されるテキスト
+		を指定します。
+
+initDone	バッファの準備ができたとマークします。暗黙的にそのバッファを
+		カレントバッファにします。オートコマンドイベント BufReadPost
+		を発生させます。
+
+insertDone
+		Vim コントローラから Vim へ、最初のファイルの挿入が行われた
+		ことを通知します。これにより、ファイル読み込みのメッセージが表
+		示されます。version 2.3 より前は、ファイルを開いた後にメッセー
+		ジが表示されませんでした。
+		version 2.3 から。
+
+moveAnnoToFront serNum
+		未実装。
+
+netbeansBuffer isNetbeansBuffer
+		"isNetbeansBuffer" が "T" ならば、このバッファは NetBeans に
+		より「所有」されます。
+		version 2.2 から。
+
+putBufferNumber pathname
+		pathname は string。"pathname" という名前のバッファにバッファ
+		番号を割り当てます。エディタで新たにファイルが開かれると、その
+		ことを IDE に通知します。そして IDE はそのファイルに対してバッ
+		ファ番号を割り当てます。そのときこのコマンドが使われます。その
+		バッファは初期化済みとマークされます。
+		version 2.1 から。
+
+raise		エディタを前面に移動します。
+		GUI Vim でのみ有効。
+		version 2.1 から。
+
+removeAnno serNum
+		以前にこのバッファに対してつけられた annotation を削除します。
+		"serNum" は addAnno で使われたのと同じ番号です。
+
+save		バッファが変更されたとき保存します。インターフェイスのもう一方
+		側はバッファを書き出し、"setModified" を呼び出してバッファの
+		"changed" フラグをオフにすることを期待されています。
+		これらの条件が真になる場合、書き込みはスキップされます:
+		- 'write' がオフのとき
+		- バッファが読み込み専用のとき
+		- バッファがファイル名を持たないとき
+		- 'buftype' により書き込みが禁止されているとき
+		version 2.2 から。
+
+saveDone
+		Vim コントローラから Vim へ、保存が行われたことを通知します。
+		これによって保存メッセージが表示されます。version 2.3 より前で
+		は、保存メッセージは表示されませんでした。
+		version 2.3 から。
+
+setAsUser	未実装。
+
+setBufferNumber pathname
+		"pathname" という名前のバッファにバッファ番号を割り当てます。
+		エディタで新たにファイルが開かれると、そのことを IDE に通知し
+		ます。そして IDE はそのファイルに対してバッファ番号を割り当て
+		ます。そのときこのコマンドが使われます。
+		このバッファがカレントバッファになるという副作用があります。
+		"putBufferNumber" の方がより便利なコマンドです。
+
+setContentType
+		未実装。
+
+setDot off	このバッファをカレントバッファにし、カーソルを指定した位置に移
+		動します。バッファが他のウィンドウで開かれている場合は、その
+		ウィンドウがカレントウィンドウになります。
+		折り畳みがある場合、カーソル行が見えるように開かれます。
+		version 2.1 では "off" の代わりに "lnum/col" が使えます。
+
+setExitDelay seconds
+		"seconds" は number。終了の遅延をセットします。
+		この遅延によって、IDE に対して本当に終了するまえに何かをする
+		チャンスを与えます。既定値は 2 秒です。
+		version 2.1 から。
+		version 2.3 から非推奨になりました。
+
+setFullName pathname
+		バッファ "pathname" に対するファイル名をセットします。引数は
+		string です。
+		IDE の制御下にあるファイルを IDE が編集したいときに使われます。
+		このバッファがカレントバッファになりますが、ファイルは読み込
+		まれません。その内容をセットするため、次に "insert" コマンド
+		が発行されます。
+
+setLocAndSize	未実装。
+
+setMark		未実装。
+
+setModified modified
+		boolean の引数 "modified" が "T" のとき、バッファを modified
+		状態にします。"F" のときは unmodified にします。
+
+setModtime time
+		Vim コントローラによりファイルが直接保存されたあとに発行されま
+		す。バッファの変更時刻を更新します。
+		version 2.3 から。
+
+setReadOnly
+		ファイルを読み込み専用にします。
+		version 2.3 で実装されました。
+
+setStyle	未実装。
+
+setTitle name
+		"name" という名前のバッファのタイトルをセットします。引数
+		"name" は string。このタイトルは Vim コントローラ関数でのみ
+		使われ、Vim では使われません。
+
+setVisible visible
+		boolean の引数 "visible" が "T" の場合は、そのバッファへ移動し
+		ます。"F" の場合は何もしません。
+
+showBalloon text
+		マウスポインタの位置に、"text" という内容のバルーンウィンドウ
+		(ポップアップウィンドウ)を表示します。引数 "text" は string で
+		す。マウスが 2, 3 ピクセル以上移動すると、バルーンウィンドウは
+		消えます。
+		GUI Vim でのみ有効。
+		version 2.1 から。
+
+specialKeys
+		Vim コントローラに戻して処理させるキー(大抵はファンクション
+		キー)を設定します。これによって Vim の中で IDE のホットキーを
+		使うことができるようになります。
+		version 2.3 で実装されました。
+
+startAtomic	アトミックな操作を開始します。"endAtomic" が発行されるまで画面
+		の更新は行われません。
+
+startCaretListen
+		未実装。
+
+startDocumentListen
+		そのバッファにおける変更を "insert" と "remove" イベントに
+		よってIDE に通知するようセットします。既定では通知するように
+		なっています。
+
+stopCaretListen
+		未実装。
+
+stopDocumentListen
+		そのバッファにおける変更を IDE に通知しないようにします。
+		startDocumentListen の逆です。
+		NOTE: "netbeansBuffer" によってこのバッファが NetBeans バッ
+		ファであるとマークされている場合、このバッファは Vim の中で
+		削除されます。Sun Studio 10 との互換性のためです。
+
+unguard off len
+		"guard" の逆で、テキスト領域に対する保護を解除します。
+		必要に応じてカレントバッファもセットします。
+
+version		未実装。
+
+
+6.4 関数と応答						*nb-functions*
+
+getDot		未実装。
+
+getCursor	カレントバッファの bufID とカーソル位置を返します。
+		応答は次の形式:
+			seqno bufID lnum col off
+		seqno = 関数のシーケンス番号
+		bufID = カレントバッファの bufID (未知なら -1)
+		lnum  = カーソル位置の行番号 (1 から始まる)
+		col   = カーソル位置の桁番号 (バイト単位。0 から始まる)
+		off   = カーソル位置のバッファ内のオフセット (バイト単位)
+		version 2.1 から。
+
+getLength	バッファの長さをバイト単位で返します。
+		5000 バイトのバッファにおける応答の例:
+			123 5000
+		TODO: 部分行の使い方を説明する。
+
+getMark		未実装。
+
+getAnno serNum
+		指定された annotation の行番号を返す。
+		引数:
+			serNum		annotation の通し番号
+		応答は次の形式:
+			123 lnum	annotation の行番号
+			123 0		無効な annotation 番号
+		version 2.4 から。
+
+getModified	バッファが指定された場合: バッファが変更されていないなら 0、
+		変更されているなら 1 を返します。
+		バッファが指定されない場合(bufID が 0 の場合): 変更されてい
+		るバッファの数を返します。戻り値が 0 なら、Vim に終了するよう
+		指示しても安全です。
+		version 2.1 から。
+
+getText		バッファの中身を文字列として返します。2 行だけのバッファにおけ
+		る応答の例:
+			123 "first line\nsecond line\n"
+		NOTE: ドキュメントには引数 offset と length が記述されています
+		が、実装されていません。
+
+insert off text
+		位置 "off" の前に "text" を挿入します。"text" は string、
+		"off" は number です。
+		"text" の行末には "\n" (改行) がつきます。'fileformat' が
+		"dos" の場合には "\r\n" がつきます。空バッファに対して
+		"insert" を行うと、Vim はそれに応じて 'fileformat' を設定し
+		ます。
+		"off" が行頭を指している場合、その行の前に挿入されます。
+		そのため、"off" が 0 の場合、最初の行の前に挿入されます。
+		"off" が行頭よりも後を指す場合(行末の NUL を指す場合も含
+		め)、テキストの最初の行はその行に追加されます。2 行目以降
+		はその下にきます。
+		応答は次のようになります:
+			123		問題なし
+			123 !message	失敗
+		Note: 応答のメッセージはクォートされていません。
+		必要に応じてこのバッファをカレントバッファにします。
+		変更されたテキストへカーソルを移動させません。
+		undo 情報をリセットします。
+
+remove off length
+		位置 "off" のテキストを "length" バイト削除します。どちらの
+		引数も number です。
+		応答は次のようになります:
+			123		問題なし
+			123 !message	失敗
+		Note: 応答のメッセージはクォートされていません。
+		必要に応じてこのバッファをカレントバッファにします。
+
+saveAndExit	":confirm qall" と同じことをします(Vim を閉じる)。変更された
+		ファイルがない、またはユーザーが操作をキャンセルしなかった場
+		合、Vim は終了し、戻り値は送信されません。IDE は接続が切断し
+		たことをもって成功と判断できます。ユーザーが操作をキャンセル
+		した場合、変更されているバッファの番号が返され、Vim は終了し
+		ません。
+		version 2.1 から。
+
+
+6.5 イベント						*nb-events*
+
+balloonEval off len type
+		マウスポインタが一定時間テキストの上に置かれました。"len" が 0
+		の場合、マウスポインタが "off" の位置にあり、選択がされていな
+		いことを意味します。"len" が 0 でない場合、"off" から "off" +
+		"len" までのテキストが選択されていることを意味します。
+		バッファに対して "enableBalloonEval" が使われた後でのみ送信さ
+		れます。"type" はまだ定義されていません。
+		未実装。
+
+balloonText text
+		'ballooneval' がセットされており、マウスポインタが一定時間
+		テキストの上に置かれたとき発生します。"text" は string で、マ
+		ウスポインタの下のテキストを表します。
+		GUI Vim でのみ有効。
+		version 2.1 から。
+
+buttonRelease button lnum col
+		ボタンが離されたとき、どのボタンが押されたかと、カーソルの位置
+		を報告します。Vim コントローラによって所有されているバッファに
+		おいてのみ発生します。マウスがステータスラインまたはセパレータ
+		ラインの中にあるときは、ボタンが離されても、このイベントは送信
+		されません。col が 1 未満の場合、目印エリアの中でボタンが離さ
+		れたことを意味します。
+		version 2.2 から。
+
+disconnect
+		Vim が終了するので、これ以上コマンドを読み書きしないよう Vim
+		コントローラに伝えます。
+		version 2.3 から。
+
+fileClosed	未実装。
+
+fileModified	未実装。
+
+fileOpened pathname open modified
+		ユーザーがファイルを開きました。
+		引数:
+		   pathname	string	  ファイル名
+		   open		boolean   常に "T"
+		   modified	boolean   常に "F"
+
+geometry cols rows x y
+		エディタウィンドウのサイズと位置を報告します。
+		引数:
+		   cols		number	  テキストの桁数
+		   rows		number	  テキストの行数
+		   x		number	  画面上のピクセル位置
+		   y		number	  画面上のピクセル位置
+		Motif でのみ動作します。
+
+insert off text
+		Vim において、"off" の位置にテキスト "text" が挿入されまし
+		た。有効化されているときのみ発生します。
+		"startDocumentListen" を参照してください。
+
+invokeAction	未実装。
+
+keyCommand keyName
+		"keyName" という名前の特殊キーが押されたことを報告します。
+		"keyName" は string です。
+		サポートされているキー名:
+			F1		ファンクションキー 1
+			F2		ファンクションキー 2
+			...
+			F12		ファンクションキー 12
+
+			' '		スペース (シングルクォートはつかない)
+			!		エクスクラメーションマーク
+			...		それ以外の ASCII 印字可能文字
+			~		チルダ
+
+			X		認識されないキー
+
+		前に "C", "S", "M" がつくことがあります。それぞれ Control,
+		Shift, Meta (Alt) キーを意味します。これらの修飾キーとキー名
+		の間にはダッシュがつきます。例: "C-F2".
+		ASCII 文字は version 2.1 から。
+
+keyAtPos keyName lnum/col
+		"keyName" と同様ですが、行番号と桁番号も報告します。
+		version 2.1 から。
+
+killed		ユーザーによってファイルが削除またはワイプアウトされ、
+		annotation が削除されました。このバッファに対する bufID は
+		無効になりました。IDE によって bufID が割り当てられたファイ
+		ルに対してのみ発生します。
+
+newDotAndMark off off
+		カーソルがバッファの "off" バイトの位置にあることを報告しま
+		す。"keyCommand" イベントの直前でのみ送信されます。
+
+quit		未実装。
+
+remove off len
+		Vim において、"off" の位置から "len" バイトのテキストが削除
+		されました。
+		有効にされているときのみ発生します。"startDocumentListen" を
+		参照してください。
+
+revert		未実装。
+
+save		バッファが保存され、「未変更」状態です。
+		有効にされているときのみ発生します。"startDocumentListen" を
+		参照してください。
+
+startupDone	エディタがスタートアップ処理を完了し、ファイルを編集する準備
+		が整いました。
+		version 2.1 から。
+
+unmodified	バッファが「未変更」状態になりました。
+		有効にされているときのみ発生します。"startDocumentListen" を
+		参照してください。
+
+version vers	インターフェイスの実装のバージョンを報告します。Vim は
+		"2.4" と報告します(ダブルクォートを含む)。
+
+
+6.6 特別なメッセージ					*nb-special*
+
+これらのメッセージは、前述のメッセージの形式に従いません。改行文字で終わりま
+す。
+
+ACCEPT		未使用。
+
+AUTH password	editor -> IDE: エディタが IDE に送る最初のメッセージ。|-nb|
+		で指定された、ソケットサーバのパスワードを含んでいなければな
+		りません。引用符は使われません。
+
+DISCONNECT	IDE -> editor: 接続を切断します。その後エディタは終了しま
+		す。IDE は、保存されていない変更がないときしかこのメッセージ
+		を送ってはなりません。
+
+DETACH		IDE -> editor: エディタを終了させずに接続を切断します。エ
+		ディタは終了させずに IDE を終了させるとき使われます。
+		version 2.1 で導入されました。
+
+REJECT		未使用。
+
+
+6.7 プロトコルエラー					*nb-protocol_errors*
+
+メッセージがプロトコルに違反したとき、以下のエラーが発生します:
+*E627* *E628* *E629* *E630* *E631* *E632* *E633* *E634* *E635* *E636*
+*E637* *E638* *E639* *E640* *E641* *E642* *E643* *E644* *E645* *E646*
+*E647* *E648* *E649* *E650* *E651* *E652* *E653* *E654*
+
+
+==============================================================================
+7. NetBeans コマンド					*netbeans-commands*
+
+							*:nbstart* *E511* *E838*
+:nbs[tart] {connection}	新しい Netbeans セッションを開始する。{connection} は
+			ソケット接続パラメータ。{connection} の書式は
+			|netbeans-parameters| で説明されています。
+			netbeans ソケットが接続されているかどうかは次のコマン
+			ドで確認できます:
+			':echo has("netbeans_enabled")'
+
+							*:nbclose*
+:nbc[lose]		現在の NetBeans セッションを閉じる。目印はすべて削除さ
+			れます。
+
+							*:nbkey*
+:nb[key] {key}		Vim コントローラに {key} を送信する。
+			specialKeys コマンドによりホットキーがインストールされ
+			ているとき、このコマンドを使ってホットキー・メッセージ
+			を Vim コントローラに送信できます。
+			このコマンドはどのようなテキストでも送信できます。これ
+			は例えば Pyclewn で gdb コマンドを Vim ユーザーコマン
+			ドとして構築するのに使われています。
+			newDotAndMark, keyCommand, keyAtPos イベントが発生しま
+			す (この順番で)。
+
+
+==============================================================================
+8. 既知の問題						*netbeans-problems*
+
+NUL 文字は扱えません。editor -> IDE の通信では、NUL は NL に置換して送信され
+ます。IDE -> editor では、NUL を含めることはできません。
+
+NetBeans セッションが端末動作の Vim で初期化され、後で |:gui| コマンドによって
+GUI 環境に引き継がれることがあります。この場合、":gui" コマンドが .gvimrc を読
+み込み、カラースキームが読み込まれ、そこで ":highlight clear" コマンドが実行さ
+れることで、NetBeans annotation 用に定義された強調表示がクリアされるかもしれま
+せん。
+バージョン 2.5 で新たに追加された仕様。
+
+
+==============================================================================
+9. NetBeans プロトコルのデバッグ			*netbeans-debugging*
+
+Vim プロトコルをデバッグするには、まず Vim をデバッグサポートと NetBeans デ
+バッグサポートつきでコンパイルします。|netbeans-configure| を参照してくださ
+い。
+
+次の環境変数をセットしてください:
+
+    export SPRO_GVIM_DEBUG=netbeans.log
+    export SPRO_GVIM_DLEVEL=0xffffffff
+
+すると、やりとりされるすべての NetBeans プロトコルメッセージが netbeans.log
+というファイルに記録されるようになります。
+
+セッションを行った後の netbeans.log の内容は次のようになります:
+Tue May 20 17:19:27 2008
+EVT: 0:startupDone=0
+CMD 1: (1) create
+CMD 2: (1) setTitle "testfile1.txt"
+CMD 3: (1) setFullName "testfile1.txt"
+EVT(suppressed): 1:remove=3 0 -1
+EVT: 1:fileOpened=0 "d:\\work\\vimWrapper\\vimWrapper2\\pyvimwrapper\\tests\\testfile1.txt" T F
+CMD 4: (1) initDone
+FUN 5: (0) getCursor
+REP 5: 1 1 0 0
+CMD 6: (2) create
+CMD 7: (2) setTitle "testfile2.txt"
+CMD 8: (2) setFullName "testfile2.txt"
+EVT(suppressed): 2:remove=8 0 -1
+EVT: 2:fileOpened=0 "d:\\work\\vimWrapper\\vimWrapper2\\pyvimwrapper\\tests\\testfile2.txt" T F
+CMD 9: (2) initDone
+
+
+==============================================================================
+10. NetBeans External Editor
+
+NOTE: この情報は古くなっています! NetBeans の古いバージョンを使っている場合
+だけ読んでください。
+
+
+10.1. NetBeans をダウンロードする		*netbeans-download*
+
+NetBeans IDE は netbeans.org からダウンロードできます。リリースされたバージョ
+ン、ソースをダウンロードでき、CVS を使って最新のソースを取得することもできま
+す。ソースをダウンロードした場合、ビルド方法については netbeans.org にある説明
+に従ってください。
+
+NetBeans のバージョンによっては、External Editor モジュールを使うためにもう少し
+手を加えなければならないかもしれません。External Editor モジュールによって
+NetBeansは gvim と協調して動作できるようになります(xemacs とも :-)。
+このモジュールが NetBeans に含まれていない場合、
+http://externaleditor.netbeans.org を参照してください。
+
+C, C++, Fortran サポートには、cpp モジュールも必要になります。
+http://cpp.netbeans.org を参照してください。
+
+Sun Microsystems, Inc から Sun ONE Studio の 30 日間無料試用版をダウンロード
+することもできます。http://www.sun.com を参照してください。
+
+
+10.2. NetBeans のキーバインド			*netbeans-keybindings*
+
+Vim は NetBeans コマンドを実行するキーバインドを理解します。これらは普通、
+ファンクションキーの組み合わせです。NetBeans コマンドを実行するには、Pause
+キーに続けて NetBeans のキーバインドをタイプします。たとえば、Javaファイルを
+コンパイルする NetBeans のキーバインドは "F9" です。なので、Vim で "Pause F9"
+と押すと Java ファイルをコンパイルできます。カレント行のブレークポイントをト
+グルするには "Pause Shift F8" を押します。
+
+Pause キーはファンクションキー 21 です。キーボードに Pause キーがなく、代わ
+りにF8 を使いたいという場合、次のようにします: >
+
+	:map <F8> <F21>
+
+External Editor モジュールは動的に NetBeans キーバインドを読み込むので、
+NetBeans がキーバインドを変更していても、Vim は常に最新のキーバインドに対応し
+ます。
+
+
+10.3. NetBeans 側の準備				*netbeans-preparation*
+
+NetBeans を Vim と協調動作させるには、NetBeans External Editor モジュールが
+読み込まれ、有効化されていなければなりません。Sun ONE Studio Enterprise
+Edition を使っているなら、デフォルトでこのモジュールが読み込まれ有効化されます。
+NetBeans を使っている場合は、このオープンソースのモジュールを入手しなければ
+なりません。
+
+このモジュールが入っているかを確認するには Tools->Options ダイアログを開き、
+IDE Configuration->System->Modules の "Modules" リストを見ます。そこに
+"External Editor" があれば、それが有効になっているか確認します("Enabled"
+プロパティが "True" かどうか)。"External Editor" がなければ、次の節
+|obtaining-exted| を参照してください。
+
+
+10.4. External Editor モジュールの入手		*obtaining-exted*
+
+External Editor モジュールを入手する方法は二通りあります。最も簡単な方法は、
+NetBeans Update Center を使ってダウンロード・インストールすることです。
+しかし残念なことに、いくつかのバージョンでは Update Center にこのモジュールが
+存在しません。Update Center にない場合は、モジュールのソースをダウンロードして
+ビルドする必要があります。私が NetBeans Update Center からダウンロードできるよ
+うにしますので、ビルドは不要になるでしょう。
+他の方法として http://externaleditor.netbeans.org もチェックしてください。
+
+CVS で External Editor のソースを取得して自分でビルドする方法は
+http://externaleditor.netbeans.org と http://www.netbeans.org を参照してくださ
+い。残念ながら、これは簡単な道のりではありません。
+
+
+10.5. NetBeans の設定				*netbeans-setup*
+
+NetBeans External Editor モジュールを読み込み、有効化できたら、あとは gvim の
+コマンドラインを設定するだけです。
+
+Tools->Options を開き、Editing カテゴリを表示します。External Editor を選択し
+ます。右側のペインに Properties タブと Expert タブがあるはずです。Properties
+タブで "Editor Type" を "Vim" にします。Expert タブで "Vim Command" を正しく設
+定してください。
+
+"Vim Command" を変更するときは注意してください。接続するためには、いくつかの
+コマンドラインオプションを正しく設定する必要があります。
+You can change the command name but that's about it.
+gvim が $PATH の中にあるなら、コマンドを "gvim" から始められます。gvim を
+$PATH から検索させたくないならフルパスで指定してください。以上で、NetBeans
+で開くファイルが gvim で開かれるようになります。
+
+gvim で開かれるファイルもあるが、NetBeans のエディタで開かれるファイルもある
+(拡張子が異なる)という場合、Expert タブの MIME Type プロパティを確認してくだ
+さい。NetBeans は MIME によって判断し、External Editor はこのプロパティで指定
+された MIME Type だけを開きます。
+
+
+ vim:tw=78:ts=8:ft=help:norl:

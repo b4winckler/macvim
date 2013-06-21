@@ -45,6 +45,7 @@ void mch_breakcheck __ARGS((void));
 long_u mch_avail_mem __ARGS((int special));
 int mch_wrename __ARGS((WCHAR *wold, WCHAR *wnew));
 int mch_rename __ARGS((const char *pszOldFile, const char *pszNewFile));
+int mch_rmdir __ARGS((const char *dirname));
 char *default_shell __ARGS((void));
 int mch_access __ARGS((char *n, int p));
 int mch_open __ARGS((char *name, int flags, int mode));
@@ -56,4 +57,5 @@ void free_cmd_argsW __ARGS((void));
 void used_file_arg __ARGS((char *name, int literal, int full_path, int diff_mode));
 void set_alist_count __ARGS((void));
 void fix_arg_enc __ARGS((void));
+int mch_setenv __ARGS((char *var, char *value, int x));
 /* vim: set ft=c : */

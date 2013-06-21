@@ -22,11 +22,13 @@
  * regexp.c
  */
 #ifdef DEBUG
+/*
 # define NFA_REGEXP_ERROR_LOG	"nfa_regexp_error.log"
 # define ENABLE_LOG
 # define NFA_REGEXP_DUMP_LOG	"nfa_regexp_dump.log"
 # define NFA_REGEXP_RUN_LOG	"nfa_regexp_run.log"
 # define NFA_REGEXP_DEBUG_LOG	"nfa_regexp_debug.log"
+*/
 #endif
 
 enum

@@ -279,6 +279,31 @@ open_buffer(read_stdin, eap, flags)
 	    aucmd_prepbuf(&aco, old_curbuf);
 #endif
 	    do_modelines(0);
+
+	    /* specified ff and enc, bin in modelines */
+	    if (file_ff_differs(curbuf, TRUE))
+	    {
+		/* reload buffer */
+		if (eap)
+		{
+		    /* restore ++ff and ++enc, ++bin if specified */
+#ifdef FEAT_MBYTE
+		    if (eap->force_enc)
+		    {
+			char_u *fenc = enc_canonize(eap->cmd + eap->force_enc);
+			if (fenc) {
+			    vim_free(curbuf->b_p_fenc);
+			    curbuf->b_p_fenc = fenc;
+			}
+		    }
+#endif
+		    if (eap->force_ff)
+			set_fileformat(eap->force_ff, OPT_LOCAL);
+		    if (eap->force_bin)
+			curbuf->b_p_bin = eap->force_bin;
+		}
+		buf_reload(curbuf, curbuf->b_orig_mode);
+	    }
 	    curbuf->b_flags &= ~(BF_CHECK_RO | BF_NEVERLOADED);
 
 #ifdef FEAT_AUTOCMD
@@ -539,6 +564,8 @@ buf_clear_file(buf)
 #endif
     buf->b_p_eol = TRUE;
     buf->b_start_eol = TRUE;
+    buf->b_p_lasteol = TRUE;
+    buf->b_start_lasteol = TRUE;
 #ifdef FEAT_MBYTE
     buf->b_p_bomb = FALSE;
     buf->b_start_bomb = FALSE;
@@ -691,6 +718,9 @@ free_buffer_stuff(buf, free_options)
 	ga_clear(&buf->b_s.b_langp);
 #endif
     }
+#ifdef FEAT_EVAL
+    emarklist_cleanup(&buf->b_emarklist);
+#endif
 #ifdef FEAT_EVAL
     vars_clear(&buf->b_vars->dv_hashtab); /* free all internal variables */
     hash_init(&buf->b_vars->dv_hashtab);
@@ -2640,6 +2670,9 @@ get_winopts(buf)
     /* Set 'foldlevel' to 'foldlevelstart' if it's not negative. */
     if (p_fdls >= 0)
 	curwin->w_p_fdl = p_fdls;
+#endif
+#ifdef FEAT_EVAL
+    emarklist_init(&buf->b_emarklist);
 #endif
 #ifdef FEAT_SYN_HL
     check_colorcolumn(curwin);

@@ -2555,6 +2555,19 @@ if test "$enable_hangulinput" = "yes"; then
   fi
 fi
 
+dnl Check --disable-uimfep option.
+AC_MSG_CHECKING(--disable-uimfep argument)
+AC_ARG_ENABLE(uimfep,
+	[  --disable-uimfep        Don't support UIMFEP.],,
+	[enable_uimfep="yes"])
+if test "$enable_uimfep" = "yes"; then
+  AC_MSG_RESULT(no)
+  AC_DEFINE(FEAT_UIMFEP)
+else
+  AC_MSG_RESULT(yes)
+fi
+
+
 dnl Checks for libraries and include files.
 
 AC_CACHE_CHECK([whether toupper is broken], [vim_cv_toupper_broken],
@@ -2613,7 +2626,7 @@ fi
 AC_CHECK_HEADERS(stdarg.h stdint.h stdlib.h string.h \
 	sys/select.h sys/utsname.h termcap.h fcntl.h \
 	sgtty.h sys/ioctl.h sys/time.h sys/types.h \
-	termio.h iconv.h inttypes.h langinfo.h math.h \
+	termio.h iconv.h inttypes.h langinfo.h math.h migemo.h \
 	unistd.h stropts.h errno.h sys/resource.h \
 	sys/systeminfo.h locale.h sys/stream.h termios.h \
 	libc.h sys/statfs.h poll.h sys/poll.h pwd.h \
@@ -3608,6 +3621,19 @@ if test "$enable_nls" = "yes"; then
   else
     AC_MSG_RESULT([no "po/Makefile" - disabled]);
   fi
+else
+  AC_MSG_RESULT(yes)
+fi
+
+dnl Check for C/Migemo (regexp pattern expansion).
+AC_MSG_CHECKING(--disable-migemo argument)
+AC_ARG_ENABLE(migemo,
+	[  --disable-migemo        Don't support C/Migemo.], ,
+	[enable_migemo="yes"])
+if test "$enable_migemo" = "yes"; then
+  AC_MSG_RESULT(no)
+  AC_CHECK_LIB(migemo, migemo_open,
+	[LIBS="$LIBS -lmigemo" AC_DEFINE(HAVE_MIGEMO)],,)
 else
   AC_MSG_RESULT(yes)
 fi

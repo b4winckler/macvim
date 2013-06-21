@@ -1,0 +1,38 @@
+*os_mint.txt*   For Vim バージョン 7.3.  Last change: 2005 Mar 29
+
+
+		  VIMリファレンスマニュアル    by Jens M. Felderhoff
+
+
+							*MiNT* *Atari*
+このファイルは Atari MiNT version の Vim に関する特殊な事柄について述べていま
+す。
+
+Vim を Atari 上で MiNT を走らせてコンパイルするには src ディレクトリの
+"INSTALL" と "Makefile" を参照してください。
+
+Vim for MiNT は Unix version とほとんど同じ動作をします。ドキュメントに記述さ
+れている Unix 上での振る舞いは、明確に示されていない限り MiNT version の Vim
+でも同じです。
+
+<~> (ホーム・ディレクトリ)のワイルド・カード展開には、チルダを展開するシェルが
+必要です。Vanilla Bourne Shell は展開しません。Csh と ksh はうまく動作します。
+
+MiNT version の Vim は、/etc/termcap に端末にあった端末属性をふくんだ termcap
+ファイルが必要です。vt52 端末は、内蔵 termcap でサポートされています。TOSWIN
+ウィンドウ・マネージャーと仮想コンソール端末の termcap エントリが、Vim ととも
+に配布されている termcap ファイルに追加されました。
+
+<BS> と <Del> キーが入れ替わっている問題に遭遇した場合は、|:fixdel| を参照して
+ください。
+
+MiNT での端末の画面更新は、しばしば遅いため(例えば、シリアル・ライン端末)、
+'showcmd' と 'ruler' オプションはデフォルトではオフです。もしもっと速い端末を
+使っているなら、これらをオンにしてみてください。'ttyfast' オプションもオンにし
+たいかもしれません。
+
+バグ・レポートはこちらに:
+
+	Jens M. Felderhoff, e-mail: <jmf@infko.uni-koblenz.de>
+
+ vim:tw=78:ts=8:ft=help:norl:

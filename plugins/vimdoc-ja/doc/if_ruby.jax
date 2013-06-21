@@ -1,0 +1,212 @@
+*if_ruby.txt*   For Vim バージョン 7.3.  Last change: 2012 Aug 02
+
+
+		 VIM リファレンスマニュアル    by Shugo Maeda
+
+Rubyインターフェイス					*ruby* *Ruby*
+
+
+1. コマンド			|ruby-commands|
+2. VIMモジュール		|ruby-vim|
+3. VIM::Buffer オブジェクト	|ruby-buffer|
+4. VIM::Window オブジェクト	|ruby-window|
+5. グローバル変数		|ruby-globals|
+6. 動的ローディング		|ruby-dynamic|
+
+{Vi にはこれらのコマンドはない}
+			*E266* *E267* *E268* *E269* *E270* *E271* *E272* *E273*
+
+Rubyインターフェイスは|+ruby|機能を有効化してVimをコンパイルした時にのみ動作す
+る。
+
+Rubyのホームページは http://www.ruby-lang.org/ である。ここでRubyをダウンロー
+ドできる。
+
+==============================================================================
+1. コマンド						*ruby-commands*
+
+							*:ruby* *:rub*
+:rub[y] {cmd}		Rubyのコマンド{cmd}を実行する。次のようにして使う: >
+				:ruby print "Hello"
+
+:rub[y] << {endpattern}
+{script}
+{endpattern}
+			Rubyスクリプト{script}を実行する。
+			{endpattern}の行では直前に空白文字を先行させてはいけな
+			い。{endpattern}が省略された場合、|:append|や|:insert|
+			コマンド同様に '.' (ドット)がデフォルトである。この形
+			式の|:ruby|コマンドは主にVimスクリプトにRubyコードを埋
+			め込むのに便利。
+			Note: このコマンドはRuby機能をコンパイル時に指定しな
+			かった時には動作しない。エラーを避けるには
+			|script-here|を参照。
+
+Vimスクリプトの例: >
+
+	function! RedGem()
+	ruby << EOF
+	class Garnet
+		def initialize(s)
+			@buffer = VIM::Buffer.current
+			vimputs(s)
+		end
+		def vimputs(s)
+			@buffer.append(@buffer.count,s)
+		end
+	end
+	gem = Garnet.new("pretty")
+	EOF
+	endfunction
+<
+
+						*:rubydo* *:rubyd* *E265*
+:[range]rubyd[o] {cmd}	[range]の範囲の各行に対し、行末の<EOL>を削除して$_へ代
+			入しつつ、Rubyコマンド{cmd}を実行評価する。$_を変更す
+			るとバッファのテキストを変更できるが、このコマンドを
+			使って行を追加したり削除したりはできないことに注意。
+			[range]を省略した場合ファイル全体が対象: "1,$"
+
+							*:rubyfile* *:rubyf*
+:rubyf[ile] {file}	ファイル{file}のRubyスクリプトを実行する。ファイル名の
+			補完が利用できる以外は、":ruby load 'file'"と同じ。
+
+|sandbox|環境内ではRubyコマンドを実行できない。
+
+==============================================================================
+2. VIMモジュール					*ruby-vim*
+
+Rubyのコードは全てのVimへのアクセスをVIMモジュール経由で行う。
+
+概要 >
+	print "Hello"			# メッセージを表示する
+	VIM.command(cmd)		# Exコマンドを実行する
+	num = VIM::Window.count		# ウィンドウ数を取得する
+	w = VIM::Window[n]		# ウィンドウ n を取得する
+	cw = VIM::Window.current	# 現在のウィンドウを取得する
+	num = VIM::Buffer.count		# バッファ数を取得する
+	b = VIM::Buffer[n]		# バッファ n を取得する
+	cb = VIM::Buffer.current	# 現在のバッファを取得する
+	w.height = lines		# ウィンドウの高さ(行数)を設定する
+	w.cursor = [row, col]		# ウィンドウのカーソル位置を設定する
+	pos = w.cursor			# カーソルの位置を配列で受け取る
+	name = b.name			# バッファのファイル名を取得する
+	line = b[n]			# バッファから行の内容を取得する
+	num = b.count			# バッファの行数を取得する
+	b[n] = str			# バッファの行の内容を変更する
+	b.delete(n)			# 行を削除する
+	b.append(n, str)		# n行目の直後に行を追加する
+	line = VIM::Buffer.current.line       # カレント行を取得する
+	num = VIM::Buffer.current.line_number # カレント行の行番号を取得する
+	VIM::Buffer.current.line = "test"     # カレント行を設定する
+<
+
+モジュール関数:
+
+							*ruby-message*
+VIM::message({msg})
+	メッセージ{msg}を表示する。
+
+							*ruby-set_option*
+VIM::set_option({arg})
+	Vimのオプションを設定する。{arg}は ":set" コマンドが受け付けるものであ
+	れば何でも良い。引数の中では空白文字が使えないことに注意。|:set|を参
+	照。
+
+							*ruby-command*
+VIM::command({cmd})
+	Exコマンド{cmd}を実行する。
+
+							*ruby-evaluate*
+VIM::evaluate({expr})
+	Vim内部の実行エンジンを使ってスクリプト{expr}を実行評価する
+	(|expression|参照)。実行結果は文字列で返される。
+        |List|は文字列に変換される。各要素が連結され、間に改行が挿入される。
+
+==============================================================================
+3. VIM::Buffer オブジェクト				*ruby-buffer*
+
+オブジェクトVIM::BufferはVimのバッファを表す。
+
+クラスメソッド:
+
+current		カレントバッファオブジェクトを返す。
+count		バッファの個数を返す。
+self[{n}]	番号{n}のバッファオブジェクトを返す。最初の番号は0。
+
+メソッド:
+
+name		バッファの名前を返す。
+number		バッファの番号を返す。
+count		行数を返す。
+length		行数を返す。
+self[{n}]	バッファの行を返す。{n}は行番号。
+self[{n}] = {str}
+                バッファの行を設定する。{n}は行番号。
+delete({n})	バッファから行を削除する。{n}は行番号。
+append({n}, {str})
+		行{n}の後ろに行を追加する。
+line		そのバッファがアクティブなら、カレント行を返す。
+line = {str}    そのバッファがアクティブなら、カレント行を設定する。
+line_number     そのバッファがアクティブなら、カレント行の行番号を返す。
+
+==============================================================================
+4. VIM::Window オブジェクト				*ruby-window*
+
+VIM::Window オブジェクトはVimのウィンドウを表現している。
+
+クラスメソッド:
+
+current		現在のウィンドウオブジェクトを返す。
+count		ウィンドウの数を返す。
+self[{n}]	番号{n}のウィンドウオブジェクトを返す。番号は0から数え始める。
+
+メソッド:
+
+buffer		ウィンドウに表示されているバッファを返す。
+height		ウィンドウの高さを返す。
+height = {n}	ウィンドウの高さを{n}に設定する。
+width		ウィンドウの幅を返す。
+width = {n}	ウィンドウの幅を{n}に設定する。
+cursor		カーソルの位置を[行数, カラム]の形で配列にして返す。
+cursor = [{row}, {col}]
+		カーソルの位置を{row} 行の {col}カラムに設定する。
+
+==============================================================================
+5. グローバル変数					*ruby-globals*
+
+2つのグローバル変数がある。
+
+$curwin		現在のウィンドウオブジェクト
+$curbuf		現在のバッファオブジェクト
+
+==============================================================================
+6. 動的ローディング					*ruby-dynamic*
+
+MS-WindowsとUnixではRubyライブラリを動的に読み込むことが可能である。これを行う
+と|:version|の出力に|+ruby/dyn|が含まれるようになる。
+
+この場合、Vimは必要になったときだけRubyのDLLファイル及び共有ライブラリを検索す
+る。Rubyインターフェイスを使わないのであればそれらは必要ではないので、ライブラ
+リファイルがシステムに無くてもVimを使うことができる。
+
+これが動作するためには Ruby の適切なバージョンがインストールされている必要があ
+る。次の場所からパッケージをダウンロードできる:
+http://www.garbagecollect.jp/ruby/mswin32/en/download/release.html
+現在のパッケージは ruby-1.9.1-p429-i386-mswin32.zip である。
+
+Rubyインターフェイスを使うにはRubyのDLLが検索パス内に存在しなければならな
+い。コンソールウィンドウで "path" とタイプすると、どのディレクトリが検索パスと
+なるか表示することができる。
+
+DLLの名前はVimをコンパイルした時のRubyのバージョンに一致しなければならない。現
+在その名前は "msvcrt-ruby191.dll" である。これはRuby1.9.1用である。これを確か
+めるには、"gvim.exe" を開き、"ruby\d*.dll\c" を検索する。
+
+自分で Ruby 1.9.1 対応の Vim をビルドするには、config.h ファイルを編集して
+_MSC_VER のチェックをコメントアウトする必要があるだろう。
+また、インクルードディレクトリの名前をバージョンと同じ名前に変更する必要もある
+かもしれない。不思議なことに Ruby 1.9.3 のディレクトリは 1.9.1 となっている。
+
+==============================================================================
+ vim:tw=78:ts=8:ft=help:norl:

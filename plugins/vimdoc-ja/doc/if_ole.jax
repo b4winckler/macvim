@@ -1,0 +1,200 @@
+*if_ole.txt*    For Vim バージョン 7.3.  Last change: 2008 Aug 16
+
+
+		  VIMリファレンスマニュアル    by Paul Moore
+
+
+VimへのOLEインターフェイス				*ole-interface*
+
+1. アクティブにする		|ole-activation|
+2. メソッド			|ole-methods|
+3. "normal" コマンド		|ole-normal|
+4. 登録				|ole-registration|
+5. MS Visual Studioとの統合	|MSVisualStudio|
+
+{Vi にはこれらのコマンドはない}
+
+OLE は|+ole|機能と共にコンパイルされたときのみ有効である。
+src/if_ole.INSTALLを参照せよ。
+代わりにクライアント、サーバ型の通信を使うこともできる|clientserver|。
+
+==============================================================================
+1. アクティブにする					*ole-activation*
+
+Vimは、あらゆるオートメーションクライアント、例えばVisual Basic、Python、
+Perlなどからアクセス可能な、OLEオートメーションサーバとして振舞う。Vimアプリ
+ケーションの "名前" (これはOLE用語で言うところの "ProgID")は、"Vim.Application"
+である。
+
+したがって、Vimのインスタンスを起動する(あるいはすでに起動しているインスタン
+スに接続する)には、次のようなコードが用いられることになる:
+
+[Visual Basic] >
+	Dim Vim As Object
+	Set Vim = CreateObject("Vim.Application")
+
+[Python] >
+	from win32com.client.dynamic import Dispatch
+	vim = Dispatch('Vim.Application')
+
+[Perl] >
+	use Win32::OLE;
+	$vim = new Win32::OLE 'Vim.Application';
+
+[C#] >
+        // プロジェクトに VIM への参照を追加する。
+        // COM タブを選択する。
+        // "VIM Ole Interface 1.1 Type Library" を選択する。
+	Vim.Vim vimobj = new Vim.Vim();
+
+Vimは、他の一部のOLEサーバがサポートしているような、"hidden" なOLEサーバとして
+の機能をサポートしていない。クライアントがVimのインスタンスを起動する場合、そ
+のインスタンスは即座に可視化される。単にVimインスタンスとのOLE接続を閉じるだ
+けでは、Vimインスタンスを終了するに十分ではない - 明確に終了コマンド(例えば、
+:qa!、:wqa)を実行する必要がある。
+
+==============================================================================
+2. メソッド						*ole-methods*
+
+Vimはクライアントに対して４つのメソッドを公開している。
+
+							*ole-sendkeys*
+SendKeys(keys)		一連のキー操作を実行する。
+
+このメソッドはひとつの引数、キーストロークの文字列、を取る。これらのキースト
+ロークは、完全にキーボードから打ち込まれたもののように実行される。スペシャル
+キーは、マッピングの右側に書かれる、<...>形式の名前で与えることができる。
+Note: Ex "normal" コマンドの実行はサポートされていない - 以下の|ole-normal|を
+見よ。
+
+例 (Visual Basic の文法) >
+	Vim.SendKeys "ihello<Esc>"
+	Vim.SendKeys "ma1GV4jy`a"
+
+これらの例は、Vimがノーマルモードで始まるものと仮定している。必ずノーマルモー
+ドにするには、一連のキーを次のように CTRL-\ CTRL-N で始めるとよい >
+
+	Vim.SendKeys "<C-\><C-N>ihello<Esc>"
+
+CTRL-\ CTRL-N は、挿入モード、コマンドラインモードにいるとき、Vimをノーマル
+モードに戻す。これらはVimコマンドの途中に入れると機能しないことに注意せよ。
+
+							*ole-eval*
+Eval(expr)		式(expr)を実行する。
+
+このメソッドはひとつの引数、Vim標準フォーマットの式、を取る(|expression|を参
+照)。戻り値は、その式を評価した結果の文字列である。リスト |List| は文字列に変
+換される。そのとき各要素の間に改行が挿入され、連結される。
+
+Examples (Visual Basic の文法で) >
+	Line20 = Vim.Eval("getline(20)")
+	Twelve = Vim.Eval("6 + 6")		' これが文字列であることに注意
+	Font = Vim.Eval("&guifont")
+<
+							*ole-setforeground*
+SetForeground()		Vimウィンドウを最前面に持ってくる。
+
+このメソッドは引数を持たない。戻り値はない。
+
+例 (Visual Basic の文法で) >
+	Vim.SetForeground
+<
+
+							*ole-gethwnd*
+GetHwnd()		Vimのウィンドウハンドルを得る。
+
+このメソッドは引数を持たない。戻り値はVimウィンドウのウィンドウハンドルである。
+これはVimウィンドウに対して何かの操作を行いたい時に使う。
+
+例 (Visual Basic の文法で) >
+	Vim_Hwnd = Vim.GetHwnd
+<
+
+==============================================================================
+3. "normal" コマンド					*ole-normal*
+
+VimがOLEオートメーションコマンドを処理する方法は、exコマンド :normal の実装と
+統合されているため、OLEオートメーションから :normal コマンドを実行することは
+できない。実際に実行しようとしても失敗する、たぶん害はないと思われるが、予期
+しない動作をする恐れはある。
+
+この状況をトラップする現実的な方法は今のところ存在しないため、ユーザはこの制
+限に単に気をつけるようにする他ない。
+==============================================================================
+4. 登録						*ole-registration* *E243*
+
+VimをOLEサーバとして動作させる前に、システムレジストリに登録する必要がある。
+これを行うには、Vimをひとつの引数 "-register" で実行すればよい。
+							*-register*  >
+	gvim -register
+
+
+OLEサーバーが登録されていないとき、OLEをサポートしたgvimを起動すると警告ダイア
+ログが出る。"Yes" を選択するとレジストリに登録できる。
+
+レジストリが書き込み可能でないときには登録はできない。もし登録できないときは
+"Administrator" 権限でgvimを起動すること。
+
+いったんVimが登録されると、アプリケーションへのパスはレジストリに保存される。
+Vimを移動、削除、更新する前に、レジストリの項目を "-unregister" スイッチを使っ
+て削除する必要がある。
+							*-unregister*  >
+	gvim -unregister
+
+OLEメカニズムは、登録されたVimの内、最初に見つけたものを使用する。Vimがすでに
+実行されている場合は、そのVimが使用される。OLEコマンドに影響されないで、(いく
+つかの)Vimセッションを張ろうとする場合は、非OLEバージョンを違うディレクトリに
+置いて使用するとよい。そして、OLEバージョンをパスに含まれないディレクトリに置
+けば、"gvim" とタイプしたとき非OLEバージョンが起動するようになる。
+
+							*-silent*
+結果を表示するメッセージボックスを表示したくないなら "-silent" を付けること。 >
+	gvim -silent -register
+	gvim -silent -unregister
+
+==============================================================================
+5. MS Visual Studio との統合			*MSVisualStudio* *VisVim*
+
+OLEバージョンにより、Microsoft Visual StudioのエディタとしてVimを実行すること
+ができる。これは "VisVim" と呼ばれる。これはOLEバージョンを含んだアーカイブに
+同梱されている。ドキュメントは、ランタイムディレクトリに置かれている
+README_VisVim.txtファイルにある。
+
+
+Vim と Visual Studio.Net を連携させる~
+
+.Net studio は外部エディタをサポートしているので、.Net では VisVim は必要ない。
+次のようにするとよい:
+
+.Net Studio でメニューから[ツール]→[外部ツール]を選択する。
+次を追加する
+    タイトル	     - Vim
+    コマンド	     - c:\vim\vim63\gvim.exe
+    引数	     - --servername VS_NET --remote-silent "+call cursor($(CurLine), $(CurCol))" $(ItemPath)
+    初期ディレクトリ - 空
+
+こうしておくと .Net でファイルを開いたとき、.Net のメニューから[ツール]→[Vim]
+を選べるようになる。
+
+それを選ぶとそのファイルが Vim で開かれる。
+この外部コマンドをアイコンにして好きなところに置くことができる。これをデフォル
+トのエディタに設定することもできる。
+
+もしこれをさらに改良できたら、それを留めておけるように Vim メーリングリストに
+投稿していただきたい。
+
+--servername VS_NET
+この引数をつけると、VS_NET という名前で新しい Vim インスタンスを作る。そのため、
+VS で複数のファイルを開いても、同じ Vim のインスタンスが使われる。これによって
+複数の Vim のインスタンスを起動し、かつどのインスタンスが VS のファイルを開い
+ているかを管理することができる。
+
+--remote-silent "+call cursor(10, 27)"
+	      - カーソルを10行27桁に移動する
+より詳しくは Vim 内で >
+   :h --remote-silent
+
+[.Net の部分は Dave Fishburn と Brian Sturk によって提供された]
+
+==============================================================================
+ vim:tw=78:ts=8:ft=help:norl:

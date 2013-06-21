@@ -1,0 +1,96 @@
+*if_sniff.txt*	For Vim バージョン 7.3.  Last change: 2005 Mar 29
+
+
+		  VIMリファレンスマニュアル
+		by Anton Leherbauer (toni@takefive.co.at)
+
+
+SNiFF+ と Vim				    *sniff*
+
+1. イントロダクション			    |sniff-intro|
+2. コマンド				    |sniff-commands|
+3. SNiFF+ インタフェイス付きコンパイル	    |sniff-compiling|
+
+{Vi にはこれらのコマンドはありません} *E275* *E274* *E276* *E278* *E279*
+
+SNiFF+ インタフェイスは、|+sniff| 機能つきでコンパイルしていた場合にのみ有効で
+す。
+
+==============================================================================
+1. イントロダクション				*sniff-intro*
+
+SNiFF+ を使う以下の機能が利用できます:
+
+   * 全ての編集リクエストに Vim を使うことができます
+   * Vim でファイルがセーブされると SNiFF+ はそれに気づいて、全てのブラウザ
+     を更新します
+   * SNiFF+ コマンドを Vim から直接実行できます
+
+Vim で SNiFF+ を使うには
+   1. SNiFF+ が起動していることを確認してください。
+   2. Preferences ダイアログでの Editor ビューで、フィールド名の 'External
+      Editor' を 'Emacs/Vim' に変更してください。
+   4. Vim を起動します。
+   5. SNiFF+ に接続します。(:sniff 接続)
+
+いったん接続が確立されると、SNiFF+ は、ソース・コードを表示したり、編集した
+りする全てのリクエストで Vim を使います。一方、:sniff コマンドで SNiFF+ にク
+エリーを送ることができます。
+
+==============================================================================
+2. コマンド				    *sniff-commands*
+
+			    *:sniff* *:sni*
+:sni[ff] request [symbol]   sniff にリクエストを送信する、symbol はオプショナ
+			    ル {Vi にはない機能です}
+:sni[ff]		    可能な全てのリクエストと接続状態を表示する。
+
+ほとんどのリクエストは symbol (識別子)をパラメーターとして必要とします。省略さ
+れた場合は、カーソルの下の単語が使われます。利用可能なリクエストの一覧を下に挙
+げます:
+
+リクエスト	      マッピング    説明
+-------------------------------------------------------------------------------
+connect			sc	SNiFF+ との接続を確立します。
+				Preference で、これが可能なように SNiFF+ を設
+				定ずみかどうか確認しておいてください。
+disconnect		sq	SNiFF+ との接続を切断します。:sniff connect 
+				(もしくは 'sc')で、いつでも再接続できます。
+toggle			st	実装と定義ファイルをトグルします。
+find-symbol		sf	シンボル・ブラウザーに symbol を読み込みます。
+browse-class		sb	クラス・ブラウザーに class を読み込みます。
+superclass		ss	symbol の superclass を編集します。
+overridden		so	symbol の上書きされた method を編集します。
+retrieve-file		srf	現在のファイルの symbol を集めます。
+retrieve-project	srp	現在のプロジェクトの symbol を集めます。
+retrieve-all-projects	srP	全てのプロジェクトの symbol を集めます。
+retrieve-next		sR	現在の Retriever の設定を使って symbol を集め
+				ます。
+goto-symbol		sg	symbol の定義もしくは実装に飛びます。
+hierarchy		sh	階層ブラウザーに symbol を読み込みます。
+restr-hier		sH	上と同じですが、関連する class のみを表示しま
+				す。
+xref-to			sxt	symbol に関する refers-to クエリーを開始し、結
+				果をクロス・リファレンサーに読み込む。
+xref-by			sxb	symbol に関する referred-by クエリーを開始する。
+xref-has		sxh	symbol に関する refers-to コンポーネント・クエ
+				リーを開始する。
+xref-used-by		sxu	symbol に関して、コンポーネントとして
+				referred-by クエリーを開始する。
+show-docu		sd	symbol のドキュメントを表示する。
+gen-docu		sD	symbol のドキュメントを生成する。
+
+マッピングは 'sniff.vim' に定義されており、これは全ての SNiFF+ プロダクトの一
+部になります ($SNIFF_DIR/config/sniff.vim)。このファイルは Vim が SNiFF+ に接
+続するときには、常に読み込まれます。
+
+==============================================================================
+3. SNiFF+ インタフェイス付きコンパイル		*sniff-compiling*
+
+Vim を SNiFF+ サポートつきでコンパイルするには、extra アーカイブに含まれる2つ
+のソース・ファイルが必要になります: if_sniff.c と if_sniff.h。
+Unix 上: Makefile を編集して "--enable-sniff" の行のコメントを外します。もしく
+は "--enable-sniff" を指定してconfigureを実行してください。
+NT 上: make コマンドで SNIFF=yes を指定します。
+
+ vim:tw=78:ts=8:ft=help:norl:

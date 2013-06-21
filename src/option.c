@@ -132,10 +132,14 @@
 # define PV_KMAP	OPT_BUF(BV_KMAP)
 #endif
 #define PV_KP		OPT_BOTH(OPT_BUF(BV_KP))
+#define PV_LEOL		OPT_BUF(BV_LEOL)
 #ifdef FEAT_LISP
 # define PV_LISP	OPT_BUF(BV_LISP)
 #endif
 #define PV_MA		OPT_BUF(BV_MA)
+#ifdef USE_MIGEMO
+# define PV_MIG		OPT_BUF(BV_MIG)
+#endif
 #define PV_ML		OPT_BUF(BV_ML)
 #define PV_MOD		OPT_BUF(BV_MOD)
 #define PV_MPS		OPT_BUF(BV_MPS)
@@ -326,6 +330,7 @@ static char_u	*p_isk;
 #ifdef FEAT_CRYPT
 static char_u	*p_key;
 #endif
+static int	p_leol;
 #ifdef FEAT_LISP
 static int	p_lisp;
 #endif
@@ -713,6 +718,14 @@ static struct vimoption
 			    {(char_u *)0L, (char_u *)0L}
 #endif
 			    SCRIPTID_INIT},
+    {"charspace",   "csp",  P_NUM|P_NODEFAULT|P_VIM|P_RCLR,
+#ifdef FEAT_GUI
+			    (char_u *)&p_charspace, PV_NONE,
+#else
+			    (char_u *)NULL, PV_NONE,
+#endif
+			    {(char_u *)0L, (char_u *)0L}
+			    SCRIPTID_INIT},
     {"cindent",	    "cin",  P_BOOL|P_VI_DEF|P_VIM,
 #ifdef FEAT_CINDENT
 			    (char_u *)&p_cin, PV_CIN,
@@ -801,6 +814,15 @@ static struct vimoption
 			    SCRIPTID_INIT},
 			    /* P_PRI_MKRC isn't needed here, optval_default()
 			     * always returns TRUE for 'compatible' */
+    {"compact",  "cfs",	    P_BOOL|P_VIM,
+#ifdef FEAT_EVAL
+			    (char_u *)&p_cfs, PV_NONE,
+			    {(char_u *)TRUE, (char_u *)FALSE}
+#else
+			    (char_u *)&NULL, PV_NONE,
+			    {(char_u *)0L, (char_u *)0L}
+#endif
+			    SCRIPTID_INIT},
     {"compatible",  "cp",   P_BOOL|P_RALL,
 			    (char_u *)&p_cp, PV_NONE,
 			    {(char_u *)TRUE, (char_u *)FALSE} SCRIPTID_INIT},
@@ -1690,6 +1712,9 @@ static struct vimoption
 			    {(char_u *)0L, (char_u *)0L}
 #endif
 			    SCRIPTID_INIT},
+    {"lasteol",	    "lol",  P_BOOL|P_NO_MKRC|P_VI_DEF|P_RSTAT,
+			    (char_u *)&p_leol, PV_LEOL,
+			    {(char_u *)TRUE, (char_u *)0L} SCRIPTID_INIT},
     {"lisp",	    NULL,   P_BOOL|P_VI_DEF,
 #ifdef FEAT_LISP
 			    (char_u *)&p_lisp, PV_LISP,
@@ -1790,6 +1815,14 @@ static struct vimoption
     {"mesg",	    NULL,   P_BOOL|P_VI_DEF,
 			    (char_u *)NULL, PV_NONE,
 			    {(char_u *)FALSE, (char_u *)0L} SCRIPTID_INIT},
+#ifdef USE_MIGEMO
+    {"migemo",	    "mgm",  P_BOOL|P_VI_DEF|P_VIM,
+			    (char_u *)&p_migemo, PV_MIG,
+			    {(char_u *)FALSE, (char_u *)0L} SCRIPTID_INIT},
+    {"migemodict",  "mgd",  P_STRING|P_EXPAND|P_VI_DEF|P_VIM,
+			    (char_u *)&p_migdict, PV_NONE,
+			    {(char_u *)"", (char_u *)0L} SCRIPTID_INIT},
+#endif /* USE_MIGEMO */
     {"mkspellmem",  "msm",  P_STRING|P_VI_DEF|P_EXPAND|P_SECURE,
 #ifdef FEAT_SPELL
 			    (char_u *)&p_msm, PV_NONE,
@@ -2086,6 +2119,11 @@ static struct vimoption
     {"remap",	    NULL,   P_BOOL|P_VI_DEF,
 			    (char_u *)&p_remap, PV_NONE,
 			    {(char_u *)TRUE, (char_u *)0L} SCRIPTID_INIT},
+#ifdef FEAT_RENDER_OPTIONS
+    {"renderoptions", "rop", P_STRING|P_COMMA|P_RCLR|P_VI_DEF,
+			    (char_u *)&p_rop, PV_NONE,
+			    {(char_u *)"", (char_u *)0L} SCRIPTID_INIT},
+#endif
     {"report",	    NULL,   P_NUM|P_VI_DEF,
 			    (char_u *)&p_report, PV_NONE,
 			    {(char_u *)2L, (char_u *)0L} SCRIPTID_INIT},
@@ -2623,6 +2661,11 @@ static struct vimoption
 			    (char_u *)&p_tbis, PV_NONE,
 			    {(char_u *)"small", (char_u *)0L} SCRIPTID_INIT},
 #endif
+#ifdef USE_TRANSPARENCY
+    {"transparency", "tra", P_NUM|P_VI_DEF,
+			    (char_u *)&p_transparency, PV_NONE,
+			    {(char_u *)255L, (char_u *)0L}},
+#endif
     {"ttimeout",    NULL,   P_BOOL|P_VI_DEF|P_VIM,
 			    (char_u *)&p_ttimeout, PV_NONE,
 			    {(char_u *)FALSE, (char_u *)0L} SCRIPTID_INIT},
@@ -2944,7 +2987,11 @@ static struct vimoption
 #define PARAM_COUNT (sizeof(options) / sizeof(struct vimoption))
 
 #ifdef FEAT_MBYTE
-static char *(p_ambw_values[]) = {"single", "double", NULL};
+static char *(p_ambw_values[]) = {"single", "double",
+# ifdef USE_AMBIWIDTH_AUTO
+    "auto",
+# endif
+    NULL};
 #endif
 static char *(p_bg_values[]) = {"light", "dark", NULL};
 static char *(p_nf_values[]) = {"octal", "hex", "alpha", NULL};
@@ -5596,6 +5643,11 @@ set_string_option_global(opt_idx, varp)
 	free_string_option(*p);
 	*p = s;
     }
+
+#ifdef USE_MIGEMO
+    if (varp == &p_migdict)
+	reset_migemo(FALSE);
+#endif
 }
 
 /*
@@ -6972,6 +7024,16 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf,
     }
 #endif
 
+#if defined(FEAT_GUI) && defined(FEAT_RENDER_OPTIONS)
+    else if (varp == &p_rop && gui.in_use)
+    {
+	int gui_mch_set_rendering_options(char_u *);
+
+	if (!gui_mch_set_rendering_options(p_rop))
+	    errmsg = e_invarg;
+    }
+#endif
+
     /* Options that are a list of flags. */
     else
     {
@@ -7681,6 +7743,11 @@ set_bool_option(opt_idx, varp, value, opt_flags)
     {
 	redraw_titles();
     }
+    /* when 'lasteol' is changed, redraw the window title */
+    else if ((int *)varp == &curbuf->b_p_lasteol)
+    {
+        redraw_titles();
+    }
 # ifdef FEAT_MBYTE
     /* when 'bomb' is changed, redraw the window title and tab page text */
     else if ((int *)varp == &curbuf->b_p_bomb)
@@ -8272,7 +8339,7 @@ set_num_option(opt_idx, varp, value, errbuf, errbuflen, opt_flags)
 #endif
 
 #ifdef FEAT_GUI
-    else if (pp == &p_linespace)
+    else if (pp == &p_linespace || pp == &p_charspace)
     {
 	/* Recompute gui.char_height and resize the Vim window to keep the
 	 * same number of lines. */
@@ -8335,6 +8402,15 @@ set_num_option(opt_idx, varp, value, errbuf, errbuflen, opt_flags)
 	else if (p_mco < 0)
 	    p_mco = 0;
 	screenclear();	    /* will re-allocate the screen */
+    }
+#endif
+
+#ifdef USE_TRANSPARENCY
+    else if ((long *)varp == &p_transparency)
+    {
+	if (p_transparency < 1 || p_transparency > 255)
+	    p_transparency = 255;
+	gui_mch_set_transparency(p_transparency);
     }
 #endif
 
@@ -9994,12 +10070,16 @@ get_varp(p)
 #ifdef FEAT_CRYPT
 	case PV_KEY:	return (char_u *)&(curbuf->b_p_key);
 #endif
+	case PV_LEOL:	return (char_u *)&(curbuf->b_p_lasteol);
 #ifdef FEAT_LISP
 	case PV_LISP:	return (char_u *)&(curbuf->b_p_lisp);
 #endif
 	case PV_ML:	return (char_u *)&(curbuf->b_p_ml);
 	case PV_MPS:	return (char_u *)&(curbuf->b_p_mps);
 	case PV_MA:	return (char_u *)&(curbuf->b_p_ma);
+#ifdef USE_MIGEMO
+	case PV_MIG:	return (char_u *)&(curbuf->b_p_migemo);
+#endif
 	case PV_MOD:	return (char_u *)&(curbuf->b_changed);
 	case PV_NF:	return (char_u *)&(curbuf->b_p_nf);
 	case PV_PI:	return (char_u *)&(curbuf->b_p_pi);
@@ -10391,6 +10471,11 @@ buf_copy_options(buf, flags)
 	     * state from the current buffer is better than resetting it. */
 	    buf->b_p_iminsert = p_iminsert;
 	    buf->b_p_imsearch = p_imsearch;
+
+#ifdef USE_MIGEMO
+	    /* This is migemo extension */
+	    buf->b_p_migemo = p_migemo;
+#endif
 
 	    /* options that are normally global but also have a local value
 	     * are not copied, start using the global value */
@@ -11634,6 +11719,7 @@ save_file_ff(buf)
 {
     buf->b_start_ffc = *buf->b_p_ff;
     buf->b_start_eol = buf->b_p_eol;
+    buf->b_start_lasteol = buf->b_p_lasteol;
 #ifdef FEAT_MBYTE
     buf->b_start_bomb = buf->b_p_bomb;
 
@@ -11671,6 +11757,8 @@ file_ff_differs(buf, ignore_empty)
     if (buf->b_start_ffc != *buf->b_p_ff)
 	return TRUE;
     if (buf->b_p_bin && buf->b_start_eol != buf->b_p_eol)
+	return TRUE;
+    if (buf->b_start_lasteol != buf->b_p_lasteol)
 	return TRUE;
 #ifdef FEAT_MBYTE
     if (!buf->b_p_bin && buf->b_start_bomb != buf->b_p_bomb)
