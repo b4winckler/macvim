@@ -16,5 +16,6 @@
 #define ruby_enabled ruby19_enabled
 #define ruby_end ruby19_end
 #define ruby_window_free ruby19_window_free
+#define vim_ruby_init vim_ruby19_init
 
 #include "if_ruby.c"

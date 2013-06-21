@@ -23,6 +23,7 @@
 #define ruby_enabled ruby18_enabled
 #define ruby_end ruby18_end
 #define ruby_window_free ruby18_window_free
+#define vim_ruby_init vim18_ruby_init
 #endif
 
 #include <stdio.h>
@@ -1471,6 +1472,7 @@ void vim_ruby_init(void *stack_start)
 #undef ruby_enabled
 #undef ruby_end
 #undef ruby_window_free
+#undef vim_ruby_init
 
 enum {
     DYNAMIC_RUBY_NOT_INITIALIZED,
@@ -1550,4 +1552,13 @@ void ruby_window_free(win_T *win)
     case DYNAMIC_RUBY_VER19: ruby19_window_free(win); return;
     }
 }
+
+void vim_ruby_init()
+{
+    switch (dynamic_ruby_version) {
+    case DYNAMIC_RUBY_VER18: vim_ruby18_init(); return;
+    case DYNAMIC_RUBY_VER19: vim_ruby19_init(); return;
+    }
+}
+
 #endif
