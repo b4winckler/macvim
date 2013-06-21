@@ -639,7 +639,7 @@
  * Multibyte support doesn't work on z/OS Unix currently.
  */
 #if (defined(FEAT_NORMAL) || defined(FEAT_GUI_GTK) || defined(FEAT_ARABIC) \
-        || defined(FEAT_GUI_MACVIM)) \
+	|| defined(FEAT_GUI_MACVIM)) \
 	&& !defined(FEAT_MBYTE) && !defined(WIN16) \
 	&& SIZEOF_INT >= 4 && !defined(EBCDIC)
 # define FEAT_MBYTE

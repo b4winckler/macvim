@@ -4776,6 +4776,9 @@ nv_screengo(oap, dir, dist)
 nv_mousescroll(cap)
     cmdarg_T	*cap;
 {
+# ifdef FEAT_GUI_SCROLL_WHEEL_FORCE
+    int scroll_wheel_force = 0;
+# endif
 # ifdef FEAT_WINDOWS
     win_T *old_curwin = curwin;
 

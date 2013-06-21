@@ -3319,15 +3319,7 @@ is_mouse_key(c)
 	|| c == K_X1RELEASE
 	|| c == K_X2MOUSE
 	|| c == K_X2DRAG
-	|| c == K_X2RELEASE
-# ifdef FEAT_GUI_MACVIM
-	|| n == K_SWIPELEFT
-	|| n == K_SWIPERIGHT
-	|| n == K_SWIPEUP
-	|| n == K_SWIPEDOWN
-# endif
-	;
-
+	|| c == K_X2RELEASE;
 }
 #endif
 
@@ -3422,7 +3414,13 @@ get_keystroke()
 #ifdef FEAT_GUI
 		    || n == K_VER_SCROLLBAR
 		    || n == K_HOR_SCROLLBAR
-#endif
+# endif
+# ifdef FEAT_GUI_MACVIM
+		    || n == K_SWIPELEFT
+		    || n == K_SWIPERIGHT
+		    || n == K_SWIPEUP
+		    || n == K_SWIPEDOWN
+# endif
 	       )
 	    {
 		if (buf[1] == KS_MODIFIER)

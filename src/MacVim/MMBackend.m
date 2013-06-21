@@ -2100,6 +2100,8 @@ static void netbeansReadCallback(CFSocketRef s,
         [self setImState:YES];
     } else if (DeactivatedImMsgID == msgid) {
         [self setImState:NO];
+    } else if (BackingPropertiesChangedMsgID == msgid) {
+        [self redrawScreen];
     } else {
         ASLogWarn(@"Unknown message received (msgid=%d)", msgid);
     }
