@@ -23,7 +23,7 @@
 #define ruby_enabled ruby18_enabled
 #define ruby_end ruby18_end
 #define ruby_window_free ruby18_window_free
-#define vim_ruby_init vim18_ruby_init
+#define vim_ruby_init vim_ruby18_init
 #endif
 
 #include <stdio.h>
