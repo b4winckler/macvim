@@ -17,7 +17,6 @@ LANGUAGES = \
 		ga \
 		it \
 		ja \
-		ja_JP.UTF-8 \
 		ko \
 		ko.UTF-8 \
 		nb \
@@ -59,7 +58,6 @@ MOFILES = \
 		ga.mo \
 		it.mo \
 		ja.mo \
-		ja_JP.UTF-8.mo \
 		ko.mo \
 		ko.UTF-8.mo \
 		nb.mo \
@@ -81,7 +79,6 @@ MOCONVERTED = \
 		cs.cp1250.mo \
 		ja.sjis.mo \
 		ja.euc-jp.mo \
-		ja_JP.UTF-8.mo \
 		pl.cp1250.mo \
 		pl.UTF-8.mo \
 		ru.cp1251.mo \
@@ -121,7 +118,6 @@ CHECKFILES = \
 		cs.cp1250.ck \
 		ja.sjis.ck \
 		ja.euc-jp.ck \
-		ja_JP.UTF-8.ck \
 		pl.cp1250.ck \
 		pl.UTF-8.ck \
 		ru.cp1251.ck \
@@ -208,12 +204,6 @@ sjiscorr: sjiscorr.c
 ja.euc-jp.po: ja.po
 	iconv -f utf-8 -t euc-jp ja.po | \
 		sed -e 's/charset=utf-8/charset=euc-jp/' -e 's/# Original translations/# Generated from ja.po, DO NOT EDIT/' > ja.euc-jp.po
-
-# Convert ja.po to create ja_JP.UTF-8.po.
-ja_JP.UTF-8.po: ja.po
-	rm -f ja_JP.UTF-8.po
-	iconv -f euc-jp -t utf-8 ja.po | \
-		sed -e 's/charset=euc-jp/charset=utf-8/' -e 's/# Original translations/# Generated from ja.po, DO NOT EDIT/' > ja_JP.UTF-8.po
 
 # Convert cs.po to create cs.cp1250.po.
 cs.cp1250.po: cs.po
