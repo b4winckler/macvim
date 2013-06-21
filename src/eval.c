@@ -600,7 +600,9 @@ static void f_invert __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_isdirectory __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_islocked __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_items __ARGS((typval_T *argvars, typval_T *rettv));
+#if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
 static void f_jobrun __ARGS((typval_T *argvars, typval_T *rettv));
+#endif
 static void f_join __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_keys __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_last_buffer_nr __ARGS((typval_T *argvars, typval_T *rettv));
@@ -870,8 +872,8 @@ eval_init()
     hash_init(&func_hashtab);
 #if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
     init_var_dict(&jobvardict, &jobvars_var);
-#endif /* defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL) */
     jobvardict.dv_lock = VAR_FIXED;
+#endif /* defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL) */
 
     for (i = 0; i < VV_LEN; ++i)
     {
@@ -6825,8 +6827,10 @@ garbage_collect()
 	set_ref_in_item(&tp->tp_winvar.di_tv, copyID);
 #endif
 
+#if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
     /* job's host variables */
     set_ref_in_ht(&jobvarht, copyID);
+#endif
 
     /* global variables */
     set_ref_in_ht(&globvarht, copyID);
@@ -8011,7 +8015,9 @@ static struct fst
     {"isdirectory",	1, 1, f_isdirectory},
     {"islocked",	1, 1, f_islocked},
     {"items",		1, 1, f_items},
+#if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
     {"jobrun",		1, 1, f_jobrun},
+#endif
     {"join",		1, 2, f_join},
     {"keys",		1, 1, f_keys},
     {"last_buffer_nr",	0, 0, f_last_buffer_nr},/* obsolete */
