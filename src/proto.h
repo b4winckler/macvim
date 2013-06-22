@@ -93,7 +93,6 @@ extern int _stricoll __ARGS((char *a, char *b));
 # endif
 # include "hardcopy.pro"
 # include "hashtab.pro"
-# include "job.pro"
 # include "main.pro"
 # include "mark.pro"
 # include "memfile.pro"

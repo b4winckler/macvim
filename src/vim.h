@@ -9,10 +9,6 @@
 #ifndef VIM__H
 # define VIM__H
 
-/* TODO: make FEAT_JOB_* as puzzle and move into the Makefile. */
-#define FEAT_JOB_BASE		1
-#define FEAT_JOB_EVAL		1
-
 /* use fastcall for Borland, when compiling for Win32 (not for DOS16) */
 #if defined(__BORLANDC__) && defined(WIN32) && !defined(DEBUG)
 #if defined(FEAT_PERL) || \

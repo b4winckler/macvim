@@ -37,12 +37,6 @@ static void cleanup_jumplist __ARGS((void));
 #ifdef FEAT_VIMINFO
 static void write_one_filemark __ARGS((FILE *fp, xfmark_T *fm, int c1, int c2));
 #endif
-#ifdef FEAT_EVAL
-static emark_T ** emark_find __ARGS((emark_T **first, int_u (*find)(emark_T *, void *), void *data));
-static int_u emark_find_equals_id __ARGS((emark_T *p, void *data));
-static int_u emark_find_over_pos __ARGS((emark_T *p, void *data));
-static void emarklist_adjust __ARGS((emarklist_T *list, linenr_T line1, linenr_T, long amount, long amount_after));
-#endif
 
 /*
  * Set named mark "c" at current cursor position.
@@ -1204,11 +1198,6 @@ mark_adjust(line1, line2, amount, amount_after)
     /* adjust diffs */
     diff_mark_adjust(line1, line2, amount, amount_after);
 #endif
-
-#ifdef FEAT_EVAL
-    /* Adjust eval marks */
-    emarklist_adjust(&curbuf->b_emarklist, line1, line2, amount, amount_after);
-#endif
 }
 
 /* This code is used often, needs to be fast. */
@@ -1241,7 +1230,6 @@ mark_col_adjust(lnum, mincol, lnum_amount, col_amount)
     int		fnum = curbuf->b_fnum;
     win_T	*win;
     pos_T	*posp;
-    emark_T	*emarkp;
 
     if ((col_amount == 0L && lnum_amount == 0L) || cmdmod.lockmarks)
 	return; /* nothing to do */
@@ -1310,15 +1298,6 @@ mark_col_adjust(lnum, mincol, lnum_amount, col_amount)
 		col_adjust(&win->w_cursor);
 	}
     }
-
-#ifdef FEAT_EVAL
-    /*
-     * Adjust eval marks of current buffer.
-     */
-    for (emarkp = curbuf->b_emarklist.eml_first; emarkp;
-	    emarkp = emarkp->em_next)
-	col_adjust(&emarkp->em_pos);
-#endif
 }
 
 #ifdef FEAT_JUMPLIST
@@ -1849,163 +1828,3 @@ copy_viminfo_marks(virp, fp_out, count, eof, flags)
     vim_free(name_buf);
 }
 #endif /* FEAT_VIMINFO */
-
-#ifdef FEAT_EVAL
-    void
-emarklist_init(list)
-    emarklist_T *list;
-{
-    list->eml_first = NULL;
-    list->eml_count = 0;
-    list->eml_next_id = 0;
-}
-
-    void
-emarklist_cleanup(list)
-    emarklist_T *list;
-{
-    emark_T     *m;
-    emark_T     *next;
-
-    for (m = list->eml_first; m; m = next)
-    {
-	next = m->em_next;
-	vim_free(m);
-    }
-    list->eml_count = 0;
-    list->eml_next_id = 0;
-}
-
-    static emark_T **
-emark_find(first, find, data)
-    emark_T **first;
-    int_u (*find)(emark_T *, void *);
-    void *data;
-{
-    emark_T	**pp;
-
-    for (pp = first; *pp; pp = &(*pp)->em_next)
-    {
-	switch ((*find)(*pp, data))
-	{
-	    case 1:
-		return pp;
-	    case 2:
-		return &(*pp)->em_next;
-	}
-    }
-    /* not found, until end. */
-    return NULL;
-}
-
-    static int_u
-emark_find_equals_id(p, data)
-    emark_T *p;
-    void *data;
-{
-    return (p->em_id == *((int_u*)data)) ? 1 : 0;
-}
-
-    static int_u
-emark_find_over_pos(p, data)
-    emark_T *p;
-    void *data;
-{
-    pos_T	*pos;
-
-    /* find an emark_T which have larger pos_T than data */
-    pos = (pos_T *)data;
-    if ((pos->lnum < p->em_pos.lnum) ||
-	    (pos->lnum == p->em_pos.lnum && pos->col <= p->em_pos.col))
-	return 1;
-
-    return (p->em_next == NULL) ? 2 : 0;
-}
-
-    emark_T*
-emarklist_add(list, pos)
-    emarklist_T *list;
-    pos_T *pos;
-{
-    emark_T	**pp;
-    emark_T	*p;
-
-    pp = emark_find(&list->eml_first, emark_find_over_pos, pos);
-    if (pp == NULL)
-	pp = &list->eml_first;
-
-    p = (emark_T*)alloc(sizeof(*p));
-    if (p)
-    {
-	++list->eml_count;
-	p->em_id = list->eml_next_id++;
-	p->em_pos = *pos;
-	p->em_next = *pp;
-	*pp = p;
-    }
-
-    return p;
-}
-
-    emark_T**
-emarklist_find(list, id)
-    emarklist_T *list;
-    int_u id;
-{
-    return emark_find(&list->eml_first, emark_find_equals_id, &id);
-}
-
-    void
-emarklist_remove(list, id)
-    emarklist_T *list;
-    int_u id;
-{
-    emark_T	**pp;
-    emark_T	*p;
-
-    pp = emarklist_find(list, id);
-    if (pp && *pp)
-    {
-	p = *pp;
-	*pp = p->em_next;
-	vim_free(p);
-	--list->eml_count;
-    }
-}
-
-    static void
-emarklist_adjust(list, line1, line2, amount, amount_after)
-    emarklist_T *list;
-    linenr_T	line1;
-    linenr_T	line2;
-    long	amount;
-    long	amount_after;
-{
-    emark_T	**pp;
-    emark_T	**ppnext;
-    linenr_T	*lp;
-
-    /* Adjust all eval marks. */
-    for (pp = &curbuf->b_emarklist.eml_first; *pp; pp = &(*pp)->em_next)
-	one_adjust_nodel(&(*pp)->em_pos.lnum);
-
-    /* Remove invalid marks, which lnum is 0. */
-    for (pp = &curbuf->b_emarklist.eml_first; *pp; pp = ppnext)
-    {
-	if ((*pp)->em_pos.lnum != 0)
-	{
-	    /* Keep current mark. */
-	    ppnext = &(*pp)->em_next;
-	}
-	else
-	{
-	    /* Remove current mark. */
-	    emark_T	*p = (*pp);
-
-	    *pp = p->em_next;
-	    vim_free(p);
-	    --list->eml_count;
-	}
-    }
-}
-#endif /* FEAT_EVAL */

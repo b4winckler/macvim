@@ -6679,8 +6679,8 @@ cursor_pos_info()
 		    byte_count_cursor += line_count_info(s, &word_count_cursor,
 					   &char_count_cursor, len, eol_size);
 		    if (lnum == curbuf->b_ml.ml_line_count
-			    && ((!curbuf->b_p_eol && curbuf->b_p_bin)
-				|| !curbuf->b_p_lasteol)
+			    && !curbuf->b_p_eol
+			    && curbuf->b_p_bin
 			    && (long)STRLEN(s) < len)
 			byte_count_cursor -= eol_size;
 		}
@@ -6705,7 +6705,7 @@ cursor_pos_info()
 	}
 
 	/* Correction for when last line doesn't have an EOL. */
-	if ((!curbuf->b_p_eol && curbuf->b_p_bin) || !curbuf->b_p_lasteol)
+	if (!curbuf->b_p_eol && curbuf->b_p_bin)
 	    byte_count -= eol_size;
 
 #ifdef FEAT_VISUAL

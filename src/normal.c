@@ -564,82 +564,6 @@ find_command(cmdchar)
     return idx;
 }
 
-#ifdef FEAT_SYN_HL
-typedef struct citer_s
-{
-    char_u	*top;
-    int		col;
-    int		len;
-    int		dir;
-} citer_t;
-
-    void
-csearch_citer_init(citer, top, col, dir)
-    citer_t	*citer;
-    char_u	*top;
-    int		col;
-    int		dir;
-{
-    citer->top = top;
-    citer->col = col;
-    citer->len = (int)STRLEN(top);
-    citer->dir = dir == 0 ? 1 : dir;
-}
-
-    int
-csearch_citer_get(citer)
-    citer_t	*citer;
-{
-    if (citer->col >= 0 && citer->col < citer->len)
-	return (*mb_ptr2char)(citer->top + citer->col);
-    else
-	return 0;
-}
-
-    void
-csearch_citer_forward(citer)
-    citer_t	*citer;
-{
-    if (citer->col >= 0 && citer->col < citer->len)
-    {
-	if (citer->dir > 0)
-	    citer->col += (*mb_ptr2len)(citer->top + citer->col);
-	else
-	    citer->col -= (*mb_head_off)(citer->top,
-		    citer->top + citer->col - 1) + 1;
-    }
-}
-
-    static void
-csearch_highlight_enable(dir)
-    int dir;
-{
-    citer_t	citer;
-    int		ch;
-    garray_T	ga;
-
-    ga_init2(&ga, sizeof(int), 25);
-    csearch_citer_init(&citer);
-    csearch_citer_forward(&citer);
-
-    while ((ch = csearch_citer_get(&citer)) != 0)
-    {
-	/* TODO: implement me. */
-	csearch_citer_forward(&citer);
-    }
-
-    /* show hightlight */
-
-    ga_clear(&ga);
-}
-
-    static void
-csearch_highlight_disable()
-{
-    /* TODO: implement me. */
-}
-#endif
-
 /*
  * Execute a command in Normal mode.
  */
@@ -1091,19 +1015,7 @@ getcount:
 		im_set_active(TRUE);
 #endif
 
-#ifdef FEAT_SYN_HL
-	    /* apply csearch highlight if need. */
-	    if (nv_cmds[idx].cmd_func == nv_csearch)
-		csearch_highlight_enable(nv_cmds[idx].cmd_arg);
-#endif
-
 	    *cp = plain_vgetc();
-
-#ifdef FEAT_SYN_HL
-	    /* revert csearch highlight if need. */
-	    if (nv_cmds[idx].cmd_func == nv_csearch)
-		csearch_highlight_disable();
-#endif
 
 	    if (langmap_active)
 	    {

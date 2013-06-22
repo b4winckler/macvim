@@ -28,9 +28,4 @@ void write_viminfo_filemarks __ARGS((FILE *fp));
 int removable __ARGS((char_u *name));
 int write_viminfo_marks __ARGS((FILE *fp_out));
 void copy_viminfo_marks __ARGS((vir_T *virp, FILE *fp_out, int count, int eof, int flags));
-void emarklist_init __ARGS((emarklist_T *list));
-void emarklist_cleanup __ARGS((emarklist_T *list));
-emark_T* emarklist_add __ARGS((emarklist_T *list, pos_T *pos));
-emark_T** emarklist_find __ARGS((emarklist_T *list, int_u id));
-void emarklist_remove __ARGS((emarklist_T *list, int_u id));
 /* vim: set ft=c : */

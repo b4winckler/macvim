@@ -940,8 +940,6 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
 	{
 	    curbuf->b_p_eol = TRUE;
 	    curbuf->b_start_eol = TRUE;
-            curbuf->b_p_lasteol = TRUE;
-            curbuf->b_start_lasteol = TRUE;
 	}
 #ifdef FEAT_MBYTE
 	curbuf->b_p_bomb = FALSE;
@@ -1593,8 +1591,7 @@ retry:
 				{
 				    /* When the last line didn't have an
 				     * end-of-line don't add it now either. */
-				    if (!curbuf->b_p_eol
-					    || !curbuf->b_p_lasteol)
+				    if (!curbuf->b_p_eol)
 					--tlen;
 				    size = tlen;
 				    break;
@@ -2515,10 +2512,7 @@ failed:
     {
 	/* remember for when writing */
 	if (set_options)
-	{
 	    curbuf->b_p_eol = FALSE;
-	    curbuf->b_p_lasteol = FALSE;
-	}
 	*ptr = NUL;
 	len = (colnr_T)(ptr - line_start + 1);
 	if (ml_append(lnum, line_start, len, newfile) == FAIL)
@@ -4833,11 +4827,9 @@ restore_backup:
 	/* write failed or last line has no EOL: stop here */
 	if (end == 0
 		|| (lnum == end
-		    && (write_bin
-			&& (lnum == buf->b_no_eol_lnum
-			    || (lnum == buf->b_ml.ml_line_count
-				&& !buf->b_p_eol)))
-		    || (lnum == buf->b_ml.ml_line_count && !buf->b_p_lasteol)))
+		    && write_bin
+		    && (lnum == buf->b_no_eol_lnum
+			|| (lnum == buf->b_ml.ml_line_count && !buf->b_p_eol))))
 	{
 	    ++lnum;			/* written the line, count it */
 	    no_eol = TRUE;

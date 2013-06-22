@@ -4451,7 +4451,6 @@ mch_call_shell(cmd, options)
 			    {
 				/* Finished a line, add a NL, unless this line
 				 * should not have one. */
-                                /* TODO: check curbuf->b_p_lasteol */
 				if (lnum != curbuf->b_op_end.lnum
 					|| !curbuf->b_p_bin
 					|| (lnum != curbuf->b_no_eol_lnum
