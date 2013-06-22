@@ -132,7 +132,6 @@
 # define PV_KMAP	OPT_BUF(BV_KMAP)
 #endif
 #define PV_KP		OPT_BOTH(OPT_BUF(BV_KP))
-#define PV_LEOL		OPT_BUF(BV_LEOL)
 #ifdef FEAT_LISP
 # define PV_LISP	OPT_BUF(BV_LISP)
 #endif
@@ -333,7 +332,6 @@ static char_u	*p_isk;
 #ifdef FEAT_CRYPT
 static char_u	*p_key;
 #endif
-static int	p_leol;
 #ifdef FEAT_LISP
 static int	p_lisp;
 #endif
@@ -824,15 +822,6 @@ static struct vimoption
 			    SCRIPTID_INIT},
 			    /* P_PRI_MKRC isn't needed here, optval_default()
 			     * always returns TRUE for 'compatible' */
-    {"compact",  "cfs",	    P_BOOL|P_VIM,
-#ifdef FEAT_EVAL
-			    (char_u *)&p_cfs, PV_NONE,
-			    {(char_u *)TRUE, (char_u *)FALSE}
-#else
-			    (char_u *)&NULL, PV_NONE,
-			    {(char_u *)0L, (char_u *)0L}
-#endif
-			    SCRIPTID_INIT},
     {"compatible",  "cp",   P_BOOL|P_RALL,
 			    (char_u *)&p_cp, PV_NONE,
 			    {(char_u *)TRUE, (char_u *)FALSE} SCRIPTID_INIT},
@@ -1754,9 +1743,6 @@ static struct vimoption
 			    {(char_u *)0L, (char_u *)0L}
 #endif
 			    SCRIPTID_INIT},
-    {"lasteol",	    "lol",  P_BOOL|P_NO_MKRC|P_VI_DEF|P_RSTAT,
-			    (char_u *)&p_leol, PV_LEOL,
-			    {(char_u *)TRUE, (char_u *)0L} SCRIPTID_INIT},
     {"lisp",	    NULL,   P_BOOL|P_VI_DEF,
 #ifdef FEAT_LISP
 			    (char_u *)&p_lisp, PV_LISP,
@@ -7841,11 +7827,6 @@ set_bool_option(opt_idx, varp, value, opt_flags)
     {
 	redraw_titles();
     }
-    /* when 'lasteol' is changed, redraw the window title */
-    else if ((int *)varp == &curbuf->b_p_lasteol)
-    {
-        redraw_titles();
-    }
 # ifdef FEAT_MBYTE
     /* when 'bomb' is changed, redraw the window title and tab page text */
     else if ((int *)varp == &curbuf->b_p_bomb)
@@ -10226,7 +10207,6 @@ get_varp(p)
 #ifdef FEAT_CRYPT
 	case PV_KEY:	return (char_u *)&(curbuf->b_p_key);
 #endif
-	case PV_LEOL:	return (char_u *)&(curbuf->b_p_lasteol);
 #ifdef FEAT_LISP
 	case PV_LISP:	return (char_u *)&(curbuf->b_p_lisp);
 #endif
@@ -11881,7 +11861,6 @@ save_file_ff(buf)
 {
     buf->b_start_ffc = *buf->b_p_ff;
     buf->b_start_eol = buf->b_p_eol;
-    buf->b_start_lasteol = buf->b_p_lasteol;
 #ifdef FEAT_MBYTE
     buf->b_start_bomb = buf->b_p_bomb;
 
@@ -11919,8 +11898,6 @@ file_ff_differs(buf, ignore_empty)
     if (buf->b_start_ffc != *buf->b_p_ff)
 	return TRUE;
     if (buf->b_p_bin && buf->b_start_eol != buf->b_p_eol)
-	return TRUE;
-    if (buf->b_start_lasteol != buf->b_p_lasteol)
 	return TRUE;
 #ifdef FEAT_MBYTE
     if (!buf->b_p_bin && buf->b_start_bomb != buf->b_p_bomb)

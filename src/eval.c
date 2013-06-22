@@ -371,16 +371,6 @@ static struct vimvar
 static dictitem_T	vimvars_var;		/* variable used for v: */
 #define vimvarht  vimvardict.dv_hashtab
 
-#if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
-/*
- * Running job's host variables.
- */
-static dict_T		jobvardict;
-static dictitem_T	jobvars_var;
-# define jobvarht	jobvardict.dv_hashtab
-static int		job_next_id = 0;
-#endif /* defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL) */
-
 static void prepare_vimvar __ARGS((int idx, typval_T *save_tv));
 static void restore_vimvar __ARGS((int idx, typval_T *save_tv));
 static int ex_let_vars __ARGS((char_u *arg, typval_T *tv, int copy, int semicolon, int var_count, char_u *nextchars));
@@ -494,8 +484,6 @@ static void f_char2nr __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_cindent __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_clearmatches __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_col __ARGS((typval_T *argvars, typval_T *rettv));
-static void f_compactinfo __ARGS((typval_T *argvars, typval_T *rettv));
-static void f_compactreset __ARGS((typval_T *argvars, typval_T *rettv));
 #if defined(FEAT_INS_EXPAND)
 static void f_complete __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_complete_add __ARGS((typval_T *argvars, typval_T *rettv));
@@ -600,9 +588,6 @@ static void f_invert __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_isdirectory __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_islocked __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_items __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
-static void f_jobrun __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_join __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_keys __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_last_buffer_nr __ARGS((typval_T *argvars, typval_T *rettv));
@@ -623,10 +608,6 @@ static void f_luaeval __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_map __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_maparg __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_mapcheck __ARGS((typval_T *argvars, typval_T *rettv));
-static void f_markadd __ARGS((typval_T *argvars, typval_T *rettv));
-static void f_markdelete __ARGS((typval_T *argvars, typval_T *rettv));
-static void f_markget __ARGS((typval_T *argvars, typval_T *rettv));
-static void f_markupdate __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_match __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_matchadd __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_matcharg __ARGS((typval_T *argvars, typval_T *rettv));
@@ -674,7 +655,6 @@ static void f_rename __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_repeat __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_resolve __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_reverse __ARGS((typval_T *argvars, typval_T *rettv));
-static void f_rmdir __ARGS((typval_T *argvars, typval_T *rettv));
 #ifdef FEAT_FLOAT
 static void f_round __ARGS((typval_T *argvars, typval_T *rettv));
 #endif
@@ -870,10 +850,6 @@ eval_init()
     vimvardict.dv_lock = VAR_FIXED;
     hash_init(&compat_hashtab);
     hash_init(&func_hashtab);
-#if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
-    init_var_dict(&jobvardict, &jobvars_var);
-    jobvardict.dv_lock = VAR_FIXED;
-#endif /* defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL) */
 
     for (i = 0; i < VV_LEN; ++i)
     {
@@ -933,11 +909,6 @@ eval_clear()
 # if defined(FEAT_CMDL_COMPL)
     free_locales();
 # endif
-
-#if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
-    /* job's host variables. */
-    vars_clear(&jobvarht);
-#endif /* defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL) */
 
     /* global variables */
     vars_clear(&globvarht);
@@ -6827,11 +6798,6 @@ garbage_collect()
 	set_ref_in_item(&tp->tp_winvar.di_tv, copyID);
 #endif
 
-#if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
-    /* job's host variables */
-    set_ref_in_ht(&jobvarht, copyID);
-#endif
-
     /* global variables */
     set_ref_in_ht(&globvarht, copyID);
 
@@ -7905,8 +7871,6 @@ static struct fst
     {"cindent",		1, 1, f_cindent},
     {"clearmatches",	0, 0, f_clearmatches},
     {"col",		1, 1, f_col},
-    {"compactinfo",	0, 0, f_compactinfo},
-    {"compactreset",	0, 0, f_compactreset},
 #if defined(FEAT_INS_EXPAND)
     {"complete",	2, 2, f_complete},
     {"complete_add",	1, 1, f_complete_add},
@@ -8015,9 +7979,6 @@ static struct fst
     {"isdirectory",	1, 1, f_isdirectory},
     {"islocked",	1, 1, f_islocked},
     {"items",		1, 1, f_items},
-#if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
-    {"jobrun",		1, 1, f_jobrun},
-#endif
     {"join",		1, 2, f_join},
     {"keys",		1, 1, f_keys},
     {"last_buffer_nr",	0, 0, f_last_buffer_nr},/* obsolete */
@@ -8038,10 +7999,6 @@ static struct fst
     {"map",		2, 2, f_map},
     {"maparg",		1, 4, f_maparg},
     {"mapcheck",	1, 3, f_mapcheck},
-    {"markadd",		1, 1, f_markadd},
-    {"markdelete",	1, 1, f_markdelete},
-    {"markget",		1, 1, f_markget},
-    {"markupdate",	2, 2, f_markupdate},
     {"match",		2, 4, f_match},
     {"matchadd",	2, 4, f_matchadd},
     {"matcharg",	1, 1, f_matcharg},
@@ -8089,7 +8046,6 @@ static struct fst
     {"repeat",		2, 2, f_repeat},
     {"resolve",		1, 1, f_resolve},
     {"reverse",		1, 1, f_reverse},
-    {"rmdir",		1, 2, f_rmdir},
 #ifdef FEAT_FLOAT
     {"round",		1, 1, f_round},
 #endif
@@ -9473,40 +9429,6 @@ f_col(argvars, rettv)
 	}
     }
     rettv->vval.v_number = col;
-}
-
-/*
- * "compactinfo()" function
- */
-    static void
-f_compactinfo(argvars, rettv)
-    typval_T	*argvars;
-    typval_T	*rettv;
-{
-    list_T	*l;
-
-    if (rettv_list_alloc(rettv) == OK)
-    {
-	l = rettv->vval.v_list;
-	list_append_number(l, devel_compact_presize);
-	list_append_number(l, devel_compact_postsize);
-	list_append_number(l, devel_compact_funcnum);
-    }
-    else
-	rettv->vval.v_number = FALSE;
-}
-
-/*
- * "compactreset()" function
- */
-    static void
-f_compactreset(argvars, rettv)
-    typval_T	*argvars;
-    typval_T	*rettv UNUSED;
-{
-    devel_compact_presize = 0;
-    devel_compact_postsize = 0;
-    devel_compact_funcnum = 0;
 }
 
 #if defined(FEAT_INS_EXPAND)
@@ -13942,95 +13864,6 @@ f_mapcheck(argvars, rettv)
     get_maparg(argvars, rettv, FALSE);
 }
 
-/*
- * "markadd()" function
- */
-    static void
-f_markadd(argvars, rettv)
-    typval_T	*argvars;
-    typval_T	*rettv;
-{
-    pos_T	*fp;
-    int		fnum = curbuf->b_fnum;
-    emark_T	*markp = NULL;
-
-    fp = var2fpos(&argvars[0], FALSE, &fnum);
-    if (fp != NULL && fnum == curbuf->b_fnum)
-	markp = emarklist_add(&curbuf->b_emarklist, fp);
-
-    rettv->vval.v_number = markp != NULL ? markp->em_id : -1;
-}
-
-/*
- * "markdelete()" function
- */
-    static void
-f_markdelete(argvars, rettv)
-    typval_T	*argvars;
-    typval_T	*rettv UNUSED;
-{
-    long	id;
-
-    id = get_tv_number_chk(&argvars[0], NULL);
-    if (id >= 0)
-	emarklist_remove(&curbuf->b_emarklist, (int_u)id);
-}
-
-/*
- * "markget()" function
- */
-    static void
-f_markget(argvars, rettv)
-    typval_T	*argvars;
-    typval_T	*rettv;
-{
-    long	id;
-    emark_T	**markpp = NULL;
-    list_T	*l;
-
-    id = get_tv_number_chk(&argvars[0], NULL);
-    if (id >= 0)
-	markpp = emarklist_find(&curbuf->b_emarklist, (int_u)id);
-
-    if (rettv_list_alloc(rettv) == OK)
-    {
-	l = rettv->vval.v_list;
-	if (markpp != NULL && *markpp != NULL)
-	{
-	    pos_T	*fp = &(*markpp)->em_pos;
-	    list_append_number(l, (varnumber_T)fp->lnum);
-	    list_append_number(l, (varnumber_T)fp->col == MAXCOL ?  MAXCOL
-		    : fp->col + 1);
-	}
-    }
-    else
-	rettv->vval.v_number = FALSE;
-}
-
-/*
- * "markupdate()" function
- */
-    static void
-f_markupdate(argvars, rettv)
-    typval_T	*argvars;
-    typval_T	*rettv UNUSED;
-{
-    long	id;
-    emark_T	**markpp = NULL;
-    pos_T	*fp;
-    int		fnum = curbuf->b_fnum;
-
-    id = get_tv_number_chk(&argvars[0], NULL);
-    fp = var2fpos(&argvars[1], FALSE, &fnum);
-
-    if (id >= 0 && fp != NULL && fnum == curbuf->b_fnum)
-    {
-	markpp = emarklist_find(&curbuf->b_emarklist, (int_u)id);
-	if (markpp != NULL && *markpp != NULL)
-	    (*markpp)->em_pos = *fp;
-    }
-}
-
 static void find_some_match __ARGS((typval_T *argvars, typval_T *rettv, int start));
 
     static void
@@ -15855,57 +15688,6 @@ f_reverse(argvars, rettv)
 	++l->lv_refcount;
 	l->lv_idx = l->lv_len - l->lv_idx - 1;
     }
-}
-
-    static int
-rmdir_sub(path, recurse)
-    char_u	*path;
-    int		recurse;
-{
-    if (recurse)
-    {
-	/* TODO: */
-    }
-    return mch_rmdir(path);
-}
-
-/*
- * "rmdir({dname} [, {flags}])" function
- */
-    static void
-f_rmdir(argvars, rettv)
-    typval_T	*argvars;
-    typval_T	*rettv;
-{
-    char_u	*dname;
-    char_u	*flags;
-    char_u	ch;
-    char_u	buf1[NUMBUFLEN];
-    char_u	buf2[NUMBUFLEN];
-    int		recurse = 0;
-
-    rettv->vval.v_number = 1;
-    if (check_restricted() || check_secure())
-	return;
-
-    dname = get_tv_string_buf(&argvars[0], buf1);
-
-    /* Parse {flags}. */
-    if (argvars[1].v_type != VAR_UNKNOWN)
-    {
-	flags = get_tv_string_buf(&argvars[1], buf2);
-	while ((ch = *flags++) != NUL)
-	{
-	    switch (ch)
-	    {
-		case 'r':
-		    recurse = 1;
-		    break;
-	    }
-	}
-    }
-
-    rettv->vval.v_number = rmdir_sub(dname, recurse);
 }
 
 #define SP_NOMOVE	0x01	    /* don't move cursor */
@@ -20453,9 +20235,6 @@ find_var_in_ht(ht, htname, varname, writing)
 					? NULL : &current_funccal->l_vars_var;
 	    case 'a': return current_funccal == NULL
 				       ? NULL : &current_funccal->l_avars_var;
-#if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
-	    case 'j': return &jobvars_var;
-#endif /* defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL) */
 	}
 	return NULL;
     }
@@ -20533,10 +20312,6 @@ find_var_ht(name, varname)
     if (*name == 's'				/* script variable */
 	    && current_SID > 0 && current_SID <= ga_scripts.ga_len)
 	return &SCRIPT_VARS(current_SID);
-#if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
-    if (*name == 'j')
-	return &jobvarht;
-#endif /* defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL) */
     return NULL;
 }
 
@@ -21365,26 +21140,6 @@ find_option_end(arg, opt_flags)
     return p;
 }
 
-    static char_u *
-make_line_compact(line, prevline, lines, alloced)
-    char_u	*line;
-    char_u	**prevline;
-    garray_T	*lines;
-    int		*alloced;
-{
-    char_u	*p = skipwhite(line);
-
-    /* Substitute an empty line for a comment line. */
-    if (*p == '"')
-	return line + (int)STRLEN(line);
-    /* Remove leading whites. */
-    if (p != line)
-	return p;
-
-    /* Use original line. */
-    return NULL;
-}
-
 /*
  * ":function"
  */
@@ -21418,8 +21173,6 @@ ex_function(eap)
     int		todo;
     hashitem_T	*hi;
     int		sourcing_lnum_off;
-    int		compacted_size = 0;
-    char_u	*compacted_prevline = NULL;
 
     /*
      * ":function" without argument: list functions.
@@ -21850,37 +21603,6 @@ ex_function(eap)
 	    }
 	}
 
-	/* make theline compact. */
-	{
-	    char_u* compacted = NULL;
-	    int alloced = 0;
-
-	    if (p_cfs)
-	    {
-		compacted = make_line_compact(theline,
-		    &compacted_prevline, &newlines, &alloced);
-	    }
-
-	    if (compacted && compacted != theline)
-	    {
-		int sz1 = (int)STRLEN(theline);
-		int sz2 = (int)STRLEN(compacted);
-		assert(sz2 < sz1);
-		devel_compact_presize += sz1;
-		devel_compact_postsize += sz2;
-		mch_memmove(theline, compacted, sz2 + 1);
-	    }
-	    else
-	    {
-		int sz = (int)STRLEN(theline);
-		devel_compact_presize += sz;
-		devel_compact_postsize += sz;
-	    }
-
-	    if (compacted && alloced)
-		vim_free(compacted);
-	}
-
 	/* Add the line to the function. */
 	if (ga_grow(&newlines, 1 + sourcing_lnum_off) == FAIL)
 	{
@@ -21901,7 +21623,6 @@ ex_function(eap)
 	}
 
 	((char_u **)(newlines.ga_data))[newlines.ga_len++] = theline;
-	compacted_prevline = theline;
 
 	/* Add NULL lines for continuation lines, so that the line count is
 	 * equal to the index in the growarray.   */
@@ -22049,7 +21770,6 @@ ex_function(eap)
 	STRCPY(fp->uf_name, name);
 	hash_add(&func_hashtab, UF2HIKEY(fp));
     }
-    devel_compact_funcnum += 1;
     fp->uf_args = newargs;
     fp->uf_lines = newlines;
 #ifdef FEAT_PROFILE
@@ -24676,184 +24396,3 @@ do_string_sub(str, pat, sub, flags)
 }
 
 #endif /* defined(FEAT_MODIFY_FNAME) || defined(FEAT_EVAL) */
-
-#if defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL)
-
-typedef struct _eval_job_T
-{
-    int		ej_id;
-    dict_T	*ej_dict;
-} eval_job_T;
-
-    static void
-eval_job_pin(int key, dict_T *d)
-{
-    char_u	varname[NUMBUFLEN];
-    dictitem_T  *v;
-
-    vim_snprintf((char *)varname, NUMBUFLEN, "%d", key);
-
-    v = (dictitem_T *)alloc((unsigned)(sizeof(dictitem_T)
-                + STRLEN(varname)));
-    if (v == NULL)
-        return; /* FIXME: raise an error. */
-
-    STRCPY(v->di_key, varname);
-    if (hash_add(&jobvarht, DI2HIKEY(v)) == FAIL)
-    {
-        vim_free(v);
-        return; /* FIXME: raise an error. */
-    }
-
-    v->di_flags = 0;
-    v->di_tv.v_type = VAR_DICT;
-    v->di_tv.v_lock = 0;
-    v->di_tv.vval.v_dict = d;
-}
-
-    static void
-eval_job_unpin(int key)
-{
-    char_u	varname[NUMBUFLEN];
-    hashitem_T	*hi;
-
-    vim_snprintf((char *)varname, NUMBUFLEN, "%d", key);
-    hi = hash_find(&jobvarht, varname);
-    if (!HASHITEM_EMPTY(hi))
-        hash_remove(&jobvarht, hi);
-}
-
-    static char_u *
-eval_job_findfunc(dict_T *d, char_u *key, int *outlen)
-{
-    dictitem_T	*di;
-    char_u	*func = NULL;
-
-    di = dict_find(d, key, (int)STRLEN(key));
-    if (di == NULL)
-	return NULL;
-
-    if (di->di_tv.v_type == VAR_FUNC)
-	func = di->di_tv.vval.v_string;
-    else
-	func = get_tv_string(&di->di_tv);
-
-    if (func != NULL && outlen != NULL)
-	*outlen = (int)STRLEN(func);
-    return func;
-}
-
-    static int
-eval_job_checkend(job)
-    eval_job_T	*job;
-{
-    int		next_wait = 0;
-    char_u	*func;
-    int		len = 0;
-    typval_T	rettv;
-    typval_T	argv[1];
-    int		doesrange;
-
-    _RPT1(_CRT_WARN, "f_jobrun#checkend: %p\n", job);
-
-    /* call "check" method of job->ej_dict. */
-    func = eval_job_findfunc(job->ej_dict, "check", &len);
-    if (func != NULL)
-    {
-	rettv.v_type = VAR_UNKNOWN;
-	if (call_func(func, len, &rettv, 0, argv, 1, 1, &doesrange, TRUE,
-		    job->ej_dict) == OK)
-	    next_wait = get_tv_number(&rettv);
-	clear_tv(&rettv);
-    }
-
-    _RPT1(_CRT_WARN, "  -> %d\n", next_wait);
-
-    return next_wait;
-}
-
-    static void
-eval_job_close(job)
-    eval_job_T	*job;
-{
-    char_u	*func;
-    int		len = 0;
-    typval_T	rettv;
-    typval_T	argv[1];
-    int		doesrange;
-    int		res;
-
-    _RPT2(_CRT_WARN, "f_jobrun#onend: %p,%p\n", job, job->ej_dict);
-
-    func = eval_job_findfunc(job->ej_dict, "onend", &len);
-    if (func != NULL)
-    {
-	rettv.v_type = VAR_UNKNOWN;
-	res = call_func(func, len, &rettv, 0, argv, 1, 1, &doesrange, TRUE,
-		job->ej_dict);
-	clear_tv(&rettv);
-    }
-
-    eval_job_unpin(job->ej_id);
-    dict_unref(job->ej_dict);
-    vim_free(job);
-}
-
-    static int
-eval_job_newid(void)
-{
-    /* TODO: consider overflow and recycle id. */
-    return job_next_id++;
-}
-
-/*
- * "jobrun({dict})" function
- *
- * {dict} must have two methods "check", "onend".
- */
-    static void
-f_jobrun(argvars, rettv)
-    typval_T	*argvars;
-    typval_T	*rettv;
-{
-    int		newid;
-    dict_T	*d;
-    eval_job_T	*job;
-    job_T	*gj;
-
-    if (argvars[0].v_type != VAR_DICT)
-    {
-	/* FIXME: add "e_dictarg" or so, and replace by it. */
-	EMSG(_(e_dictreq));
-	return;
-    }
-
-    d = argvars[0].vval.v_dict;
-    if (d == NULL)
-	return;
-
-    newid = eval_job_newid();
-    if (newid < 0)
-    {
-	/* FIXME: show fatal error. */
-	return;
-    }
-
-    job = (eval_job_T*)alloc(sizeof(*job));
-    if (job == NULL)
-    {
-	/* FIXME: show error. */
-	return;
-    }
-
-    eval_job_pin(newid, d);
-    job->ej_id = newid;
-    job->ej_dict = d;
-    ++job->ej_dict->dv_refcount;
-
-    gj = job_add(job, (JOB_CHECK_END)eval_job_checkend,
-	    (JOB_CLOSE)eval_job_close, 1000);
-    _RPT2(_CRT_WARN, "f_jobrun=%p (%d)\n", gj, newid);
-}
-
-#endif /* defined(FEAT_JOB_BASE) && defined(FEAT_JOB_EVAL) */

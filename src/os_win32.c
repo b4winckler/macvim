@@ -1273,9 +1273,6 @@ WaitForChar(long msec)
      */
     for (;;)
     {
-#ifdef FEAT_JOB_BASE
-        job_check_ends();
-#endif
 #ifdef FEAT_MZSCHEME
 	mzvim_check_threads();
 #endif
@@ -1302,15 +1299,7 @@ WaitForChar(long msec)
 	if (msec != 0)
 	{
 	    DWORD dwWaitTime = dwEndTime - dwNow;
-#ifdef FEAT_JOB_BASE
-	    int job_wait;
-#endif
 
-#ifdef FEAT_JOB_BASE
-	    job_wait = job_get_wait();
-	    if (job_wait > 0 && (DWORD)job_wait < dwWaitTime)
-		dwWaitTime = job_wait;
-#endif
 #ifdef FEAT_MZSCHEME
 	    if (mzthreads_allowed() && p_mzq > 0
 				    && (msec < 0 || (long)dwWaitTime > p_mzq))
@@ -3599,7 +3588,6 @@ sub_process_writer(LPVOID param)
 	{
 	    /* Finished a line, add a NL, unless this line should not have
 	     * one. */
-            /* TODO: check curbuf->b_p_lasteol */
 	    if (lnum != curbuf->b_op_end.lnum
 		|| !curbuf->b_p_bin
 		|| (lnum != curbuf->b_no_eol_lnum
@@ -5120,28 +5108,6 @@ mch_delay(
     Sleep((int)msec);	    /* never wait for input */
 #else /* Console */
     if (ignoreinput)
-    {
-# ifdef FEAT_JOB_BASE
-	int job_wait;
-# endif
-
-# ifdef FEAT_JOB_BASE
-	/* FIXME: consider combination with FEAT_MZSCHEME. */
-	job_wait = job_get_wait();
-	if (job_wait > 0 && job_wait < msec)
-	{
-	    while (msec > 0)
-	    {
-		job_check_ends();
-		job_wait = job_get_wait();
-		if (job_wait < 0 || msec < job_wait)
-		    job_wait = msec;
-		Sleep(job_wait);
-		msec -= job_wait;
-	    }
-	}
-	else
-# endif
 # ifdef FEAT_MZSCHEME
 	if (mzthreads_allowed() && p_mzq > 0 && msec > p_mzq)
 	{
@@ -5160,7 +5126,6 @@ mch_delay(
 	else
 # endif
 	    Sleep((int)msec);
-    }
     else
 	WaitForChar(msec);
 #endif
@@ -5386,28 +5351,6 @@ mch_rename(
 	return -8;
 
     return 0;	/* success */
-}
-
-    int
-mch_rmdir __ARGS((const char *dirname))
-{
-    BOOL result = FALSE;
-
-#ifdef FEAT_MBYTE
-    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
-    {
-	WCHAR	*wdirname = enc_to_utf16((char_u *)dirname, NULL);
-	if (wdirname != NULL)
-	    result = RemoveDirectoryW(wdirname);
-    }
-    else
-#endif
-    {
-	if (dirname != NULL)
-	    result = RemoveDirectoryA(dirname);
-    }
-
-    return result != FALSE ? 0 : 1;
 }
 
 /*
@@ -6123,34 +6066,3 @@ fix_arg_enc(void)
     set_alist_count();
 }
 #endif
-
-    int
-mch_setenv(var, value, x)
-    char *var;
-    char *value;
-    int	 x;
-{
-    char_u	*envbuf;
-
-    envbuf = alloc((unsigned)(STRLEN(var) + STRLEN(value) + 2));
-    if (envbuf == NULL)
-	return -1;
-
-    sprintf((char *)envbuf, "%s=%s", var, value);
-
-#ifdef FEAT_MBYTE
-    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
-    {
-	WCHAR	    *p = enc_to_utf16(envbuf, NULL);
-
-	vim_free(envbuf);
-	if (p == NULL)
-	    return -1;
-	_wputenv(p);
-    }
-    else
-#endif
-	_putenv((char *)envbuf);
-
-    return 0;
-}

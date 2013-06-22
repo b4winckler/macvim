@@ -568,8 +568,6 @@ buf_clear_file(buf)
 #endif
     buf->b_p_eol = TRUE;
     buf->b_start_eol = TRUE;
-    buf->b_p_lasteol = TRUE;
-    buf->b_start_lasteol = TRUE;
 #ifdef FEAT_MBYTE
     buf->b_p_bomb = FALSE;
     buf->b_start_bomb = FALSE;
@@ -722,9 +720,6 @@ free_buffer_stuff(buf, free_options)
 	ga_clear(&buf->b_s.b_langp);
 #endif
     }
-#ifdef FEAT_EVAL
-    emarklist_cleanup(&buf->b_emarklist);
-#endif
 #ifdef FEAT_EVAL
     vars_clear(&buf->b_vars->dv_hashtab); /* free all internal variables */
     hash_init(&buf->b_vars->dv_hashtab);
@@ -2674,9 +2669,6 @@ get_winopts(buf)
     /* Set 'foldlevel' to 'foldlevelstart' if it's not negative. */
     if (p_fdls >= 0)
 	curwin->w_p_fdl = p_fdls;
-#endif
-#ifdef FEAT_EVAL
-    emarklist_init(&buf->b_emarklist);
 #endif
 #ifdef FEAT_SYN_HL
     check_colorcolumn(curwin);
