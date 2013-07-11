@@ -384,7 +384,16 @@ lua_link_init(char *libname, int verbose)
     int
 lua_enabled(int verbose)
 {
-    return lua_link_init(DYNAMIC_LUA_DLL, verbose) == OK;
+    int ret = FAIL;
+    int mustfree = FALSE;
+    char *s = (char *)vim_getenv((char_u *)"LUA_DLL", &mustfree);
+    if (s != NULL)
+	ret = lua_link_init(s, verbose);
+    if (mustfree)
+	vim_free(s);
+    if (ret == FAIL)
+	ret = lua_link_init(DYNAMIC_LUA_DLL, verbose);
+    return (ret == OK);
 }
 
 #endif /* DYNAMIC_LUA */
