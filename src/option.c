@@ -1470,6 +1470,15 @@ static struct vimoption
     {"ignorecase",  "ic",   P_BOOL|P_VI_DEF,
 			    (char_u *)&p_ic, PV_NONE,
 			    {(char_u *)FALSE, (char_u *)0L} SCRIPTID_INIT},
+    {"imactivatefunc","imaf",P_STRING|P_VI_DEF|P_SECURE,
+# if defined(FEAT_EVAL) && defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
+			    (char_u *)&p_imaf, PV_NONE,
+			    {(char_u *)"", (char_u *)NULL}
+# else
+			    (char_u *)NULL, PV_NONE,
+			    {(char_u *)NULL, (char_u *)0L}
+# endif
+			    SCRIPTID_INIT},
     {"imactivatekey","imak",P_STRING|P_VI_DEF,
 #if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
 			    (char_u *)&p_imak, PV_NONE,
@@ -1519,6 +1528,15 @@ static struct vimoption
 #else
 			    {(char_u *)B_IMODE_NONE, (char_u *)0L}
 #endif
+			    SCRIPTID_INIT},
+    {"imstatusfunc","imsf",P_STRING|P_VI_DEF|P_SECURE,
+# if defined(FEAT_EVAL) && defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
+			    (char_u *)&p_imsf, PV_NONE,
+			    {(char_u *)"", (char_u *)NULL}
+# else
+			    (char_u *)NULL, PV_NONE,
+			    {(char_u *)NULL, (char_u *)0L}
+# endif
 			    SCRIPTID_INIT},
     {"include",	    "inc",  P_STRING|P_ALLOCED|P_VI_DEF,
 #ifdef FEAT_FIND_ID
@@ -7929,7 +7947,10 @@ set_bool_option(opt_idx, varp, value, opt_flags)
     else if ((int *)varp == &curwin->w_p_scb)
     {
 	if (curwin->w_p_scb)
+	{
 	    do_check_scrollbind(FALSE);
+	    curwin->w_scbind_pos = curwin->w_topline;
+	}
     }
 #endif
 
@@ -8723,11 +8744,7 @@ set_num_option(opt_idx, varp, value, errbuf, errbuflen, opt_flags)
 	}
 	Columns = MIN_COLUMNS;
     }
-    /* Limit the values to avoid an overflow in Rows * Columns. */
-    if (Columns > 10000)
-	Columns = 10000;
-    if (Rows > 1000)
-	Rows = 1000;
+    limit_screen_size();
 
 #ifdef DJGPP
     /* avoid a crash by checking for a too large value of 'columns' */
@@ -10323,14 +10340,19 @@ copy_winopt(from, to)
     to->wo_stl = vim_strsave(from->wo_stl);
 #endif
     to->wo_wrap = from->wo_wrap;
+#ifdef FEAT_DIFF
+    to->wo_wrap_save = from->wo_wrap_save;
+#endif
 #ifdef FEAT_LINEBREAK
     to->wo_lbr = from->wo_lbr;
 #endif
 #ifdef FEAT_SCROLLBIND
     to->wo_scb = from->wo_scb;
+    to->wo_scb_save = from->wo_scb_save;
 #endif
 #ifdef FEAT_CURSORBIND
     to->wo_crb = from->wo_crb;
+    to->wo_crb_save = from->wo_crb_save;
 #endif
 #ifdef FEAT_SPELL
     to->wo_spell = from->wo_spell;
@@ -10342,6 +10364,7 @@ copy_winopt(from, to)
 #endif
 #ifdef FEAT_DIFF
     to->wo_diff = from->wo_diff;
+    to->wo_diff_saved = from->wo_diff_saved;
 #endif
 #ifdef FEAT_CONCEAL
     to->wo_cocu = vim_strsave(from->wo_cocu);
@@ -10349,11 +10372,16 @@ copy_winopt(from, to)
 #endif
 #ifdef FEAT_FOLDING
     to->wo_fdc = from->wo_fdc;
+    to->wo_fdc_save = from->wo_fdc_save;
     to->wo_fen = from->wo_fen;
+    to->wo_fen_save = from->wo_fen_save;
     to->wo_fdi = vim_strsave(from->wo_fdi);
     to->wo_fml = from->wo_fml;
     to->wo_fdl = from->wo_fdl;
+    to->wo_fdl_save = from->wo_fdl_save;
     to->wo_fdm = vim_strsave(from->wo_fdm);
+    to->wo_fdm_save = from->wo_diff_saved
+			      ? vim_strsave(from->wo_fdm_save) : empty_option;
     to->wo_fdn = from->wo_fdn;
 # ifdef FEAT_EVAL
     to->wo_fde = vim_strsave(from->wo_fde);
@@ -10385,6 +10413,7 @@ check_winopt(wop)
 #ifdef FEAT_FOLDING
     check_string_option(&wop->wo_fdi);
     check_string_option(&wop->wo_fdm);
+    check_string_option(&wop->wo_fdm_save);
 # ifdef FEAT_EVAL
     check_string_option(&wop->wo_fde);
     check_string_option(&wop->wo_fdt);
@@ -10415,6 +10444,7 @@ clear_winopt(wop)
 #ifdef FEAT_FOLDING
     clear_string_option(&wop->wo_fdi);
     clear_string_option(&wop->wo_fdm);
+    clear_string_option(&wop->wo_fdm_save);
 # ifdef FEAT_EVAL
     clear_string_option(&wop->wo_fde);
     clear_string_option(&wop->wo_fdt);

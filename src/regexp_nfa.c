@@ -292,10 +292,11 @@ static void nfa_dump __ARGS((nfa_regprog_T *prog));
 #endif
 static int *re2post __ARGS((void));
 static nfa_state_T *alloc_state __ARGS((int c, nfa_state_T *out, nfa_state_T *out1));
+static void st_error __ARGS((int *postfix, int *end, int *p));
+static int nfa_max_width __ARGS((nfa_state_T *startstate, int depth));
 static nfa_state_T *post2nfa __ARGS((int *postfix, int *end, int nfa_calc_size));
 static void nfa_postprocess __ARGS((nfa_regprog_T *prog));
 static int check_char_class __ARGS((int class, int c));
-static void st_error __ARGS((int *postfix, int *end, int *p));
 static void nfa_save_listids __ARGS((nfa_regprog_T *prog, int *list));
 static void nfa_restore_listids __ARGS((nfa_regprog_T *prog, int *list));
 static int nfa_re_num_cmp __ARGS((long_u val, int op, long_u pos));
@@ -2613,7 +2614,7 @@ nfa_max_width(startstate, depth)
     if (depth > 4)
 	return -1;
 
-    for (;;)
+    while (state != NULL)
     {
 	switch (state->c)
 	{
@@ -2812,7 +2813,7 @@ nfa_max_width(startstate, depth)
 	state = state->out;
     }
 
-    /* unrecognized */
+    /* unrecognized, "cannot happen" */
     return -1;
 }
 
@@ -3471,6 +3472,7 @@ typedef struct
 #ifdef ENABLE_LOG
 static void log_subsexpr __ARGS((regsubs_T *subs));
 static void log_subexpr __ARGS((regsub_T *sub));
+static char *pim_info __ARGS((nfa_pim_T *pim));
 
     static void
 log_subsexpr(subs)
@@ -3510,7 +3512,8 @@ log_subexpr(sub)
 }
 
     static char *
-pim_info(nfa_pim_T *pim)
+pim_info(pim)
+    nfa_pim_T *pim;
 {
     static char buf[30];
 
@@ -3534,9 +3537,10 @@ static void clear_sub __ARGS((regsub_T *sub));
 static void copy_sub __ARGS((regsub_T *to, regsub_T *from));
 static void copy_sub_off __ARGS((regsub_T *to, regsub_T *from));
 static int sub_equal __ARGS((regsub_T *sub1, regsub_T *sub2));
+static int match_backref __ARGS((regsub_T *sub, int subidx, int *bytelen));
 static int has_state_with_pos __ARGS((nfa_list_T *l, nfa_state_T *state, regsubs_T *subs));
 static int state_in_list __ARGS((nfa_list_T *l, nfa_state_T *state, regsubs_T *subs));
-static void addstate __ARGS((nfa_list_T *l, nfa_state_T *state, regsubs_T *subs, nfa_pim_T *pim, int off));
+static regsubs_T *addstate __ARGS((nfa_list_T *l, nfa_state_T *state, regsubs_T *subs_arg, nfa_pim_T *pim, int off));
 static void addstate_here __ARGS((nfa_list_T *l, nfa_state_T *state, regsubs_T *subs, nfa_pim_T *pim, int *ip));
 
 /*
@@ -3640,14 +3644,14 @@ sub_equal(sub1, sub2)
 	    if (i < sub1->in_use)
 		s1 = sub1->list.multi[i].start.lnum;
 	    else
-		s1 = 0;
+		s1 = -1;
 	    if (i < sub2->in_use)
 		s2 = sub2->list.multi[i].start.lnum;
 	    else
-		s2 = 0;
+		s2 = -1;
 	    if (s1 != s2)
 		return FALSE;
-	    if (s1 != 0 && sub1->list.multi[i].start.col
+	    if (s1 != -1 && sub1->list.multi[i].start.col
 					     != sub2->list.multi[i].start.col)
 		return FALSE;
 	}
@@ -3830,13 +3834,18 @@ state_in_list(l, state, subs)
     return FALSE;
 }
 
-    static void
-addstate(l, state, subs, pim, off)
-    nfa_list_T		*l;	/* runtime state list */
-    nfa_state_T		*state;	/* state to update */
-    regsubs_T		*subs;	/* pointers to subexpressions */
-    nfa_pim_T		*pim;   /* postponed look-behind match */
-    int			off;	/* byte offset, when -1 go to next line */
+/*
+ * Add "state" and possibly what follows to state list ".".
+ * Returns "subs_arg", possibly copied into temp_subs.
+ */
+
+    static regsubs_T *
+addstate(l, state, subs_arg, pim, off)
+    nfa_list_T		*l;	    /* runtime state list */
+    nfa_state_T		*state;	    /* state to update */
+    regsubs_T		*subs_arg;  /* pointers to subexpressions */
+    nfa_pim_T		*pim;	    /* postponed look-behind match */
+    int			off;	    /* byte offset, when -1 go to next line */
 {
     int			subidx;
     nfa_thread_T	*thread;
@@ -3845,6 +3854,8 @@ addstate(l, state, subs, pim, off)
     char_u		*save_ptr;
     int			i;
     regsub_T		*sub;
+    regsubs_T		*subs = subs_arg;
+    static regsubs_T	temp_subs;
 #ifdef ENABLE_LOG
     int			did_print = FALSE;
 #endif
@@ -3929,8 +3940,9 @@ addstate(l, state, subs, pim, off)
 	    if (state->lastlist[nfa_ll_index] == l->id)
 	    {
 		/* This state is already in the list, don't add it again,
-		 * unless it is an MOPEN that is used for a backreference. */
-		if (!nfa_has_backref)
+		 * unless it is an MOPEN that is used for a backreference or
+		 * when there is a PIM. */
+		if (!nfa_has_backref && pim == NULL)
 		{
 skip_add:
 #ifdef ENABLE_LOG
@@ -3938,7 +3950,7 @@ skip_add:
 		    fprintf(log_fd, "> Not adding state %d to list %d. char %d: %s\n",
 			    abs(state->id), l->id, state->c, code);
 #endif
-		    return;
+		    return subs;
 		}
 
 		/* Do not add the state again when it exists with the same
@@ -3947,11 +3959,23 @@ skip_add:
 		    goto skip_add;
 	    }
 
-	    /* When there are backreferences the number of states may be (a
-	     * lot) bigger than anticipated. */
-	    if (nfa_has_backref && l->n == l->len)
+	    /* When there are backreferences or PIMs the number of states may
+	     * be (a lot) bigger than anticipated. */
+	    if (l->n == l->len)
 	    {
 		int newlen = l->len * 3 / 2 + 50;
+
+		if (subs != &temp_subs)
+		{
+		    /* "subs" may point into the current array, need to make a
+		     * copy before it becomes invalid. */
+		    copy_sub(&temp_subs.norm, &subs->norm);
+#ifdef FEAT_SYN_HL
+		    if (nfa_has_zsubexpr)
+			copy_sub(&temp_subs.synt, &subs->synt);
+#endif
+		    subs = &temp_subs;
+		}
 
 		l->t = vim_realloc(l->t, newlen * sizeof(nfa_thread_T));
 		l->len = newlen;
@@ -3988,14 +4012,14 @@ skip_add:
 
 	case NFA_SPLIT:
 	    /* order matters here */
-	    addstate(l, state->out, subs, pim, off);
-	    addstate(l, state->out1, subs, pim, off);
+	    subs = addstate(l, state->out, subs, pim, off);
+	    subs = addstate(l, state->out1, subs, pim, off);
 	    break;
 
 	case NFA_SKIP_CHAR:
 	case NFA_NOPEN:
 	case NFA_NCLOSE:
-	    addstate(l, state->out, subs, pim, off);
+	    subs = addstate(l, state->out, subs, pim, off);
 	    break;
 
 	case NFA_MOPEN:
@@ -4091,7 +4115,7 @@ skip_add:
 		sub->list.line[subidx].start = reginput + off;
 	    }
 
-	    addstate(l, state->out, subs, pim, off);
+	    subs = addstate(l, state->out, subs, pim, off);
 
 	    if (save_in_use == -1)
 	    {
@@ -4109,7 +4133,7 @@ skip_add:
 	    {
 		/* Do not overwrite the position set by \ze. If no \ze
 		 * encountered end will be set in nfa_regtry(). */
-		addstate(l, state->out, subs, pim, off);
+		subs = addstate(l, state->out, subs, pim, off);
 		break;
 	    }
 	case NFA_MCLOSE1:
@@ -4178,7 +4202,7 @@ skip_add:
 		sub->list.line[subidx].end = reginput + off;
 	    }
 
-	    addstate(l, state->out, subs, pim, off);
+	    subs = addstate(l, state->out, subs, pim, off);
 
 	    if (REG_MULTI)
 		sub->list.multi[subidx].end = save_lpos;
@@ -4187,6 +4211,7 @@ skip_add:
 	    sub->in_use = save_in_use;
 	    break;
     }
+    return subs;
 }
 
 /*
@@ -4225,14 +4250,39 @@ addstate_here(l, state, subs, pim, ip)
     }
     else if (count > 1)
     {
-	/* make space for new states, then move them from the
-	 * end to the current position */
-	mch_memmove(&(l->t[listidx + count]),
-		&(l->t[listidx + 1]),
-		sizeof(nfa_thread_T) * (l->n - listidx - 1));
-	mch_memmove(&(l->t[listidx]),
-		&(l->t[l->n - 1]),
-		sizeof(nfa_thread_T) * count);
+	if (l->n + count - 1 >= l->len)
+	{
+	    /* not enough space to move the new states, reallocate the list
+	     * and move the states to the right position */
+	    nfa_thread_T *newl;
+
+	    l->len = l->len * 3 / 2 + 50;
+	    newl = (nfa_thread_T *)alloc(l->len * sizeof(nfa_thread_T));
+	    if (newl == NULL)
+		return;
+	    mch_memmove(&(newl[0]),
+		    &(l->t[0]),
+		    sizeof(nfa_thread_T) * listidx);
+	    mch_memmove(&(newl[listidx]),
+		    &(l->t[l->n - count]),
+		    sizeof(nfa_thread_T) * count);
+	    mch_memmove(&(newl[listidx + count]),
+		    &(l->t[listidx + 1]),
+		    sizeof(nfa_thread_T) * (l->n - count - listidx - 1));
+	    vim_free(l->t);
+	    l->t = newl;
+	}
+	else
+	{
+	    /* make space for new states, then move them from the
+	     * end to the current position */
+	    mch_memmove(&(l->t[listidx + count]),
+		    &(l->t[listidx + 1]),
+		    sizeof(nfa_thread_T) * (l->n - listidx - 1));
+	    mch_memmove(&(l->t[listidx]),
+		    &(l->t[l->n - 1]),
+		    sizeof(nfa_thread_T) * count);
+	}
     }
     --l->n;
     *ip = listidx - 1;
@@ -4320,8 +4370,6 @@ check_char_class(class, c)
     }
     return FAIL;
 }
-
-static int match_backref __ARGS((regsub_T *sub, int subidx, int *bytelen));
 
 /*
  * Check for a match with subexpression "subidx".
@@ -5197,6 +5245,12 @@ nfa_regmatch(prog, start, submatch, m)
 			 || t->state->c == NFA_START_INVISIBLE_BEFORE_FIRST
 			 || t->state->c == NFA_START_INVISIBLE_BEFORE_NEG_FIRST)
 		    {
+			int in_use = m->norm.in_use;
+
+			/* Copy submatch info for the recursive call, so that
+			 * \1 can be matched. */
+			copy_sub_off(&m->norm, &t->subs.norm);
+
 			/*
 			 * First try matching the invisible match, then what
 			 * follows.
@@ -5226,6 +5280,7 @@ nfa_regmatch(prog, start, submatch, m)
 			    add_here = TRUE;
 			    add_state = t->state->out1->out;
 			}
+			m->norm.in_use = in_use;
 		    }
 		    else
 		    {

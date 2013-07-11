@@ -41,6 +41,9 @@ gvimext.lib
 # Android
 *.o.d
 
+# Mac OSX
+src/xxd/xxd.dSYM
+
 # All platforms
 *.rej
 *.orig

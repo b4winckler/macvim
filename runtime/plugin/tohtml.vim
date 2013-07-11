@@ -1,6 +1,6 @@
 " Vim plugin for converting a syntax highlighted file to HTML.
 " Maintainer: Ben Fritz <fritzophrenic@gmail.com>
-" Last Change: 2013 May 31
+" Last Change: 2013 Jul 08
 "
 " The core of the code is in $VIMRUNTIME/autoload/tohtml.vim and
 " $VIMRUNTIME/syntax/2html.vim
@@ -67,12 +67,20 @@
 if exists('g:loaded_2html_plugin')
   finish
 endif
-let g:loaded_2html_plugin = 'vim7.3_v13'
+let g:loaded_2html_plugin = 'vim7.4_v1'
 
 "
 " Changelog: {{{
+"   7.4_v1  (this version): Fix modeline mangling for new "Vim:" format, and
+"			    also for version-specific modelines like "vim>703:".
 "
-"   7.3_v13 (this version): Keep foldmethod at manual in the generated file and
+"   7.3 updates: {{{
+"   7.3_v14 (ad6996a23e3e): Allow suppressing line number anchors using
+"			    g:html_line_ids=0. Allow customizing
+"			    important IDs (like line IDs and fold IDs) using
+"			    g:html_id_expr evalutated when the buffer conversion
+"			    is started.
+"   7.3_v13 (2eb30f341e8d): Keep foldmethod at manual in the generated file and
 "			    insert modeline to set it to manual.
 "			    Fix bug: diff mode with 2 unsaved buffers creates a
 "			    duplicate of one buffer instead of including both.
@@ -156,6 +164,7 @@ let g:loaded_2html_plugin = 'vim7.3_v13'
 "			    diff colors and the normal syntax colors
 "   7.3_v1  (e7751177126b): Add conceal support and meta tags in output
 "   Pre-v1 baseline: Mercurial changeset 3c9324c0800e
+"}}}
 "}}}
 
 " Define the :TOhtml command when:

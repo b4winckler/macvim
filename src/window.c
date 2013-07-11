@@ -53,10 +53,10 @@ static void win_free __ARGS((win_T *wp, tabpage_T *tp));
 static void frame_append __ARGS((frame_T *after, frame_T *frp));
 static void frame_insert __ARGS((frame_T *before, frame_T *frp));
 static void frame_remove __ARGS((frame_T *frp));
-#ifdef FEAT_VERTSPLIT
+# ifdef FEAT_VERTSPLIT
 static void win_goto_ver __ARGS((int up, long count));
 static void win_goto_hor __ARGS((int left, long count));
-#endif
+# endif
 static void frame_add_height __ARGS((frame_T *frp, int n));
 static void last_status_rec __ARGS((frame_T *fr, int statusline));
 
@@ -65,6 +65,11 @@ static void clear_snapshot __ARGS((tabpage_T *tp, int idx));
 static void clear_snapshot_rec __ARGS((frame_T *fr));
 static int check_snapshot_rec __ARGS((frame_T *sn, frame_T *fr));
 static win_T *restore_snapshot_rec __ARGS((frame_T *sn, frame_T *fr));
+
+static int frame_check_height __ARGS((frame_T *topfrp, int height));
+#ifdef FEAT_VERTSPLIT
+static int frame_check_width __ARGS((frame_T *topfrp, int width));
+#endif
 
 #endif /* FEAT_WINDOWS */
 
@@ -4077,7 +4082,8 @@ win_find_tabpage(win)
     tabpage_T	*tp;
 
     for (tp = first_tabpage; tp != NULL; tp = tp->tp_next)
-	for (wp = tp->tp_firstwin; wp != NULL; wp = wp->w_next)
+	for (wp = (tp == curtab ? firstwin : tp->tp_firstwin);
+						  wp != NULL; wp = wp->w_next)
 	    if (wp == win)
 		return tp;
     return NULL;
@@ -4754,7 +4760,7 @@ shell_new_rows()
     /* First try setting the heights of windows with 'winfixheight'.  If
      * that doesn't result in the right height, forget about that option. */
     frame_new_height(topframe, h, FALSE, TRUE);
-    if (topframe->fr_height != h)
+    if (!frame_check_height(topframe, h))
 	frame_new_height(topframe, h, FALSE, FALSE);
 
     (void)win_comp_pos();		/* recompute w_winrow and w_wincol */
@@ -4788,7 +4794,7 @@ shell_new_columns()
     /* First try setting the widths of windows with 'winfixwidth'.  If that
      * doesn't result in the right width, forget about that option. */
     frame_new_width(topframe, (int)Columns, FALSE, TRUE);
-    if (topframe->fr_width != Columns)
+    if (!frame_check_width(topframe, Columns))
 	frame_new_width(topframe, (int)Columns, FALSE, FALSE);
 
     (void)win_comp_pos();		/* recompute w_winrow and w_wincol */
@@ -6932,3 +6938,50 @@ get_tab_number(tabpage_T *tp UNUSED)
 	return i;
 }
 #endif
+
+#ifdef FEAT_WINDOWS
+/*
+ * Return TRUE if "topfrp" and its children are at the right height.
+ */
+    static int
+frame_check_height(topfrp, height)
+    frame_T *topfrp;
+    int	    height;
+{
+    frame_T *frp;
+
+    if (topfrp->fr_height != height)
+	return FALSE;
+
+    if (topfrp->fr_layout == FR_ROW)
+	for (frp = topfrp->fr_child; frp != NULL; frp = frp->fr_next)
+	    if (frp->fr_height != height)
+		return FALSE;
+
+    return TRUE;
+}
+#endif
+
+#ifdef FEAT_VERTSPLIT
+/*
+ * Return TRUE if "topfrp" and its children are at the right width.
+ */
+    static int
+frame_check_width(topfrp, width)
+    frame_T *topfrp;
+    int	    width;
+{
+    frame_T *frp;
+
+    if (topfrp->fr_width != width)
+	return FALSE;
+
+    if (topfrp->fr_layout == FR_COL)
+	for (frp = topfrp->fr_child; frp != NULL; frp = frp->fr_next)
+	    if (frp->fr_width != width)
+		return FALSE;
+
+    return TRUE;
+}
+#endif
+

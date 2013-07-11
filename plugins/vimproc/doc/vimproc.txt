@@ -33,7 +33,7 @@ Interface		|vimproc-interface|
   Variables		  |vimproc-variables|
 Tips			|vimproc-tips|
 Examples		|vimproc-examples|
-Changelog		|vimproc-changelog|
+FAQ			|vimproc-faq|
 
 ==============================================================================
 INTRODUCTION					*vimproc-introduction*
@@ -67,10 +67,15 @@ Supported platforms:
 
 Note: You must use GNU make to build vimproc.
 
+Note: In Windows, using MinGW is recommended.
+
+Note: In Windows, to build it by Visual Studio, you must install Windows SDK.
+
 Not supported platforms:
 * Other UNIX platforms
 
-Below is Make command.
+Below is Make command:
+
 * Windows using Mingw(32bit Vim): >
  $ make -f make_mingw32.mak
 
@@ -392,126 +397,11 @@ EXAMPLES					*vimproc-examples*
 	call append(0, split(res, '\r\n\|\r\|\n'))
 <
 ==============================================================================
-CHANGELOG					*vimproc-changelog*
+FAQ						*vimproc-faq*
 
-2013-06-12
-- Added vimproc#cmd#system() experimentally.
+Q: I want to check process is zombie.
 
-2013-06-11
-- Added simple benchmark script.
-
-2013-06-09
-- Fixed performance problem in if_lua.
-- Fixed for Visual Studio.
-
-2013-06-07
-- Optimized using if_lua.
-
-2013-05-23
-- Fixed fatal resource leak in Windows(required recompile).
-
-2013-05-17
-- Fixed resource leak.
-
-2013-04-28
-- Add starting GUI process support in Windows.
-
-2013-04-17
-- Improved vimproc#readdir().
-
-2013-04-07
-- Fixed vimproc#system_passwd().
-
-2013-03-23
-- Fixed for double quote.
-- Improved catch behavior.
-
-2013-03-20
-- Fixed escape sequence behavior.
-
-2013-03-19
-- Added Android support(experimental).
-
-2013-03-16
-- Fixed expand glob.
-- Fixed backquote.
-
-2013-03-10
-- Changed expand wildcard behavior.
-
-2013-02-16
-- Fixed parse variables.
-
-2013-01-31
-- Changed timeout behavior.
-- Improved initialization.
-
-2013-01-19
-- Fixed parser.
-
-2012-12-27
-- Fixed parse of backquote.
-
-2012-12-20
-- Improved vimproc#kill() behavior.
-
-2012-12-14
-- Improved for Visual Studio support(KoRoN).
-
-2012-12-08
-- Fixed for UTF-8 string(mattn).
-
-2012-11-19
-- Improved vimproc#get_last_errmsg().
-
-2012-11-04
-- Added for neobundle description.
-
-2012-10-26
-- Changed variable names.
-
-2012-10-24
-- Fixed error of vimproc#system().
-
-2012-10-23
-- Fixed parse system.
-
-2012-10-21
-- Improved garbage collect.
-
-2012-10-18
-- Fixed parse of backquote.
-
-2012-10-17
-- Fixed parse of backquote.
-
-2012-10-16
-- Search from internal commands.
-- Improved vimproc#host_exists() behavior.
-- Added check host in vimproc#open().
-
-2012-10-15
-- Added vimproc#host_exists().
-
-2012-10-13
-- Fixed vimproc#get_command_name() error.
-- Fixed echo in Windows.
-
-2012-10-04
-- Uniq path searching.
-
-2012-08-29
-- Fixed g:vimproc_dll_path conversion.
-
-2012-08-18
-- Added test.
-
-2012-08-15
-- Improved g:vimproc_password_pattern.
-
-2012-08-14
-- Ver.7.1 development is started.
-- Remain vimproc#version().
+A: You can use vimproc#kill({pid}, 0) or {process}.kill(0).
 
 ==============================================================================
 vim:tw=78:ts=8:ft=help:norl:noet:fen:

@@ -9861,6 +9861,12 @@ unblock_autocmds()
 # endif
 }
 
+    int
+is_autocmd_blocked()
+{
+    return autocmd_blocked != 0;
+}
+
 /*
  * Find next autocommand pattern that matches.
  */
@@ -10584,7 +10590,10 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
 		 * foo\,bar -> foo,bar
 		 * foo\ bar -> foo bar
 		 * Don't unescape \, * and others that are also special in a
-		 * regexp. */
+		 * regexp.
+		 * An escaped { must be unescaped since we use magic not
+		 * verymagic.
+		 */
 		if (*++p == '?'
 #ifdef BACKSLASH_IN_FILENAME
 			&& no_bslash
@@ -10592,7 +10601,8 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
 			)
 		    reg_pat[i++] = '?';
 		else
-		    if (*p == ',' || *p == '%' || *p == '#' || *p == ' ')
+		    if (*p == ',' || *p == '%' || *p == '#'
+						    || *p == ' ' || *p == '{')
 			reg_pat[i++] = *p;
 		    else
 		    {

@@ -3,7 +3,7 @@
                                                          Version: 1.7.3
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 16-Jun-2013.
+                                                     Last Change: 17-Jun-2013.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -191,8 +191,7 @@ Vimの拡張機能について
 
 既知の問題点
   * qkcの-njフラグでコンバートしたJISファイルは開けない(iconv.dll)
-  * scrolloffが窓高の丁度半分の時、スクロールが2行単位になる
-  * 書き込み時にNTFSのハードリンクが切れる
+  * scrolloffが窓高の丁度半分の時、下へのスクロールが2行単位になる
 
 質問・連絡先
   日本のVimユーザ向けのGoogleグループ(vim_jp)が用意されています。どんなに簡単

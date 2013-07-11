@@ -80,6 +80,11 @@ function! s:Godoc(...)
   if !len(words)
     return
   endif
+  " Doc for imported package.
+  if word =~ '/'
+    call s:GodocWord(word)
+    return
+  end
   call s:GodocWord(words[0])
   if len(words) > 1
     if search('^\%(const\|var\|type\|\s\+\) ' . words[1] . '\s\+=\s')

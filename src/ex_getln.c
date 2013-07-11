@@ -1718,13 +1718,13 @@ getcmdline(firstc, count, indent)
 	 * We come here if we have a normal character.
 	 */
 
-	if (do_abbr && (IS_SPECIAL(c) || !vim_iswordc(c)) && ccheck_abbr(
+	if (do_abbr && (IS_SPECIAL(c) || !vim_iswordc(c)) && (ccheck_abbr(
 #ifdef FEAT_MBYTE
 			/* Add ABBR_OFF for characters above 0x100, this is
 			 * what check_abbr() expects. */
 			(has_mbyte && c >= 0x100) ? (c + ABBR_OFF) :
 #endif
-									c))
+							 c) || c == Ctrl_RSB))
 	    goto cmdline_changed;
 
 	/*
@@ -3757,6 +3757,7 @@ ExpandInit(xp)
 #if defined(FEAT_USR_CMDS) && defined(FEAT_EVAL) && defined(FEAT_CMDL_COMPL)
     xp->xp_arg = NULL;
 #endif
+    xp->xp_line = NULL;
 }
 
 /*
@@ -4436,6 +4437,11 @@ set_cmd_context(xp, str, len, col)
 	while (nextcomm != NULL)
 	    nextcomm = set_one_cmd_context(xp, nextcomm);
 
+    /* Store the string here so that call_user_expand_func() can get to them
+     * easily. */
+    xp->xp_line = str;
+    xp->xp_col = col;
+
     str[col] = old_char;
 }
 
@@ -4976,34 +4982,27 @@ call_user_expand_func(user_expand_func, xp, num_file, file)
     int		*num_file;
     char_u	***file;
 {
-    char_u	keep;
+    int		keep = 0;
     char_u	num[50];
     char_u	*args[3];
     int		save_current_SID = current_SID;
     void	*ret;
     struct cmdline_info	    save_ccline;
 
-    if (xp->xp_arg == NULL || xp->xp_arg[0] == '\0')
+    if (xp->xp_arg == NULL || xp->xp_arg[0] == '\0' || xp->xp_line == NULL)
 	return NULL;
     *num_file = 0;
     *file = NULL;
 
-    if (ccline.cmdbuff == NULL)
+    if (ccline.cmdbuff != NULL)
     {
-	/* Completion from Insert mode, pass fake arguments. */
-	keep = 0;
-	sprintf((char *)num, "%d", (int)STRLEN(xp->xp_pattern));
-	args[1] = xp->xp_pattern;
-    }
-    else
-    {
-	/* Completion on the command line, pass real arguments. */
 	keep = ccline.cmdbuff[ccline.cmdlen];
 	ccline.cmdbuff[ccline.cmdlen] = 0;
-	sprintf((char *)num, "%d", ccline.cmdpos);
-	args[1] = ccline.cmdbuff;
     }
+
     args[0] = vim_strnsave(xp->xp_pattern, xp->xp_pattern_len);
+    args[1] = xp->xp_line;
+    sprintf((char *)num, "%d", xp->xp_col);
     args[2] = num;
 
     /* Save the cmdline, we don't know what the function may do. */
