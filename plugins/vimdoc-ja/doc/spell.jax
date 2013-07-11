@@ -75,10 +75,10 @@ zg			カーソルの下の単語を正しい (good) 単語として、
                         の項目を指定することができる。count として 2 を指定す
                         ると、二番目の項目が使われる。
 
-			In Visual mode the selected characters are added as a
-			word (including white space!).
-			When the cursor is on text that is marked as badly
-			spelled then the marked text is used.
+                        ビジュアルモードで選択された文字は単語として追加される
+                        (スペースを含む!)。
+                        When the cursor is on text that is marked as badly
+                        spelled then the marked text is used.
 			Otherwise the word under the cursor, separated by
 			non-word characters, is used.
 
@@ -93,7 +93,7 @@ zG			"zg" と同様であるが、その単語を内部単語リスト
 zw			"zg" と同様であるが、間違った (wrong) 単語としてマーク
                         する。もしその単語がすでに 'spellfile' にある場合は、
                         コメント行に変更される。それらを取り除くには
-                        |spellfile-cleanup|を参照する。
+                        |spellfile-cleanup| を参照する。
 
 							*zW*
 zW			"zw" と同様であるが、その単語を内部単語リスト
@@ -109,21 +109,21 @@ zuG			|zW| や |zG| をundoして、内部単語リストからその単語を
 
 							*:spe* *:spellgood*
 :[count]spe[llgood] {word}
-			Add {word} as a good word to 'spellfile', like with
-			|zg|.  Without count the first name is used, with a
-			count of two the second entry, etc.
+                        |zg| と同様に、{word} を正しい単語として 'spellfile'
+                        に加える。 Without count the first name is used, with
+                        a count of two the second entry, etc.
 
-:spe[llgood]! {word}	Add {word} as a good word to the internal word list,
-			like with |zG|.
+:spe[llgood]! {word}	|zG| と同様に、{word} を正しい単語として内部単語リスト
+                        に加える。
 
 							*:spellw* *:spellwrong*
 :[count]spellw[rong] {word}
-			Add {word} as a wrong (bad) word to 'spellfile', as
-			with |zw|.  Without count the first name is used, with
-			a count of two the second entry, etc.
+                        |zw| と同様に、{word} を間違った (wrong) 単語として
+                        'spellfile' に加える。Without count the first name is
+                        used, with a count of two the second entry, etc.
 
-:spellw[rong]! {word}	Add {word} as a wrong (bad) word to the internal word
-			list, like with |zW|.
+:spellw[rong]! {word}	|zW| と同様に、{word} を間違った (wrong) 単語として内
+                        部単語リストに追加する。
 
 :[count]spellu[ndo] {word}				*:spellu* *:spellundo*
 			Like |zuw|.  [count] used as with |:spellgood|.
@@ -234,10 +234,10 @@ all the word lists are reloaded, thus you may notice a delay then too.
 	en_nz		ニュージーランド
 	en_us		アメリカ
 
-Words that are not used in one region but are used in another region are
-highlighted with SpellLocal |hl-SpellLocal|.
+ある地域では使われないが別の地域では使われる単語は SpellLocal |hl-SpellLocal|
+でハイライトされる。
 
-Always use lowercase letters for the language and region names.
+常に言語名や地域名には小文字を使う。
 
 When adding a word with |zg| or another command it's always added for all
 regions.  You can change that by manually editing the 'spellfile'.  See
