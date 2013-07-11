@@ -341,7 +341,9 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 'iconstring'	options.txt	/*'iconstring'*
 'ignorecase'	options.txt	/*'ignorecase'*
 'im'	options.txt	/*'im'*
+'imactivatefunc'	options.txt	/*'imactivatefunc'*
 'imactivatekey'	options.txt	/*'imactivatekey'*
+'imaf'	options.txt	/*'imaf'*
 'imak'	options.txt	/*'imak'*
 'imc'	options.txt	/*'imc'*
 'imcmdline'	options.txt	/*'imcmdline'*
@@ -351,6 +353,8 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 'iminsert'	options.txt	/*'iminsert'*
 'ims'	options.txt	/*'ims'*
 'imsearch'	options.txt	/*'imsearch'*
+'imsf'	options.txt	/*'imsf'*
+'imstatusfunc'	options.txt	/*'imstatusfunc'*
 'inc'	options.txt	/*'inc'*
 'include'	options.txt	/*'include'*
 'includeexpr'	options.txt	/*'includeexpr'*
@@ -2416,6 +2420,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 :map!	map.txt	/*:map!*
 :map-<buffer>	map.txt	/*:map-<buffer>*
 :map-<expr>	map.txt	/*:map-<expr>*
+:map-<nowait>	map.txt	/*:map-<nowait>*
 :map-<script>	map.txt	/*:map-<script>*
 :map-<silent>	map.txt	/*:map-<silent>*
 :map-<special>	map.txt	/*:map-<special>*
@@ -2426,6 +2431,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 :map-expression	map.txt	/*:map-expression*
 :map-local	map.txt	/*:map-local*
 :map-modes	map.txt	/*:map-modes*
+:map-nowait	map.txt	/*:map-nowait*
 :map-operator	map.txt	/*:map-operator*
 :map-script	map.txt	/*:map-script*
 :map-silent	map.txt	/*:map-silent*
@@ -4286,6 +4292,7 @@ E877	pattern.txt	/*E877*
 E878	pattern.txt	/*E878*
 E879	syntax.txt	/*E879*
 E88	windows.txt	/*E88*
+E880	if_pyth.txt	/*E880*
 E89	message.txt	/*E89*
 E90	message.txt	/*E90*
 E91	options.txt	/*E91*
@@ -4390,6 +4397,7 @@ N	pattern.txt	/*N*
 N%	motion.txt	/*N%*
 N:	cmdline.txt	/*N:*
 N<Del>	various.txt	/*N<Del>*
+NFA	pattern.txt	/*NFA*
 NL-used-for-Nul	pattern.txt	/*NL-used-for-Nul*
 NetBSD-backspace	options.txt	/*NetBSD-backspace*
 NetUserPass()	pi_netrw.txt	/*NetUserPass()*
@@ -4725,6 +4733,7 @@ added-6.4	version6.txt	/*added-6.4*
 added-7.1	version7.txt	/*added-7.1*
 added-7.2	version7.txt	/*added-7.2*
 added-7.3	version7.txt	/*added-7.3*
+added-7.4	version7.txt	/*added-7.4*
 added-BeOS	version5.txt	/*added-BeOS*
 added-Mac	version5.txt	/*added-Mac*
 added-VMS	version5.txt	/*added-VMS*
@@ -4808,6 +4817,7 @@ b:changedtick	eval.txt	/*b:changedtick*
 b:changelog_name	filetype.txt	/*b:changelog_name*
 b:current_syntax-variable	syntax.txt	/*b:current_syntax-variable*
 b:netrw_lastfile	pi_netrw.txt	/*b:netrw_lastfile*
+b:tex_stylish	syntax.txt	/*b:tex_stylish*
 b:var	eval.txt	/*b:var*
 baan-folding	syntax.txt	/*baan-folding*
 baan-syntax	syntax.txt	/*baan-syntax*
@@ -5002,6 +5012,7 @@ changed-6.4	version6.txt	/*changed-6.4*
 changed-7.1	version7.txt	/*changed-7.1*
 changed-7.2	version7.txt	/*changed-7.2*
 changed-7.3	version7.txt	/*changed-7.3*
+changed-7.4	version7.txt	/*changed-7.4*
 changelist	motion.txt	/*changelist*
 changelog.vim	syntax.txt	/*changelog.vim*
 changenr()	eval.txt	/*changenr()*
@@ -5610,6 +5621,7 @@ fixed-6.4	version6.txt	/*fixed-6.4*
 fixed-7.1	version7.txt	/*fixed-7.1*
 fixed-7.2	version7.txt	/*fixed-7.2*
 fixed-7.3	version7.txt	/*fixed-7.3*
+fixed-7.4	version7.txt	/*fixed-7.4*
 flexwiki.vim	syntax.txt	/*flexwiki.vim*
 float-e	eval.txt	/*float-e*
 float-functions	usr_41.txt	/*float-functions*
@@ -5665,6 +5677,7 @@ format-comments	change.txt	/*format-comments*
 formatting	change.txt	/*formatting*
 formfeed	intro.txt	/*formfeed*
 fortran.vim	syntax.txt	/*fortran.vim*
+friendship	intro.txt	/*friendship*
 frombook	usr_01.txt	/*frombook*
 ft-abel-syntax	syntax.txt	/*ft-abel-syntax*
 ft-ada-commands	ft_ada.txt	/*ft-ada-commands*
@@ -5892,8 +5905,10 @@ g:html_encoding_override	syntax.txt	/*g:html_encoding_override*
 g:html_end_line	syntax.txt	/*g:html_end_line*
 g:html_expand_tabs	syntax.txt	/*g:html_expand_tabs*
 g:html_hover_unfold	syntax.txt	/*g:html_hover_unfold*
+g:html_id_expr	syntax.txt	/*g:html_id_expr*
 g:html_ignore_conceal	syntax.txt	/*g:html_ignore_conceal*
 g:html_ignore_folding	syntax.txt	/*g:html_ignore_folding*
+g:html_line_ids	syntax.txt	/*g:html_line_ids*
 g:html_no_foldcolumn	syntax.txt	/*g:html_no_foldcolumn*
 g:html_no_invalid	syntax.txt	/*g:html_no_invalid*
 g:html_no_pre	syntax.txt	/*g:html_no_pre*
@@ -5997,10 +6012,16 @@ g:tar_nomax	pi_tar.txt	/*g:tar_nomax*
 g:tar_readoptions	pi_tar.txt	/*g:tar_readoptions*
 g:tar_secure	pi_tar.txt	/*g:tar_secure*
 g:tar_writeoptions	pi_tar.txt	/*g:tar_writeoptions*
+g:tex_comment_nospell	syntax.txt	/*g:tex_comment_nospell*
 g:tex_conceal	syntax.txt	/*g:tex_conceal*
 g:tex_fast	syntax.txt	/*g:tex_fast*
 g:tex_flavor	filetype.txt	/*g:tex_flavor*
+g:tex_fold_enabled	syntax.txt	/*g:tex_fold_enabled*
 g:tex_isk	syntax.txt	/*g:tex_isk*
+g:tex_no_error	syntax.txt	/*g:tex_no_error*
+g:tex_nospell	syntax.txt	/*g:tex_nospell*
+g:tex_stylish	syntax.txt	/*g:tex_stylish*
+g:tex_verbspell	syntax.txt	/*g:tex_verbspell*
 g:var	eval.txt	/*g:var*
 g:vimball_home	pi_vimball.txt	/*g:vimball_home*
 g:vimball_mkdir	pi_vimball.txt	/*g:vimball_mkdir*
@@ -6134,6 +6155,7 @@ graphic-option-gone	version4.txt	/*graphic-option-gone*
 greek	options.txt	/*greek*
 grep	quickfix.txt	/*grep*
 groff.vim	syntax.txt	/*groff.vim*
+gross-national-happiness	intro.txt	/*gross-national-happiness*
 group-name	syntax.txt	/*group-name*
 gs	various.txt	/*gs*
 gsp.vim	syntax.txt	/*gsp.vim*
@@ -6614,6 +6636,7 @@ language-mapping	map.txt	/*language-mapping*
 last-pattern	pattern.txt	/*last-pattern*
 last-position-jump	eval.txt	/*last-position-jump*
 last_buffer_nr()	eval.txt	/*last_buffer_nr()*
+latex-syntax	syntax.txt	/*latex-syntax*
 lc_time-variable	eval.txt	/*lc_time-variable*
 lcs-conceal	options.txt	/*lcs-conceal*
 lcs-eol	options.txt	/*lcs-eol*
@@ -6667,6 +6690,7 @@ location-list-window	quickfix.txt	/*location-list-window*
 log()	eval.txt	/*log()*
 log10()	eval.txt	/*log10()*
 long-lines	version5.txt	/*long-lines*
+love	intro.txt	/*love*
 lowercase	change.txt	/*lowercase*
 lpc.vim	syntax.txt	/*lpc.vim*
 lua	if_lua.txt	/*lua*
@@ -7135,6 +7159,7 @@ new-posix	version7.txt	/*new-posix*
 new-print-multi-byte	version7.txt	/*new-print-multi-byte*
 new-printing	version6.txt	/*new-printing*
 new-python3	version7.txt	/*new-python3*
+new-regexp-engine	version7.txt	/*new-regexp-engine*
 new-runtime-dir	version5.txt	/*new-runtime-dir*
 new-script	version5.txt	/*new-script*
 new-script-5.4	version5.txt	/*new-script-5.4*
@@ -7244,6 +7269,7 @@ pattern-searches	pattern.txt	/*pattern-searches*
 pattern.txt	pattern.txt	/*pattern.txt*
 patterns-composing	pattern.txt	/*patterns-composing*
 pdev-option	print.txt	/*pdev-option*
+peace	intro.txt	/*peace*
 penc-option	print.txt	/*penc-option*
 perl	if_perl.txt	/*perl*
 perl-Append	if_perl.txt	/*perl-Append*
@@ -8186,7 +8212,9 @@ tex-nospell	syntax.txt	/*tex-nospell*
 tex-package	syntax.txt	/*tex-package*
 tex-runon	syntax.txt	/*tex-runon*
 tex-slow	syntax.txt	/*tex-slow*
+tex-stopzone	syntax.txt	/*tex-stopzone*
 tex-style	syntax.txt	/*tex-style*
+tex-sync	syntax.txt	/*tex-sync*
 tex-verb	syntax.txt	/*tex-verb*
 tex.vim	syntax.txt	/*tex.vim*
 text-functions	usr_41.txt	/*text-functions*
@@ -8494,6 +8522,7 @@ version-7.0	version7.txt	/*version-7.0*
 version-7.1	version7.txt	/*version-7.1*
 version-7.2	version7.txt	/*version-7.2*
 version-7.3	version7.txt	/*version-7.3*
+version-7.4	version7.txt	/*version-7.4*
 version-variable	eval.txt	/*version-variable*
 version4.txt	version4.txt	/*version4.txt*
 version5.txt	version5.txt	/*version5.txt*
@@ -8502,6 +8531,7 @@ version7.0	version7.txt	/*version7.0*
 version7.1	version7.txt	/*version7.1*
 version7.2	version7.txt	/*version7.2*
 version7.3	version7.txt	/*version7.3*
+version7.4	version7.txt	/*version7.4*
 version7.txt	version7.txt	/*version7.txt*
 vi	intro.txt	/*vi*
 vi-differences	vi_diff.txt	/*vi-differences*
