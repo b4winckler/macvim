@@ -175,6 +175,7 @@ void qsort __ARGS((void *base, size_t elm_count, size_t elm_size, int (*cmp)(con
 
 # ifdef FEAT_LUA
 #  include "if_lua.pro"
+#  include "if_lua52.pro"
 # endif
 
 # ifdef FEAT_MZSCHEME

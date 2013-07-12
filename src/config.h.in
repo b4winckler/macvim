@@ -322,6 +322,9 @@
 /* Define if you want to include the Lua interpreter. */
 #undef FEAT_LUA
 
+/* Define if you want to include the Lua 5.2 interpreter. */
+#undef FEAT_LUA52
+
 /* Define for linking via dlopen() or LoadLibrary() */
 #undef DYNAMIC_LUA
 
