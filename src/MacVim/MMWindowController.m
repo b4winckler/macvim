@@ -1464,7 +1464,7 @@
                                             boolForKey:MMSidebarOnLeftEdgeKey];
     [self setSidebarView:sidebarView leftEdge:leftEdge];
     //[vimView placeViews];
-    [vimController sendMessage:ForceRedrawMsgID data:nil];
+    [vimController sendMessage:BackingPropertiesChangedMsgID data:nil];
 }
 
 // -- Services menu delegate -------------------------------------------------
