@@ -1,8 +1,8 @@
 " Vim indent file
 " Language:    SQL
-" Maintainer:  David Fishburn <fishburn at ianywhere dot com>
-" Last Change: Mon Apr 02 2007 9:13:47 AM
-" Version:     1.5
+" Maintainer:  David Fishburn <dfishburn dot vim at gmail dot com>
+" Last Change: 2012 Dec 06
+" Version:     3.0
 " Download:    http://vim.sourceforge.net/script.php?script_id=495
 
 " Notes:
@@ -18,6 +18,17 @@
 " Known Issues:
 "    The Oracle MERGE statement does not have an end tag associated with
 "    it, this can leave the indent hanging to the right one too many.
+"
+" History:
+"    3.0 (Dec 2012)
+"        Added cpo check
+"
+"    2.0
+"        Added the FOR keyword to SQLBlockStart to handle (Alec Tica):
+"            for i in 1..100 loop
+"              |<-- I expect to have indentation here
+"            end loop;
+"
 
 " Only load this indent file when no other was loaded.
 if exists("b:did_indent")
@@ -56,8 +67,8 @@ set cpo&vim
 " IS is excluded, since it is difficult to determine when the
 " ending block is (especially for procedures/functions).
 let s:SQLBlockStart = '^\s*\%('.
-            \ 'if\|else\|elseif\|elsif\|'.
-                \ 'while\|loop\|do\|'.
+                \ 'if\|else\|elseif\|elsif\|'.
+                \ 'while\|loop\|do\|for\|'.
                 \ 'begin\|'.
                 \ 'case\|when\|merge\|exception'.
                 \ '\)\>'
@@ -66,7 +77,7 @@ let s:SQLBlockEnd = '^\s*\(end\)\>'
 " The indent level is also based on unmatched paranethesis
 " If a line has an extra "(" increase the indent
 " If a line has an extra ")" decrease the indent
-function s:CountUnbalancedParan( line, paran_to_check )
+function! s:CountUnbalancedParan( line, paran_to_check )
     let l = a:line
     let lp = substitute(l, '[^(]', '', 'g')
     let l = a:line
@@ -88,7 +99,7 @@ function s:CountUnbalancedParan( line, paran_to_check )
 endfunction
 
 " Unindent commands based on previous indent level
-function s:CheckToIgnoreRightParan( prev_lnum, num_levels )
+function! s:CheckToIgnoreRightParan( prev_lnum, num_levels )
     let lnum = a:prev_lnum
     let line = getline(lnum)
     let ends = 0
@@ -151,7 +162,7 @@ endfunction
 "         something;
 "    WHEN ...
 " Should return indent level of exception.
-function s:GetStmtStarterIndent( keyword, curr_lnum )
+function! s:GetStmtStarterIndent( keyword, curr_lnum )
     let lnum  = a:curr_lnum
 
     " Default - reduce indent by 1
@@ -193,7 +204,7 @@ endfunction
 
 
 " Check if the line is a comment
-function s:IsLineComment(lnum)
+function! s:IsLineComment(lnum)
     let rc = synIDattr(
                 \ synID(a:lnum,
                 \     match(getline(a:lnum), '\S')+1, 0)
@@ -205,7 +216,7 @@ endfunction
 
 
 " Check if the column is a comment
-function s:IsColComment(lnum, cnum)
+function! s:IsColComment(lnum, cnum)
     let rc = synIDattr(synID(a:lnum, a:cnum, 0), "name")
                 \           =~? "comment"
 
@@ -215,7 +226,7 @@ endfunction
 
 " Instead of returning a column position, return
 " an appropriate value as a factor of shiftwidth.
-function s:ModuloIndent(ind)
+function! s:ModuloIndent(ind)
     let ind = a:ind
 
     if ind > 0
@@ -231,7 +242,7 @@ endfunction
 
 
 " Find correct indent of a new line based upon the previous line
-function GetSQLIndent()
+function! GetSQLIndent()
     let lnum = v:lnum
     let ind = indent(lnum)
 
@@ -242,35 +253,27 @@ function GetSQLIndent()
     "     return ind
     " endif
 
-    " while 1
-        " Get previous non-blank line
-        let prevlnum = prevnonblank(lnum - 1)
-        if prevlnum <= 0
-            return ind
-        endif
+    " Get previous non-blank line
+    let prevlnum = prevnonblank(lnum - 1)
+    if prevlnum <= 0
+        return ind
+    endif
 
-        if s:IsLineComment(prevlnum) == 1
-            if getline(v:lnum) =~ '^\s*\*'
-                let ind = s:ModuloIndent(indent(prevlnum))
-                return ind + 1
-            endif
-            " If the previous line is a comment, then return -1
-            " to tell Vim to use the formatoptions setting to determine
-            " the indent to use
-            " But only if the next line is blank.  This would be true if
-            " the user is typing, but it would not be true if the user
-            " is reindenting the file
-            if getline(v:lnum) =~ '^\s*$'
-                return -1
-            endif
+    if s:IsLineComment(prevlnum) == 1
+        if getline(v:lnum) =~ '^\s*\*'
+            let ind = s:ModuloIndent(indent(prevlnum))
+            return ind + 1
         endif
-
-    "     let prevline = getline(prevlnum)
-    "     if prevline !~ '^\s*$'
-    "         " echom 'previous non blank - break: ' . prevline
-    "         break
-    "     endif
-    " endwhile
+        " If the previous line is a comment, then return -1
+        " to tell Vim to use the formatoptions setting to determine
+        " the indent to use
+        " But only if the next line is blank.  This would be true if
+        " the user is typing, but it would not be true if the user
+        " is reindenting the file
+        if getline(v:lnum) =~ '^\s*$'
+            return -1
+        endif
+    endif
 
     " echom 'PREVIOUS INDENT: ' . indent(prevlnum) . '  LINE: ' . getline(prevlnum)
 
@@ -384,7 +387,7 @@ function GetSQLIndent()
     return s:ModuloIndent(ind)
 endfunction
 
-let &cpo = s:keepcpo
+"  Restore:
+let &cpo= s:keepcpo
 unlet s:keepcpo
-
-" vim:sw=4:
+" vim: ts=4 fdm=marker sw=4

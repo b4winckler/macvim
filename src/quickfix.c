@@ -863,7 +863,7 @@ qf_init_ok:
     for (fmt_ptr = fmt_first; fmt_ptr != NULL; fmt_ptr = fmt_first)
     {
 	fmt_first = fmt_ptr->next;
-	vim_free(fmt_ptr->prog);
+	vim_regfree(fmt_ptr->prog);
 	vim_free(fmt_ptr);
     }
     qf_clean_dir_stack(&dir_stack);
@@ -1180,7 +1180,10 @@ copy_loclist(from, to)
 	/* When no valid entries are present in the list, qf_ptr points to
 	 * the first item in the list */
 	if (to_qfl->qf_nonevalid)
+	{
 	    to_qfl->qf_ptr = to_qfl->qf_start;
+	    to_qfl->qf_index = 1;
+	}
     }
 
     to->w_llist->qf_curlist = qi->qf_curlist;	/* current list */
@@ -1613,6 +1616,8 @@ qf_jump(qi, dir, errornr, forceit)
      */
     if (bt_quickfix(curbuf) && !opened_window)
     {
+	win_T *usable_win_ptr = NULL;
+
 	/*
 	 * If there is no file specified, we don't know where to go.
 	 * But do advance, otherwise ":cn" gets stuck.
@@ -1620,14 +1625,32 @@ qf_jump(qi, dir, errornr, forceit)
 	if (qf_ptr->qf_fnum == 0)
 	    goto theend;
 
-	/* Locate a window showing a normal buffer */
 	usable_win = 0;
-	FOR_ALL_WINDOWS(win)
-	    if (win->w_buffer->b_p_bt[0] == NUL)
-	    {
-		usable_win = 1;
-		break;
-	    }
+
+	ll_ref = curwin->w_llist_ref;
+	if (ll_ref != NULL)
+	{
+	    /* Find a window using the same location list that is not a
+	     * quickfix window. */
+	    FOR_ALL_WINDOWS(usable_win_ptr)
+		if (usable_win_ptr->w_llist == ll_ref
+			&& usable_win_ptr->w_buffer->b_p_bt[0] != 'q')
+		{
+		    usable_win = 1;
+		    break;
+		}
+	}
+
+	if (!usable_win)
+	{
+	    /* Locate a window showing a normal buffer */
+	    FOR_ALL_WINDOWS(win)
+		if (win->w_buffer->b_p_bt[0] == NUL)
+		{
+		    usable_win = 1;
+		    break;
+		}
+	}
 
 	/*
 	 * If no usable window is found and 'switchbuf' contains "usetab"
@@ -1656,8 +1679,6 @@ win_found:
 	 */
 	if (((firstwin == lastwin) && bt_quickfix(curbuf)) || !usable_win)
 	{
-	    ll_ref = curwin->w_llist_ref;
-
 	    flags = WSP_ABOVE;
 	    if (ll_ref != NULL)
 		flags |= WSP_NEWLOC;
@@ -1680,12 +1701,7 @@ win_found:
 	    if (curwin->w_llist_ref != NULL)
 	    {
 		/* In a location window */
-		ll_ref = curwin->w_llist_ref;
-
-		/* Find the window with the same location list */
-		FOR_ALL_WINDOWS(win)
-		    if (win->w_llist == ll_ref)
-			break;
+		win = usable_win_ptr;
 		if (win == NULL)
 		{
 		    /* Find the window showing the selected file */
@@ -2085,7 +2101,7 @@ qf_age(eap)
 	    if (qi->qf_curlist == 0)
 	    {
 		EMSG(_("E380: At bottom of quickfix stack"));
-		return;
+		break;
 	    }
 	    --qi->qf_curlist;
 	}
@@ -2094,13 +2110,12 @@ qf_age(eap)
 	    if (qi->qf_curlist >= qi->qf_listcount - 1)
 	    {
 		EMSG(_("E381: At top of quickfix stack"));
-		return;
+		break;
 	    }
 	    ++qi->qf_curlist;
 	}
     }
     qf_msg(qi);
-
 }
 
     static void
@@ -2124,13 +2139,23 @@ qf_free(qi, idx)
     int		idx;
 {
     qfline_T	*qfp;
+    int		stop = FALSE;
 
     while (qi->qf_lists[idx].qf_count)
     {
 	qfp = qi->qf_lists[idx].qf_start->qf_next;
-	vim_free(qi->qf_lists[idx].qf_start->qf_text);
-	vim_free(qi->qf_lists[idx].qf_start->qf_pattern);
-	vim_free(qi->qf_lists[idx].qf_start);
+	if (qi->qf_lists[idx].qf_title != NULL && !stop)
+	{
+	    vim_free(qi->qf_lists[idx].qf_start->qf_text);
+	    stop = (qi->qf_lists[idx].qf_start == qfp);
+	    vim_free(qi->qf_lists[idx].qf_start->qf_pattern);
+	    vim_free(qi->qf_lists[idx].qf_start);
+	    if (stop)
+		/* Somehow qf_count may have an incorrect value, set it to 1
+		 * to avoid crashing when it's wrong.
+		 * TODO: Avoid qf_count being incorrect. */
+		qi->qf_lists[idx].qf_count = 1;
+	}
 	qi->qf_lists[idx].qf_start = qfp;
 	--qi->qf_lists[idx].qf_count;
     }
@@ -2340,8 +2365,10 @@ ex_copen(eap)
 	/* The current window becomes the previous window afterwards. */
 	win = curwin;
 
-	if (eap->cmdidx == CMD_copen || eap->cmdidx == CMD_cwindow)
-	    /* Create the new window at the very bottom. */
+	if ((eap->cmdidx == CMD_copen || eap->cmdidx == CMD_cwindow)
+		&& cmdmod.split == 0)
+	    /* Create the new window at the very bottom, except when
+	     * :belowright or :aboveleft is used. */
 	    win_goto(lastwin);
 	if (win_split(height, WSP_BELOW | WSP_NEWLOC) == FAIL)
 	    return;		/* not enough room for window */
@@ -3097,6 +3124,9 @@ ex_vimgrep(eap)
     char_u	*p;
     int		fi;
     qf_info_T	*qi = &ql_info;
+#ifdef FEAT_AUTOCMD
+    qfline_T	*cur_qf_start;
+#endif
     qfline_T	*prevp = NULL;
     long	lnum;
     buf_T	*buf;
@@ -3164,7 +3194,20 @@ ex_vimgrep(eap)
 	EMSG(_(e_invalpat));
 	goto theend;
     }
-    regmatch.regprog = vim_regcomp(s, RE_MAGIC);
+
+    if (s != NULL && *s == NUL)
+    {
+	/* Pattern is empty, use last search pattern. */
+	if (last_search_pat() == NULL)
+	{
+	    EMSG(_(e_noprevre));
+	    goto theend;
+	}
+	regmatch.regprog = vim_regcomp(last_search_pat(), RE_MAGIC);
+    }
+    else
+	regmatch.regprog = vim_regcomp(s, RE_MAGIC);
+
     if (regmatch.regprog == NULL)
 	goto theend;
     regmatch.rmm_ic = p_ic;
@@ -3205,6 +3248,12 @@ ex_vimgrep(eap)
     /* Remember the current directory, because a BufRead autocommand that does
      * ":lcd %:p:h" changes the meaning of short path names. */
     mch_dirname(dirname_start, MAXPATHL);
+
+#ifdef FEAT_AUTOCMD
+     /* Remember the value of qf_start, so that we can check for autocommands
+      * changing the current quickfix list. */
+    cur_qf_start = qi->qf_lists[qi->qf_curlist].qf_start;
+#endif
 
     seconds = (time_t)0;
     for (fi = 0; fi < fcount && !got_int && tomatch > 0; ++fi)
@@ -3261,6 +3310,28 @@ ex_vimgrep(eap)
 	    /* Use existing, loaded buffer. */
 	    using_dummy = FALSE;
 
+#ifdef FEAT_AUTOCMD
+	if (cur_qf_start != qi->qf_lists[qi->qf_curlist].qf_start)
+	{
+	    int idx;
+
+	    /* Autocommands changed the quickfix list.  Find the one we were
+	     * using and restore it. */
+	    for (idx = 0; idx < LISTCOUNT; ++idx)
+		if (cur_qf_start == qi->qf_lists[idx].qf_start)
+		{
+		    qi->qf_curlist = idx;
+		    break;
+		}
+	    if (idx == LISTCOUNT)
+	    {
+		/* List cannot be found, create a new one. */
+		qf_new_list(qi, *eap->cmdlinep);
+		cur_qf_start = qi->qf_lists[qi->qf_curlist].qf_start;
+	    }
+	}
+#endif
+
 	if (buf == NULL)
 	{
 	    if (!got_int)
@@ -3312,6 +3383,9 @@ ex_vimgrep(eap)
 		if (got_int)
 		    break;
 	    }
+#ifdef FEAT_AUTOCMD
+	    cur_qf_start = qi->qf_lists[qi->qf_curlist].qf_start;
+#endif
 
 	    if (using_dummy)
 	    {
@@ -3429,7 +3503,7 @@ theend:
     vim_free(dirname_now);
     vim_free(dirname_start);
     vim_free(target_dir);
-    vim_free(regmatch.regprog);
+    vim_regfree(regmatch.regprog);
 }
 
 /*
@@ -3510,6 +3584,7 @@ restore_start_dir(dirname_start)
 	    ea.cmdidx = (curwin->w_localdir == NULL) ? CMD_cd : CMD_lcd;
 	    ex_cd(&ea);
 	}
+	vim_free(dirname_now);
     }
 }
 
@@ -4119,7 +4194,7 @@ ex_helpgrep(eap)
 	    }
 	}
 
-	vim_free(regmatch.regprog);
+	vim_regfree(regmatch.regprog);
 #ifdef FEAT_MBYTE
 	if (vc.vc_type != CONV_NONE)
 	    convert_setup(&vc, NULL, NULL);

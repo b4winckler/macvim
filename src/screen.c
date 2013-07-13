@@ -268,6 +268,151 @@ redraw_buf_later(buf, type)
 }
 
 /*
+ * Redraw as soon as possible.  When the command line is not scrolled redraw
+ * right away and restore what was on the command line.
+ * Return a code indicating what happened.
+ */
+    int
+redraw_asap(type)
+    int		type;
+{
+    int		rows;
+    int		r;
+    int		ret = 0;
+    schar_T	*screenline;	/* copy from ScreenLines[] */
+    sattr_T	*screenattr;	/* copy from ScreenAttrs[] */
+#ifdef FEAT_MBYTE
+    int		i;
+    u8char_T	*screenlineUC = NULL;	/* copy from ScreenLinesUC[] */
+    u8char_T	*screenlineC[MAX_MCO];	/* copy from ScreenLinesC[][] */
+    schar_T	*screenline2 = NULL;	/* copy from ScreenLines2[] */
+#endif
+
+    redraw_later(type);
+    if (msg_scrolled || (State != NORMAL && State != NORMAL_BUSY))
+	return ret;
+
+    /* Allocate space to save the text displayed in the command line area. */
+    rows = Rows - cmdline_row;
+    screenline = (schar_T *)lalloc(
+			   (long_u)(rows * Columns * sizeof(schar_T)), FALSE);
+    screenattr = (sattr_T *)lalloc(
+			   (long_u)(rows * Columns * sizeof(sattr_T)), FALSE);
+    if (screenline == NULL || screenattr == NULL)
+	ret = 2;
+#ifdef FEAT_MBYTE
+    if (enc_utf8)
+    {
+	screenlineUC = (u8char_T *)lalloc(
+			  (long_u)(rows * Columns * sizeof(u8char_T)), FALSE);
+	if (screenlineUC == NULL)
+	    ret = 2;
+	for (i = 0; i < p_mco; ++i)
+	{
+	    screenlineC[i] = (u8char_T *)lalloc(
+			  (long_u)(rows * Columns * sizeof(u8char_T)), FALSE);
+	    if (screenlineC[i] == NULL)
+		ret = 2;
+	}
+    }
+    if (enc_dbcs == DBCS_JPNU)
+    {
+	screenline2 = (schar_T *)lalloc(
+			   (long_u)(rows * Columns * sizeof(schar_T)), FALSE);
+	if (screenline2 == NULL)
+	    ret = 2;
+    }
+#endif
+
+    if (ret != 2)
+    {
+	/* Save the text displayed in the command line area. */
+	for (r = 0; r < rows; ++r)
+	{
+	    mch_memmove(screenline + r * Columns,
+			ScreenLines + LineOffset[cmdline_row + r],
+			(size_t)Columns * sizeof(schar_T));
+	    mch_memmove(screenattr + r * Columns,
+			ScreenAttrs + LineOffset[cmdline_row + r],
+			(size_t)Columns * sizeof(sattr_T));
+#ifdef FEAT_MBYTE
+	    if (enc_utf8)
+	    {
+		mch_memmove(screenlineUC + r * Columns,
+			    ScreenLinesUC + LineOffset[cmdline_row + r],
+			    (size_t)Columns * sizeof(u8char_T));
+		for (i = 0; i < p_mco; ++i)
+		    mch_memmove(screenlineC[i] + r * Columns,
+				ScreenLinesC[r] + LineOffset[cmdline_row + r],
+				(size_t)Columns * sizeof(u8char_T));
+	    }
+	    if (enc_dbcs == DBCS_JPNU)
+		mch_memmove(screenline2 + r * Columns,
+			    ScreenLines2 + LineOffset[cmdline_row + r],
+			    (size_t)Columns * sizeof(schar_T));
+#endif
+	}
+
+	update_screen(0);
+	ret = 3;
+
+	if (must_redraw == 0)
+	{
+	    int	off = (int)(current_ScreenLine - ScreenLines);
+
+	    /* Restore the text displayed in the command line area. */
+	    for (r = 0; r < rows; ++r)
+	    {
+		mch_memmove(current_ScreenLine,
+			    screenline + r * Columns,
+			    (size_t)Columns * sizeof(schar_T));
+		mch_memmove(ScreenAttrs + off,
+			    screenattr + r * Columns,
+			    (size_t)Columns * sizeof(sattr_T));
+#ifdef FEAT_MBYTE
+		if (enc_utf8)
+		{
+		    mch_memmove(ScreenLinesUC + off,
+				screenlineUC + r * Columns,
+				(size_t)Columns * sizeof(u8char_T));
+		    for (i = 0; i < p_mco; ++i)
+			mch_memmove(ScreenLinesC[i] + off,
+				    screenlineC[i] + r * Columns,
+				    (size_t)Columns * sizeof(u8char_T));
+		}
+		if (enc_dbcs == DBCS_JPNU)
+		    mch_memmove(ScreenLines2 + off,
+				screenline2 + r * Columns,
+				(size_t)Columns * sizeof(schar_T));
+#endif
+		SCREEN_LINE(cmdline_row + r, 0, Columns, Columns, FALSE);
+	    }
+	    ret = 4;
+	}
+    }
+
+    vim_free(screenline);
+    vim_free(screenattr);
+#ifdef FEAT_MBYTE
+    if (enc_utf8)
+    {
+	vim_free(screenlineUC);
+	for (i = 0; i < p_mco; ++i)
+	    vim_free(screenlineC[i]);
+    }
+    if (enc_dbcs == DBCS_JPNU)
+	vim_free(screenline2);
+#endif
+
+    /* Show the intro message when appropriate. */
+    maybe_intro_message();
+
+    setcursor();
+
+    return ret;
+}
+
+/*
  * Changed something in the current window, at buffer line "lnum", that
  * requires that line and possibly other lines to be redrawn.
  * Used when entering/leaving Insert mode with the cursor on a folded line.
@@ -548,6 +693,11 @@ update_screen(type)
 #if defined(FEAT_SEARCH_EXTRA)
     end_search_hl();
 #endif
+#ifdef FEAT_INS_EXPAND
+    /* May need to redraw the popup menu. */
+    if (pum_visible())
+	pum_redraw();
+#endif
 
 #ifdef FEAT_WINDOWS
     /* Reset b_mod_set flags.  Going through all windows is probably faster
@@ -569,13 +719,8 @@ update_screen(type)
 	showmode();
 
     /* May put up an introductory message when not editing a file */
-    if (!did_intro && bufempty()
-	    && curbuf->b_fname == NULL
-#ifdef FEAT_WINDOWS
-	    && firstwin->w_next == NULL
-#endif
-	    && vim_strchr(p_shm, SHM_INTRO) == NULL)
-	intro_message(FALSE);
+    if (!did_intro)
+	maybe_intro_message();
     did_intro = TRUE;
 
 #ifdef FEAT_GUI
@@ -1633,6 +1778,10 @@ win_update(wp)
 # endif
 					syntax_check_changed(lnum)))
 #endif
+#ifdef FEAT_SEARCH_EXTRA
+				/* match in fixed position might need redraw */
+				||  wp->w_match_head != NULL
+#endif
 				)))))
 	{
 #ifdef FEAT_SEARCH_EXTRA
@@ -2319,18 +2468,28 @@ fold_line(wp, fold_count, foldinfo, lnum, row)
 	{
 	    int	    w = number_width(wp);
 	    long num;
+	    char *fmt = "%*ld ";
 
 	    if (len > w + 1)
 		len = w + 1;
 
-	    if (wp->w_p_nu)
-		/* 'number' */
+	    if (wp->w_p_nu && !wp->w_p_rnu)
+		/* 'number' + 'norelativenumber' */
 		num = (long)lnum;
 	    else
+	    {
 		/* 'relativenumber', don't use negative numbers */
 		num = labs((long)get_cursor_rel_lnum(wp, lnum));
+		if (num == 0 && wp->w_p_nu && wp->w_p_rnu)
+		{
+		    /* 'number' + 'relativenumber': cursor line shows absolute
+		     * line number */
+		    num = lnum;
+		    fmt = "%-*ld ";
+		}
+	    }
 
-	    sprintf((char *)buf, "%*ld ", w, num);
+	    sprintf((char *)buf, fmt, w, num);
 #ifdef FEAT_RIGHTLEFT
 	    if (wp->w_p_rl)
 		/* the line number isn't reversed */
@@ -3347,9 +3506,11 @@ win_line(wp, lnum, startrow, endrow, nochange)
 #endif
 
 #ifdef FEAT_SYN_HL
-    /* Cursor line highlighting for 'cursorline'.  Not when Visual mode is
-     * active, because it's not clear what is selected then. */
-    if (wp->w_p_cul && lnum == wp->w_cursor.lnum && !VIsual_active)
+    /* Cursor line highlighting for 'cursorline' in the current window.  Not
+     * when Visual mode is active, because it's not clear what is selected
+     * then. */
+    if (wp->w_p_cul && lnum == wp->w_cursor.lnum
+					 && !(wp == curwin  && VIsual_active))
     {
 	line_attr = hl_attr(HLF_CUL);
 	area_highlighting = TRUE;
@@ -3484,15 +3645,24 @@ win_line(wp, lnum, startrow, endrow, nochange)
 			    )
 		    {
 			long num;
+			char *fmt = "%*ld ";
 
-			if (wp->w_p_nu)
-			    /* 'number' */
+			if (wp->w_p_nu && !wp->w_p_rnu)
+			    /* 'number' + 'norelativenumber' */
 			    num = (long)lnum;
 			else
+			{
 			    /* 'relativenumber', don't use negative numbers */
 			    num = labs((long)get_cursor_rel_lnum(wp, lnum));
+			    if (num == 0 && wp->w_p_nu && wp->w_p_rnu)
+			    {
+				/* 'number' + 'relativenumber' */
+				num = lnum;
+				fmt = "%-*ld ";
+			    }
+			}
 
-			sprintf((char *)extra, "%*ld ",
+			sprintf((char *)extra, fmt,
 						number_width(wp), num);
 			if (wp->w_skipcol > 0)
 			    for (p_extra = extra; *p_extra == ' '; ++p_extra)
@@ -3513,7 +3683,8 @@ win_line(wp, lnum, startrow, endrow, nochange)
 		     * the current line differently.
 		     * TODO: Can we use CursorLine instead of CursorLineNr
 		     * when CursorLineNr isn't set? */
-		    if (wp->w_p_cul && lnum == wp->w_cursor.lnum)
+		    if ((wp->w_p_cul || wp->w_p_rnu)
+						 && lnum == wp->w_cursor.lnum)
 			char_attr = hl_attr(HLF_CLN);
 #endif
 		}
@@ -3553,6 +3724,11 @@ win_line(wp, lnum, startrow, endrow, nochange)
 		     * required when 'linebreak' is also set. */
 		    if (tocol == vcol)
 			tocol += n_extra;
+#ifdef FEAT_SYN_HL
+		    /* combine 'showbreak' with 'cursorline' */
+		    if (wp->w_p_cul && lnum == wp->w_cursor.lnum)
+			char_attr = hl_combine_attr(char_attr, HLF_CLN);
+#endif
 		}
 # endif
 	    }
@@ -4022,7 +4198,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 
 		/* If a double-width char doesn't fit at the left side display
 		 * a '<' in the first column.  Don't do this for unprintable
-		 * charactes. */
+		 * characters. */
 		if (n_skip > 0 && mb_l > 1 && n_extra == 0)
 		{
 		    n_extra = 1;
@@ -4269,7 +4445,20 @@ win_line(wp, lnum, startrow, endrow, nochange)
 		{
 		    /* tab amount depends on current column */
 		    n_extra = (int)wp->w_buffer->b_p_ts
-				   - VCOL_HLC % (int)wp->w_buffer->b_p_ts - 1;
+					- vcol % (int)wp->w_buffer->b_p_ts - 1;
+#ifdef FEAT_CONCEAL
+		    /* Tab alignment should be identical regardless of
+		     * 'conceallevel' value. So tab compensates of all
+		     * previous concealed characters, and thus resets vcol_off
+		     * and boguscols accumulated so far in the line. Note that
+		     * the tab can be longer than 'tabstop' when there
+		     * are concealed characters. */
+		    n_extra += vcol_off;
+		    vcol -= vcol_off;
+		    vcol_off = 0;
+		    col -= boguscols;
+		    boguscols = 0;
+#endif
 #ifdef FEAT_MBYTE
 		    mb_utf8 = FALSE;	/* don't draw as UTF-8 */
 #endif
@@ -6254,7 +6443,7 @@ win_redr_status(wp)
 	}
 	if (wp->w_buffer->b_p_ro)
 	{
-	    STRCPY(p + len, "[RO]");
+	    STRCPY(p + len, _("[RO]"));
 	    len += 4;
 	}
 
@@ -7057,7 +7246,7 @@ end_search_hl()
 {
     if (search_hl.rm.regprog != NULL)
     {
-	vim_free(search_hl.rm.regprog);
+	vim_regfree(search_hl.rm.regprog);
 	search_hl.rm.regprog = NULL;
     }
 }
@@ -7259,7 +7448,7 @@ next_search_hl(win, shl, lnum, mincol)
 	    if (shl == &search_hl)
 	    {
 		/* don't free regprog in the match list, it's a copy */
-		vim_free(shl->rm.regprog);
+		vim_regfree(shl->rm.regprog);
 		no_hlsearch = TRUE;
 	    }
 	    shl->rm.regprog = NULL;
@@ -9905,7 +10094,7 @@ get_trans_bufname(buf)
     buf_T	*buf;
 {
     if (buf_spname(buf) != NULL)
-	STRCPY(NameBuff, buf_spname(buf));
+	vim_strncpy(NameBuff, buf_spname(buf), MAXPATHL - 1);
     else
 	home_replace(buf, buf->b_fname, NameBuff, MAXPATHL, TRUE);
     trans_characters(NameBuff, MAXPATHL);
@@ -10254,12 +10443,12 @@ number_width(wp)
     int		n;
     linenr_T	lnum;
 
-    if (wp->w_p_nu)
-	/* 'number' */
-	lnum = wp->w_buffer->b_ml.ml_line_count;
-    else
-	/* 'relativenumber' */
+    if (wp->w_p_rnu && !wp->w_p_nu)
+	/* cursor line shows "0" */
 	lnum = wp->w_height;
+    else
+	/* cursor line shows absolute line number */
+	lnum = wp->w_buffer->b_ml.ml_line_count;
 
     if (lnum == wp->w_nrwidth_line_count)
 	return wp->w_nrwidth_width;
@@ -10280,3 +10469,23 @@ number_width(wp)
     return n;
 }
 #endif
+
+/*
+ * Return the current cursor column. This is the actual position on the
+ * screen. First column is 0.
+ */
+    int
+screen_screencol()
+{
+    return screen_cur_col;
+}
+
+/*
+ * Return the current cursor row. This is the actual position on the screen.
+ * First row is 0.
+ */
+    int
+screen_screenrow()
+{
+    return screen_cur_row;
+}

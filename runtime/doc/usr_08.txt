@@ -1,4 +1,4 @@
-*usr_08.txt*	For Vim version 7.3.  Last change: 2006 Jul 18
+*usr_08.txt*	For Vim version 7.4a.  Last change: 2006 Jul 18
 
 		     VIM USER MANUAL - by Bram Moolenaar
 
@@ -17,7 +17,7 @@ side by side.  All this is possible with split windows.
 |08.6|	Commands for all windows
 |08.7|	Viewing differences with vimdiff
 |08.8|	Various
-|08.9|  Tab pages
+|08.9|	Tab pages
 
      Next chapter: |usr_09.txt|  Using the GUI
  Previous chapter: |usr_07.txt|  Editing more than one file

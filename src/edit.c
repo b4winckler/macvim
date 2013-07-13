@@ -372,6 +372,8 @@ edit(cmdchar, startln, count)
      */
     if (cmdchar != 'r' && cmdchar != 'v')
     {
+	pos_T   save_cursor = curwin->w_cursor;
+
 # ifdef FEAT_EVAL
 	if (cmdchar == 'R')
 	    ptr = (char_u *)"r";
@@ -380,8 +382,29 @@ edit(cmdchar, startln, count)
 	else
 	    ptr = (char_u *)"i";
 	set_vim_var_string(VV_INSERTMODE, ptr, 1);
+	set_vim_var_string(VV_CHAR, NULL, -1);  /* clear v:char */
 # endif
 	apply_autocmds(EVENT_INSERTENTER, NULL, NULL, FALSE, curbuf);
+
+	/* Make sure the cursor didn't move.  Do call check_cursor_col() in
+	 * case the text was modified.  Since Insert mode was not started yet
+	 * a call to check_cursor_col() may move the cursor, especially with
+	 * the "A" command, thus set State to avoid that. Also check that the
+	 * line number is still valid (lines may have been deleted).
+	 * Do not restore if v:char was set to a non-empty string. */
+	if (!equalpos(curwin->w_cursor, save_cursor)
+# ifdef FEAT_EVAL
+		&& *get_vim_var_str(VV_CHAR) == NUL
+# endif
+		&& save_cursor.lnum <= curbuf->b_ml.ml_line_count)
+	{
+	    int save_state = State;
+
+	    curwin->w_cursor = save_cursor;
+	    State = INSERT;
+	    check_cursor_col();
+	    State = save_state;
+	}
     }
 #endif
 
@@ -1413,7 +1436,7 @@ docomplete:
 
 normalchar:
 	    /*
-	     * Insert a nomal character.
+	     * Insert a normal character.
 	     */
 #ifdef FEAT_AUTOCMD
 	    if (!p_paste)
@@ -1586,6 +1609,21 @@ ins_redraw(ready)
 	    }
 # endif
 	    last_cursormoved = curwin->w_cursor;
+	}
+#endif
+#ifdef FEAT_AUTOCMD
+	/* Trigger TextChangedI if b_changedtick differs. */
+	if (!ready && has_textchangedI()
+		&& last_changedtick != curbuf->b_changedtick
+# ifdef FEAT_INS_EXPAND
+		&& !pum_visible()
+# endif
+		)
+	{
+	    if (last_changedtick_buf == curbuf)
+		apply_autocmds(EVENT_TEXTCHANGEDI, NULL, NULL, FALSE, curbuf);
+	    last_changedtick_buf = curbuf;
+	    last_changedtick = curbuf->b_changedtick;
 	}
 #endif
 	if (must_redraw)
@@ -3106,7 +3144,7 @@ ins_compl_dictionaries(dict_start, pat, flags, thesaurus)
 
 theend:
     p_scs = save_p_scs;
-    vim_free(regmatch.regprog);
+    vim_regfree(regmatch.regprog);
     vim_free(buf);
 }
 
@@ -3375,6 +3413,9 @@ ins_compl_bs()
     if (compl_leader != NULL)
     {
 	ins_compl_new_leader();
+	if (compl_shown_match != NULL)
+	    /* Make sure current match is not a hidden item. */
+	    compl_curr_match = compl_shown_match;
 	return NUL;
     }
     return K_BS;
@@ -3436,6 +3477,7 @@ ins_compl_new_leader()
     }
 
     compl_enter_selects = !compl_used_match;
+    compl_shown_match = compl_curr_match = compl_first_match;
 
     /* Show the popup menu with a different set of matches. */
     ins_compl_show_pum();
@@ -3846,6 +3888,12 @@ ins_compl_prep(c)
 #endif
 	}
     }
+#ifdef FEAT_AUTOCMD
+    else if (ctrl_x_mode == CTRL_X_LOCAL_MSG)
+	/* Trigger the CompleteDone event to give scripts a chance to act
+	 * upon the (possibly failed) completion. */
+	apply_autocmds(EVENT_COMPLETEDONE, NULL, NULL, FALSE, curbuf);
+#endif
 
     /* reset continue_* if we left expansion-mode, if we stay they'll be
      * (re)set properly in ins_complete() */
@@ -4209,8 +4257,8 @@ ins_compl_get_exp(ini)
 			ins_buf->b_fname == NULL
 			    ? buf_spname(ins_buf)
 			    : ins_buf->b_sfname == NULL
-				? (char *)ins_buf->b_fname
-				: (char *)ins_buf->b_sfname);
+				? ins_buf->b_fname
+				: ins_buf->b_sfname);
 		(void)msg_trunc_attr(IObuff, TRUE, hl_attr(HLF_R));
 	    }
 	    else if (*e_cpt == NUL)
@@ -4312,13 +4360,7 @@ ins_compl_get_exp(ini)
 
 		/* May change home directory back to "~". */
 		tilde_replace(compl_pattern, num_matches, matches);
-		ins_compl_add_matches(num_matches, matches,
-#ifdef CASE_INSENSITIVE_FILENAME
-			TRUE
-#else
-			FALSE
-#endif
-			);
+		ins_compl_add_matches(num_matches, matches, p_fic || p_wic);
 	    }
 	    break;
 
@@ -7144,7 +7186,7 @@ cursor_up(n, upd_topline)
 	    /*
 	     * Count each sequence of folded lines as one logical line.
 	     */
-	    /* go to the the start of the current fold */
+	    /* go to the start of the current fold */
 	    (void)hasFolding(lnum, &lnum, NULL);
 
 	    while (n--)
@@ -7195,7 +7237,7 @@ cursor_down(n, upd_topline)
 	(void)hasFolding(lnum, NULL, &lnum);
 #endif
 	/* This fails if the cursor is already in the last line or would move
-	 * beyound the last line and '-' is in 'cpoptions' */
+	 * beyond the last line and '-' is in 'cpoptions' */
 	if (lnum >= curbuf->b_ml.ml_line_count
 		|| (lnum + n > curbuf->b_ml.ml_line_count
 		    && vim_strchr(p_cpo, CPO_MINUS) != NULL))
@@ -7697,7 +7739,7 @@ fix_indent()
 /*
  * return TRUE if 'cinkeys' contains the key "keytyped",
  * when == '*':	    Only if key is preceded with '*'	(indent before insert)
- * when == '!':	    Only if key is prededed with '!'	(don't insert)
+ * when == '!':	    Only if key is preceded with '!'	(don't insert)
  * when == ' ':	    Only if key is not preceded with '*'(indent afterwards)
  *
  * "keytyped" can have a few special values:
@@ -8100,16 +8142,18 @@ ins_reg()
     --no_mapping;
 
 #ifdef FEAT_EVAL
-    /*
-     * Don't call u_sync() while getting the expression,
-     * evaluating it or giving an error message for it!
-     */
+    /* Don't call u_sync() while typing the expression or giving an error
+     * message for it. Only call it explicitly. */
     ++no_u_sync;
     if (regname == '=')
     {
 # ifdef USE_IM_CONTROL
 	int	im_on = im_get_status();
 # endif
+	/* Sync undo when evaluating the expression calls setline() or
+	 * append(), so that it can be undone separately. */
+	u_sync_once = 2;
+
 	regname = get_expr_register();
 # ifdef USE_IM_CONTROL
 	/* Restore the Input Method. */
@@ -8149,6 +8193,9 @@ ins_reg()
 #ifdef FEAT_EVAL
     }
     --no_u_sync;
+    if (u_sync_once == 1)
+	ins_need_undo = TRUE;
+    u_sync_once = 0;
 #endif
 #ifdef FEAT_CMDL_INFO
     clear_showcmd();
@@ -8523,7 +8570,7 @@ ins_start_select(c)
 #endif
 
 /*
- * <Insert> key in Insert mode: toggle insert/remplace mode.
+ * <Insert> key in Insert mode: toggle insert/replace mode.
  */
     static void
 ins_insert(replaceState)
@@ -8900,7 +8947,7 @@ ins_bs(c, mode, inserted_space_p)
 	 */
 	if (	   mode == BACKSPACE_CHAR
 		&& ((p_sta && in_indent)
-		    || (curbuf->b_p_sts != 0
+		    || (get_sts_value() != 0
 			&& curwin->w_cursor.col > 0
 			&& (*(ml_get_cursor() - 1) == TAB
 			    || (*(ml_get_cursor() - 1) == ' '
@@ -8916,7 +8963,7 @@ ins_bs(c, mode, inserted_space_p)
 	    if (p_sta && in_indent)
 		ts = (int)get_sw_value();
 	    else
-		ts = (int)curbuf->b_p_sts;
+		ts = (int)get_sts_value();
 	    /* Compute the virtual column where we want to be.  Since
 	     * 'showbreak' may get in the way, need to get the last column of
 	     * the previous character. */
@@ -9136,9 +9183,8 @@ ins_mousescroll(dir)
 
     tpos = curwin->w_cursor;
 
-# if defined(FEAT_GUI) && defined(FEAT_WINDOWS)
-    /* Currently the mouse coordinates are only known in the GUI. */
-    if (gui.in_use && mouse_row >= 0 && mouse_col >= 0)
+# ifdef FEAT_WINDOWS
+    if (mouse_row >= 0 && mouse_col >= 0)
     {
 	int row, col;
 
@@ -9204,7 +9250,7 @@ ins_mousescroll(dir)
 # endif
     }
 
-# if defined(FEAT_GUI) && defined(FEAT_WINDOWS)
+# ifdef FEAT_WINDOWS
     curwin->w_redr_status = TRUE;
 
     curwin = old_curwin;
@@ -9624,7 +9670,7 @@ ins_tab()
      */
     if (!curbuf->b_p_et
 	    && !(p_sta && ind && curbuf->b_p_ts != get_sw_value())
-	    && curbuf->b_p_sts == 0)
+	    && get_sts_value() == 0)
 	return TRUE;
 
     if (stop_arrow() == FAIL)
@@ -9640,8 +9686,8 @@ ins_tab()
 
     if (p_sta && ind)		/* insert tab in indent, use 'shiftwidth' */
 	temp = (int)get_sw_value();
-    else if (curbuf->b_p_sts > 0) /* use 'softtabstop' when set */
-	temp = (int)curbuf->b_p_sts;
+    else if (curbuf->b_p_sts != 0) /* use 'softtabstop' when set */
+	temp = (int)get_sts_value();
     else			/* otherwise use 'tabstop' */
 	temp = (int)curbuf->b_p_ts;
     temp -= get_nolist_virtcol() % temp;
@@ -9669,7 +9715,7 @@ ins_tab()
     /*
      * When 'expandtab' not set: Replace spaces by TABs where possible.
      */
-    if (!curbuf->b_p_et && (curbuf->b_p_sts || (p_sta && ind)))
+    if (!curbuf->b_p_et && (get_sts_value() || (p_sta && ind)))
     {
 	char_u		*ptr;
 #ifdef FEAT_VREPLACE

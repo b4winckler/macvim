@@ -59,15 +59,6 @@
 #endif
 
 /*
- * On some systems, when we compile with the GUI, we always use it.  On Mac
- * there is no terminal version, and on Windows we can't figure out how to
- * fork one off with :gui.
- */
-#if defined(FEAT_GUI_MSWIN) || (defined(FEAT_GUI_MAC) && !defined(MACOS_X_UNIX))
-# define ALWAYS_USE_GUI
-#endif
-
-/*
  * On some systems scrolling needs to be done right away instead of in the
  * main loop.
  */
@@ -328,7 +319,12 @@ typedef struct Gui
 # endif
 #endif
 #ifdef FEAT_MBYTE
-    GuiFont	wide_font;	    /* 'guifontwide' font */
+    GuiFont	wide_font;	    /* Normal 'guifontwide' font */
+# ifndef FEAT_GUI_GTK
+    GuiFont	wide_bold_font;	    /* Bold 'guifontwide' font */
+    GuiFont	wide_ital_font;	    /* Italic 'guifontwide' font */
+    GuiFont	wide_boldital_font; /* Bold-Italic 'guifontwide' font */
+# endif
 #endif
 #ifdef FEAT_XFONTSET
     GuiFontset	fontset;	    /* set of fonts for multi-byte chars */

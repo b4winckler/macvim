@@ -1,7 +1,7 @@
 " These commands create the option window.
 "
 " Maintainer:	Bram Moolenaar <Bram@vim.org>
-" Last Change:	2012 Feb 22
+" Last Change:	2013 Jun 29
 
 " If there already is an option window, jump to that one.
 if bufwinnr("option-window") > 0
@@ -258,6 +258,8 @@ call append("$", "incsearch\tshow match for partly typed search command")
 call <SID>BinOptionG("is", &is)
 call append("$", "magic\tchange the way backslashes are used in search patterns")
 call <SID>BinOptionG("magic", &magic)
+call append("$", "regexpengine\tselect the default regexp engine used")
+call <SID>OptionG("re", &re)
 call append("$", "ignorecase\tignore case when using a search pattern")
 call <SID>BinOptionG("ic", &ic)
 call append("$", "smartcase\toverride 'ignorecase' when pattern has upper case characters")
@@ -1046,6 +1048,8 @@ if has("wildignore")
   call append("$", "wildignore\tlist of patterns to ignore files for file name completion")
   call <SID>OptionG("wig", &wig)
 endif
+call append("$", "fileignorecase\tignore case when using file names")
+call <SID>BinOptionG("fic", &fic)
 call append("$", "wildignorecase\tignore case when completing file names")
 call <SID>BinOptionG("wic", &wic)
 if has("wildmenu")
@@ -1205,6 +1209,10 @@ call <SID>OptionL("ims")
 if has("xim")
   call append("$", "imcmdline\twhen set always use IM when starting to edit a command line")
   call <SID>BinOptionG("imc", &imc)
+  call append("$", "imstatusfunc\tfunction to obtain IME status")
+  call <SID>OptionG("imsf", &imsf)
+  call append("$", "imactivatefunc\tfunction to enable/disable IME")
+  call <SID>OptionG("imaf", &imaf)
 endif
 
 

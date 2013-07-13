@@ -91,7 +91,7 @@ BEGIN
 	VALUE "FileDescription",	"Vi Improved - A Text Editor\0"
 	VALUE "FileVersion",		VIM_VERSION_MAJOR_STR ", " VIM_VERSION_MINOR_STR ", " VIM_VERSION_BUILD_STR ", " VIM_VERSION_PATCHLEVEL_STR  "\0"
 	VALUE "InternalName",		"VIM\0"
-	VALUE "LegalCopyright",		"Copyright \251 1996-2008\0"
+	VALUE "LegalCopyright",		"Copyright \251 1996\0"
 	VALUE "LegalTrademarks",	"Vim\0"
 	VALUE "OriginalFilename",	"VIM.EXE\0"
 	VALUE "ProductName",		"Vim\0"
@@ -116,8 +116,8 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 FONT 8, "Helv"
 BEGIN
     DEFPUSHBUTTON   "Cancel", IDCANCEL, 85, 60, 40, 14
-    CTEXT	    "Printing",IDC_PRINTTEXT1,23,15,157,8
-    CTEXT	    " ",IDC_PRINTTEXT2,23,25,157,8
-    CTEXT	    "Initializing...",IDC_PROGRESS,24,38,157,8
+    CTEXT	    "Printing",IDC_PRINTTEXT1,23,15,157,9
+    CTEXT	    " ",IDC_PRINTTEXT2,23,25,157,9
+    CTEXT	    "Initializing...",IDC_PROGRESS,24,38,157,9
     GROUPBOX	    "",IDC_BOX1,19,9,170,47
 END

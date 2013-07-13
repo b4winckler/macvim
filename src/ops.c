@@ -398,7 +398,7 @@ shift_block(oap, amount)
 #ifdef FEAT_RIGHTLEFT
     int			old_p_ri = p_ri;
 
-    p_ri = 0;			/* don't want revins in ident */
+    p_ri = 0;			/* don't want revins in indent */
 #endif
 
     State = INSERT;		/* don't want REPLACE for State */
@@ -1017,6 +1017,19 @@ put_register(name, reg)
     may_set_selection();
 # endif
 }
+
+    void
+free_register(reg)
+    void	*reg;
+{
+    struct yankreg tmp;
+
+    tmp = *y_current;
+    *y_current = *(struct yankreg *)reg;
+    free_yank_all();
+    vim_free(reg);
+    *y_current = tmp;
+}
 #endif
 
 #if defined(FEAT_MOUSE) || defined(PROTO)
@@ -1623,6 +1636,7 @@ op_delete(oap)
 #endif
     linenr_T		old_lcount = curbuf->b_ml.ml_line_count;
     int			did_yank = FALSE;
+    int			orig_regname = oap->regname;
 
     if (curbuf->b_ml.ml_flags & ML_EMPTY)	    /* nothing to do */
 	return OK;
@@ -1715,8 +1729,10 @@ op_delete(oap)
 	/*
 	 * Put deleted text into register 1 and shift number registers if the
 	 * delete contains a line break, or when a regname has been specified.
+	 * Use the register name from before adjust_clip_reg() may have
+	 * changed it.
 	 */
-	if (oap->regname != 0 || oap->motion_type == MLINE
+	if (orig_regname != 0 || oap->motion_type == MLINE
 				   || oap->line_count > 1 || oap->use_reg_one)
 	{
 	    y_current = &y_regs[9];
@@ -2191,7 +2207,8 @@ op_replace(oap, c)
 		{
 		    /* This is slow, but it handles replacing a single-byte
 		     * with a multi-byte and the other way around. */
-		    oap->end.col += (*mb_char2len)(c) - (*mb_char2len)(n);
+		    if (curwin->w_cursor.lnum == oap->end.lnum)
+			oap->end.col += (*mb_char2len)(c) - (*mb_char2len)(n);
 		    n = State;
 		    State = REPLACE;
 		    ins_char(c);
@@ -3348,6 +3365,12 @@ do_put(regname, dir, count, flags)
 	    return;
     }
 
+#ifdef FEAT_AUTOCMD
+    /* Autocommands may be executed when saving lines for undo, which may make
+     * y_array invalid.  Start undo now to avoid that. */
+    u_save(curwin->w_cursor.lnum, curwin->w_cursor.lnum + 1);
+#endif
+
     if (insert_string != NULL)
     {
 	y_type = MCHAR;
@@ -3474,7 +3497,9 @@ do_put(regname, dir, count, flags)
 #endif
 	if (dir == FORWARD)
 	    ++lnum;
-	if (u_save(lnum - 1, lnum) == FAIL)
+	/* In an empty buffer the empty line is going to be replaced, include
+	 * it in the saved lines. */
+	if ((bufempty() ? u_save(0, 2) : u_save(lnum - 1, lnum)) == FAIL)
 	    goto end;
 #ifdef FEAT_FOLDING
 	if (dir == FORWARD)
@@ -5819,6 +5844,8 @@ x11_export_final_selection()
 					       && len < 1024*1024 && len > 0)
     {
 #ifdef FEAT_MBYTE
+	int ok = TRUE;
+
 	/* The CUT_BUFFER0 is supposed to always contain latin1.  Convert from
 	 * 'enc' when it is a multi-byte encoding.  When 'enc' is an 8-bit
 	 * encoding conversion usually doesn't work, so keep the text as-is.
@@ -5833,6 +5860,7 @@ x11_export_final_selection()
 		int	intlen = len;
 		char_u	*conv_str;
 
+		vc.vc_fail = TRUE;
 		conv_str = string_convert(&vc, str, &intlen);
 		len = intlen;
 		if (conv_str != NULL)
@@ -5840,12 +5868,26 @@ x11_export_final_selection()
 		    vim_free(str);
 		    str = conv_str;
 		}
+		else
+		{
+		    ok = FALSE;
+		}
 		convert_setup(&vc, NULL, NULL);
 	    }
+	    else
+	    {
+		ok = FALSE;
+	    }
 	}
+
+	/* Do not store the string if conversion failed.  Better to use any
+	 * other selection than garbled text. */
+	if (ok)
 #endif
-	XStoreBuffer(dpy, (char *)str, (int)len, 0);
-	XFlush(dpy);
+	{
+	    XStoreBuffer(dpy, (char *)str, (int)len, 0);
+	    XFlush(dpy);
+	}
     }
 
     vim_free(str);

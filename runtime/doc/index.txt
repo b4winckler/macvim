@@ -1,4 +1,4 @@
-*index.txt*     For Vim version 7.3.  Last change: 2012 Jul 25
+*index.txt*     For Vim version 7.4a.  Last change: 2013 Jun 21
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -94,8 +94,8 @@ tag		char		action in Insert mode	~
 |i_CTRL-Z|	CTRL-Z		when 'insertmode' set: suspend Vim
 |i_<Esc>|	<Esc>		end insert mode (unless 'insertmode' set)
 |i_CTRL-[|	CTRL-[		same as <Esc>
-|i_CTRL-\_CTRL-N| CTRL-\ CTRL-N	 go to Normal mode
-|i_CTRL-\_CTRL-G| CTRL-\ CTRL-G	 go to mode specified with 'insertmode'
+|i_CTRL-\_CTRL-N| CTRL-\ CTRL-N	go to Normal mode
+|i_CTRL-\_CTRL-G| CTRL-\ CTRL-G	go to mode specified with 'insertmode'
 		CTRL-\ a - z	reserved for extensions
 		CTRL-\ others	not used
 |i_CTRL-]|	CTRL-]		trigger abbreviation
@@ -141,7 +141,7 @@ tag		char		action in Insert mode	~
 |i_<ScrollWheelUp>|	<ScrollWheelUp>		move window three lines up
 |i_<S-ScrollWheelUp>|	<S-ScrollWheelUp>	move window one page up
 |i_<ScrollWheelLeft>|	<ScrollWheelLeft>	move window six columns left
-|i_<S-ScrollWheelLeft>| <S-ScrollWheelLeft>	move window one page left
+|i_<S-ScrollWheelLeft>|	<S-ScrollWheelLeft>	move window one page left
 |i_<ScrollWheelRight>|	<ScrollWheelRight>	move window six columns right
 |i_<S-ScrollWheelRight>| <S-ScrollWheelRight>	move window one page right
 
@@ -212,8 +212,8 @@ tag		char	      note action in Normal mode	~
 |CTRL-Y|	CTRL-Y		   scroll N lines downwards
 |CTRL-Z|	CTRL-Z		   suspend program (or start new shell)
 		CTRL-[ <Esc>	   not used
-|CTRL-\_CTRL-N| CTRL-\ CTRL-N	   go to Normal mode (no-op)
-|CTRL-\_CTRL-G| CTRL-\ CTRL-G	   go to mode specified with 'insertmode'
+|CTRL-\_CTRL-N|	CTRL-\ CTRL-N	   go to Normal mode (no-op)
+|CTRL-\_CTRL-G|	CTRL-\ CTRL-G	   go to mode specified with 'insertmode'
 		CTRL-\ a - z	   reserved for extensions
 		CTRL-\ others      not used
 |CTRL-]|	CTRL-]		   :ta to ident under cursor
@@ -431,7 +431,7 @@ tag		char	      note action in Normal mode	~
 |<Insert>|	<Insert>	2  same as "i"
 |<Left>|	<Left>		1  same as "h"
 |<LeftMouse>|	<LeftMouse>	1  move cursor to the mouse click position
-|<MiddleMouse>| <MiddleMouse>	2  same as "gP" at the mouse click position
+|<MiddleMouse>|	<MiddleMouse>	2  same as "gP" at the mouse click position
 |<PageDown>|	<PageDown>	   same as CTRL-F
 |<PageUp>|	<PageUp>	   same as CTRL-B
 |<Right>|	<Right>		1  same as "l"
@@ -640,7 +640,7 @@ tag		char	      note action in Normal mode	~
 |[s|		[s		1  move to the previous misspelled word
 |[z|		[z		1  move to start of open fold
 |[{|		[{		1  cursor N times back to unmatched '{'
-|[<MiddleMouse> [<MiddleMouse>	2  same as "[p"
+|[<MiddleMouse>| [<MiddleMouse>	2  same as "[p"
 
 |]_CTRL-D|	] CTRL-D	   jump to first #define found in current and
 				   included files matching the word under the
@@ -680,7 +680,7 @@ tag		char	      note action in Normal mode	~
 |]s|		]s		1  move to next misspelled word
 |]z|		]z		1  move to end of open fold
 |]}|		]}		1  cursor N times forward to unmatched '}'
-|]<MiddleMouse> ]<MiddleMouse>	2  same as "]p"
+|]<MiddleMouse>| ]<MiddleMouse>	2  same as "]p"
 
 ==============================================================================
 2.4 Commands starting with 'g'						*g*
@@ -725,6 +725,7 @@ tag		char	      note action in Normal mode	~
 				   cursor N times, leave the cursor after it
 |gQ|		gQ		    switch to "Ex" mode with Vim editing
 |gR|		gR		2  enter Virtual Replace mode
+|gT|		gT		   go to the previous tab page
 |gU|		gU{motion}	2  make Nmove text uppercase
 |gV|		gV		   don't reselect the previous Visual area
 				   when executing a mapping or menu in Select
@@ -762,6 +763,7 @@ tag		char	      note action in Normal mode	~
 |gq|		gq{motion}	2  format Nmove text
 |gr|		gr{char}	2  virtual replace N chars with {char}
 |gs|		gs		   go to sleep for N seconds (default 1)
+|gt|		gt		   go to the next tab page
 |gu|		gu{motion}	2  make Nmove text lowercase
 |gv|		gv		   reselect the previous Visual area
 |gw|		gw{motion}	2  format Nmove text and keep cursor
@@ -799,6 +801,10 @@ tag		char	      note action in Normal mode	~
 |zE|		zE		   eliminate all folds
 |zF|		zF		   create a fold for N lines
 |zG|		zG		   mark word as good spelled word
+|zH|		zH		   when 'wrap' off scroll half a screenwidth
+				   to the right
+|zL|		zL		   when 'wrap' off scroll half a screenwidth
+				   to the left
 |zM|		zM		   set 'foldlevel' to zero
 |zN|		zN		   set 'foldenable'
 |zO|		zO		   open folds recursively
@@ -1011,8 +1017,8 @@ tag		command	      action in Command-line editing mode	~
 		CTRL-Z		not used (reserved for suspend)
 |c_<Esc>|	<Esc>		abandon command-line without executing it
 |c_<Esc>|	CTRL-[		same as <Esc>
-|c_CTRL-\_CTRL-N| CTRL-\ CTRL-N	 go to Normal mode, abandon command-line
-|c_CTRL-\_CTRL-G| CTRL-\ CTRL-G	 go to mode specified with 'insertmode',
+|c_CTRL-\_CTRL-N| CTRL-\ CTRL-N	go to Normal mode, abandon command-line
+|c_CTRL-\_CTRL-G| CTRL-\ CTRL-G	go to mode specified with 'insertmode',
 				abandon command-line
 		CTRL-\ a - d	reserved for extensions
 |c_CTRL-\_e|	CTRL-\ e {expr} replace the command line with the result of
@@ -1134,7 +1140,7 @@ tag	      command	      action ~
 |:cgetbuffer|	:cgetb[uffer]	get errors from buffer
 |:cgetexpr|	:cgete[xpr]	get errors from expr
 |:cgetfile|	:cg[etfile]	read file with error messages
-|:changes|	:cha[nges]	print the change list
+|:changes|	:changes	print the change list
 |:chdir|	:chd[ir]	change directory
 |:checkpath|	:che[ckpath]	list included files
 |:checktime|	:checkt[ime]	check timestamp of loaded buffers
@@ -1385,7 +1391,7 @@ tag	      command	      action ~
 |:promptrepl|	:promptr[epl]	open GUI dialog for search/replace
 |:perldo|	:perld[o]	execute Perl command for each line
 |:pop|		:po[p]		jump to older entry in tag stack
-|:popup|	:pop[up]	popup a menu by name
+|:popup|	:popu[p]	popup a menu by name
 |:ppop|		:pp[op]		":pop" in preview window
 |:preserve|	:pre[serve]	write all text to swap file
 |:previous|	:prev[ious]	go to previous file in argument list
@@ -1403,8 +1409,10 @@ tag	      command	      action ~
 |:pwd|		:pw[d]		print current directory
 |:py3|		:py3		execute Python 3 command
 |:python3|	:python3	same as :py3
+|:py3do|	:py3d[o]	execute Python 3 command for each line
 |:py3file|	:py3f[ile]	execute Python 3 script file
 |:python|	:py[thon]	execute Python command
+|:pydo|		:pyd[o]		execute Python command for each line
 |:pyfile|	:pyf[ile]	execute Python script file
 |:quit|		:q[uit]		quit current window (when one window quit Vim)
 |:quitall|	:quita[ll]	quit Vim
@@ -1471,7 +1479,7 @@ tag	      command	      action ~
 |:slast|	:sla[st]	split window and go to last file in the
 				argument list
 |:smagic|	:sm[agic]	:substitute with 'magic'
-|:smap|		:sma[p]		like ":map" but for Select mode
+|:smap|		:smap		like ":map" but for Select mode
 |:smapclear|	:smapc[lear]	remove all mappings for Select mode
 |:smenu|	:sme[nu]	add menu for Select mode
 |:snext|	:sn[ext]	split window and go to next file in the
@@ -1508,6 +1516,7 @@ tag	      command	      action ~
 |:sview|	:sv[iew]	split window and edit file read-only
 |:swapname|	:sw[apname]	show the name of the current swap file
 |:syntax|	:sy[ntax]	syntax highlighting
+|:syntime|	:synti[me]	measure syntax highlighting speed
 |:syncbind|	:sync[bind]	sync scroll binding
 |:t|		:t		same as ":copy"
 |:tNext|	:tN[ext]	jump to previous matching tag

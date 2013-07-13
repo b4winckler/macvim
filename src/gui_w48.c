@@ -25,6 +25,10 @@
 #ifdef DEBUG
 # include <tchar.h>
 #endif
+
+/* cproto fails on missing include files */
+#ifndef PROTO
+
 #ifndef __MINGW32__
 # include <shellapi.h>
 #endif
@@ -43,6 +47,8 @@
 #ifdef GLOBAL_IME
 # include "glbl_ime.h"
 #endif
+
+#endif /* PROTO */
 
 #ifdef FEAT_MENU
 # define MENUHINTS		/* show menu hints in command line */
@@ -317,10 +323,15 @@ static void TrackUserActivity __ARGS((UINT uMsg));
 
 /*
  * For control IME.
+ *
+ * These LOGFONT used for IME.
  */
 #ifdef FEAT_MBYTE
 # ifdef USE_IM_CONTROL
+/* holds LOGFONT for 'guifontwide' if available, otherwise 'guifont' */
 static LOGFONT norm_logfont;
+/* holds LOGFONT for 'guifont' always. */
+static LOGFONT sub_logfont;
 # endif
 #endif
 
@@ -1211,7 +1222,7 @@ gui_mch_set_text_area_pos(int x, int y, int w, int h)
 
     /* When side scroll bar is unshown, the size of window will change.
      * then, the text area move left or right. thus client rect should be
-     * forcely redraw. (Yasuhiro Matsumoto) */
+     * forcedly redrawn. (Yasuhiro Matsumoto) */
     if (oldx != x || oldy != y)
     {
 	InvalidateRect(s_hwnd, NULL, FALSE);
@@ -2446,7 +2457,6 @@ gui_mch_update_tabline(void)
     TCITEM	tie;
     int		nr = 0;
     int		curtabidx = 0;
-    RECT	rc;
 #ifdef FEAT_MBYTE
     static int	use_unicode = FALSE;
     int		uu;
@@ -2473,13 +2483,16 @@ gui_mch_update_tabline(void)
     tie.mask = TCIF_TEXT;
     tie.iImage = -1;
 
+    /* Disable redraw for tab updates to eliminate O(N^2) draws. */
+    SendMessage(s_tabhwnd, WM_SETREDRAW, (WPARAM)FALSE, 0);
+
     /* Add a label for each tab page.  They all contain the same text area. */
     for (tp = first_tabpage; tp != NULL; tp = tp->tp_next, ++nr)
     {
 	if (tp == curtab)
 	    curtabidx = nr;
 
-	if (!TabCtrl_GetItemRect(s_tabhwnd, nr, &rc))
+	if (nr >= TabCtrl_GetItemCount(s_tabhwnd))
 	{
 	    /* Add the tab */
 	    tie.pszText = "-Empty-";
@@ -2513,11 +2526,16 @@ gui_mch_update_tabline(void)
     }
 
     /* Remove any old labels. */
-    while (TabCtrl_GetItemRect(s_tabhwnd, nr, &rc))
+    while (nr < TabCtrl_GetItemCount(s_tabhwnd))
 	TabCtrl_DeleteItem(s_tabhwnd, nr);
 
     if (TabCtrl_GetCurSel(s_tabhwnd) != curtabidx)
 	TabCtrl_SetCurSel(s_tabhwnd, curtabidx);
+
+    /* Re-enable redraw and redraw. */
+    SendMessage(s_tabhwnd, WM_SETREDRAW, (WPARAM)TRUE, 0);
+    RedrawWindow(s_tabhwnd, NULL, NULL,
+		    RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
 }
 
 /*
@@ -3077,6 +3095,74 @@ logfont2name(LOGFONT lf)
     return res;
 }
 
+
+#ifdef FEAT_MBYTE_IME
+/*
+ * Set correct LOGFONT to IME.  Use 'guifontwide' if available, otherwise use
+ * 'guifont'
+ */
+    static void
+update_im_font(void)
+{
+    LOGFONT	lf_wide;
+
+    if (p_guifontwide != NULL && *p_guifontwide != NUL
+	    && gui.wide_font != NOFONT
+	    && GetObject((HFONT)gui.wide_font, sizeof(lf_wide), &lf_wide))
+	norm_logfont = lf_wide;
+    else
+	norm_logfont = sub_logfont;
+    im_set_font(&norm_logfont);
+}
+#endif
+
+#ifdef FEAT_MBYTE
+/*
+ * Handler of gui.wide_font (p_guifontwide) changed notification.
+ */
+    void
+gui_mch_wide_font_changed()
+{
+# ifndef MSWIN16_FASTTEXT
+    LOGFONT lf;
+# endif
+
+# ifdef FEAT_MBYTE_IME
+    update_im_font();
+# endif
+
+# ifndef MSWIN16_FASTTEXT
+    gui_mch_free_font(gui.wide_ital_font);
+    gui.wide_ital_font = NOFONT;
+    gui_mch_free_font(gui.wide_bold_font);
+    gui.wide_bold_font = NOFONT;
+    gui_mch_free_font(gui.wide_boldital_font);
+    gui.wide_boldital_font = NOFONT;
+
+    if (gui.wide_font
+	&& GetObject((HFONT)gui.wide_font, sizeof(lf), &lf))
+    {
+	if (!lf.lfItalic)
+	{
+	    lf.lfItalic = TRUE;
+	    gui.wide_ital_font = get_font_handle(&lf);
+	    lf.lfItalic = FALSE;
+	}
+	if (lf.lfWeight < FW_BOLD)
+	{
+	    lf.lfWeight = FW_BOLD;
+	    gui.wide_bold_font = get_font_handle(&lf);
+	    if (!lf.lfItalic)
+	    {
+		lf.lfItalic = TRUE;
+		gui.wide_boldital_font = get_font_handle(&lf);
+	    }
+	}
+    }
+# endif
+}
+#endif
+
 /*
  * Initialise vim to use the font with the given name.
  * Return FAIL if the font could not be loaded, OK otherwise.
@@ -3099,9 +3185,10 @@ gui_mch_init_font(char_u *font_name, int fontset)
 	font_name = lf.lfFaceName;
 #if defined(FEAT_MBYTE_IME) || defined(GLOBAL_IME)
     norm_logfont = lf;
+    sub_logfont = lf;
 #endif
 #ifdef FEAT_MBYTE_IME
-    im_set_font(&lf);
+    update_im_font();
 #endif
     gui_mch_free_font(gui.norm_font);
     gui.norm_font = font;
@@ -3212,27 +3299,27 @@ gui_mch_settitle(
  * misc2.c! */
 static LPCSTR mshape_idcs[] =
 {
-    MAKEINTRESOURCE(IDC_ARROW),		/* arrow */
-    MAKEINTRESOURCE(0),			/* blank */
-    MAKEINTRESOURCE(IDC_IBEAM),		/* beam */
-    MAKEINTRESOURCE(IDC_SIZENS),	/* updown */
-    MAKEINTRESOURCE(IDC_SIZENS),	/* udsizing */
-    MAKEINTRESOURCE(IDC_SIZEWE),	/* leftright */
-    MAKEINTRESOURCE(IDC_SIZEWE),	/* lrsizing */
-    MAKEINTRESOURCE(IDC_WAIT),		/* busy */
+    IDC_ARROW,			/* arrow */
+    MAKEINTRESOURCE(0),		/* blank */
+    IDC_IBEAM,			/* beam */
+    IDC_SIZENS,			/* updown */
+    IDC_SIZENS,			/* udsizing */
+    IDC_SIZEWE,			/* leftright */
+    IDC_SIZEWE,			/* lrsizing */
+    IDC_WAIT,			/* busy */
 #ifdef WIN3264
-    MAKEINTRESOURCE(IDC_NO),		/* no */
+    IDC_NO,			/* no */
 #else
-    MAKEINTRESOURCE(IDC_ICON),		/* no */
+    IDC_ICON,			/* no */
 #endif
-    MAKEINTRESOURCE(IDC_ARROW),		/* crosshair */
-    MAKEINTRESOURCE(IDC_ARROW),		/* hand1 */
-    MAKEINTRESOURCE(IDC_ARROW),		/* hand2 */
-    MAKEINTRESOURCE(IDC_ARROW),		/* pencil */
-    MAKEINTRESOURCE(IDC_ARROW),		/* question */
-    MAKEINTRESOURCE(IDC_ARROW),		/* right-arrow */
-    MAKEINTRESOURCE(IDC_UPARROW),	/* up-arrow */
-    MAKEINTRESOURCE(IDC_ARROW)		/* last one */
+    IDC_ARROW,			/* crosshair */
+    IDC_ARROW,			/* hand1 */
+    IDC_ARROW,			/* hand2 */
+    IDC_ARROW,			/* pencil */
+    IDC_ARROW,			/* question */
+    IDC_ARROW,			/* right-arrow */
+    IDC_UPARROW,		/* up-arrow */
+    IDC_ARROW			/* last one */
 };
 
     void
@@ -3245,7 +3332,7 @@ mch_set_mouse_shape(int shape)
     else
     {
 	if (shape >= MSHAPE_NUMBERED)
-	    idc = MAKEINTRESOURCE(IDC_ARROW);
+	    idc = IDC_ARROW;
 	else
 	    idc = mshape_idcs[shape];
 #ifdef SetClassLongPtr

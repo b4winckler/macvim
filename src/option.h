@@ -453,6 +453,7 @@ EXTERN int	p_exrc;		/* 'exrc' */
 EXTERN char_u	*p_fencs;	/* 'fileencodings' */
 #endif
 EXTERN char_u	*p_ffs;		/* 'fileformats' */
+EXTERN long	p_fic;		/* 'fileignorecase' */
 #ifdef FEAT_FOLDING
 EXTERN char_u	*p_fcl;		/* 'foldclose' */
 EXTERN long	p_fdls;		/* 'foldlevelstart' */
@@ -569,6 +570,8 @@ EXTERN char_u	*p_iconstring;	/* 'iconstring' */
 EXTERN int	p_ic;		/* 'ignorecase' */
 #if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
 EXTERN char_u	*p_imak;	/* 'imactivatekey' */
+EXTERN char_u	*p_imaf;	/* 'imactivatefunc' */
+EXTERN char_u	*p_imsf;	/* 'imstatusfunc' */
 #endif
 #ifdef USE_IM_CONTROL
 EXTERN int	p_imcmdline;	/* 'imcmdline' */
@@ -664,6 +667,7 @@ EXTERN char_u	*p_cdpath;	/* 'cdpath' */
 EXTERN long	p_rdt;		/* 'redrawtime' */
 #endif
 EXTERN int	p_remap;	/* 'remap' */
+EXTERN long	p_re;		/* 'regexpengine' */
 EXTERN long	p_report;	/* 'report' */
 #if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
 EXTERN long	p_pvh;		/* 'previewheight' */

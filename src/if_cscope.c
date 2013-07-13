@@ -539,12 +539,27 @@ cs_add_common(arg1, arg2, flags)
     char	*fname2 = NULL;
     char	*ppath = NULL;
     int		i;
+#ifdef FEAT_MODIFY_FNAME
+    int		len;
+    int		usedlen = 0;
+    char_u	*fbuf = NULL;
+#endif
 
     /* get the filename (arg1), expand it, and try to stat it */
     if ((fname = (char *)alloc(MAXPATHL + 1)) == NULL)
 	goto add_err;
 
     expand_env((char_u *)arg1, (char_u *)fname, MAXPATHL);
+#ifdef FEAT_MODIFY_FNAME
+    len = (int)STRLEN(fname);
+    fbuf = (char_u *)fname;
+    (void)modify_fname((char_u *)":p", &usedlen,
+					      (char_u **)&fname, &fbuf, &len);
+    if (fname == NULL)
+	goto add_err;
+    fname = (char *)vim_strnsave((char_u *)fname, len);
+    vim_free(fbuf);
+#endif
     ret = stat(fname, &statbuf);
     if (ret < 0)
     {
@@ -982,6 +997,15 @@ err_closing:
 	vim_free(ppath);
 
 #if defined(UNIX)
+# if defined(HAVE_SETSID) || defined(HAVE_SETPGID)
+	/* Change our process group to avoid cscope receiving SIGWINCH. */
+#  if defined(HAVE_SETSID)
+	(void)setsid();
+#  else
+	if (setpgid(0, 0) == -1)
+	    PERROR(_("cs_create_connection setpgid failed"));
+#  endif
+# endif
 	if (execl("/bin/sh", "sh", "-c", cmd, (char *)NULL) == -1)
 	    PERROR(_("cs_create_connection exec failed"));
 
@@ -1192,9 +1216,8 @@ cs_find_common(opt, pat, forceit, verbose, use_ll, cmdline)
     if (nummatches == NULL)
 	return FALSE;
 
-    /* send query to all open connections, then count the total number
-     * of matches so we can alloc matchesp all in one swell foop
-     */
+    /* Send query to all open connections, then count the total number
+     * of matches so we can alloc all in one swell foop. */
     for (i = 0; i < csinfo_size; i++)
 	nummatches[i] = 0;
     totmatches = 0;
@@ -2461,13 +2484,13 @@ cs_reset(eap)
 /*
  * PRIVATE: cs_resolve_file
  *
- * construct the full pathname to a file found in the cscope database.
+ * Construct the full pathname to a file found in the cscope database.
  * (Prepends ppath, if there is one and if it's not already prepended,
  * otherwise just uses the name found.)
  *
- * we need to prepend the prefix because on some cscope's (e.g., the one that
+ * We need to prepend the prefix because on some cscope's (e.g., the one that
  * ships with Solaris 2.6), the output never has the prefix prepended.
- * contrast this with my development system (Digital Unix), which does.
+ * Contrast this with my development system (Digital Unix), which does.
  */
     static char *
 cs_resolve_file(i, name)
@@ -2494,13 +2517,11 @@ cs_resolve_file(i, name)
 	if (csdir != NULL)
 	{
 	    vim_strncpy(csdir, (char_u *)csinfo[i].fname,
-		    gettail((char_u *)csinfo[i].fname) - 1 - (char_u *)csinfo[i].fname);
+		                       gettail((char_u *)csinfo[i].fname)
+						 - (char_u *)csinfo[i].fname);
 	    len += (int)STRLEN(csdir);
 	}
     }
-
-    if ((fullname = (char *)alloc(len)) == NULL)
-	return NULL;
 
     /* Note/example: this won't work if the cscope output already starts
      * "../.." and the prefix path is also "../..".  if something like this
@@ -2512,16 +2533,20 @@ cs_resolve_file(i, name)
 	    && name[0] != '\\' && name[1] != ':'
 #endif
        )
-	(void)sprintf(fullname, "%s/%s", csinfo[i].ppath, name);
-    else if (csdir != NULL && csinfo[i].fname != NULL && STRLEN(csdir) > 0)
+    {
+	if ((fullname = (char *)alloc(len)) != NULL)
+	    (void)sprintf(fullname, "%s/%s", csinfo[i].ppath, name);
+    }
+    else if (csdir != NULL && csinfo[i].fname != NULL && *csdir != NUL)
     {
 	/* Check for csdir to be non empty to avoid empty path concatenated to
-	 * cscope output. TODO: avoid the unnecessary alloc/free of fullname. */
-	vim_free(fullname);
+	 * cscope output. */
 	fullname = (char *)concat_fnames(csdir, (char_u *)name, TRUE);
     }
     else
-	(void)sprintf(fullname, "%s", name);
+    {
+	fullname = (char *)vim_strsave((char_u *)name);
+    }
 
     vim_free(csdir);
     return fullname;

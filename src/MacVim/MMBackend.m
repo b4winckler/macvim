@@ -2092,15 +2092,8 @@ static void netbeansReadCallback(CFSocketRef s,
         [self setImState:YES];
     } else if (DeactivatedImMsgID == msgid) {
         [self setImState:NO];
-    } else if (ForceRedrawMsgID == msgid) {
-        // TODO: Figure out if there is a "right" way to redraw the screen.
-        // This magic sequence of calls seems to clear the screen properly.
-        screenclear();
-        update_screen(NOT_VALID);
-        setcursor();
-        out_flush();
-        gui_update_cursor(FALSE, FALSE);
-        maketitle();
+    } else if (BackingPropertiesChangedMsgID == msgid) {
+        [self redrawScreen];
     } else {
         ASLogWarn(@"Unknown message received (msgid=%d)", msgid);
     }
@@ -3035,13 +3028,10 @@ static void netbeansReadCallback(CFSocketRef s,
 
         (*balloonEval->msgCB)(balloonEval, 0);
 
-        [[MMBackend sharedInstance] queueMessage:SetTooltipMsgID properties:
+        [self queueMessage:SetTooltipMsgID properties:
             [NSDictionary dictionaryWithObject:(lastToolTip ? lastToolTip : @"")
                                         forKey:@"toolTip"]];
-
-        // NOTE: We have to explicitly stop the run loop since timer events do
-        // not cause CFRunLoopRunInMode() to exit.
-        CFRunLoopStop(CFRunLoopGetCurrent());
+        [self flushQueue:YES];
     }
 }
 #endif

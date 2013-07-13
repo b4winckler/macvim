@@ -82,6 +82,9 @@ open_buffer(read_stdin, eap, flags)
 #ifdef FEAT_AUTOCMD
     buf_T	*old_curbuf;
 #endif
+#ifdef FEAT_SYN_HL
+    long	old_tw = curbuf->b_p_tw;
+#endif
 
     /*
      * The 'readonly' flag is only set when BF_NEVERLOADED is being reset.
@@ -113,6 +116,10 @@ open_buffer(read_stdin, eap, flags)
 	}
 	EMSG(_("E83: Cannot allocate buffer, using other one..."));
 	enter_buffer(curbuf);
+#ifdef FEAT_SYN_HL
+	if (old_tw != curbuf->b_p_tw)
+	    check_colorcolumn(curwin);
+#endif
 	return FAIL;
     }
 
@@ -645,6 +652,9 @@ free_buffer(buf)
     buf_T	*buf;
 {
     free_buffer_stuff(buf, TRUE);
+#ifdef FEAT_EVAL
+    unref_var_dict(buf->b_vars);
+#endif
 #ifdef FEAT_LUA
     lua_buffer_free(buf);
 #endif
@@ -686,8 +696,8 @@ free_buffer_stuff(buf, free_options)
 #endif
     }
 #ifdef FEAT_EVAL
-    vars_clear(&buf->b_vars.dv_hashtab); /* free all internal variables */
-    hash_init(&buf->b_vars.dv_hashtab);
+    vars_clear(&buf->b_vars->dv_hashtab); /* free all internal variables */
+    hash_init(&buf->b_vars->dv_hashtab);
 #endif
 #ifdef FEAT_USR_CMDS
     uc_clear(&buf->b_ucmds);		/* clear local user commands */
@@ -790,6 +800,9 @@ handle_swap_exists(old_curbuf)
 # if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
     cleanup_T	cs;
 # endif
+#ifdef FEAT_SYN_HL
+    long	old_tw = curbuf->b_p_tw;
+#endif
 
     if (swap_exists_action == SEA_QUIT)
     {
@@ -808,7 +821,13 @@ handle_swap_exists(old_curbuf)
 	if (!buf_valid(old_curbuf) || old_curbuf == curbuf)
 	    old_curbuf = buflist_new(NULL, NULL, 1L, BLN_CURBUF | BLN_LISTED);
 	if (old_curbuf != NULL)
+	{
 	    enter_buffer(old_curbuf);
+#ifdef FEAT_SYN_HL
+	    if (old_tw != curbuf->b_p_tw)
+		check_colorcolumn(curwin);
+#endif
+	}
 	/* If "old_curbuf" is NULL we are in big trouble here... */
 
 # if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
@@ -916,7 +935,8 @@ do_bufdel(command, arg, addr_count, start_bnr, end_bnr, forceit)
 		if (!VIM_ISDIGIT(*arg))
 		{
 		    p = skiptowhite_esc(arg);
-		    bnr = buflist_findpat(arg, p, command == DOBUF_WIPE, FALSE);
+		    bnr = buflist_findpat(arg, p, command == DOBUF_WIPE,
+								FALSE, FALSE);
 		    if (bnr < 0)	    /* failed */
 			break;
 		    arg = p;
@@ -968,6 +988,10 @@ do_bufdel(command, arg, addr_count, start_bnr, end_bnr, forceit)
 
     return errormsg;
 }
+#endif /* FEAT_LISTCMDS */
+
+#if defined(FEAT_LISTCMDS) || defined(FEAT_PYTHON) \
+	|| defined(FEAT_PYTHON3) || defined(PROTO)
 
 /*
  * Implementation of the commands for the buffer list.
@@ -1348,8 +1372,7 @@ do_buffer(action, start, dir, count, forceit)
 
     return OK;
 }
-
-#endif /* FEAT_LISTCMDS */
+#endif
 
 /*
  * Set current buffer to "buf".  Executes autocommands and closes current
@@ -1368,6 +1391,9 @@ set_curbuf(buf, action)
     buf_T	*prevbuf;
     int		unload = (action == DOBUF_UNLOAD || action == DOBUF_DEL
 						     || action == DOBUF_WIPE);
+#ifdef FEAT_SYN_HL
+    long	old_tw = curbuf->b_p_tw;
+#endif
 
     setpcmark();
     if (!cmdmod.keepalt)
@@ -1434,12 +1460,19 @@ set_curbuf(buf, action)
 # endif
        )
 #endif
+    {
 	enter_buffer(buf);
+#ifdef FEAT_SYN_HL
+	if (old_tw != curbuf->b_p_tw)
+	    check_colorcolumn(curwin);
+#endif
+    }
 }
 
 /*
  * Enter a new current buffer.
- * Old curbuf must have been abandoned already!
+ * Old curbuf must have been abandoned already!  This also means "curbuf" may
+ * be pointing to freed memory.
  */
     void
 enter_buffer(buf)
@@ -1671,6 +1704,17 @@ buflist_new(ffname, sfname, lnum, flags)
 	    vim_free(ffname);
 	    return NULL;
 	}
+#ifdef FEAT_EVAL
+	/* init b: variables */
+	buf->b_vars = dict_alloc();
+	if (buf->b_vars == NULL)
+	{
+	    vim_free(ffname);
+	    vim_free(buf);
+	    return NULL;
+	}
+	init_var_dict(buf->b_vars, &buf->b_bufvar, VAR_SCOPE);
+#endif
     }
 
     if (ffname != NULL)
@@ -1706,6 +1750,11 @@ buflist_new(ffname, sfname, lnum, flags)
 #endif
 	/* buf->b_nwindows = 0; why was this here? */
 	free_buffer_stuff(buf, FALSE);	/* delete local variables et al. */
+
+	/* Init the options. */
+	buf->b_p_initialized = FALSE;
+	buf_copy_options(buf, BCO_ENTER);
+
 #ifdef FEAT_KEYMAP
 	/* need to reload lmaps and set b:keymap_name */
 	curbuf->b_kmap_state |= KEYMAP_INIT;
@@ -1750,10 +1799,6 @@ buflist_new(ffname, sfname, lnum, flags)
     buf->b_wininfo->wi_fpos.lnum = lnum;
     buf->b_wininfo->wi_win = curwin;
 
-#ifdef FEAT_EVAL
-    /* init b: variables */
-    init_var_dict(&buf->b_vars, &buf->b_bufvar, VAR_SCOPE);
-#endif
 #ifdef FEAT_SYN_HL
     hash_init(&buf->b_s.b_keywtab);
     hash_init(&buf->b_s.b_keywtab_ic);
@@ -1860,7 +1905,7 @@ free_buf_options(buf, free_p_ff)
 #ifdef FEAT_SPELL
     clear_string_option(&buf->b_s.b_p_spc);
     clear_string_option(&buf->b_s.b_p_spf);
-    vim_free(buf->b_s.b_cap_prog);
+    vim_regfree(buf->b_s.b_cap_prog);
     buf->b_s.b_cap_prog = NULL;
     clear_string_option(&buf->b_s.b_p_spl);
 #endif
@@ -1967,7 +2012,7 @@ buflist_getfile(n, lnum, options, forceit)
 	 * "buf" if one exists */
 	if (swb_flags & SWB_USEOPEN)
 	    wp = buf_jump_open_win(buf);
-	/* If 'switchbuf' contians "usetab": jump to first window in any tab
+	/* If 'switchbuf' contains "usetab": jump to first window in any tab
 	 * page containing "buf" if one exists */
 	if (wp == NULL && (swb_flags & SWB_USETAB))
 	    wp = buf_jump_open_tab(buf);
@@ -2102,18 +2147,20 @@ buflist_findname_stat(ffname, stp)
     return NULL;
 }
 
-#if defined(FEAT_LISTCMDS) || defined(FEAT_EVAL) || defined(FEAT_PERL) || defined(PROTO)
+#if defined(FEAT_LISTCMDS) || defined(FEAT_EVAL) || defined(FEAT_PERL) \
+	|| defined(PROTO)
 /*
  * Find file in buffer list by a regexp pattern.
  * Return fnum of the found buffer.
  * Return < 0 for error.
  */
     int
-buflist_findpat(pattern, pattern_end, unlisted, diffmode)
+buflist_findpat(pattern, pattern_end, unlisted, diffmode, curtab_only)
     char_u	*pattern;
     char_u	*pattern_end;	/* pointer to first char after pattern */
     int		unlisted;	/* find unlisted buffers */
     int		diffmode UNUSED; /* find diff-mode buffers only */
+    int		curtab_only;	/* find buffers in current tab only */
 {
     buf_T	*buf;
     regprog_T	*prog;
@@ -2181,6 +2228,23 @@ buflist_findpat(pattern, pattern_end, unlisted, diffmode)
 #endif
 			    && buflist_match(prog, buf) != NULL)
 		    {
+			if (curtab_only)
+			{
+			    /* Ignore the match if the buffer is not open in
+			     * the current tab. */
+#ifdef FEAT_WINDOWS
+			    win_T	*wp;
+
+			    for (wp = firstwin; wp != NULL; wp = wp->w_next)
+				if (wp->w_buffer == buf)
+				    break;
+			    if (wp == NULL)
+				continue;
+#else
+			    if (curwin->w_buffer != buf)
+				continue;
+#endif
+			}
 			if (match >= 0)		/* already found a match */
 			{
 			    match = -2;
@@ -2189,7 +2253,7 @@ buflist_findpat(pattern, pattern_end, unlisted, diffmode)
 			match = buf->b_fnum;	/* remember first match */
 		    }
 
-		vim_free(prog);
+		vim_regfree(prog);
 		if (match >= 0)			/* found one match */
 		    break;
 	    }
@@ -2298,14 +2362,14 @@ ExpandBufnames(pat, num_file, file, options)
 		*file = (char_u **)alloc((unsigned)(count * sizeof(char_u *)));
 		if (*file == NULL)
 		{
-		    vim_free(prog);
+		    vim_regfree(prog);
 		    if (patc != pat)
 			vim_free(patc);
 		    return FAIL;
 		}
 	    }
 	}
-	vim_free(prog);
+	vim_regfree(prog);
 	if (count)		/* match(es) found, break here */
 	    break;
     }
@@ -2354,12 +2418,7 @@ fname_match(prog, name)
     if (name != NULL)
     {
 	regmatch.regprog = prog;
-#ifdef CASE_INSENSITIVE_FILENAME
-	regmatch.rm_ic = TRUE;		/* Always ignore case */
-#else
-	regmatch.rm_ic = FALSE;		/* Never ignore case */
-#endif
-
+	regmatch.rm_ic = p_fic;	/* ignore case when 'fileignorecase' is set */
 	if (vim_regexec(&regmatch, name, (colnr_T)0))
 	    match = name;
 	else
@@ -2639,7 +2698,7 @@ buflist_list(eap)
 	    continue;
 	msg_putchar('\n');
 	if (buf_spname(buf) != NULL)
-	    STRCPY(NameBuff, buf_spname(buf));
+	    vim_strncpy(NameBuff, buf_spname(buf), MAXPATHL - 1);
 	else
 	    home_replace(buf, buf->b_fname, NameBuff, MAXPATHL, TRUE);
 
@@ -3062,7 +3121,7 @@ fileinfo(fullname, shorthelp, dont_truncate)
 
     *p++ = '"';
     if (buf_spname(curbuf) != NULL)
-	STRCPY(p, buf_spname(curbuf));
+	vim_strncpy(p, buf_spname(curbuf), IOSIZE - (p - buffer) - 1);
     else
     {
 	if (!fullname && curbuf->b_fname != NULL)
@@ -3087,7 +3146,7 @@ fileinfo(fullname, shorthelp, dont_truncate)
 #endif
 					? _("[New file]") : "",
 	    (curbuf->b_flags & BF_READERR) ? _("[Read errors]") : "",
-	    curbuf->b_p_ro ? (shortmess(SHM_RO) ? "[RO]"
+	    curbuf->b_p_ro ? (shortmess(SHM_RO) ? _("[RO]")
 						      : _("[readonly]")) : "",
 	    (curbufIsChanged() || (curbuf->b_flags & BF_WRITE_MASK)
 							  || curbuf->b_p_ro) ?
@@ -3242,12 +3301,15 @@ maketitle()
 	{
 	    /* format: "fname + (path) (1 of 2) - VIM" */
 
+#define SPACE_FOR_FNAME (IOSIZE - 100)
+#define SPACE_FOR_DIR   (IOSIZE - 20)
+#define SPACE_FOR_ARGNR (IOSIZE - 10)  /* at least room for " - VIM" */
 	    if (curbuf->b_fname == NULL)
-		vim_strncpy(buf, (char_u *)_("[No Name]"), IOSIZE - 100);
+		vim_strncpy(buf, (char_u *)_("[No Name]"), SPACE_FOR_FNAME);
 	    else
 	    {
 		p = transstr(gettail(curbuf->b_fname));
-		vim_strncpy(buf, p, IOSIZE - 100);
+		vim_strncpy(buf, p, SPACE_FOR_FNAME);
 		vim_free(p);
 	    }
 
@@ -3271,7 +3333,7 @@ maketitle()
 		buf[off++] = ' ';
 		buf[off++] = '(';
 		home_replace(curbuf, curbuf->b_ffname,
-					       buf + off, IOSIZE - off, TRUE);
+					buf + off, SPACE_FOR_DIR - off, TRUE);
 #ifdef BACKSLASH_IN_FILENAME
 		/* avoid "c:/name" to be reduced to "c" */
 		if (isalpha(buf[off]) && buf[off + 1] == ':')
@@ -3282,19 +3344,29 @@ maketitle()
 		if (p == buf + off)
 		    /* must be a help buffer */
 		    vim_strncpy(buf + off, (char_u *)_("help"),
-						  (size_t)(IOSIZE - off - 1));
+					   (size_t)(SPACE_FOR_DIR - off - 1));
 		else
 		    *p = NUL;
 
-		/* translate unprintable chars */
-		p = transstr(buf + off);
-		vim_strncpy(buf + off, p, (size_t)(IOSIZE - off - 1));
-		vim_free(p);
+		/* Translate unprintable chars and concatenate.  Keep some
+		 * room for the server name.  When there is no room (very long
+		 * file name) use (...). */
+		if (off < SPACE_FOR_DIR)
+		{
+		    p = transstr(buf + off);
+		    vim_strncpy(buf + off, p, (size_t)(SPACE_FOR_DIR - off));
+		    vim_free(p);
+		}
+		else
+		{
+		    vim_strncpy(buf + off, (char_u *)"...",
+					     (size_t)(SPACE_FOR_ARGNR - off));
+		}
 		STRCAT(buf, ")");
 	    }
 
 #ifndef FEAT_GUI_MACVIM
-	    append_arg_number(curwin, buf, IOSIZE, FALSE);
+	    append_arg_number(curwin, buf, SPACE_FOR_ARGNR, FALSE);
 #endif
 
 #if defined(FEAT_CLIENTSERVER)
@@ -3347,7 +3419,7 @@ maketitle()
 	else
 	{
 	    if (buf_spname(curbuf) != NULL)
-		i_name = (char_u *)buf_spname(curbuf);
+		i_name = buf_spname(curbuf);
 	    else		    /* use file name only in icon */
 		i_name = gettail(curbuf->b_ffname);
 	    *i_str = NUL;
@@ -3447,7 +3519,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
     char_u	*p;
     char_u	*s;
     char_u	*t;
-    char_u	*linecont;
+    int		byteval;
 #ifdef FEAT_EVAL
     win_T	*o_curwin;
     buf_T	*o_curbuf;
@@ -3514,12 +3586,21 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
 	fillchar = '-';
 #endif
 
-    /*
-     * Get line & check if empty (cursorpos will show "0-1").
-     * If inversion is possible we use it. Else '=' characters are used.
-     */
-    linecont = ml_get_buf(wp->w_buffer, wp->w_cursor.lnum, FALSE);
-    empty_line = (*linecont == NUL);
+    /* Get line & check if empty (cursorpos will show "0-1").  Note that
+     * p will become invalid when getting another buffer line. */
+    p = ml_get_buf(wp->w_buffer, wp->w_cursor.lnum, FALSE);
+    empty_line = (*p == NUL);
+
+    /* Get the byte value now, in case we need it below. This is more
+     * efficient than making a copy of the line. */
+    if (wp->w_cursor.col > (colnr_T)STRLEN(p))
+	byteval = 0;
+    else
+#ifdef FEAT_MBYTE
+	byteval = (*mb_ptr2char)(p + wp->w_cursor.col);
+#else
+	byteval = p[wp->w_cursor.col];
+#endif
 
     groupdepth = 0;
     p = out;
@@ -3763,7 +3844,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
 	case STL_FILENAME:
 	    fillable = FALSE;	/* don't change ' ' to fillchar */
 	    if (buf_spname(wp->w_buffer) != NULL)
-		STRCPY(NameBuff, buf_spname(wp->w_buffer));
+		vim_strncpy(NameBuff, buf_spname(wp->w_buffer), MAXPATHL - 1);
 	    else
 	    {
 		t = (opt == STL_FULLPATH) ? wp->w_buffer->b_ffname
@@ -3897,16 +3978,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
 	case STL_BYTEVAL_X:
 	    base = 'X';
 	case STL_BYTEVAL:
-	    if (wp->w_cursor.col > (colnr_T)STRLEN(linecont))
-		num = 0;
-	    else
-	    {
-#ifdef FEAT_MBYTE
-		num = (*mb_ptr2char)(linecont + wp->w_cursor.col);
-#else
-		num = linecont[wp->w_cursor.col];
-#endif
-	    }
+	    num = byteval;
 	    if (num == NL)
 		num = 0;
 	    else if (num == CAR && get_fileformat(wp->w_buffer) == EOL_MAC)
@@ -3917,7 +3989,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
 	case STL_ROFLAG_ALT:
 	    itemisflag = TRUE;
 	    if (wp->w_buffer->b_p_ro)
-		str = (char_u *)((opt == STL_ROFLAG_ALT) ? ",RO" : "[RO]");
+		str = (char_u *)((opt == STL_ROFLAG_ALT) ? ",RO" : _("[RO]"));
 	    break;
 
 	case STL_HELPFLAG:
@@ -4492,7 +4564,7 @@ do_arg_all(count, forceit, keep_tabs)
      * When the ":tab" modifier was used do this for all tab pages.
      */
     if (had_tab > 0)
-	goto_tabpage_tp(first_tabpage, TRUE);
+	goto_tabpage_tp(first_tabpage, TRUE, TRUE);
     for (;;)
     {
 	tpnext = curtab->tp_next;
@@ -4604,7 +4676,7 @@ do_arg_all(count, forceit, keep_tabs)
 	if (!valid_tabpage(tpnext))
 	    tpnext = first_tabpage;	/* start all over...*/
 # endif
-	goto_tabpage_tp(tpnext, TRUE);
+	goto_tabpage_tp(tpnext, TRUE, TRUE);
     }
 
     /*
@@ -4708,13 +4780,13 @@ do_arg_all(count, forceit, keep_tabs)
     if (last_curtab != new_curtab)
     {
 	if (valid_tabpage(last_curtab))
-	    goto_tabpage_tp(last_curtab, TRUE);
+	    goto_tabpage_tp(last_curtab, TRUE, TRUE);
 	if (win_valid(last_curwin))
 	    win_enter(last_curwin, FALSE);
     }
     /* to window with first arg */
     if (valid_tabpage(new_curtab))
-	goto_tabpage_tp(new_curtab, TRUE);
+	goto_tabpage_tp(new_curtab, TRUE, TRUE);
     if (win_valid(new_curwin))
 	win_enter(new_curwin, FALSE);
 
@@ -4766,7 +4838,7 @@ ex_buffer_all(eap)
      */
 #ifdef FEAT_WINDOWS
     if (had_tab > 0)
-	goto_tabpage_tp(first_tabpage, TRUE);
+	goto_tabpage_tp(first_tabpage, TRUE, TRUE);
     for (;;)
     {
 #endif
@@ -4806,7 +4878,7 @@ ex_buffer_all(eap)
 	/* Without the ":tab" modifier only do the current tab page. */
 	if (had_tab == 0 || tpnext == NULL)
 	    break;
-	goto_tabpage_tp(tpnext, TRUE);
+	goto_tabpage_tp(tpnext, TRUE, TRUE);
     }
 #endif
 
@@ -5034,7 +5106,8 @@ chk_modeline(lnum, flags)
 	    if ((prev != -1 && STRNCMP(s, "ex:", (size_t)3) == 0)
 		    || STRNCMP(s, "vi:", (size_t)3) == 0)
 		break;
-	    if (STRNCMP(s, "vim", 3) == 0)
+	    /* Accept both "vim" and "Vim". */
+	    if ((s[0] == 'v' || s[0] == 'V') && s[1] == 'i' && s[2] == 'm')
 	    {
 		if (s[3] == '<' || s[3] == '=' || s[3] == '>')
 		    e = s + 4;
@@ -5042,6 +5115,8 @@ chk_modeline(lnum, flags)
 		    e = s + 3;
 		vers = getdigits(&e);
 		if (*e == ':'
+			&& (s[0] != 'V'
+				  || STRNCMP(skipwhite(e + 1), "set", 3) == 0)
 			&& (s[3] == ':'
 			    || (VIM_VERSION_100 >= vers && isdigit(s[3]))
 			    || (VIM_VERSION_100 < vers && s[3] == '<')
@@ -5241,7 +5316,7 @@ write_viminfo_bufferlist(fp)
  * Return special buffer name.
  * Returns NULL when the buffer has a normal file name.
  */
-    char *
+    char_u *
 buf_spname(buf)
     buf_T	*buf;
 {
@@ -5260,9 +5335,9 @@ buf_spname(buf)
 		goto win_found;
 win_found:
 	if (win != NULL && win->w_llist_ref != NULL)
-	    return _(msg_loclist);
+	    return (char_u *)_(msg_loclist);
 	else
-	    return _(msg_qflist);
+	    return (char_u *)_(msg_qflist);
     }
 #endif
 #ifdef FEAT_QUICKFIX
@@ -5271,12 +5346,12 @@ win_found:
     if (bt_nofile(buf))
     {
 	if (buf->b_sfname != NULL)
-	    return (char *)buf->b_sfname;
-	return _("[Scratch]");
+	    return buf->b_sfname;
+	return (char_u *)_("[Scratch]");
     }
 #endif
     if (buf->b_fname == NULL)
-	return _("[No Name]");
+	return (char_u *)_("[No Name]");
     return NULL;
 }
 

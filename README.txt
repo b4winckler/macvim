@@ -1,4 +1,4 @@
-README.txt for version 7.3 of Vim: Vi IMproved.
+README.txt for version 7.4a of Vim: Vi IMproved.
 
 
 WHAT IS VIM
@@ -97,10 +97,12 @@ The latest news about Vim can be found on the Vim home page:
 If you have problems, have a look at the Vim FAQ:
 	http://vimdoc.sf.net/vimfaq.html
 
-Send bug reports to:
-	Bram Moolenaar <Bram@vim.org>
+If you still have problems or any other questions, use one of the mailing
+lists to discuss them with Vim users and developers:
+	http://www.vim.org/maillist.php
 
-There are several mailing lists for Vim, see http://www.vim.org/maillist.php.
+If nothing else works, report bugs directly:
+	Bram Moolenaar <Bram@vim.org>
 
 
 MAIN AUTHOR

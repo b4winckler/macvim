@@ -18,6 +18,12 @@
 
 #include "vim.h"
 
+#ifdef FEAT_CYGWIN_WIN32_CLIPBOARD
+# define WIN32_LEAN_AND_MEAN
+# include <windows.h>
+# include "winclip.pro"
+#endif
+
     void
 ui_write(s, len)
     char_u  *s;
@@ -98,7 +104,7 @@ ui_inchar_undo(s, len)
 #endif
 
 /*
- * ui_inchar(): low level input funcion.
+ * ui_inchar(): low level input function.
  * Get characters from the keyboard.
  * Return the number of characters that are available.
  * If "wtime" == 0 do not wait for characters.
@@ -342,13 +348,7 @@ ui_set_shellsize(mustset)
 {
 #ifdef FEAT_GUI
     if (gui.in_use)
-	gui_set_shellsize(mustset,
-# ifdef WIN3264
-		TRUE
-# else
-		FALSE
-# endif
-		, RESIZE_BOTH);
+	gui_set_shellsize(mustset, TRUE, RESIZE_BOTH);
     else
 #endif
 	mch_set_shellsize();
@@ -509,7 +509,7 @@ clip_own_selection(cbd)
 	}
     }
 #else
-    /* Only own the clibpard when we didn't own it yet. */
+    /* Only own the clipboard when we didn't own it yet. */
     if (!cbd->owned && cbd->available)
 	cbd->owned = (clip_gen_own_selection(cbd) == OK);
 #endif
@@ -1476,6 +1476,21 @@ clip_gen_request_selection(cbd)
 #endif
 }
 
+    int
+clip_gen_owner_exists(cbd)
+    VimClipboard	*cbd UNUSED;
+{
+#ifdef FEAT_XCLIPBOARD
+# ifdef FEAT_GUI_GTK
+    if (gui.in_use)
+	return clip_gtk_owner_exists(cbd);
+    else
+# endif
+	return clip_x11_owner_exists(cbd);
+#endif
+    return TRUE;
+}
+
 #endif /* FEAT_CLIPBOARD */
 
 /*****************************************************************************
@@ -2139,7 +2154,13 @@ clip_x11_request_selection_cb(w, success, sel_atom, type, value, length,
 	text_prop.encoding = *type;
 	text_prop.format = *format;
 	text_prop.nitems = len;
-	status = XmbTextPropertyToTextList(X_DISPLAY, &text_prop,
+#if defined(FEAT_MBYTE) && defined(X_HAVE_UTF8_STRING)
+	if (*type == utf8_atom)
+	    status = Xutf8TextPropertyToTextList(X_DISPLAY, &text_prop,
+							 &text_list, &n_text);
+	else
+#endif
+	    status = XmbTextPropertyToTextList(X_DISPLAY, &text_prop,
 							 &text_list, &n_text);
 	if (status != Success || n_text < 1)
 	{
@@ -2195,8 +2216,13 @@ clip_x11_request_selection(myShell, dpy, cbd)
 	    default: type = XA_STRING;
 	}
 #ifdef FEAT_MBYTE
-	if (type == utf8_atom && !enc_utf8)
-	    /* Only request utf-8 when 'encoding' is utf8. */
+	if (type == utf8_atom
+# if defined(X_HAVE_UTF8_STRING)
+		&& !enc_utf8
+# endif
+		)
+	    /* Only request utf-8 when 'encoding' is utf8 and
+	     * Xutf8TextPropertyToTextList is available. */
 	    continue;
 #endif
 	success = MAYBE;
@@ -2360,14 +2386,20 @@ clip_x11_convert_selection_cb(w, sel_atom, target, type, value, length, format)
     {
 	XTextProperty	text_prop;
 	char		*string_nt = (char *)alloc((unsigned)*length + 1);
+	int		conv_result;
 
 	/* create NUL terminated string which XmbTextListToTextProperty wants */
 	mch_memmove(string_nt, string, (size_t)*length);
 	string_nt[*length] = NUL;
-	XmbTextListToTextProperty(X_DISPLAY, (char **)&string_nt, 1,
-					      XCompoundTextStyle, &text_prop);
+	conv_result = XmbTextListToTextProperty(X_DISPLAY, (char **)&string_nt,
+					   1, XCompoundTextStyle, &text_prop);
 	vim_free(string_nt);
 	XtFree(*value);			/* replace with COMPOUND text */
+	if (conv_result != Success)
+	{
+	    vim_free(string);
+	    return False;
+	}
 	*value = (XtPointer)(text_prop.value);	/*    from plain text */
 	*length = text_prop.nitems;
 	*type = compound_text_atom;
@@ -2412,7 +2444,8 @@ clip_x11_lose_selection(myShell, cbd)
     Widget		myShell;
     VimClipboard	*cbd;
 {
-    XtDisownSelection(myShell, cbd->sel_atom, CurrentTime);
+    XtDisownSelection(myShell, cbd->sel_atom,
+				XtLastTimestampProcessed(XtDisplay(myShell)));
 }
 
     int
@@ -2453,6 +2486,13 @@ clip_x11_own_selection(myShell, cbd)
 clip_x11_set_selection(cbd)
     VimClipboard *cbd UNUSED;
 {
+}
+
+    int
+clip_x11_owner_exists(cbd)
+    VimClipboard	*cbd;
+{
+    return XGetSelectionOwner(X_DISPLAY, cbd->sel_atom) != None;
 }
 #endif
 
@@ -3153,7 +3193,7 @@ vcol2col(wp, lnum, vcol)
     char_u	*start;
 
     start = ptr = ml_get_buf(wp->w_buffer, lnum, FALSE);
-    while (count <= vcol && *ptr != NUL)
+    while (count < vcol && *ptr != NUL)
     {
 	count += win_lbr_chartabsize(wp, ptr, count, NULL);
 	mb_ptr_adv(ptr);

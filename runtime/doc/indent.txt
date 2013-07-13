@@ -1,4 +1,4 @@
-*indent.txt*    For Vim version 7.3.  Last change: 2011 Sep 02
+*indent.txt*    For Vim version 7.4a.  Last change: 2013 Jun 13
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -540,7 +540,7 @@ The examples below assume a 'shiftwidth' of 4.
 								*cino-star*
 	*N    Vim searches for unclosed comments at most N lines away.  This
 	      limits the time needed to search for the start of a comment.
-	      If your /* */ comments stop indenting afer N lines this is the
+	      If your /* */ comments stop indenting after N lines this is the
 	      value you will want to change.
 	      (default 70 lines).
 
@@ -575,6 +575,106 @@ $VIMRUNTIME/indent directory for examples.
 
 
 REMARKS ABOUT SPECIFIC INDENT FILES ~
+
+
+CLOJURE					*ft-clojure-indent* *clojure-indent*
+
+Clojure indentation differs somewhat from traditional Lisps, due in part to
+the use of square and curly brackets, and otherwise by community convention.
+These conventions are not always universally followed, so the Clojure indent
+script offers a few configurable options, listed below.
+
+If the current vim does not include searchpairpos(), the indent script falls
+back to normal 'lisp' indenting, and the following options are ignored.
+
+							*g:clojure_maxlines*
+
+Set maximum scan distance of searchpairpos(). Larger values trade performance
+for correctness when dealing with very long forms. A value of 0 will scan
+without limits.
+>
+	" Default
+	let g:clojure_maxlines = 100
+<
+
+						*g:clojure_fuzzy_indent*
+					*g:clojure_fuzzy_indent_patterns*
+					*g:clojure_fuzzy_indent_blacklist*
+
+The 'lispwords' option is a list of comma-separated words that mark special
+forms whose subforms must be indented with two spaces.
+
+For example:
+>
+	(defn bad []
+	      "Incorrect indentation")
+
+	(defn good []
+	  "Correct indentation")
+<
+If you would like to specify 'lispwords' with a |pattern| instead, you can use
+the fuzzy indent feature:
+>
+	" Default
+	let g:clojure_fuzzy_indent = 1
+	let g:clojure_fuzzy_indent_patterns = ['^with', '^def', '^let']
+	let g:clojure_fuzzy_indent_blacklist =
+		\ ['-fn$', '\v^with-%(meta|out-str|loading-context)$']
+
+	" Legacy comma-delimited string version; the list format above is
+	" recommended. Note that patterns are implicitly anchored with ^ and $
+	let g:clojure_fuzzy_indent_patterns = 'with.*,def.*,let.*'
+<
+|g:clojure_fuzzy_indent_patterns| and |g:clojure_fuzzy_indent_blacklist| are
+|Lists| of patterns that will be matched against the unquoted, unqualified
+symbol at the head of a list. This means that a pattern like "^foo" will match
+all these candidates: "foobar", "my.ns/foobar", and "#'foobar".
+
+Each candidate word is tested for special treatment in this order:
+
+	1. Return true if word is literally in 'lispwords'
+	2. Return false if word matches a pattern in
+	   |g:clojure_fuzzy_indent_blacklist|
+	3. Return true if word matches a pattern in
+	   |g:clojure_fuzzy_indent_patterns|
+	4. Return false and indent normally otherwise
+
+					*g:clojure_special_indent_words*
+
+Some forms in Clojure are indented so that every subform is indented only two
+spaces, regardless of 'lispwords'. If you have a custom construct that should
+be indented in this idiosyncratic fashion, you can add your symbols to the
+default list below.
+>
+	" Default
+	let g:clojure_special_indent_words =
+	   \ 'deftype,defrecord,reify,proxy,extend-type,extend-protocol,letfn'
+<
+
+					*g:clojure_align_multiline_strings*
+
+Align subsequent lines in multiline strings to the column after the opening
+quote, instead of the same column.
+
+For example:
+>
+	(def default
+	  "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+	  eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+	  enim ad minim veniam, quis nostrud exercitation ullamco laboris
+	  nisi ut aliquip ex ea commodo consequat.")
+
+	(def aligned
+	  "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+	   eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+	   enim ad minim veniam, quis nostrud exercitation ullamco laboris
+	   nisi ut aliquip ex ea commodo consequat.")
+<
+This option is off by default.
+>
+	" Default
+	let g:clojure_align_multiline_strings = 0
+<
 
 
 FORTRAN							*ft-fortran-indent*
@@ -629,6 +729,50 @@ buffer-local variable as follows >
   let b:fortran_indent_less=1
 
 
+HTML				*ft-html-indent* *html-indent* *html-indenting*
+
+This is about variables you can set in your vimrc to customize HTML indenting.
+
+You can set the indent for the first line after <script> and <style>
+"blocktags" (default "zero"): >
+
+      :let g:html_indent_script1 = "inc"
+      :let g:html_indent_style1 = "inc"
+<
+      VALUE	MEANING ~
+      "zero"	zero indent
+      "auto"	auto indent (same indent as the blocktag)
+      "inc"	auto indent + one indent step
+
+Many tags increase the indent for what follows per default (see "Add Indent
+Tags" in the script).  You can add further tags with: >
+
+      :let g:html_indent_inctags = "html,body,head,tbody"
+
+You can also remove such tags with: >
+
+      :let g:html_indent_autotags = "th,td,tr,tfoot,thead"
+
+Default value is empty for both variables.  Note: the initial "inctags" are
+only defined once per Vim session.
+
+User variables are only read when the script is sourced.  To enable your
+changes during a session, without reloading the HTML file, you can manually
+do: >
+
+      :call HtmlIndent_CheckUserSettings()
+
+Detail:
+  Calculation of indent inside "blocktags" with "alien" content:
+      BLOCKTAG   INDENT EXPR	    WHEN APPLICABLE ~
+      <script> : {customizable}	    if first line of block
+	       : cindent(v:lnum)    if attributes empty or contain "java"
+	       : -1		    else (vbscript, tcl, ...)
+      <style>  : {customizable}	    if first line of block
+	       : GetCSSIndent()	    else
+      <!-- --> : -1
+
+
 PHP				*ft-php-indent* *php-indent* *php-indenting*
 
 NOTE:	PHP files will be indented correctly only if PHP |syntax| is active.
@@ -640,12 +784,12 @@ those useless characters first with a command like: >
     :%s /\r$//g
 
 Or, you can simply |:let| the variable PHP_removeCRwhenUnix to 1 and the
-script will silently remove them when Vim loads a PHP file (at each|BufRead|).
+script will silently remove them when Vim loads a PHP file (at each |BufRead|).
 
 OPTIONS: ~
 
 PHP indenting can be altered in several ways by modifying the values of some
-variables:
+global variables:
 
 								*php-comment*
 To not enable auto-formating of comments by default (if you want to use your
@@ -653,10 +797,21 @@ own 'formatoptions'): >
     :let g:PHP_autoformatcomment = 0
 
 Else, 't' will be removed from the 'formatoptions' string and "qrowcb" will be
-added, see|fo-table|for more information.
+added, see |fo-table| for more information.
 -------------
 
-To add an extra indent to every PHP lines with N being the number of
+To add extra indentation to single-line comments: >
+    :let g:PHP_outdentSLComments = N
+
+With N being the number of 'shiftwidth' to add.
+
+Only single-line comments will be affected such as: >
+    # Comment
+    // Comment
+    /* Comment */
+-------------
+
+To add extra indentation to every PHP lines with N being the number of
 'shiftwidth' to add: >
     :let g:PHP_default_indenting = N
 
@@ -672,7 +827,7 @@ For example, with N = 1, this will give:
 
 	$command_hist = TRUE;
     ?>
-(Notice the extra indent between the PHP container markers and the code)
+(Notice the extra indentation between the PHP container markers and the code)
 -------------
 
 To indent PHP tags as the surrounding code: >
@@ -704,8 +859,10 @@ NOTE:	Indenting will be a bit slower if this option is used because some
 To indent 'case:' and 'default:' statements in switch() blocks: >
     :let g:PHP_vintage_case_default_indent = 1
 
-(Since in PHP braces are not required inside 'case/default' blocks, by default they are indented at the same level than the 'switch()' to avoid
-unnecessary indentation)
+In PHP braces are not required inside 'case/default' blocks therefore 'case:'
+and 'default:' are indented at the same level than the 'switch()' to avoid
+meaningless indentation. You can use the above option to return to the
+traditional way.
 
 
 PYTHON							*ft-python-indent*

@@ -1344,7 +1344,7 @@ gui_mch_add_menu_item(menu, idx)
 	else
 	{
 	    /* Without shadows one can't sense whatever the button has been
-	     * pressed or not! However we wan't to save a bit of space...
+	     * pressed or not! However we want to save a bit of space...
 	     * Need the highlightThickness to see the focus.
 	     */
 	    XtSetArg(args[n], XmNhighlightThickness, 1); n++;
@@ -3205,7 +3205,7 @@ motif_get_toolbar_colors(bgp, fgp, bsp, tsp, hsp)
 # ifdef FEAT_FOOTER
 /*
  * The next toolbar enter/leave callbacks should really do balloon help.  But
- * I have to use footer help for backwards compatability.  Hopefully both will
+ * I have to use footer help for backwards compatibility.  Hopefully both will
  * get implemented and the user will have a choice.
  */
     static void
@@ -3653,7 +3653,7 @@ find_replace_keypress(w, frdp, event)
     static void
 set_label(w, label)
     Widget w;
-    char_u *label;
+    char *label;
 {
     XmString	str;
     char_u	*p, *next;
@@ -3662,7 +3662,7 @@ set_label(w, label)
     if (!w)
 	return;
 
-    p = vim_strsave(label);
+    p = vim_strsave((char_u *)label);
     if (p == NULL)
 	return;
     for (next = p; *next; ++next)

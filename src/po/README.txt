@@ -65,8 +65,7 @@ language.
 	make xx
 
     This will extract all the strings from Vim and merge them in with the
-    existing translations.  Requires the GNU gettext utilities.  Also requires
-    unpacking the extra archive.
+    existing translations.  Requires the GNU gettext utilities.
     Your original xx.po file will be copied to xx.po.orig
 
     -- After you do this, you MUST do the next three steps! --
@@ -107,3 +106,25 @@ language.
 	make xx.mo
 
     Look out for syntax errors and fix them.
+
+
+USING GETTEXT WITHOUT ICONV
+
+When using gettext which doesn't support iconv, the encoding of the .mo file
+must match your active encoding.  For that you must convert and change
+encoding of *.po file in advance of generating the *.mo file.  For example, to
+convert ja.po to EUC-JP (supposed as your system encoding):
+
+(1) Convert the file encoding:
+
+	mv ja.po ja.po.orig
+	iconv -f utf-8 -t euc-jp ja.po.orig > ja.po
+
+(2) Rewrite charset declaration in the file:
+
+    Open ja.po find this line:
+	"Content-Type: text/plain; charset=utf-8\n"
+    You should change "charset" like this:
+	"Content-Type: text/plain; charset=euc-jp\n"
+
+There are examples in the Makefile for the conversions already supported.

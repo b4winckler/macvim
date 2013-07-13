@@ -49,6 +49,7 @@ void gui_mch_flash __ARGS((int msec));
 void gui_mch_delete_lines __ARGS((int row, int num_lines));
 void gui_mch_insert_lines __ARGS((int row, int num_lines));
 void gui_mch_exit __ARGS((int rc));
+void gui_mch_wide_font_changed __ARGS((void));
 int gui_mch_init_font __ARGS((char_u *font_name, int fontset));
 int gui_mch_maximized __ARGS((void));
 void gui_mch_newfont __ARGS((void));

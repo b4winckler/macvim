@@ -38,6 +38,7 @@
     unsigned                    maxlen;
     CGGlyph                     *glyphs;
     CGSize                      *advances;
+    NSMutableArray              *fontCache;
 
     NSPoint                     lastLowerLeft;
     NSPoint                     lastUpperRight;

@@ -2,7 +2,7 @@
 " This file is normally sourced from menu.vim.
 "
 " Maintainer:	Bram Moolenaar <Bram@vim.org>
-" Last Change:	2010 Jul 26
+" Last Change:	2013 Jun 24
 
 " Define the SetSyn function, used for the Syntax menu entries.
 " Set 'filetype' and also 'syntax' if it is manually selected.
@@ -124,16 +124,17 @@ an 50.20.360 &Syntax.C.Config.Configure\.in :cal SetSyn("config")<CR>
 an 50.20.370 &Syntax.C.Config.Generic\ Config\ file :cal SetSyn("conf")<CR>
 an 50.20.380 &Syntax.C.CRM114 :cal SetSyn("crm")<CR>
 an 50.20.390 &Syntax.C.Crontab :cal SetSyn("crontab")<CR>
-an 50.20.400 &Syntax.C.CSP :cal SetSyn("csp")<CR>
-an 50.20.410 &Syntax.C.Ctrl-H :cal SetSyn("ctrlh")<CR>
-an 50.20.420 &Syntax.C.Cucumber :cal SetSyn("cucumber")<CR>
-an 50.20.430 &Syntax.C.CUDA :cal SetSyn("cuda")<CR>
-an 50.20.440 &Syntax.C.CUPL.CUPL :cal SetSyn("cupl")<CR>
-an 50.20.450 &Syntax.C.CUPL.Simulation :cal SetSyn("cuplsim")<CR>
-an 50.20.460 &Syntax.C.CVS.commit\ file :cal SetSyn("cvs")<CR>
-an 50.20.470 &Syntax.C.CVS.cvsrc :cal SetSyn("cvsrc")<CR>
-an 50.20.480 &Syntax.C.Cyn++ :cal SetSyn("cynpp")<CR>
-an 50.20.490 &Syntax.C.Cynlib :cal SetSyn("cynlib")<CR>
+an 50.20.400 &Syntax.C.CSDL :cal SetSyn("csdl")<CR>
+an 50.20.410 &Syntax.C.CSP :cal SetSyn("csp")<CR>
+an 50.20.420 &Syntax.C.Ctrl-H :cal SetSyn("ctrlh")<CR>
+an 50.20.430 &Syntax.C.Cucumber :cal SetSyn("cucumber")<CR>
+an 50.20.440 &Syntax.C.CUDA :cal SetSyn("cuda")<CR>
+an 50.20.450 &Syntax.C.CUPL.CUPL :cal SetSyn("cupl")<CR>
+an 50.20.460 &Syntax.C.CUPL.Simulation :cal SetSyn("cuplsim")<CR>
+an 50.20.470 &Syntax.C.CVS.commit\ file :cal SetSyn("cvs")<CR>
+an 50.20.480 &Syntax.C.CVS.cvsrc :cal SetSyn("cvsrc")<CR>
+an 50.20.490 &Syntax.C.Cyn++ :cal SetSyn("cynpp")<CR>
+an 50.20.500 &Syntax.C.Cynlib :cal SetSyn("cynlib")<CR>
 an 50.30.100 &Syntax.DE.D :cal SetSyn("d")<CR>
 an 50.30.110 &Syntax.DE.Datascript :cal SetSyn("datascript")<CR>
 an 50.30.120 &Syntax.DE.Debian.Debian\ ChangeLog :cal SetSyn("debchangelog")<CR>
@@ -242,23 +243,28 @@ an 50.50.360 &Syntax.HIJK.Informix\ 4GL :cal SetSyn("fgl")<CR>
 an 50.50.370 &Syntax.HIJK.Initng :cal SetSyn("initng")<CR>
 an 50.50.380 &Syntax.HIJK.Inittab :cal SetSyn("inittab")<CR>
 an 50.50.390 &Syntax.HIJK.Inno\ setup :cal SetSyn("iss")<CR>
-an 50.50.400 &Syntax.HIJK.InstallShield\ script :cal SetSyn("ishd")<CR>
-an 50.50.410 &Syntax.HIJK.Interactive\ Data\ Lang :cal SetSyn("idlang")<CR>
-an 50.50.420 &Syntax.HIJK.IPfilter :cal SetSyn("ipfilter")<CR>
-an 50.50.440 &Syntax.HIJK.JAL :cal SetSyn("jal")<CR>
-an 50.50.450 &Syntax.HIJK.JAM :cal SetSyn("jam")<CR>
-an 50.50.460 &Syntax.HIJK.Jargon :cal SetSyn("jargon")<CR>
-an 50.50.470 &Syntax.HIJK.Java.Java :cal SetSyn("java")<CR>
-an 50.50.480 &Syntax.HIJK.Java.JavaCC :cal SetSyn("javacc")<CR>
-an 50.50.490 &Syntax.HIJK.Java.Java\ Server\ Pages :cal SetSyn("jsp")<CR>
-an 50.50.500 &Syntax.HIJK.Java.Java\ Properties :cal SetSyn("jproperties")<CR>
-an 50.50.510 &Syntax.HIJK.JavaScript :cal SetSyn("javascript")<CR>
-an 50.50.520 &Syntax.HIJK.Jess :cal SetSyn("jess")<CR>
-an 50.50.530 &Syntax.HIJK.Jgraph :cal SetSyn("jgraph")<CR>
-an 50.50.550 &Syntax.HIJK.Kconfig :cal SetSyn("kconfig")<CR>
-an 50.50.560 &Syntax.HIJK.KDE\ script :cal SetSyn("kscript")<CR>
-an 50.50.570 &Syntax.HIJK.Kimwitu++ :cal SetSyn("kwt")<CR>
-an 50.50.580 &Syntax.HIJK.KixTart :cal SetSyn("kix")<CR>
+an 50.50.400 &Syntax.HIJK.Innovation\ Data\ Processing.Upstream\ dat :cal SetSyn("upstreamdat")<CR>
+an 50.50.410 &Syntax.HIJK.Innovation\ Data\ Processing.Upstream\ log :cal SetSyn("upstreamlog")<CR>
+an 50.50.420 &Syntax.HIJK.Innovation\ Data\ Processing.Upstream\ Install\ log :cal SetSyn("upstreaminstalllog")<CR>
+an 50.50.430 &Syntax.HIJK.Innovation\ Data\ Processing.Usserver\ log :cal SetSyn("usserverlog")<CR>
+an 50.50.440 &Syntax.HIJK.Innovation\ Data\ Processing.USW2KAgt\ log :cal SetSyn("usw2kagtlog")<CR>
+an 50.50.450 &Syntax.HIJK.InstallShield\ script :cal SetSyn("ishd")<CR>
+an 50.50.460 &Syntax.HIJK.Interactive\ Data\ Lang :cal SetSyn("idlang")<CR>
+an 50.50.470 &Syntax.HIJK.IPfilter :cal SetSyn("ipfilter")<CR>
+an 50.50.490 &Syntax.HIJK.JAL :cal SetSyn("jal")<CR>
+an 50.50.500 &Syntax.HIJK.JAM :cal SetSyn("jam")<CR>
+an 50.50.510 &Syntax.HIJK.Jargon :cal SetSyn("jargon")<CR>
+an 50.50.520 &Syntax.HIJK.Java.Java :cal SetSyn("java")<CR>
+an 50.50.530 &Syntax.HIJK.Java.JavaCC :cal SetSyn("javacc")<CR>
+an 50.50.540 &Syntax.HIJK.Java.Java\ Server\ Pages :cal SetSyn("jsp")<CR>
+an 50.50.550 &Syntax.HIJK.Java.Java\ Properties :cal SetSyn("jproperties")<CR>
+an 50.50.560 &Syntax.HIJK.JavaScript :cal SetSyn("javascript")<CR>
+an 50.50.570 &Syntax.HIJK.Jess :cal SetSyn("jess")<CR>
+an 50.50.580 &Syntax.HIJK.Jgraph :cal SetSyn("jgraph")<CR>
+an 50.50.600 &Syntax.HIJK.Kconfig :cal SetSyn("kconfig")<CR>
+an 50.50.610 &Syntax.HIJK.KDE\ script :cal SetSyn("kscript")<CR>
+an 50.50.620 &Syntax.HIJK.Kimwitu++ :cal SetSyn("kwt")<CR>
+an 50.50.630 &Syntax.HIJK.KixTart :cal SetSyn("kix")<CR>
 an 50.60.100 &Syntax.L.Lace :cal SetSyn("lace")<CR>
 an 50.60.110 &Syntax.L.LamdaProlog :cal SetSyn("lprolog")<CR>
 an 50.60.120 &Syntax.L.Latte :cal SetSyn("latte")<CR>

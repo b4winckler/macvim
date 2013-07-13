@@ -613,6 +613,17 @@ gui_mch_menu_set_tip(vimmenu_T *menu)
     void
 gui_mch_destroy_menu(vimmenu_T *menu)
 {
+    /* Don't let gtk_container_remove automatically destroy menu->id. */
+    if (menu->id != NULL)
+	g_object_ref(menu->id);
+
+    /* Workaround for a spurious gtk warning in Ubuntu: "Trying to remove
+     * a child that doesn't believe we're it's parent."
+     * Remove widget from gui.menubar before destroying it. */
+    if (menu->id != NULL && gui.menubar != NULL
+			    && gtk_widget_get_parent(menu->id) == gui.menubar)
+	gtk_container_remove(GTK_CONTAINER(gui.menubar), menu->id);
+
 # ifdef FEAT_TOOLBAR
     if (menu->parent != NULL && menu_is_toolbar(menu->parent->name))
     {
@@ -632,6 +643,8 @@ gui_mch_destroy_menu(vimmenu_T *menu)
 	    gtk_widget_destroy(menu->id);
     }
 
+    if (menu->id != NULL)
+	g_object_unref(menu->id);
     menu->submenu_id = NULL;
     menu->id = NULL;
 }
@@ -845,7 +858,6 @@ gui_mch_browse(int saving UNUSED,
     char_u		dirbuf[MAXPATHL];
     guint		log_handler;
     const gchar		*domain = "Gtk";
-    GtkFileFilter	*gfilter;
 
     title = CONVERT_TO_UTF8(title);
 
@@ -883,6 +895,7 @@ gui_mch_browse(int saving UNUSED,
 	int     i = 0;
 	char_u  *patt;
 	char_u  *p = filter;
+	GtkFileFilter	*gfilter;
 
 	gfilter = gtk_file_filter_new();
 	patt = alloc(STRLEN(filter));

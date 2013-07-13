@@ -73,7 +73,7 @@ struct spat
 {
     char_u	    *pat;	/* the pattern (in allocated memory) or NULL */
     int		    magic;	/* magicness of the pattern */
-    int		    no_scs;	/* no smarcase for this pattern */
+    int		    no_scs;	/* no smartcase for this pattern */
     struct soffset  off;
 };
 
@@ -581,7 +581,8 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
 	extra_col = 0;
 #ifdef FEAT_MBYTE
     /* Watch out for the "col" being MAXCOL - 2, used in a closed fold. */
-    else if (has_mbyte && pos->lnum >= 1 && pos->lnum <= buf->b_ml.ml_line_count
+    else if (dir != BACKWARD && has_mbyte
+		    && pos->lnum >= 1 && pos->lnum <= buf->b_ml.ml_line_count
 						     && pos->col < MAXCOL - 2)
     {
 	ptr = ml_get_buf(buf, pos->lnum, FALSE) + pos->col;
@@ -735,6 +736,8 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
 					++matchcol;
 				}
 			    }
+			    if (matchcol == 0 && (options & SEARCH_START))
+				break;
 			    if (ptr[matchcol] == NUL
 				    || (nmatched = vim_regexec_multi(&regmatch,
 					      win, buf, lnum + matchpos.lnum,
@@ -875,7 +878,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
 		    /* With the SEARCH_END option move to the last character
 		     * of the match.  Don't do it for an empty match, end
 		     * should be same as start then. */
-		    if (options & SEARCH_END && !(options & SEARCH_NOOF)
+		    if ((options & SEARCH_END) && !(options & SEARCH_NOOF)
 			    && !(matchpos.lnum == endpos.lnum
 				&& matchpos.col == endpos.col))
 		    {
@@ -978,7 +981,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
     }
     while (--count > 0 && found);   /* stop after count matches or no match */
 
-    vim_free(regmatch.regprog);
+    vim_regfree(regmatch.regprog);
 
     called_emsg |= save_called_emsg;
 
@@ -1795,28 +1798,8 @@ findmatchlimit(oap, initc, flags, maxtravel)
     }
     else if (initc != '#' && initc != NUL)
     {
-	/* 'matchpairs' is "x:y,x:y" */
-	for (ptr = curbuf->b_p_mps; *ptr; ptr += 2)
-	{
-	    if (*ptr == initc)
-	    {
-		findc = initc;
-		initc = ptr[2];
-		backwards = TRUE;
-		break;
-	    }
-	    ptr += 2;
-	    if (*ptr == initc)
-	    {
-		findc = initc;
-		initc = ptr[-2];
-		backwards = FALSE;
-		break;
-	    }
-	    if (ptr[1] != ',')
-		break;
-	}
-	if (!findc)		/* invalid initc! */
+	find_mps_values(&initc, &findc, &backwards, TRUE);
+	if (findc == NUL)
 	    return NULL;
     }
     /*
@@ -1895,36 +1878,14 @@ findmatchlimit(oap, initc, flags, maxtravel)
 		    --pos.col;
 		for (;;)
 		{
-		    initc = linep[pos.col];
+		    initc = PTR2CHAR(linep + pos.col);
 		    if (initc == NUL)
 			break;
 
-		    for (ptr = curbuf->b_p_mps; *ptr; ++ptr)
-		    {
-			if (*ptr == initc)
-			{
-			    findc = ptr[2];
-			    backwards = FALSE;
-			    break;
-			}
-			ptr += 2;
-			if (*ptr == initc)
-			{
-			    findc = ptr[-2];
-			    backwards = TRUE;
-			    break;
-			}
-			if (!*++ptr)
-			    break;
-		    }
+		    find_mps_values(&initc, &findc, &backwards, FALSE);
 		    if (findc)
 			break;
-#ifdef FEAT_MBYTE
-		    if (has_mbyte)
-			pos.col += (*mb_ptr2len)(linep + pos.col);
-		    else
-#endif
-			++pos.col;
+		    pos.col += MB_PTR2LEN(linep + pos.col);
 		}
 		if (!findc)
 		{
@@ -2269,7 +2230,8 @@ findmatchlimit(oap, initc, flags, maxtravel)
 	 *   inquote if the number of quotes in a line is even, unless this
 	 *   line or the previous one ends in a '\'.  Complicated, isn't it?
 	 */
-	switch (c = linep[pos.col])
+	c = PTR2CHAR(linep + pos.col);
+	switch (c)
 	{
 	case NUL:
 	    /* at end of line without trailing backslash, reset inquote */
@@ -2478,26 +2440,27 @@ showmatch(c)
      * Only show match for chars in the 'matchpairs' option.
      */
     /* 'matchpairs' is "x:y,x:y" */
-    for (p = curbuf->b_p_mps; *p != NUL; p += 2)
+    for (p = curbuf->b_p_mps; *p != NUL; ++p)
     {
 #ifdef FEAT_RIGHTLEFT
-	if (*p == c && (curwin->w_p_rl ^ p_ri))
+	if (PTR2CHAR(p) == c && (curwin->w_p_rl ^ p_ri))
 	    break;
 #endif
-	p += 2;
-	if (*p == c
+	p += MB_PTR2LEN(p) + 1;
+	if (PTR2CHAR(p) == c
 #ifdef FEAT_RIGHTLEFT
 		&& !(curwin->w_p_rl ^ p_ri)
 #endif
 	   )
 	    break;
-	if (p[1] != ',')
+	p += MB_PTR2LEN(p);
+	if (*p == NUL)
 	    return;
     }
 
     if ((lpos = findmatch(NULL, NUL)) == NULL)	    /* no match, so beep */
 	vim_beep();
-    else if (lpos->lnum >= curwin->w_topline)
+    else if (lpos->lnum >= curwin->w_topline && lpos->lnum < curwin->w_botline)
     {
 	if (!curwin->w_p_wrap)
 	    getvcol(curwin, lpos, NULL, &vcol, NULL);
@@ -3592,7 +3555,7 @@ extend:
 
 /*
  * Find block under the cursor, cursor at end.
- * "what" and "other" are two matching parenthesis/paren/etc.
+ * "what" and "other" are two matching parenthesis/brace/etc.
  */
     int
 current_block(oap, count, include, what, other)
@@ -4535,7 +4498,7 @@ current_quote(oap, count, include, quotechar)
 #endif /* FEAT_TEXTOBJ */
 
 #if defined(FEAT_VISUAL) || defined(PROTO)
-static int is_zerowidth __ARGS((char_u *pattern));
+static int is_one_char __ARGS((char_u *pattern));
 
 /*
  * Find next search match under cursor, cursor at end.
@@ -4554,10 +4517,9 @@ current_search(count, forward)
     int		dir;
     int		result;		/* result of various function calls */
     char_u	old_p_ws = p_ws;
-    int		visual_active = FALSE;
     int		flags = 0;
     pos_T	save_VIsual;
-    int		zerowidth = FALSE;
+    int		one_char;
 
     /* wrapping should not occur */
     p_ws = FALSE;
@@ -4570,11 +4532,6 @@ current_search(count, forward)
     {
 	orig_pos = curwin->w_cursor;
 	save_VIsual = VIsual;
-	visual_active = TRUE;
-
-	/* just started visual selection, only one character */
-	if (equalpos(VIsual, curwin->w_cursor))
-	    visual_active = FALSE;
 
 	pos = curwin->w_cursor;
 	start_pos = VIsual;
@@ -4592,9 +4549,9 @@ current_search(count, forward)
 	orig_pos = pos = start_pos = curwin->w_cursor;
 
     /* Is the pattern is zero-width? */
-    zerowidth = is_zerowidth(spats[last_idx].pat);
-    if (zerowidth == -1)
-	return FAIL;
+    one_char = is_one_char(spats[last_idx].pat);
+    if (one_char == -1)
+	return FAIL;  /* invalid pattern */
 
     /*
      * The trick is to first search backwards and then search forward again,
@@ -4609,7 +4566,7 @@ current_search(count, forward)
 	    dir = !i;
 
 	flags = 0;
-	if (!dir && !zerowidth)
+	if (!dir && !one_char)
 	    flags = SEARCH_END;
 
 	result = searchit(curwin, curbuf, &pos, (dir ? FORWARD : BACKWARD),
@@ -4628,7 +4585,7 @@ current_search(count, forward)
 	    p_ws = old_p_ws;
 	    return FAIL;
 	}
-	else if (!i && !result && !visual_active)
+	else if (!i && !result)
 	{
 	    if (forward) /* try again from start of buffer */
 	    {
@@ -4650,7 +4607,7 @@ current_search(count, forward)
 
     /* move to match, except for zero-width matches, in which case, we are
      * already on the next match */
-    if (!zerowidth)
+    if (!one_char)
 	result = searchit(curwin, curbuf, &pos, (forward ? FORWARD : BACKWARD),
 	    spats[last_idx].pat, 0L, flags | SEARCH_KEEP, RE_SEARCH, 0, NULL);
 
@@ -4665,8 +4622,15 @@ current_search(count, forward)
     if (VIsual_active)
     {
 	redraw_curbuf_later(INVERTED);	/* update the inversion */
-	if (*p_sel == 'e' && ltoreq(VIsual, curwin->w_cursor))
-	    inc_cursor();
+	if (*p_sel == 'e')
+	{
+	    /* Correction for exclusive selection depends on the direction. */
+	    if (forward && ltoreq(VIsual, curwin->w_cursor))
+		inc_cursor();
+	    else if (!forward && ltoreq(curwin->w_cursor, VIsual))
+		inc(&VIsual);
+	}
+
     }
 
 #ifdef FEAT_FOLDING
@@ -4690,17 +4654,18 @@ current_search(count, forward)
 }
 
 /*
- * Check if the pattern is zero-width.
+ * Check if the pattern is one character or zero-width.
  * Returns TRUE, FALSE or -1 for failure.
  */
     static int
-is_zerowidth(pattern)
+is_one_char(pattern)
     char_u	*pattern;
 {
     regmmatch_T	regmatch;
     int		nmatched = 0;
     int		result = -1;
-    pos_T       pos;
+    pos_T	pos;
+    int		save_called_emsg = called_emsg;
 
     if (search_regcomp(pattern, RE_SEARCH, RE_SEARCH,
 					      SEARCH_KEEP, &regmatch) == FAIL)
@@ -4713,16 +4678,21 @@ is_zerowidth(pattern)
     {
 	/* Zero-width pattern should match somewhere, then we can check if
 	 * start and end are in the same position. */
+	called_emsg = FALSE;
 	nmatched = vim_regexec_multi(&regmatch, curwin, curbuf,
 						  pos.lnum, (colnr_T)0, NULL);
 
 	if (!called_emsg)
 	    result = (nmatched != 0
-		    && regmatch.startpos[0].lnum == regmatch.endpos[0].lnum
-		    && regmatch.startpos[0].col == regmatch.endpos[0].col);
+		&& regmatch.startpos[0].lnum == regmatch.endpos[0].lnum
+		&& regmatch.startpos[0].col == regmatch.endpos[0].col);
+
+	if (!result && incl(&pos) == 0 && pos.col == regmatch.endpos[0].col)
+	    result  = TRUE;
     }
 
-    vim_free(regmatch.regprog);
+    called_emsg |= save_called_emsg;
+    vim_regfree(regmatch.regprog);
     return result;
 }
 #endif /* FEAT_VISUAL */
@@ -4864,7 +4834,7 @@ find_pattern_in_path(ptr, dir, len, whole, skip_comments,
 	    if (inc_opt != NULL && strstr((char *)inc_opt, "\\zs") != NULL)
 		/* Use text from '\zs' to '\ze' (or end) of 'include'. */
 		new_fname = find_file_name_in_path(incl_regmatch.startp[0],
-			      (int)(incl_regmatch.endp[0] - incl_regmatch.startp[0]),
+		       (int)(incl_regmatch.endp[0] - incl_regmatch.startp[0]),
 				 FNAME_EXP|FNAME_INCL|FNAME_REL, 1L, p_fname);
 	    else
 		/* Use text after match with 'include'. */
@@ -5397,7 +5367,15 @@ exit_matched:
 		depth_displayed = depth;
 	}
 	if (depth >= 0)		/* we could read the line */
+	{
 	    files[depth].lnum++;
+	    /* Remove any CR and LF from the line. */
+	    i = (int)STRLEN(line);
+	    if (i > 0 && line[i - 1] == '\n')
+		line[--i] = NUL;
+	    if (i > 0 && line[i - 1] == '\r')
+		line[--i] = NUL;
+	}
 	else if (!already)
 	{
 	    if (++lnum > end_lnum)
@@ -5450,9 +5428,9 @@ exit_matched:
 
 fpip_end:
     vim_free(file_line);
-    vim_free(regmatch.regprog);
-    vim_free(incl_regmatch.regprog);
-    vim_free(def_regmatch.regprog);
+    vim_regfree(regmatch.regprog);
+    vim_regfree(incl_regmatch.regprog);
+    vim_regfree(def_regmatch.regprog);
 }
 
     static void

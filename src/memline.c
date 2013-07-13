@@ -780,9 +780,7 @@ ml_open_file(buf)
 	need_wait_return = TRUE;	/* call wait_return later */
 	++no_wait_return;
 	(void)EMSG2(_("E303: Unable to open swap file for \"%s\", recovery impossible"),
-		    buf_spname(buf) != NULL
-			? (char_u *)buf_spname(buf)
-			: buf->b_fname);
+		    buf_spname(buf) != NULL ? buf_spname(buf) : buf->b_fname);
 	--no_wait_return;
     }
 
@@ -1315,7 +1313,7 @@ ml_recover()
     smsg((char_u *)_("Using swap file \"%s\""), NameBuff);
 
     if (buf_spname(curbuf) != NULL)
-	STRCPY(NameBuff, buf_spname(curbuf));
+	vim_strncpy(NameBuff, buf_spname(curbuf), MAXPATHL - 1);
     else
 	home_replace(NULL, curbuf->b_ffname, NameBuff, MAXPATHL, TRUE);
     smsg((char_u *)_("Original file \"%s\""), NameBuff);
@@ -3143,7 +3141,7 @@ ml_delete_int(buf, lnum, message)
 	   )
 	    set_keep_msg((char_u *)_(no_lines_msg), 0);
 
-	/* FEAT_BYTEOFF already handled in there, dont worry 'bout it below */
+	/* FEAT_BYTEOFF already handled in there, don't worry 'bout it below */
 	i = ml_replace((linenr_T)1, (char_u *)"", TRUE);
 	buf->b_ml.ml_flags |= ML_EMPTY;
 

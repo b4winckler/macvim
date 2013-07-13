@@ -1,7 +1,7 @@
 " Vim syntax file
 " Language:         reStructuredText documentation format
 " Maintainer:       Nikolai Weibull <now@bitwi.se>
-" Latest Revision:  2012-08-05
+" Latest Revision:  2013-06-03
 
 if exists("b:current_syntax")
   finish
@@ -135,9 +135,29 @@ execute 'syn match rstHyperlinkReference' .
 syn match   rstStandaloneHyperlink  contains=@NoSpell
       \ "\<\%(\%(\%(https\=\|file\|ftp\|gopher\)://\|\%(mailto\|news\):\)[^[:space:]'\"<>]\+\|www[[:alnum:]_-]*\.[[:alnum:]_-]\+\.[^[:space:]'\"<>]\+\)[[:alnum:]/]"
 
-" TODO: Use better syncing.  I don’t know the specifics of syncing well enough,
-" though.
-syn sync minlines=50 linebreaks=1
+syn region rstCodeBlock contained matchgroup=rstDirective
+      \ start=+\%(sourcecode\|code\%(-block\)\=\)::\s+
+      \ skip=+^$+
+      \ end=+^\s\@!+ 
+      \ contains=@NoSpell
+syn cluster rstDirectives add=rstCodeBlock
+
+if !exists('g:rst_syntax_code_list')
+    let g:rst_syntax_code_list = ['vim', 'java', 'cpp', 'lisp', 'php', 'python', 'perl']
+endif
+
+for code in g:rst_syntax_code_list
+    unlet! b:current_syntax
+    exe 'syn include @rst'.code.' syntax/'.code.'.vim'
+    exe 'syn region rstDirective'.code.' matchgroup=rstDirective fold '
+                \.'start=#\%(sourcecode\|code\%(-block\)\=\)::\s\+'.code.'\s*$# '
+                \.'skip=#^$# '
+                \.'end=#^\s\@!# contains=@NoSpell,@rst'.code
+    exe 'syn cluster rstDirectives add=rstDirective'.code
+endfor
+
+" TODO: Use better syncing.
+syn sync minlines=50 linebreaks=2
 
 hi def link rstTodo                         Todo
 hi def link rstComment                      Comment
@@ -168,6 +188,7 @@ hi def link rstFootnoteReference            Identifier
 hi def link rstCitationReference            Identifier
 hi def link rstHyperLinkReference           Identifier
 hi def link rstStandaloneHyperlink          Identifier
+hi def link rstCodeBlock                    String
 
 let b:current_syntax = "rst"
 

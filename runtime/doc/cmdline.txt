@@ -1,4 +1,4 @@
-*cmdline.txt*   For Vim version 7.3.  Last change: 2012 Jun 20
+*cmdline.txt*   For Vim version 7.4a.  Last change: 2013 Mar 16
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -217,7 +217,7 @@ CTRL-\ e {expr}						*c_CTRL-\_e*
 			   :return cmd
 			:endfunc
 <		This doesn't work recursively, thus not when already editing
-		an expression.
+		an expression.  But it is possible to use in a mapping.
 
 							*c_CTRL-Y*
 CTRL-Y		When there is a modeless selection, copy the selection into
@@ -714,10 +714,15 @@ three lines: >
 Visual Mode and Range					*v_:*
 
 {Visual}:	Starts a command-line with the Visual selected lines as a
-		range.  The code ":'<,'>" is used for this range, which makes
+		range.  The code `:'<,'>` is used for this range, which makes
 		it possible to select a similar line from the command-line
 		history for repeating a command on different Visually selected
 		lines.
+		When Visual mode was already ended, a short way to use the
+		Visual area for a range is `:*`.  This requires that "*" does
+		not appear in 'cpo', see |cpo-star|.  Otherwise you will have
+		to type `:'<,'>`
+
 
 ==============================================================================
 5. Ex command-line flags				*ex-flags*
@@ -959,7 +964,7 @@ for the file "$home" in the root directory.  A few examples:
 	\\$home		file "\\", followed by expanded $home
 
 ==============================================================================
-6. Command-line window				*cmdline-window* *cmdwin*
+7. Command-line window				*cmdline-window* *cmdwin*
 							*command-line-window*
 In the command-line window the command line can be edited just like editing
 text in any window.  It is a special kind of window, because you cannot leave

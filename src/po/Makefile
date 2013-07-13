@@ -34,6 +34,17 @@ LANGUAGES = \
 		zh_TW \
 		zh_TW.UTF-8
 
+CONVERTED = \
+		cs.cp1250 \
+		ja.sjis \
+		ja.euc-jp \
+		pl.cp1250 \
+		pl.UTF-8 \
+		ru.cp1251 \
+		sk.cp1250 \
+		uk.cp1251 \
+		zh_CN.cp936
+
 MOFILES = \
 		af.mo \
 		ca.mo \
@@ -64,9 +75,10 @@ MOFILES = \
 		zh_TW.UTF-8.mo \
 		zh_TW.mo
 
-CONVERTED = \
+MOCONVERTED = \
 		cs.cp1250.mo \
 		ja.sjis.mo \
+		ja.euc-jp.mo \
 		pl.cp1250.mo \
 		pl.UTF-8.mo \
 		ru.cp1251.mo \
@@ -105,6 +117,7 @@ CHECKFILES = \
 		zh_TW.ck \
 		cs.cp1250.ck \
 		ja.sjis.ck \
+		ja.euc-jp.ck \
 		pl.cp1250.ck \
 		pl.UTF-8.ck \
 		ru.cp1251.ck \
@@ -126,7 +139,7 @@ MSGMERGE = OLD_PO_FILE_INPUT=yes OLD_PO_FILE_OUTPUT=yes msgmerge
 
 .SUFFIXES:
 .SUFFIXES: .po .mo .pot .ck
-.PHONY: all install uninstall prefixcheck converted check clean checkclean distclean update-po $(LANGUAGES)
+.PHONY: all install uninstall prefixcheck converted check clean checkclean distclean update-po $(LANGUAGES) $(CONVERTED)
 
 .po.mo:
 	$(MSGFMT) -o $@ $<
@@ -135,13 +148,13 @@ MSGMERGE = OLD_PO_FILE_INPUT=yes OLD_PO_FILE_OUTPUT=yes msgmerge
 	$(VIM) -u NONE -e -X -S check.vim -c "if error == 0 | q | endif" -c cq $<
 	touch $@
 
-all: $(MOFILES)
+all: $(MOFILES) $(MOCONVERTED)
 
 check: $(CHECKFILES)
 
-install: $(MOFILES)
+install: $(MOFILES) $(MOCONVERTED)
 	@$(MAKE) prefixcheck
-	for lang in $(LANGUAGES); do \
+	for lang in $(LANGUAGES) $(CONVERTED); do \
 	  dir=$(LOCALEDIR)/$$lang/; \
 	  if test ! -x "$$dir"; then \
 	    mkdir $$dir; chmod 755 $$dir; \
@@ -158,13 +171,18 @@ install: $(MOFILES)
 
 uninstall:
 	@$(MAKE) prefixcheck
-	for cat in $(MOFILES); do \
+	for cat in $(MOFILES) $(MOCONVERTED); do \
 	  cat=`basename $$cat`; \
 	  lang=`echo $$cat | sed 's/\$(CATOBJEXT)$$//'`; \
 	  rm -f $(LOCALEDIR)/$$lang/LC_MESSAGES/$(PACKAGE).mo; \
 	done
 
-converted: $(CONVERTED)
+converted: $(MOCONVERTED)
+
+# nl.po was added later, if it does not exist use a file with just a # in it
+# (an empty file doesn't work with old msgfmt).
+nl.po:
+	@( echo \# > nl.po )
 
 # Norwegian/Bokmal: "nb" is an alias for "no".
 # Copying the file is not efficient, but I don't know of another way to make
@@ -178,10 +196,14 @@ nb.po: no.po
 ja.sjis.po: ja.po
 	@$(MAKE) sjiscorr
 	rm -f ja.sjis.po
-	iconv -f euc-jp -t cp932 ja.po | ./sjiscorr > ja.sjis.po
+	iconv -f utf-8 -t cp932 ja.po | ./sjiscorr > ja.sjis.po
 
 sjiscorr: sjiscorr.c
 	$(CC) -o sjiscorr sjiscorr.c
+
+ja.euc-jp.po: ja.po
+	iconv -f utf-8 -t euc-jp ja.po | \
+		sed -e 's/charset=utf-8/charset=euc-jp/' -e 's/# Original translations/# Generated from ja.po, DO NOT EDIT/' > ja.euc-jp.po
 
 # Convert cs.po to create cs.cp1250.po.
 cs.cp1250.po: cs.po

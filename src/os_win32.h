@@ -12,7 +12,10 @@
 
 #include "os_dos.h"		/* common MS-DOS and Win32 stuff */
 #ifndef __CYGWIN__
-#include <direct.h>		/* for _mkdir() */
+/* cproto fails on missing include files */
+# ifndef PROTO
+#  include <direct.h>		/* for _mkdir() */
+# endif
 #endif
 
 /* Stop the VC2005 compiler from nagging. */
@@ -54,14 +57,11 @@
 
 #define FEAT_SHORTCUT		/* resolve shortcuts */
 
-#if !defined(__MINGW32__) \
-	&& !defined(__CYGWIN__) \
-	&& (!defined(__BORLANDC__) || __BORLANDC__ >= 0x550) \
+#if (!defined(__BORLANDC__) || __BORLANDC__ >= 0x550) \
 	&& (!defined(_MSC_VER) || _MSC_VER > 1020)
 /*
  * Access Control List (actually security info).
- * Mingw and Cygwin don't have the acl stuff.
- * Borland only in version 5.5 and later.
+ * Borland has the acl stuff only in version 5.5 and later.
  * MSVC in 5.0, not in 4.2, don't know about 4.3.
  */
 # define HAVE_ACL
@@ -77,7 +77,6 @@
 #ifndef FEAT_GUI_W32		/* GUI works different */
 # define BREAKCHECK_SKIP    1	/* call mch_breakcheck() each time, it's fast */
 #endif
-#define HAVE_AVAIL_MEM
 
 #define HAVE_PUTENV		/* at least Bcc 5.2 and MSC have it */
 
@@ -101,14 +100,16 @@
 #ifndef COBJMACROS
 # define COBJMACROS	/* For OLE: Enable "friendlier" access to objects */
 #endif
-#include <windows.h>
+#ifndef PROTO
+# include <windows.h>
+#endif
 
 /*
  * Win32 has plenty of memory, use large buffers
  */
 #define CMDBUFFSIZE 1024	/* size of the command processing buffer */
 
-/* _MAX_PATH is only 256 (stdlib.h), but we want more for the 'path' option,
+/* _MAX_PATH is only 260 (stdlib.h), but we want more for the 'path' option,
  * thus use a larger number. */
 #define MAXPATHL	1024
 
@@ -194,10 +195,12 @@ Trace(char *pszFormat, ...);
 # define vim_mkdir(x, y) mch_mkdir(x)
 #endif
 
-/* Enable common dialogs input unicode from IME if posible. */
+#ifndef PROTO
+
+/* Enable common dialogs input unicode from IME if possible. */
 #ifdef FEAT_MBYTE
     /* The variables are defined in os_win32.c. */
-extern LRESULT (WINAPI *pDispatchMessage)(LPMSG);
+extern LRESULT (WINAPI *pDispatchMessage)(CONST MSG *);
 extern BOOL (WINAPI *pGetMessage)(LPMSG, HWND, UINT, UINT);
 extern BOOL (WINAPI *pIsDialogMessage)(HWND, LPMSG);
 extern BOOL (WINAPI *pPeekMessage)(LPMSG, HWND, UINT, UINT, UINT);
@@ -207,3 +210,5 @@ extern BOOL (WINAPI *pPeekMessage)(LPMSG, HWND, UINT, UINT, UINT);
 # define pIsDialogMessage IsDialogMessage
 # define pPeekMessage PeekMessage
 #endif
+
+#endif /* PROTO */

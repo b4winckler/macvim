@@ -511,7 +511,7 @@ gui_mch_set_shellsize(int width, int height,
     workarea_rect.right = GetSystemMetrics(SM_CXSCREEN);
     workarea_rect.bottom = GetSystemMetrics(SM_CYFULLSCREEN);
 
-    /* get current posision of our window */
+    /* get current position of our window */
     wndpl.length = sizeof(WINDOWPLACEMENT);
     GetWindowPlacement(s_hwnd, &wndpl);
     if (wndpl.showCmd == SW_SHOWNORMAL)
@@ -1161,7 +1161,7 @@ gui_mch_dialog(
 	return -1;
 
     /*
-     * make a copy of 'buttons' to fiddle with it.  complier grizzles because
+     * make a copy of 'buttons' to fiddle with it.  compiler grizzles because
      * vim_strsave() doesn't take a const arg (why not?), so cast away the
      * const.
      */
@@ -1521,7 +1521,12 @@ get_dialog_font_metrics(void)
 
 
 #if defined(FEAT_TOOLBAR) || defined(PROTO)
-#include "gui_w3~1.h"
+
+/* cproto fails on missing include files */
+#ifndef PROTO
+# include "gui_w3~1.h"
+#endif
+
 /*
  * Create the toolbar, initially unpopulated.
  *  (just like the menu, there are no defaults, it's all

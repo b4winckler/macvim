@@ -35,6 +35,8 @@ STARTTEST
 :$put =substitute('vVv', 'V', \"\b\", '')
 :$put =substitute('wWw', 'W', \"\\\", '')
 :$put =substitute('xXx', 'X', \"\r\", '')
+:$put =substitute('Y', 'Y', '\L\uyYy\l\EY', '')
+:$put =substitute('Z', 'Z', '\U\lZzZ\u\Ez', '')
 /^TEST_2
 ENDTEST
 
@@ -67,6 +69,8 @@ STARTTEST
 :$put =substitute('uUu', 'U', \"\n\", '')
 :$put =substitute('vVv', 'V', \"\b\", '')
 :$put =substitute('wWw', 'W', \"\\\", '')
+:$put =substitute('X', 'X', '\L\uxXx\l\EX', '')
+:$put =substitute('Y', 'Y', '\U\lYyY\u\Ey', '')
 /^TEST_3
 ENDTEST
 
@@ -142,6 +146,32 @@ STARTTEST
 ENDTEST
 
 TEST_8:
+
+STARTTEST
+:set magic&
+:set cpo&
+:$put =\"\n\nTEST_8:\"
+:$put =',,X'
+:s/\(^\|,\)\ze\(,\|X\)/\1N/g
+:$put =',,Y'
+:s/\(^\|,\)\ze\(,\|Y\)/\1N/gc
+a:$put =',,Z'
+:s/\(^\|,\)\ze\(,\|Z\)/\1N/gc
+yy/^TEST_9:
+ENDTEST
+
+TEST_9:
+
+STARTTEST
+:set magic&
+:set cpo&
+:$put =\"\n\nTEST_9:\"
+:$put ='xxx'
+:s/x/X/gc
+yyq/^TEST_10:
+ENDTEST
+
+TEST_10:
 
 STARTTEST
 :/^Results/,$wq! test.out

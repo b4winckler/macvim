@@ -1349,6 +1349,11 @@
     return newFrame;
 }
 
+- (void)windowDidChangeBackingProperties:(NSNotification *)notification
+{
+    [vimController sendMessage:BackingPropertiesChangedMsgID data:nil];
+}
+
 // This is not an NSWindow delegate method, our custom MMWindow class calls it
 // instead of the usual windowWillUseStandardFrame:defaultFrame:.
 - (IBAction)zoom:(id)sender

@@ -939,6 +939,12 @@ wait_return(redraw)
 #ifdef USE_ON_FLY_SCROLL
 	dont_scroll = TRUE;		/* disallow scrolling here */
 #endif
+	/* Avoid the sequence that the user types ":" at the hit-return prompt
+	 * to start an Ex command, but the file-changed dialog gets in the
+	 * way. */
+	if (need_check_timestamps)
+	    check_timestamps(FALSE);
+
 	hit_return_msg();
 
 	do
@@ -976,10 +982,22 @@ wait_return(redraw)
 	     */
 	    if (p_more && !p_cp)
 	    {
-		if (c == 'b' || c == 'k' || c == 'u' || c == 'g' || c == K_UP)
+		if (c == 'b' || c == 'k' || c == 'u' || c == 'g'
+						|| c == K_UP || c == K_PAGEUP)
 		{
-		    /* scroll back to show older messages */
-		    do_more_prompt(c);
+		    if (msg_scrolled > Rows)
+			/* scroll back to show older messages */
+			do_more_prompt(c);
+		    else
+		    {
+			msg_didout = FALSE;
+			c = K_IGNORE;
+			msg_col =
+#ifdef FEAT_RIGHTLEFT
+			    cmdmsg_rl ? Columns - 1 :
+#endif
+			    0;
+		    }
 		    if (quit_more)
 		    {
 			c = CAR;		/* just pretend CR was hit */
@@ -993,7 +1011,8 @@ wait_return(redraw)
 		    }
 		}
 		else if (msg_scrolled > Rows - 2
-			 && (c == 'j' || c == K_DOWN || c == 'd' || c == 'f'))
+			 && (c == 'j' || c == 'd' || c == 'f'
+					   || c == K_DOWN || c == K_PAGEDOWN))
 		    c = K_IGNORE;
 	    }
 	} while ((had_got_int && c == Ctrl_C)
@@ -1562,7 +1581,7 @@ str2special(sp, from)
 	{
 	    c = TO_SPECIAL(str[1], str[2]);
 	    str += 2;
-	    if (c == K_ZERO)	/* display <Nul> as ^@ */
+	    if (c == KS_ZERO)	/* display <Nul> as ^@ or <Nul> */
 		c = NUL;
 	}
 	if (IS_SPECIAL(c) || modifiers)	/* special key */
@@ -3825,7 +3844,7 @@ do_browse(flags, title, dflt, ext, initdir, filter, buf)
 	    filter = BROWSE_FILTER_DEFAULT;
 	if (flags & BROWSE_DIR)
 	{
-#  if defined(FEAT_GUI_GTK) || defined(WIN3264)
+#  if defined(FEAT_GUI_GTK) || defined(WIN3264) || defined(FEAT_GUI_MACVIM)
 	    /* For systems that have a directory dialog. */
 	    fname = gui_mch_browsedir(title, initdir);
 #  else
@@ -3833,9 +3852,9 @@ do_browse(flags, title, dflt, ext, initdir, filter, buf)
 	     * remove the file name. */
 	    fname = gui_mch_browse(0, title, dflt, ext, initdir, (char_u *)"");
 #  endif
-#  if !defined(FEAT_GUI_GTK)
+#  if !(defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
 	    /* Win32 adds a dummy file name, others return an arbitrary file
-	     * name.  GTK+ 2 returns only the directory, */
+	     * name.  GTK+ 2 and MacVim returns only the directory, */
 	    if (fname != NULL && *fname != NUL && !mch_isdir(fname))
 	    {
 		/* Remove the file name. */
@@ -4294,6 +4313,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 	    case '%':
 	    case 'c':
 	    case 's':
+	    case 'S':
 		length_modifier = '\0';
 		str_arg_l = 1;
 		switch (fmt_spec)
@@ -4322,6 +4342,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 		    }
 
 		case 's':
+		case 'S':
 		    str_arg =
 #ifndef HAVE_STDARG_H
 				(char *)get_a_arg(arg_idx);
@@ -4358,6 +4379,24 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 			str_arg_l = (q == NULL) ? precision
 						      : (size_t)(q - str_arg);
 		    }
+#ifdef FEAT_MBYTE
+		    if (fmt_spec == 'S')
+		    {
+			if (min_field_width != 0)
+			    min_field_width += STRLEN(str_arg)
+				     - mb_string2cells((char_u *)str_arg, -1);
+			if (precision)
+			{
+			    char_u *p1 = (char_u *)str_arg;
+			    size_t i;
+
+			    for (i = 0; i < precision && *p1; i++)
+				p1 += mb_ptr2len(p1);
+
+			    str_arg_l = precision = p1 - (char_u *)str_arg;
+			}
+		    }
+#endif
 		    break;
 
 		default:

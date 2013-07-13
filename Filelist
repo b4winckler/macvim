@@ -57,6 +57,7 @@ SRC_ALL =	\
 		src/popupmnu.c \
 		src/quickfix.c \
 		src/regexp.c \
+		src/regexp_nfa.c \
 		src/regexp.h \
 		src/screen.c \
 		src/search.c \
@@ -73,6 +74,7 @@ SRC_ALL =	\
 		src/version.c \
 		src/version.h \
 		src/vim.h \
+		src/winclip.c \
 		src/window.c \
 		src/xxd/xxd.c \
 		src/main.aap \
@@ -82,6 +84,15 @@ SRC_ALL =	\
 		src/testdir/test49.vim \
 		src/testdir/test60.vim \
 		src/testdir/test83-tags? \
+		src/testdir/python2/*.py \
+		src/testdir/python3/*.py \
+		src/testdir/pythonx/*.py \
+		src/testdir/pythonx/topmodule/__init__.py \
+		src/testdir/pythonx/topmodule/submodule/__init__.py \
+		src/testdir/pythonx/topmodule/submodule/subsubmodule/__init__.py \
+		src/testdir/pythonx/topmodule/submodule/subsubmodule/subsubsubmodule.py \
+		src/testdir/python_after/*.py \
+		src/testdir/python_before/*.py \
 		src/proto.h \
 		src/proto/blowfish.pro \
 		src/proto/buffer.pro \
@@ -130,6 +141,7 @@ SRC_ALL =	\
 		src/proto/ui.pro \
 		src/proto/undo.pro \
 		src/proto/version.pro \
+		src/proto/winclip.pro \
 		src/proto/window.pro \
 
 
@@ -261,6 +273,7 @@ SRC_DOS =	\
 		src/Make_mvc.mak \
 		src/Make_w16.mak \
 		src/bigvim.bat \
+		src/bigvim64.bat \
 		src/msvcsetup.bat \
 		src/msvc2008.bat \
 		src/msvc2010.bat \
@@ -352,6 +365,7 @@ SRC_DOS_BIN =	\
 		src/xpm/COPYRIGHT \
 		src/xpm/README.txt \
 		src/xpm/include/*.h \
+		src/xpm/x64/lib/libXpm.a \
 		src/xpm/x64/lib/libXpm.lib \
 		src/xpm/x86/lib/libXpm.a \
 		src/xpm/x86/lib/libXpm.lib \
@@ -442,6 +456,7 @@ SRC_EXTRA =	\
 		src/os_beos.c \
 		src/os_beos.h \
 		src/os_beos.rsrc \
+		src/proto/os_beos.pro \
 		src/os_mint.h \
 		src/os_vms_fix.com \
 		src/toolbar.phi \
@@ -691,9 +706,17 @@ LANG_GEN = \
 		runtime/tutor/Makefile \
 		runtime/tutor/tutor.utf-8 \
 		runtime/tutor/tutor.?? \
-		runtime/tutor/tutor.??.* \
+		runtime/tutor/tutor.??.utf-8 \
+		runtime/tutor/tutor.??.euc \
+		runtime/tutor/tutor.??.sjis \
+		runtime/tutor/tutor.??.iso9 \
+		runtime/tutor/tutor.??.big5 \
+		runtime/tutor/tutor.??.cp1250 \
+		runtime/tutor/tutor.??.cp1251 \
+		runtime/tutor/tutor.??.cp737 \
+		runtime/tutor/tutor.??_??.utf-8 \
 		runtime/tutor/tutor.bar \
-		runtime/tutor/tutor.bar.* \
+		runtime/tutor/tutor.bar.utf-8 \
 		runtime/spell/README.txt \
 		runtime/spell/??/*.diff \
 		runtime/spell/??/main.aap \

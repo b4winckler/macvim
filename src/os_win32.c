@@ -29,7 +29,11 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <limits.h>
-#include <process.h>
+
+/* cproto fails on missing include files */
+#ifndef PROTO
+# include <process.h>
+#endif
 
 #undef chdir
 #ifdef __GNUC__
@@ -40,8 +44,10 @@
 # include <direct.h>
 #endif
 
-#if defined(FEAT_TITLE) && !defined(FEAT_GUI_W32)
-# include <shellapi.h>
+#ifndef PROTO
+# if defined(FEAT_TITLE) && !defined(FEAT_GUI_W32)
+#  include <shellapi.h>
+# endif
 #endif
 
 #ifdef __MINGW32__
@@ -70,6 +76,16 @@
 # ifndef DOUBLE_CLICK
 #  define DOUBLE_CLICK  0x0002
 # endif
+#endif
+
+/*
+ * Reparse Point
+ */
+#ifndef FILE_ATTRIBUTE_REPARSE_POINT
+# define FILE_ATTRIBUTE_REPARSE_POINT	0x00000400
+#endif
+#ifndef IO_REPARSE_TAG_SYMLINK
+# define IO_REPARSE_TAG_SYMLINK		0xA000000C
 #endif
 
 /* Record all output and all keyboard & mouse input */
@@ -125,6 +141,10 @@ typedef int TRUSTEE;
 typedef int WORD;
 typedef int WCHAR;
 typedef void VOID;
+typedef int BY_HANDLE_FILE_INFORMATION;
+typedef int SE_OBJECT_TYPE;
+typedef int PSNSECINFO;
+typedef int PSNSECINFOW;
 #endif
 
 #ifndef FEAT_GUI_W32
@@ -152,13 +172,17 @@ static PFNGCKLN    s_pfnGetConsoleKeyboardLayoutName = NULL;
 # define wcsicmp(a, b) wcscmpi((a), (b))
 #endif
 
-/* Enable common dialogs input unicode from IME if posible. */
+#ifndef PROTO
+
+/* Enable common dialogs input unicode from IME if possible. */
 #ifdef FEAT_MBYTE
-LRESULT (WINAPI *pDispatchMessage)(LPMSG) = DispatchMessage;
+LRESULT (WINAPI *pDispatchMessage)(CONST MSG *) = DispatchMessage;
 BOOL (WINAPI *pGetMessage)(LPMSG, HWND, UINT, UINT) = GetMessage;
 BOOL (WINAPI *pIsDialogMessage)(HWND, LPMSG) = IsDialogMessage;
 BOOL (WINAPI *pPeekMessage)(LPMSG, HWND, UINT, UINT, UINT) = PeekMessage;
 #endif
+
+#endif /* PROTO */
 
 #ifndef FEAT_GUI_W32
 /* Win32 Console handles for input and output */
@@ -207,6 +231,10 @@ static int s_dont_use_vimrun = TRUE;
 static int need_vimrun_warning = FALSE;
 static char *vimrun_path = "vimrun ";
 #endif
+
+static int win32_getattrs(char_u *name);
+static int win32_setattrs(char_u *name, int attrs);
+static int win32_set_archive(char_u *name);
 
 #ifndef FEAT_GUI_W32
 static int suppress_winsize = 1;	/* don't fiddle with console */
@@ -287,19 +315,40 @@ unescape_shellxquote(char_u *p, char_u *escaped)
     HINSTANCE
 vimLoadLib(char *name)
 {
-    HINSTANCE dll = NULL;
-    char old_dir[MAXPATHL];
+    HINSTANCE	dll = NULL;
+    char	old_dir[MAXPATHL];
 
+    /* NOTE: Do not use mch_dirname() and mch_chdir() here, they may call
+     * vimLoadLib() recursively, which causes a stack overflow. */
     if (exe_path == NULL)
 	get_exe_name();
-    if (exe_path != NULL && mch_dirname(old_dir, MAXPATHL) == OK)
+    if (exe_path != NULL)
     {
-	/* Change directory to where the executable is, both to make sure we
-	 * find a .dll there and to avoid looking for a .dll in the current
-	 * directory. */
-	mch_chdir(exe_path);
-	dll = LoadLibrary(name);
-	mch_chdir(old_dir);
+#ifdef FEAT_MBYTE
+	WCHAR old_dirw[MAXPATHL];
+
+	if (GetCurrentDirectoryW(MAXPATHL, old_dirw) != 0)
+	{
+	    /* Change directory to where the executable is, both to make
+	     * sure we find a .dll there and to avoid looking for a .dll
+	     * in the current directory. */
+	    SetCurrentDirectory(exe_path);
+	    dll = LoadLibrary(name);
+	    SetCurrentDirectoryW(old_dirw);
+	    return dll;
+	}
+	/* Retry with non-wide function (for Windows 98). */
+	if (GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+#endif
+	    if (GetCurrentDirectory(MAXPATHL, old_dir) != 0)
+	    {
+		/* Change directory to where the executable is, both to make
+		 * sure we find a .dll there and to avoid looking for a .dll
+		 * in the current directory. */
+		SetCurrentDirectory(exe_path);
+		dll = LoadLibrary(name);
+		SetCurrentDirectory(old_dir);
+	    }
     }
     return dll;
 }
@@ -432,26 +481,79 @@ null_libintl_textdomain(const char *domainname)
 DWORD g_PlatformId;
 
 #ifdef HAVE_ACL
-# include <aclapi.h>
+# ifndef PROTO
+#  include <aclapi.h>
+# endif
+# ifndef PROTECTED_DACL_SECURITY_INFORMATION
+#  define PROTECTED_DACL_SECURITY_INFORMATION	0x80000000L
+# endif
+
 /*
  * These are needed to dynamically load the ADVAPI DLL, which is not
  * implemented under Windows 95 (and causes VIM to crash)
  */
-typedef DWORD (WINAPI *PSNSECINFO) (LPTSTR, enum SE_OBJECT_TYPE,
+typedef DWORD (WINAPI *PSNSECINFO) (LPSTR, SE_OBJECT_TYPE,
 	SECURITY_INFORMATION, PSID, PSID, PACL, PACL);
-typedef DWORD (WINAPI *PGNSECINFO) (LPSTR, enum SE_OBJECT_TYPE,
+typedef DWORD (WINAPI *PGNSECINFO) (LPSTR, SE_OBJECT_TYPE,
 	SECURITY_INFORMATION, PSID *, PSID *, PACL *, PACL *,
 	PSECURITY_DESCRIPTOR *);
+# ifdef FEAT_MBYTE
+typedef DWORD (WINAPI *PSNSECINFOW) (LPWSTR, SE_OBJECT_TYPE,
+	SECURITY_INFORMATION, PSID, PSID, PACL, PACL);
+typedef DWORD (WINAPI *PGNSECINFOW) (LPWSTR, SE_OBJECT_TYPE,
+	SECURITY_INFORMATION, PSID *, PSID *, PACL *, PACL *,
+	PSECURITY_DESCRIPTOR *);
+# endif
 
 static HANDLE advapi_lib = NULL;	/* Handle for ADVAPI library */
 static PSNSECINFO pSetNamedSecurityInfo;
 static PGNSECINFO pGetNamedSecurityInfo;
+# ifdef FEAT_MBYTE
+static PSNSECINFOW pSetNamedSecurityInfoW;
+static PGNSECINFOW pGetNamedSecurityInfoW;
+# endif
 #endif
 
 typedef BOOL (WINAPI *PSETHANDLEINFORMATION)(HANDLE, DWORD, DWORD);
 
 static BOOL allowPiping = FALSE;
 static PSETHANDLEINFORMATION pSetHandleInformation;
+
+#ifdef HAVE_ACL
+/*
+ * Enables or disables the specified privilege.
+ */
+    static BOOL
+win32_enable_privilege(LPTSTR lpszPrivilege, BOOL bEnable)
+{
+    BOOL             bResult;
+    LUID             luid;
+    HANDLE           hToken;
+    TOKEN_PRIVILEGES tokenPrivileges;
+
+    if (!OpenProcessToken(GetCurrentProcess(),
+		TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
+	return FALSE;
+
+    if (!LookupPrivilegeValue(NULL, lpszPrivilege, &luid))
+    {
+	CloseHandle(hToken);
+	return FALSE;
+    }
+
+    tokenPrivileges.PrivilegeCount           = 1;
+    tokenPrivileges.Privileges[0].Luid       = luid;
+    tokenPrivileges.Privileges[0].Attributes = bEnable ?
+						    SE_PRIVILEGE_ENABLED : 0;
+
+    bResult = AdjustTokenPrivileges(hToken, FALSE, &tokenPrivileges,
+	    sizeof(TOKEN_PRIVILEGES), NULL, NULL);
+
+    CloseHandle(hToken);
+
+    return bResult && GetLastError() == ERROR_SUCCESS;
+}
+#endif
 
 /*
  * Set g_PlatformId to VER_PLATFORM_WIN32_NT (NT) or
@@ -492,14 +594,27 @@ PlatformId(void)
 						      "SetNamedSecurityInfoA");
 		pGetNamedSecurityInfo = (PGNSECINFO)GetProcAddress(advapi_lib,
 						      "GetNamedSecurityInfoA");
+# ifdef FEAT_MBYTE
+		pSetNamedSecurityInfoW = (PSNSECINFOW)GetProcAddress(advapi_lib,
+						      "SetNamedSecurityInfoW");
+		pGetNamedSecurityInfoW = (PGNSECINFOW)GetProcAddress(advapi_lib,
+						      "GetNamedSecurityInfoW");
+# endif
 		if (pSetNamedSecurityInfo == NULL
-			|| pGetNamedSecurityInfo == NULL)
+			|| pGetNamedSecurityInfo == NULL
+# ifdef FEAT_MBYTE
+			|| pSetNamedSecurityInfoW == NULL
+			|| pGetNamedSecurityInfoW == NULL
+# endif
+			)
 		{
 		    /* If we can't get the function addresses, set advapi_lib
 		     * to NULL so that we don't use them. */
 		    FreeLibrary(advapi_lib);
 		    advapi_lib = NULL;
 		}
+		/* Enable privilege for getting or setting SACLs. */
+		win32_enable_privilege(SE_SECURITY_NAME, TRUE);
 	    }
 	}
 #endif
@@ -997,7 +1112,7 @@ decode_mouse_event(
 	    DWORD dwLR = (pmer->dwButtonState & LEFT_RIGHT);
 
 	    /* if either left or right button only is pressed, see if the
-	     * the next mouse event has both of them pressed */
+	     * next mouse event has both of them pressed */
 	    if (dwLR == LEFT || dwLR == RIGHT)
 	    {
 		for (;;)
@@ -1431,6 +1546,11 @@ mch_inchar(
 #define TYPEAHEADLEN 20
     static char_u   typeahead[TYPEAHEADLEN];	/* previously typed bytes. */
     static int	    typeaheadlen = 0;
+#ifdef FEAT_MBYTE
+    static char_u   *rest = NULL;	/* unconverted rest of previous read */
+    static int	    restlen = 0;
+    int		    unconverted;
+#endif
 
     /* First use any typeahead that was kept because "buf" was too small. */
     if (typeaheadlen > 0)
@@ -1534,6 +1654,33 @@ mch_inchar(
 
 	    c = tgetch(&modifiers, &ch2);
 
+#ifdef FEAT_MBYTE
+	    /* stolen from fill_input_buf() in ui.c */
+	    if (rest != NULL)
+	    {
+		/* Use remainder of previous call, starts with an invalid
+		 * character that may become valid when reading more. */
+		if (restlen > TYPEAHEADLEN - typeaheadlen)
+		    unconverted = TYPEAHEADLEN - typeaheadlen;
+		else
+		    unconverted = restlen;
+		mch_memmove(typeahead + typeaheadlen, rest, unconverted);
+		if (unconverted == restlen)
+		{
+		    vim_free(rest);
+		    rest = NULL;
+		}
+		else
+		{
+		    restlen -= unconverted;
+		    mch_memmove(rest, rest + unconverted, restlen);
+		}
+		typeaheadlen += unconverted;
+	    }
+	    else
+		unconverted = 0;
+#endif
+
 	    if (typebuf_changed(tb_change_cnt))
 	    {
 		/* "buf" may be invalid now if a client put something in the
@@ -1569,8 +1716,12 @@ mch_inchar(
 		 * when 'tenc' is set. */
 		if (input_conv.vc_type != CONV_NONE
 						&& (ch2 == NUL || c != K_NUL))
-		    n = convert_input(typeahead + typeaheadlen, n,
-						 TYPEAHEADLEN - typeaheadlen);
+		{
+		    typeaheadlen -= unconverted;
+		    n = convert_input_safe(typeahead + typeaheadlen,
+				n + unconverted, TYPEAHEADLEN - typeaheadlen,
+				rest == NULL ? &rest : NULL, &restlen);
+		}
 #endif
 
 		/* Use the ALT key to set the 8th bit of the character
@@ -1637,8 +1788,10 @@ theend:
 #endif /* FEAT_GUI_W32 */
 }
 
-#ifndef __MINGW32__
-# include <shellapi.h>	/* required for FindExecutable() */
+#ifndef PROTO
+# ifndef __MINGW32__
+#  include <shellapi.h>	/* required for FindExecutable() */
+# endif
 #endif
 
 /*
@@ -1778,16 +1931,7 @@ mch_init(void)
 	set_option_value((char_u *)"grepprg", 0, (char_u *)"grep -n", 0);
 
 #ifdef FEAT_CLIPBOARD
-    clip_init(TRUE);
-
-    /*
-     * Vim's own clipboard format recognises whether the text is char, line,
-     * or rectangular block.  Only useful for copying between two Vims.
-     * "VimClipboard" was used for previous versions, using the first
-     * character to specify MCHAR, MLINE or MBLOCK.
-     */
-    clip_star.format = RegisterClipboardFormat("VimClipboard2");
-    clip_star.format_raw = RegisterClipboardFormat("VimRawBytes");
+    win_clip_init();
 #endif
 }
 
@@ -2272,16 +2416,7 @@ mch_init(void)
 #endif
 
 #ifdef FEAT_CLIPBOARD
-    clip_init(TRUE);
-
-    /*
-     * Vim's own clipboard format recognises whether the text is char, line, or
-     * rectangular block.  Only useful for copying between two Vims.
-     * "VimClipboard" was used for previous versions, using the first
-     * character to specify MCHAR, MLINE or MBLOCK.
-     */
-    clip_star.format = RegisterClipboardFormat("VimClipboard2");
-    clip_star.format_raw = RegisterClipboardFormat("VimRawBytes");
+    win_clip_init();
 #endif
 
     /* This will be NULL on anything but NT 4.0 */
@@ -2568,57 +2703,54 @@ mch_dirname(
 /*
  * get file permissions for `name'
  * -1 : error
- * else FILE_ATTRIBUTE_* defined in winnt.h
+ * else mode_t
  */
     long
 mch_getperm(char_u *name)
 {
-#ifdef FEAT_MBYTE
-    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
-    {
-	WCHAR	*p = enc_to_utf16(name, NULL);
-	long	n;
+    struct stat st;
+    int n;
 
-	if (p != NULL)
-	{
-	    n = (long)GetFileAttributesW(p);
-	    vim_free(p);
-	    if (n >= 0 || GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-		return n;
-	    /* Retry with non-wide function (for Windows 98). */
-	}
-    }
-#endif
-    return (long)GetFileAttributes((char *)name);
+    n = mch_stat(name, &st);
+    return n == 0 ? (int)st.st_mode : -1;
 }
 
 
 /*
  * set file permission for `name' to `perm'
+ *
+ * return FAIL for failure, OK otherwise
  */
     int
 mch_setperm(
     char_u  *name,
     long    perm)
 {
-    perm |= FILE_ATTRIBUTE_ARCHIVE;	/* file has changed, set archive bit */
+    long	n;
 #ifdef FEAT_MBYTE
+    WCHAR *p;
     if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
     {
-	WCHAR	*p = enc_to_utf16(name, NULL);
-	long	n;
+	p = enc_to_utf16(name, NULL);
 
 	if (p != NULL)
 	{
-	    n = (long)SetFileAttributesW(p, perm);
+	    n = _wchmod(p, perm);
 	    vim_free(p);
-	    if (n || GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-		return n ? OK : FAIL;
+	    if (n == -1 && GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
+		return FAIL;
 	    /* Retry with non-wide function (for Windows 98). */
 	}
     }
+    if (p == NULL)
 #endif
-    return SetFileAttributes((char *)name, perm) ? OK : FAIL;
+	n = _chmod(name, perm);
+    if (n == -1)
+	return FAIL;
+
+    win32_set_archive(name);
+
+    return OK;
 }
 
 /*
@@ -2627,49 +2759,12 @@ mch_setperm(
     void
 mch_hide(char_u *name)
 {
-    int		perm;
-#ifdef FEAT_MBYTE
-    WCHAR	*p = NULL;
+    int attrs = win32_getattrs(name);
+    if (attrs == -1)
+	return;
 
-    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
-	p = enc_to_utf16(name, NULL);
-#endif
-
-#ifdef FEAT_MBYTE
-    if (p != NULL)
-    {
-	perm = GetFileAttributesW(p);
-	if (perm < 0 && GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
-	{
-	    /* Retry with non-wide function (for Windows 98). */
-	    vim_free(p);
-	    p = NULL;
-	}
-    }
-    if (p == NULL)
-#endif
-	perm = GetFileAttributes((char *)name);
-    if (perm >= 0)
-    {
-	perm |= FILE_ATTRIBUTE_HIDDEN;
-#ifdef FEAT_MBYTE
-	if (p != NULL)
-	{
-	    if (SetFileAttributesW(p, perm) == 0
-		    && GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
-	    {
-		/* Retry with non-wide function (for Windows 98). */
-		vim_free(p);
-		p = NULL;
-	    }
-	}
-	if (p == NULL)
-#endif
-	    SetFileAttributes((char *)name, perm);
-    }
-#ifdef FEAT_MBYTE
-    vim_free(p);
-#endif
+    attrs |= FILE_ATTRIBUTE_HIDDEN;
+    win32_setattrs(name, attrs);
 }
 
 /*
@@ -2679,7 +2774,7 @@ mch_hide(char_u *name)
     int
 mch_isdir(char_u *name)
 {
-    int f = mch_getperm(name);
+    int f = win32_getattrs(name);
 
     if (f == -1)
 	return FALSE;		    /* file does not exist at all */
@@ -2715,12 +2810,82 @@ mch_mkdir(char_u *name)
  * Return TRUE if file "fname" has more than one link.
  */
     int
-mch_is_linked(char_u *fname)
+mch_is_hard_link(char_u *fname)
 {
     BY_HANDLE_FILE_INFORMATION info;
 
     return win32_fileinfo(fname, &info) == FILEINFO_OK
 						   && info.nNumberOfLinks > 1;
+}
+
+/*
+ * Return TRUE if file "fname" is a symbolic link.
+ */
+    int
+mch_is_symbolic_link(char_u *fname)
+{
+    HANDLE		hFind;
+    int			res = FALSE;
+    WIN32_FIND_DATAA	findDataA;
+    DWORD		fileFlags = 0, reparseTag = 0;
+#ifdef FEAT_MBYTE
+    WCHAR		*wn = NULL;
+    WIN32_FIND_DATAW	findDataW;
+
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+	wn = enc_to_utf16(fname, NULL);
+    if (wn != NULL)
+    {
+	hFind = FindFirstFileW(wn, &findDataW);
+	vim_free(wn);
+	if (hFind == INVALID_HANDLE_VALUE
+		&& GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+	{
+	    /* Retry with non-wide function (for Windows 98). */
+	    hFind = FindFirstFile(fname, &findDataA);
+	    if (hFind != INVALID_HANDLE_VALUE)
+	    {
+		fileFlags = findDataA.dwFileAttributes;
+		reparseTag = findDataA.dwReserved0;
+	    }
+	}
+	else
+	{
+	    fileFlags = findDataW.dwFileAttributes;
+	    reparseTag = findDataW.dwReserved0;
+	}
+    }
+    else
+#endif
+    {
+	hFind = FindFirstFile(fname, &findDataA);
+	if (hFind != INVALID_HANDLE_VALUE)
+	{
+	    fileFlags = findDataA.dwFileAttributes;
+	    reparseTag = findDataA.dwReserved0;
+	}
+    }
+
+    if (hFind != INVALID_HANDLE_VALUE)
+	FindClose(hFind);
+
+    if ((fileFlags & FILE_ATTRIBUTE_REPARSE_POINT)
+	    && reparseTag == IO_REPARSE_TAG_SYMLINK)
+	res = TRUE;
+
+    return res;
+}
+
+/*
+ * Return TRUE if file "fname" has more than one link or if it is a symbolic
+ * link.
+ */
+    int
+mch_is_linked(char_u *fname)
+{
+    if (mch_is_hard_link(fname) || mch_is_symbolic_link(fname))
+	return TRUE;
+    return FALSE;
 }
 
 /*
@@ -2787,6 +2952,92 @@ win32_fileinfo(char_u *fname, BY_HANDLE_FILE_INFORMATION *info)
 }
 
 /*
+ * get file attributes for `name'
+ * -1 : error
+ * else FILE_ATTRIBUTE_* defined in winnt.h
+ */
+    static
+    int
+win32_getattrs(char_u *name)
+{
+    int		attr;
+#ifdef FEAT_MBYTE
+    WCHAR	*p = NULL;
+
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+	p = enc_to_utf16(name, NULL);
+
+    if (p != NULL)
+    {
+	attr = GetFileAttributesW(p);
+	if (attr < 0 && GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+	{
+	    /* Retry with non-wide function (for Windows 98). */
+	    vim_free(p);
+	    p = NULL;
+	}
+    }
+    if (p == NULL)
+#endif
+	attr = GetFileAttributes((char *)name);
+#ifdef FEAT_MBYTE
+    vim_free(p);
+#endif
+    return attr;
+}
+
+/*
+ * set file attributes for `name' to `attrs'
+ *
+ * return -1 for failure, 0 otherwise
+ */
+    static
+    int
+win32_setattrs(char_u *name, int attrs)
+{
+    int res;
+#ifdef FEAT_MBYTE
+    WCHAR	*p = NULL;
+
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+	p = enc_to_utf16(name, NULL);
+
+    if (p != NULL)
+    {
+	res = SetFileAttributesW(p, attrs);
+	if (res == FALSE
+	    && GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+	{
+	    /* Retry with non-wide function (for Windows 98). */
+	    vim_free(p);
+	    p = NULL;
+	}
+    }
+    if (p == NULL)
+#endif
+	res = SetFileAttributes((char *)name, attrs);
+#ifdef FEAT_MBYTE
+    vim_free(p);
+#endif
+    return res ? 0 : -1;
+}
+
+/*
+ * Set archive flag for "name".
+ */
+    static
+    int
+win32_set_archive(char_u *name)
+{
+    int attrs = win32_getattrs(name);
+    if (attrs == -1)
+	return -1;
+
+    attrs |= FILE_ATTRIBUTE_ARCHIVE;
+    return win32_setattrs(name, attrs);
+}
+
+/*
  * Return TRUE if file or directory "name" is writable (not readonly).
  * Strange semantics of Win32: a readonly directory is writable, but you can't
  * delete a file.  Let's say this means it is writable.
@@ -2794,10 +3045,10 @@ win32_fileinfo(char_u *fname, BY_HANDLE_FILE_INFORMATION *info)
     int
 mch_writable(char_u *name)
 {
-    int perm = mch_getperm(name);
+    int attrs = win32_getattrs(name);
 
-    return (perm != -1 && (!(perm & FILE_ATTRIBUTE_READONLY)
-				       || (perm & FILE_ATTRIBUTE_DIRECTORY)));
+    return (attrs != -1 && (!(attrs & FILE_ATTRIBUTE_READONLY)
+			  || (attrs & FILE_ATTRIBUTE_DIRECTORY)));
 }
 
 /*
@@ -2906,6 +3157,7 @@ mch_get_acl(char_u *fname)
     return (vim_acl_T)NULL;
 #else
     struct my_acl   *p = NULL;
+    DWORD   err;
 
     /* This only works on Windows NT and 2000. */
     if (g_PlatformId == VER_PLATFORM_WIN32_NT && advapi_lib != NULL)
@@ -2913,23 +3165,82 @@ mch_get_acl(char_u *fname)
 	p = (struct my_acl *)alloc_clear((unsigned)sizeof(struct my_acl));
 	if (p != NULL)
 	{
-	    if (pGetNamedSecurityInfo(
-			(LPTSTR)fname,		// Abstract filename
-			SE_FILE_OBJECT,		// File Object
-			// Retrieve the entire security descriptor.
-			OWNER_SECURITY_INFORMATION |
-			GROUP_SECURITY_INFORMATION |
-			DACL_SECURITY_INFORMATION |
-			SACL_SECURITY_INFORMATION,
-			&p->pSidOwner,		// Ownership information.
-			&p->pSidGroup,		// Group membership.
-			&p->pDacl,		// Discretionary information.
-			&p->pSacl,		// For auditing purposes.
-			&p->pSecurityDescriptor
-				    ) != ERROR_SUCCESS)
+# ifdef FEAT_MBYTE
+	    WCHAR	*wn = NULL;
+
+	    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+		wn = enc_to_utf16(fname, NULL);
+	    if (wn != NULL)
 	    {
-		mch_free_acl((vim_acl_T)p);
-		p = NULL;
+		/* Try to retrieve the entire security descriptor. */
+		err = pGetNamedSecurityInfoW(
+			    wn,			// Abstract filename
+			    SE_FILE_OBJECT,	// File Object
+			    OWNER_SECURITY_INFORMATION |
+			    GROUP_SECURITY_INFORMATION |
+			    DACL_SECURITY_INFORMATION |
+			    SACL_SECURITY_INFORMATION,
+			    &p->pSidOwner,	// Ownership information.
+			    &p->pSidGroup,	// Group membership.
+			    &p->pDacl,		// Discretionary information.
+			    &p->pSacl,		// For auditing purposes.
+			    &p->pSecurityDescriptor);
+		if (err == ERROR_ACCESS_DENIED ||
+			err == ERROR_PRIVILEGE_NOT_HELD)
+		{
+		    /* Retrieve only DACL. */
+		    (void)pGetNamedSecurityInfoW(
+			    wn,
+			    SE_FILE_OBJECT,
+			    DACL_SECURITY_INFORMATION,
+			    NULL,
+			    NULL,
+			    &p->pDacl,
+			    NULL,
+			    &p->pSecurityDescriptor);
+		}
+		if (p->pSecurityDescriptor == NULL)
+		{
+		    mch_free_acl((vim_acl_T)p);
+		    p = NULL;
+		}
+		vim_free(wn);
+	    }
+	    else
+# endif
+	    {
+		/* Try to retrieve the entire security descriptor. */
+		err = pGetNamedSecurityInfo(
+			    (LPSTR)fname,	// Abstract filename
+			    SE_FILE_OBJECT,	// File Object
+			    OWNER_SECURITY_INFORMATION |
+			    GROUP_SECURITY_INFORMATION |
+			    DACL_SECURITY_INFORMATION |
+			    SACL_SECURITY_INFORMATION,
+			    &p->pSidOwner,	// Ownership information.
+			    &p->pSidGroup,	// Group membership.
+			    &p->pDacl,		// Discretionary information.
+			    &p->pSacl,		// For auditing purposes.
+			    &p->pSecurityDescriptor);
+		if (err == ERROR_ACCESS_DENIED ||
+			err == ERROR_PRIVILEGE_NOT_HELD)
+		{
+		    /* Retrieve only DACL. */
+		    (void)pGetNamedSecurityInfo(
+			    (LPSTR)fname,
+			    SE_FILE_OBJECT,
+			    DACL_SECURITY_INFORMATION,
+			    NULL,
+			    NULL,
+			    &p->pDacl,
+			    NULL,
+			    &p->pSecurityDescriptor);
+		}
+		if (p->pSecurityDescriptor == NULL)
+		{
+		    mch_free_acl((vim_acl_T)p);
+		    p = NULL;
+		}
 	    }
 	}
     }
@@ -2937,6 +3248,29 @@ mch_get_acl(char_u *fname)
     return (vim_acl_T)p;
 #endif
 }
+
+#ifdef HAVE_ACL
+/*
+ * Check if "acl" contains inherited ACE.
+ */
+    static BOOL
+is_acl_inherited(PACL acl)
+{
+    DWORD   i;
+    ACL_SIZE_INFORMATION    acl_info;
+    PACCESS_ALLOWED_ACE	    ace;
+
+    acl_info.AceCount = 0;
+    GetAclInformation(acl, &acl_info, sizeof(acl_info), AclSizeInformation);
+    for (i = 0; i < acl_info.AceCount; i++)
+    {
+	GetAce(acl, i, (LPVOID *)&ace);
+	if (ace->Header.AceFlags & INHERITED_ACE)
+	    return TRUE;
+    }
+    return FALSE;
+}
+#endif
 
 /*
  * Set the ACL of file "fname" to "acl" (unless it's NULL).
@@ -2948,21 +3282,61 @@ mch_set_acl(char_u *fname, vim_acl_T acl)
 {
 #ifdef HAVE_ACL
     struct my_acl   *p = (struct my_acl *)acl;
+    SECURITY_INFORMATION    sec_info = 0;
 
     if (p != NULL && advapi_lib != NULL)
-	(void)pSetNamedSecurityInfo(
-		    (LPTSTR)fname,		// Abstract filename
-		    SE_FILE_OBJECT,		// File Object
-		    // Retrieve the entire security descriptor.
-		    OWNER_SECURITY_INFORMATION |
-			GROUP_SECURITY_INFORMATION |
-			DACL_SECURITY_INFORMATION |
-			SACL_SECURITY_INFORMATION,
-		    p->pSidOwner,		// Ownership information.
-		    p->pSidGroup,		// Group membership.
-		    p->pDacl,			// Discretionary information.
-		    p->pSacl			// For auditing purposes.
-		    );
+    {
+# ifdef FEAT_MBYTE
+	WCHAR	*wn = NULL;
+# endif
+
+	/* Set security flags */
+	if (p->pSidOwner)
+	    sec_info |= OWNER_SECURITY_INFORMATION;
+	if (p->pSidGroup)
+	    sec_info |= GROUP_SECURITY_INFORMATION;
+	if (p->pDacl)
+	{
+	    sec_info |= DACL_SECURITY_INFORMATION;
+	    /* Do not inherit its parent's DACL.
+	     * If the DACL is inherited, Cygwin permissions would be changed.
+	     */
+	    if (!is_acl_inherited(p->pDacl))
+		sec_info |= PROTECTED_DACL_SECURITY_INFORMATION;
+	}
+	if (p->pSacl)
+	    sec_info |= SACL_SECURITY_INFORMATION;
+
+# ifdef FEAT_MBYTE
+	if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+	    wn = enc_to_utf16(fname, NULL);
+	if (wn != NULL)
+	{
+	    (void)pSetNamedSecurityInfoW(
+			wn,			// Abstract filename
+			SE_FILE_OBJECT,		// File Object
+			sec_info,
+			p->pSidOwner,		// Ownership information.
+			p->pSidGroup,		// Group membership.
+			p->pDacl,		// Discretionary information.
+			p->pSacl		// For auditing purposes.
+			);
+	    vim_free(wn);
+	}
+	else
+# endif
+	{
+	    (void)pSetNamedSecurityInfo(
+			(LPSTR)fname,		// Abstract filename
+			SE_FILE_OBJECT,		// File Object
+			sec_info,
+			p->pSidOwner,		// Ownership information.
+			p->pSidGroup,		// Group membership.
+			p->pDacl,		// Discretionary information.
+			p->pSacl		// For auditing purposes.
+			);
+	}
+    }
 #endif
 }
 
@@ -3409,7 +3783,7 @@ sub_process_writer(LPVOID param)
 		    && (lnum != curbuf->b_ml.ml_line_count
 			|| curbuf->b_p_eol)))
 	    {
-		WriteFile(g_hChildStd_IN_Wr, "\n", 1, &ignored, NULL);
+		WriteFile(g_hChildStd_IN_Wr, "\n", 1, (LPDWORD)&ignored, NULL);
 	    }
 
 	    ++lnum;
@@ -4957,13 +5331,16 @@ mch_remove(char_u *name)
 #ifdef FEAT_MBYTE
     WCHAR	*wn = NULL;
     int		n;
+#endif
 
+    win32_setattrs(name, FILE_ATTRIBUTE_NORMAL);
+
+#ifdef FEAT_MBYTE
     if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
     {
 	wn = enc_to_utf16(name, NULL);
 	if (wn != NULL)
 	{
-	    SetFileAttributesW(wn, FILE_ATTRIBUTE_NORMAL);
 	    n = DeleteFileW(wn) ? 0 : -1;
 	    vim_free(wn);
 	    if (n == 0 || GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
@@ -4972,7 +5349,6 @@ mch_remove(char_u *name)
 	}
     }
 #endif
-    SetFileAttributes(name, FILE_ATTRIBUTE_NORMAL);
     return DeleteFile(name) ? 0 : -1;
 }
 
@@ -4992,37 +5368,6 @@ mch_breakcheck(void)
 #endif
 }
 
-
-/*
- * How much memory is available in Kbyte?
- * Return sum of available physical and page file memory.
- */
-/*ARGSUSED*/
-    long_u
-mch_avail_mem(int special)
-{
-#ifdef MEMORYSTATUSEX
-    PlatformId();
-    if (g_PlatformId == VER_PLATFORM_WIN32_NT)
-    {
-	MEMORYSTATUSEX	ms;
-
-	/* Need to use GlobalMemoryStatusEx() when there is more memory than
-	 * what fits in 32 bits. But it's not always available. */
-	ms.dwLength = sizeof(MEMORYSTATUSEX);
-	GlobalMemoryStatusEx(&ms);
-	return (long_u)((ms.ullAvailPhys + ms.ullAvailPageFile) >> 10);
-    }
-    else
-#endif
-    {
-	MEMORYSTATUS	ms;
-
-	ms.dwLength = sizeof(MEMORYSTATUS);
-	GlobalMemoryStatus(&ms);
-	return (long_u)((ms.dwAvailPhys + ms.dwAvailPageFile) >> 10);
-    }
-}
 
 #ifdef FEAT_MBYTE
 /*

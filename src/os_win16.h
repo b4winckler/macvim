@@ -50,7 +50,7 @@
 #endif
 
 /* toupper() is not really broken, but it's very slow.	Probably because of
- * using unicde characters on Windows NT */
+ * using unicode characters on Windows NT */
 #define BROKEN_TOUPPER
 
 #define FNAME_ILLEGAL "\"*?><|" /* illegal characters in a file name */
@@ -63,16 +63,21 @@ typedef long off_t;
 
 #include <stdlib.h>
 #include <time.h>
-#include <dos.h>
-#include <dir.h>
 
-#ifndef STRICT
-# define STRICT
-#endif
-#ifndef COBJMACROS
-# define COBJMACROS	/* For OLE: Enable "friendlier" access to objects */
-#endif
-#include <windows.h>
+/* cproto fails on missing include files */
+#ifndef PROTO
+# include <dos.h>
+# include <dir.h>
+
+# ifndef STRICT
+#  define STRICT
+# endif
+# ifndef COBJMACROS
+#  define COBJMACROS	/* For OLE: Enable "friendlier" access to objects */
+# endif
+# include <windows.h>
+
+#endif /* PROTO */
 
 /*
  *  plenty of memory, use large buffers

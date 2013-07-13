@@ -652,7 +652,7 @@ ex_breakdel(eap)
 	while (gap->ga_len > 0)
 	{
 	    vim_free(DEBUGGY(gap, todel).dbg_name);
-	    vim_free(DEBUGGY(gap, todel).dbg_prog);
+	    vim_regfree(DEBUGGY(gap, todel).dbg_prog);
 	    --gap->ga_len;
 	    if (todel < gap->ga_len)
 		mch_memmove(&DEBUGGY(gap, todel), &DEBUGGY(gap, todel + 1),
@@ -958,6 +958,36 @@ profile_zero(tm)
 
 # endif  /* FEAT_PROFILE || FEAT_RELTIME */
 
+#if defined(FEAT_SYN_HL) && defined(FEAT_RELTIME) && defined(FEAT_FLOAT)
+# if defined(HAVE_MATH_H)
+#  include <math.h>
+# endif
+
+/*
+ * Divide the time "tm" by "count" and store in "tm2".
+ */
+    void
+profile_divide(tm, count, tm2)
+    proftime_T  *tm;
+    proftime_T  *tm2;
+    int		count;
+{
+    if (count == 0)
+	profile_zero(tm2);
+    else
+    {
+# ifdef WIN3264
+	tm2->QuadPart = tm->QuadPart / count;
+# else
+	double usec = (tm->tv_sec * 1000000.0 + tm->tv_usec) / count;
+
+	tm2->tv_sec = floor(usec / 1000000.0);
+	tm2->tv_usec = vim_round(usec - (tm2->tv_sec * 1000000.0));
+# endif
+    }
+}
+#endif
+
 # if defined(FEAT_PROFILE) || defined(PROTO)
 /*
  * Functions for profiling.
@@ -1050,7 +1080,7 @@ profile_equal(tm1, tm2)
  */
     int
 profile_cmp(tm1, tm2)
-    proftime_T *tm1, *tm2;
+    const proftime_T *tm1, *tm2;
 {
 # ifdef WIN3264
     return (int)(tm2->QuadPart - tm1->QuadPart);
@@ -1761,8 +1791,7 @@ check_changed_any(hidden)
 	    msg_didout = FALSE;
 	}
 	if (EMSG2(_("E162: No write since last change for buffer \"%s\""),
-		    buf_spname(buf) != NULL ? (char_u *)buf_spname(buf) :
-		    buf->b_fname))
+		    buf_spname(buf) != NULL ? buf_spname(buf) : buf->b_fname))
 	{
 	    save = no_wait_return;
 	    no_wait_return = FALSE;
@@ -2000,11 +2029,7 @@ do_arglist(str, what, after)
 	 * Delete the items: use each item as a regexp and find a match in the
 	 * argument list.
 	 */
-#ifdef CASE_INSENSITIVE_FILENAME
-	regmatch.rm_ic = TRUE;		/* Always ignore case */
-#else
-	regmatch.rm_ic = FALSE;		/* Never ignore case */
-#endif
+	regmatch.rm_ic = p_fic;	/* ignore case when 'fileignorecase' is set */
 	for (i = 0; i < new_ga.ga_len && !got_int; ++i)
 	{
 	    p = ((char_u **)new_ga.ga_data)[i];
@@ -2033,7 +2058,7 @@ do_arglist(str, what, after)
 		    --match;
 		}
 
-	    vim_free(regmatch.regprog);
+	    vim_regfree(regmatch.regprog);
 	    vim_free(p);
 	    if (!didone)
 		EMSG2(_(e_nomatch2), ((char_u **)new_ga.ga_data)[i]);
@@ -2560,7 +2585,7 @@ ex_listdo(eap)
 		/* go to window "tp" */
 		if (!valid_tabpage(tp))
 		    break;
-		goto_tabpage_tp(tp, TRUE);
+		goto_tabpage_tp(tp, TRUE, TRUE);
 		tp = tp->tp_next;
 	    }
 #endif
@@ -2785,6 +2810,10 @@ source_runtime(name, all)
  * When "all" is TRUE repeat for all matches, otherwise only the first one is
  * used.
  * Returns OK when at least one match found, FAIL otherwise.
+ *
+ * If "name" is NULL calls callback for each entry in runtimepath. Cookie is 
+ * passed by reference in this case, setting it to NULL indicates that callback 
+ * has done its job.
  */
     int
 do_in_runtimepath(name, all, callback, cookie)
@@ -2816,7 +2845,7 @@ do_in_runtimepath(name, all, callback, cookie)
     buf = alloc(MAXPATHL);
     if (buf != NULL && rtp_copy != NULL)
     {
-	if (p_verbose > 1)
+	if (p_verbose > 1 && name != NULL)
 	{
 	    verbose_enter();
 	    smsg((char_u *)_("Searching for \"%s\" in \"%s\""),
@@ -2830,7 +2859,13 @@ do_in_runtimepath(name, all, callback, cookie)
 	{
 	    /* Copy the path from 'runtimepath' to buf[]. */
 	    copy_option_part(&rtp, buf, MAXPATHL, ",");
-	    if (STRLEN(buf) + STRLEN(name) + 2 < MAXPATHL)
+	    if (name == NULL)
+	    {
+		(*callback)(buf, (void *) &cookie);
+		if (!did_one)
+		    did_one = (cookie == NULL);
+	    }
+	    else if (STRLEN(buf) + STRLEN(name) + 2 < MAXPATHL)
 	    {
 		add_pathsep(buf);
 		tail = buf + STRLEN(buf);
@@ -2869,7 +2904,7 @@ do_in_runtimepath(name, all, callback, cookie)
     }
     vim_free(buf);
     vim_free(rtp_copy);
-    if (p_verbose > 0 && !did_one)
+    if (p_verbose > 0 && !did_one && name != NULL)
     {
 	verbose_enter();
 	smsg((char_u *)_("not found in 'runtimepath': \"%s\""), name);
@@ -2929,7 +2964,7 @@ cmd_source(fname, eap)
 	EMSG(_(e_argreq));
 
     else if (eap != NULL && eap->forceit)
-	/* ":source!": read Normal mdoe commands
+	/* ":source!": read Normal mode commands
 	 * Need to execute the commands directly.  This is required at least
 	 * for:
 	 * - ":g" command busy
@@ -4299,6 +4334,9 @@ ex_language(eap)
 		if (what == LC_ALL)
 		{
 		    vim_setenv((char_u *)"LANG", name);
+
+		    /* Clear $LANGUAGE because GNU gettext uses it. */
+		    vim_setenv((char_u *)"LANGUAGE", (char_u *)"");
 # ifdef WIN32
 		    /* Apparently MS-Windows printf() may cause a crash when
 		     * we give it 8-bit text while it's expecting text in the

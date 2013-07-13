@@ -1380,6 +1380,8 @@ retry:
 # endif
 			   )
 			{
+			    if (can_retry)
+				goto rewind_retry;
 			    if (conv_error == 0)
 				conv_error = curbuf->b_ml.ml_line_count
 								- linecnt + 1;
@@ -3277,7 +3279,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit,
 	overwriting = FALSE;
 
     if (exiting)
-	settmode(TMODE_COOK);	    /* when exiting allow typahead now */
+	settmode(TMODE_COOK);	    /* when exiting allow typeahead now */
 
     ++no_wait_return;		    /* don't wait for return yet */
 
@@ -3301,7 +3303,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit,
 	int		empty_memline = (buf->b_ml.ml_mfp == NULL);
 
 	/*
-	 * Apply PRE aucocommands.
+	 * Apply PRE autocommands.
 	 * Set curbuf to the buffer to be written.
 	 * Careful: The autocommands may call buf_write() recursively!
 	 */
@@ -3778,12 +3780,12 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit,
 	    }
 	}
 
-# ifdef UNIX
 	/*
 	 * Break symlinks and/or hardlinks if we've been asked to.
 	 */
 	if ((bkc_flags & BKC_BREAKSYMLINK) || (bkc_flags & BKC_BREAKHARDLINK))
 	{
+# ifdef UNIX
 	    int	lstat_res;
 
 	    lstat_res = mch_lstat((char *)fname, &st);
@@ -3799,8 +3801,18 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit,
 		    && st_old.st_nlink > 1
 		    && (lstat_res != 0 || st.st_ino == st_old.st_ino))
 		backup_copy = FALSE;
+# else
+#  if defined(WIN32)
+	    /* Symlinks. */
+	    if ((bkc_flags & BKC_BREAKSYMLINK) && mch_is_symbolic_link(fname))
+		backup_copy = FALSE;
+
+	    /* Hardlinks. */
+	    if ((bkc_flags & BKC_BREAKHARDLINK) && mch_is_hard_link(fname))
+		backup_copy = FALSE;
+#  endif
+# endif
 	}
-#endif
 
 #endif
 
@@ -6490,9 +6502,7 @@ vim_rename(from, to)
 #ifdef HAVE_ACL
     vim_acl_T	acl;		/* ACL from original file */
 #endif
-#if defined(UNIX) || defined(CASE_INSENSITIVE_FILENAME)
     int		use_tmp_file = FALSE;
-#endif
 
     /*
      * When the names are identical, there is nothing to do.  When they refer
@@ -6501,11 +6511,9 @@ vim_rename(from, to)
      */
     if (fnamecmp(from, to) == 0)
     {
-#ifdef CASE_INSENSITIVE_FILENAME
-	if (STRCMP(gettail(from), gettail(to)) != 0)
+	if (p_fic && STRCMP(gettail(from), gettail(to)) != 0)
 	    use_tmp_file = TRUE;
 	else
-#endif
 	    return 0;
     }
 
@@ -6544,7 +6552,6 @@ vim_rename(from, to)
     }
 #endif
 
-#if defined(UNIX) || defined(CASE_INSENSITIVE_FILENAME)
     if (use_tmp_file)
     {
 	char	tempname[MAXPATHL + 1];
@@ -6577,7 +6584,6 @@ vim_rename(from, to)
 	}
 	return -1;
     }
-#endif
 
     /*
      * Delete the "to" file, this is required on some systems to make the
@@ -7281,6 +7287,9 @@ buf_reload(buf, orig_mode)
 	 * reset it, might have had a read error. */
 	if (orig_mode == curbuf->b_orig_mode)
 	    curbuf->b_p_ro |= old_ro;
+
+	/* Modelines must override settings done by autocommands. */
+	do_modelines(0);
     }
 
     /* restore curwin/curbuf and a few other things */
@@ -7653,16 +7662,16 @@ typedef struct AutoCmd
 
 typedef struct AutoPat
 {
-    int		    group;		/* group ID */
     char_u	    *pat;		/* pattern as typed (NULL when pattern
 					   has been removed) */
-    int		    patlen;		/* strlen() of pat */
     regprog_T	    *reg_prog;		/* compiled regprog for pattern */
-    char	    allow_dirs;		/* Pattern may match whole path */
-    char	    last;		/* last pattern for apply_autocmds() */
     AutoCmd	    *cmds;		/* list of commands to do */
     struct AutoPat  *next;		/* next AutoPat in AutoPat list */
+    int		    group;		/* group ID */
+    int		    patlen;		/* strlen() of pat */
     int		    buflocal_nr;	/* !=0 for buffer-local AutoPat */
+    char	    allow_dirs;		/* Pattern may match whole path */
+    char	    last;		/* last pattern for apply_autocmds() */
 } AutoPat;
 
 static struct event_name
@@ -7748,6 +7757,8 @@ static struct event_name
     {"TabLeave",	EVENT_TABLEAVE},
     {"TermChanged",	EVENT_TERMCHANGED},
     {"TermResponse",	EVENT_TERMRESPONSE},
+    {"TextChanged",	EVENT_TEXTCHANGED},
+    {"TextChangedI",	EVENT_TEXTCHANGEDI},
     {"User",		EVENT_USER},
     {"VimEnter",	EVENT_VIMENTER},
     {"VimLeave",	EVENT_VIMLEAVE},
@@ -7812,7 +7823,6 @@ static char_u *find_end_event __ARGS((char_u *arg, int have_group));
 static int event_ignored __ARGS((event_T event));
 static int au_get_grouparg __ARGS((char_u **argp));
 static int do_autocmd_event __ARGS((event_T event, char_u *pat, int nested, char_u *cmd, int forceit, int group));
-static char_u *getnextac __ARGS((int c, void *cookie, int indent));
 static int apply_autocmds_group __ARGS((event_T event, char_u *fname, char_u *fname_io, int force, int group, buf_T *buf, exarg_T *eap));
 static void auto_next_pat __ARGS((AutoPatCmd *apc, int stop_at_last));
 
@@ -7959,7 +7969,7 @@ au_cleanup()
 	    if (ap->pat == NULL)
 	    {
 		*prev_ap = ap->next;
-		vim_free(ap->reg_prog);
+		vim_regfree(ap->reg_prog);
 		vim_free(ap);
 	    }
 	    else
@@ -8904,7 +8914,7 @@ aucmd_prepbuf(aco, buf)
     else
     {
 	/* There is no window for "buf", use "aucmd_win".  To minimize the side
-	 * effects, insert it in a the current tab page.
+	 * effects, insert it in the current tab page.
 	 * Anything related to a window (e.g., setting folds) may have
 	 * unexpected results. */
 	aco->use_aucmd_win = TRUE;
@@ -8972,7 +8982,7 @@ aucmd_restbuf(aco)
 		if (wp == aucmd_win)
 		{
 		    if (tp != curtab)
-			goto_tabpage_tp(tp, TRUE);
+			goto_tabpage_tp(tp, TRUE, TRUE);
 		    win_goto(aucmd_win);
 		    goto win_found;
 		}
@@ -8995,8 +9005,8 @@ win_found:
 	    /* Hmm, original window disappeared.  Just use the first one. */
 	    curwin = firstwin;
 # ifdef FEAT_EVAL
-	vars_clear(&aucmd_win->w_vars.dv_hashtab);  /* free all w: variables */
-	hash_init(&aucmd_win->w_vars.dv_hashtab);   /* re-use the hashtab */
+	vars_clear(&aucmd_win->w_vars->dv_hashtab);  /* free all w: variables */
+	hash_init(&aucmd_win->w_vars->dv_hashtab);   /* re-use the hashtab */
 # endif
 #else
 	curwin = aco->save_curwin;
@@ -9171,6 +9181,24 @@ has_cursormoved()
 has_cursormovedI()
 {
     return (first_autopat[(int)EVENT_CURSORMOVEDI] != NULL);
+}
+
+/*
+ * Return TRUE when there is a TextChanged autocommand defined.
+ */
+    int
+has_textchanged()
+{
+    return (first_autopat[(int)EVENT_TEXTCHANGED] != NULL);
+}
+
+/*
+ * Return TRUE when there is a TextChangedI autocommand defined.
+ */
+    int
+has_textchangedI()
+{
+    return (first_autopat[(int)EVENT_TEXTCHANGEDI] != NULL);
 }
 
 /*
@@ -9582,6 +9610,12 @@ unblock_autocmds()
 # endif
 }
 
+    int
+is_autocmd_blocked()
+{
+    return autocmd_blocked != 0;
+}
+
 /*
  * Find next autocommand pattern that matches.
  */
@@ -9651,7 +9685,7 @@ auto_next_pat(apc, stop_at_last)
  * Called by do_cmdline() to get the next line for ":if".
  * Returns allocated string, or NULL for end of autocommands.
  */
-    static char_u *
+    char_u *
 getnextac(c, cookie, indent)
     int	    c UNUSED;
     void    *cookie;
@@ -10023,11 +10057,7 @@ match_file_pat(pattern, prog, fname, sfname, tail, allow_dirs)
     int		match = FALSE;
 #endif
 
-#ifdef CASE_INSENSITIVE_FILENAME
-    regmatch.rm_ic = TRUE;		/* Always ignore case */
-#else
-    regmatch.rm_ic = FALSE;		/* Don't ever ignore case */
-#endif
+    regmatch.rm_ic = p_fic; /* ignore case if 'fileignorecase' is set */
 #ifdef FEAT_OSFILETYPE
     if (*pattern == '<')
     {
@@ -10094,7 +10124,7 @@ match_file_pat(pattern, prog, fname, sfname, tail, allow_dirs)
 	result = TRUE;
 
     if (prog == NULL)
-	vim_free(regmatch.regprog);
+	vim_regfree(regmatch.regprog);
     return result;
 }
 #endif
@@ -10309,7 +10339,10 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
 		 * foo\,bar -> foo,bar
 		 * foo\ bar -> foo bar
 		 * Don't unescape \, * and others that are also special in a
-		 * regexp. */
+		 * regexp.
+		 * An escaped { must be unescaped since we use magic not
+		 * verymagic.
+		 */
 		if (*++p == '?'
 #ifdef BACKSLASH_IN_FILENAME
 			&& no_bslash
@@ -10317,7 +10350,8 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
 			)
 		    reg_pat[i++] = '?';
 		else
-		    if (*p == ',' || *p == '%' || *p == '#' || *p == ' ')
+		    if (*p == ',' || *p == '%' || *p == '#'
+						    || *p == ' ' || *p == '{')
 			reg_pat[i++] = *p;
 		    else
 		    {

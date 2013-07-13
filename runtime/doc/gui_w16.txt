@@ -1,4 +1,4 @@
-*gui_w16.txt*   For Vim version 7.3.  Last change: 2005 Mar 29
+*gui_w16.txt*   For Vim version 7.4a.  Last change: 2005 Mar 29
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -16,7 +16,7 @@ Vim's Graphical User Interface				*gui-w16* *win16-gui*
 
 Other relevant documentation:
 |gui.txt|	For generic items of the GUI.
-|os_msdos.txt|  For items common to DOS and Windows.
+|os_msdos.txt|	For items common to DOS and Windows.
 |gui_w32.txt|	Some items here are also applicable to the Win16 version.
 
 {Vi does not have a Windows GUI}

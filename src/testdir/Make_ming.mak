@@ -28,7 +28,7 @@ VIMPROG = ..$(DIRSLASH)vim
 # test12	can't unlink a swap file
 # test25	uses symbolic link
 # test27	can't edit file with "*" in file name
-# test31	16 bit version runs out of memory...
+# test97	\{ and \$ are not escaped characters.
 
 SCRIPTS16 =	test1.out test19.out test20.out test22.out \
 		test23.out test24.out test28.out test29.out \
@@ -49,7 +49,10 @@ SCRIPTS =	test3.out test4.out test5.out test6.out test7.out \
 		test42.out test52.out test65.out test66.out test67.out \
 		test68.out test69.out test71.out test72.out test73.out \
 		test74.out test75.out test76.out test77.out test78.out \
-		test79.out test80.out test81.out test82.out
+		test79.out test80.out test81.out test82.out test83.out \
+		test84.out test85.out test86.out test87.out test88.out \
+		test89.out test90.out test91.out test92.out test93.out \
+		test94.out test95.out test96.out test98.out
 
 SCRIPTS32 =	test50.out test70.out
 
@@ -82,6 +85,7 @@ clean:
 	-$(DEL) tiny.vim
 	-$(DEL) mbyte.vim
 	-$(DEL) mzscheme.vim
+	-$(DEL) lua.vim
 	-$(DEL) X*
 	-$(DEL) viminfo
 

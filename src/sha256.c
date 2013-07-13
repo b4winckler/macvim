@@ -7,9 +7,11 @@
  * See README.txt for an overview of the Vim source code.
  *
  * FIPS-180-2 compliant SHA-256 implementation
- * GPL by Christophe Devine.
+ * GPL by Christophe Devine, applies to older version.
  * Modified for md5deep, in public domain.
  * Modified For Vim, Mohsin Ahmed, http://www.cs.albany.edu/~mosh
+ * Mohsin Ahmed states this work is distributed under the VIM License or GPL,
+ * at your choice.
  *
  * Vim specific notes:
  * Functions exported by this file:
@@ -271,14 +273,13 @@ sha256_finish(ctx, digest)
 #endif /* FEAT_CRYPT || FEAT_PERSISTENT_UNDO */
 
 #if defined(FEAT_CRYPT) || defined(PROTO)
-static char_u *sha256_bytes __ARGS((char_u *buf, int buf_len, char_u *salt, int salt_len));
 static unsigned int get_some_time __ARGS((void));
 
 /*
  * Returns hex digest of "buf[buf_len]" in a static array.
  * if "salt" is not NULL also do "salt[salt_len]".
  */
-    static char_u *
+    char_u *
 sha256_bytes(buf, buf_len, salt, salt_len)
     char_u *buf;
     int    buf_len;

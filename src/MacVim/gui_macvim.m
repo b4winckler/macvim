@@ -953,12 +953,12 @@ gui_mch_get_font(char_u *name, int giveErrorIfMissing)
 #if defined(FEAT_EVAL) || defined(PROTO)
 /*
  * Return the name of font "font" in allocated memory.
- * TODO: use 'font' instead of 'name'?
  */
     char_u *
 gui_mch_get_fontname(GuiFont font, char_u *name)
 {
-    return name ? vim_strsave(name) : NULL;
+    return font ? [(NSString *)font vimStringSave]
+                : (name ? vim_strsave(name) : NULL);
 }
 #endif
 
@@ -1423,6 +1423,34 @@ gui_mch_browse(
     NSMutableDictionary *attr = [NSMutableDictionary
         dictionaryWithObject:[NSNumber numberWithBool:saving]
                       forKey:@"saving"];
+    if (initdir)
+        [attr setObject:[NSString stringWithVimString:initdir] forKey:@"dir"];
+
+    char_u *s = (char_u*)[[MMBackend sharedInstance]
+                            browseForFileWithAttributes:attr];
+
+    return s;
+}
+
+/*
+ * Put up a directory selector
+ * Returns the selected name in allocated memory, or NULL for Cancel.
+ * title			title for the window (UNUSED)
+ * initdir			initial directory, NULL for current dir
+ */
+    char_u *
+gui_mch_browsedir(
+	       char_u *title,
+	       char_u *initdir)
+{
+    ASLogDebug(@"title='%s' initdir='%s'", title, initdir);
+
+    // Ensure no data is on the output queue before presenting the dialog.
+    gui_macvim_force_flush();
+
+    NSMutableDictionary *attr = [NSMutableDictionary
+        dictionaryWithObject:[NSNumber numberWithBool:YES]
+                      forKey:@"browsedir"];
     if (initdir)
         [attr setObject:[NSString stringWithVimString:initdir] forKey:@"dir"];
 

@@ -206,12 +206,6 @@ gui_attempt_start()
     static void
 gui_do_fork()
 {
-#ifdef __QNXNTO__
-    procmgr_daemon(0, PROCMGR_DAEMON_KEEPUMASK | PROCMGR_DAEMON_NOCHDIR |
-	    PROCMGR_DAEMON_NOCLOSE | PROCMGR_DAEMON_NODEVNULL);
-    gui_attempt_start();
-    return;
-#else
     int		pipefd[2];	/* pipe between parent and child */
     int		pipe_error;
     int		status;
@@ -316,7 +310,6 @@ gui_do_fork()
     /* If we failed to start the GUI, exit now. */
     if (!gui.in_use)
 	exit(1);
-#endif
 }
 
 /*
@@ -408,6 +401,14 @@ gui_init_check()
     gui.boldital_font = NOFONT;
 # ifdef FEAT_XFONTSET
     gui.fontset = NOFONTSET;
+# endif
+#endif
+#ifdef FEAT_MBYTE
+    gui.wide_font = NOFONT;
+# ifndef FEAT_GUI_GTK
+    gui.wide_bold_font = NOFONT;
+    gui.wide_ital_font = NOFONT;
+    gui.wide_boldital_font = NOFONT;
 # endif
 #endif
 
@@ -547,10 +548,14 @@ gui_init()
 		 && do_source((char_u *)USR_GVIMRC_FILE2, TRUE,
 							  DOSO_GVIMRC) == FAIL
 #endif
+#ifdef USR_GVIMRC_FILE3
+		 && do_source((char_u *)USR_GVIMRC_FILE3, TRUE,
+							  DOSO_GVIMRC) == FAIL
+#endif
 				)
 	    {
-#ifdef USR_GVIMRC_FILE3
-		(void)do_source((char_u *)USR_GVIMRC_FILE3, TRUE, DOSO_GVIMRC);
+#ifdef USR_GVIMRC_FILE4
+		(void)do_source((char_u *)USR_GVIMRC_FILE4, TRUE, DOSO_GVIMRC);
 #endif
 	    }
 
@@ -591,6 +596,10 @@ gui_init()
 #endif
 #ifdef USR_GVIMRC_FILE3
 			&& fullpathcmp((char_u *)USR_GVIMRC_FILE3,
+				     (char_u *)GVIMRC_FILE, FALSE) != FPC_SAME
+#endif
+#ifdef USR_GVIMRC_FILE4
+			&& fullpathcmp((char_u *)USR_GVIMRC_FILE4,
 				     (char_u *)GVIMRC_FILE, FALSE) != FPC_SAME
 #endif
 			)
@@ -830,7 +839,7 @@ gui_shell_closed()
 #endif
 
 /*
- * Set the font.  "font_list" is a a comma separated list of font names.  The
+ * Set the font.  "font_list" is a comma separated list of font names.  The
  * first font name that works is used.  If none is found, use the default
  * font.
  * If "fontset" is TRUE, the "font_list" is used as one name for the fontset.
@@ -920,13 +929,7 @@ gui_init_font(font_list, fontset)
 # endif
 	    gui_mch_set_font(gui.norm_font);
 #endif
-	gui_set_shellsize(FALSE,
-#ifdef MSWIN
-		TRUE
-#else
-		FALSE
-#endif
-		, RESIZE_BOTH);
+	gui_set_shellsize(FALSE, TRUE, RESIZE_BOTH);
     }
 
     return ret;
@@ -1012,7 +1015,7 @@ gui_get_wide_font()
     }
 
     gui_mch_free_font(gui.wide_font);
-#ifdef FEAT_GUI_GTK
+# ifdef FEAT_GUI_GTK
     /* Avoid unnecessary overhead if 'guifontwide' is equal to 'guifont'. */
     if (font != NOFONT && gui.norm_font != NOFONT
 			 && pango_font_description_equal(font, gui.norm_font))
@@ -1021,8 +1024,16 @@ gui_get_wide_font()
 	gui_mch_free_font(font);
     }
     else
-#endif
+# endif
 	gui.wide_font = font;
+# ifdef FEAT_GUI_MSWIN
+    gui_mch_wide_font_changed();
+# else
+    /*
+     * TODO: setup wide_bold_font, wide_ital_font and wide_boldital_font to
+     * support those fonts for 'guifontwide'.
+     */
+# endif
     return OK;
 }
 #endif
@@ -1626,6 +1637,7 @@ gui_set_shellsize(mustset, fit_to_display, direction)
 	    un_maximize = FALSE;
 #endif
     }
+    limit_screen_size();
     gui.num_cols = Columns;
     gui.num_rows = Rows;
 
@@ -2192,6 +2204,9 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
     guicolor_T	sp_color;
 #if !defined(MSWIN16_FASTTEXT) && !defined(FEAT_GUI_GTK)
     GuiFont	font = NOFONT;
+# ifdef FEAT_MBYTE
+    GuiFont	wide_font = NOFONT;
+# endif
 # ifdef FEAT_XFONTSET
     GuiFontset	fontset = NOFONTSET;
 # endif
@@ -2281,6 +2296,23 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
 	}
 	else
 	    font = gui.norm_font;
+
+# ifdef FEAT_MBYTE
+	/*
+	 * Choose correct wide_font by font.  wide_font should be set with font
+	 * at same time in above block.  But it will make many "ifdef" nasty
+	 * blocks.  So we do it here.
+	 */
+	if (font == gui.boldital_font && gui.wide_boldital_font)
+	    wide_font = gui.wide_boldital_font;
+	else if (font == gui.bold_font && gui.wide_bold_font)
+	    wide_font = gui.wide_bold_font;
+	else if (font == gui.ital_font && gui.wide_ital_font)
+	    wide_font = gui.wide_ital_font;
+	else if (font == gui.norm_font && gui.wide_font)
+	    wide_font = gui.wide_font;
+# endif
+
     }
 # ifdef FEAT_XFONTSET
     if (fontset != NOFONTSET)
@@ -2404,14 +2436,16 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
     {
 	int	start;		/* index of bytes to be drawn */
 	int	cells;		/* cellwidth of bytes to be drawn */
-	int	thislen;	/* length of bytes to be drawin */
+	int	thislen;	/* length of bytes to be drawn */
 	int	cn;		/* cellwidth of current char */
 	int	i;		/* index of current char */
 	int	c;		/* current char value */
 	int	cl;		/* byte length of current char */
 	int	comping;	/* current char is composing */
 	int	scol = col;	/* screen column */
-	int	dowide;		/* use 'guifontwide' */
+	int	curr_wide;	/* use 'guifontwide' */
+	int	prev_wide = FALSE;
+	int	wide_changed;
 
 	/* Break the string at a composing character, it has to be drawn on
 	 * top of the previous character. */
@@ -2421,6 +2455,18 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
 	{
 	    c = utf_ptr2char(s + i);
 	    cn = utf_char2cells(c);
+#  ifdef FEAT_GUI_MACVIM
+	    curr_wide = (cn > 1);
+#  else
+	    if (cn > 1
+#  ifdef FEAT_XFONTSET
+		    && fontset == NOFONTSET
+#  endif
+		    && wide_font != NOFONT)
+		curr_wide = TRUE;
+	    else
+		curr_wide = FALSE;
+#  endif
 	    comping = utf_iscomposing(c);
 	    if (!comping)	/* count cells from non-composing chars */
 		cells += cn;
@@ -2428,22 +2474,11 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
 	    if (cl == 0)	/* hit end of string */
 		len = i + cl;	/* len must be wrong "cannot happen" */
 
-#  ifdef FEAT_GUI_MACVIM
-	    dowide = (cn > 1);
-#  else
-	    if (cn > 1
-#   ifdef FEAT_XFONTSET
-		    && fontset == NOFONTSET
-#   endif
-		    && gui.wide_font != NOFONT)
-		dowide = TRUE;
-	    else
-		dowide = FALSE;
-#  endif
+	    wide_changed = curr_wide != prev_wide;
 
-	    /* print the string so far if it's the last character or there is
+	    /* Print the string so far if it's the last character or there is
 	     * a composing character. */
-	    if (i + cl >= len || (comping && i > start) || dowide
+	    if (i + cl >= len || (comping && i > start) || wide_changed
 #  if defined(FEAT_GUI_X11)
 		    || (cn > 1
 #   ifdef FEAT_XFONTSET
@@ -2455,31 +2490,34 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
 #  endif
 	       )
 	    {
-		if (comping || dowide)
+		if (comping || wide_changed)
 		    thislen = i - start;
 		else
 		    thislen = i - start + cl;
 		if (thislen > 0)
 		{
+		    if (prev_wide)
+			gui_mch_set_font(wide_font);
 		    gui_mch_draw_string(gui.row, scol, s + start, thislen,
 #  ifdef FEAT_GUI_MACVIM
-								cells,
+				    cells,
+				    draw_flags | (prev_wide ? DRAW_WIDE : 0)
+# else
+				    draw_flag
 #  endif
-								draw_flags);
+				    );
+		    if (prev_wide)
+			gui_mch_set_font(font);
 		    start += thislen;
 		}
 		scol += cells;
 		cells = 0;
-		if (dowide)
+		/* Adjust to not draw a character which width is changed
+		 * against with last one. */
+		if (wide_changed && !comping)
 		{
-		    gui_mch_set_font(gui.wide_font);
-		    gui_mch_draw_string(gui.row, scol - cn, s + start, cl,
-#  ifdef FEAT_GUI_MACVIM
-							cn,
-#  endif
-							draw_flags | DRAW_WIDE);
-		    gui_mch_set_font(font);
-		    start += cl;
+		    scol -= cn;
+		    cl = 0;
 		}
 
 #  if defined(FEAT_GUI_X11)
@@ -2489,7 +2527,7 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
 #   ifdef FEAT_XFONTSET
 			&& fontset == NOFONTSET
 #   endif
-			&& !dowide)
+			&& !wide_changed)
 		    gui_mch_draw_string(gui.row, scol - 1, (char_u *)" ",
 							       1, draw_flags);
 #  endif
@@ -2511,6 +2549,7 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
 #  endif
 		start = i + cl;
 	    }
+	    prev_wide = curr_wide;
 	}
 	/* The stuff below assumes "len" is the length in screen columns. */
 	len = scol - col;
@@ -3930,7 +3969,7 @@ gui_drag_scrollbar(sb, value, still_dragging)
 	gui.dragged_sb = SBAR_NONE;
 #ifdef FEAT_GUI_GTK
 	/* Keep the "dragged_wp" value until after the scrolling, for when the
-	 * moust button is released.  GTK2 doesn't send the button-up event. */
+	 * mouse button is released.  GTK2 doesn't send the button-up event. */
 	gui.dragged_wp = NULL;
 #endif
     }
@@ -5376,7 +5415,7 @@ gui_do_findrepl(flags, find_text, repl_text, down)
 	    }
 	    else
 		MSG(_("No match at cursor, finding next"));
-	    vim_free(regmatch.regprog);
+	    vim_regfree(regmatch.regprog);
 	}
     }
 

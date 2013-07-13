@@ -1,4 +1,4 @@
-*mbyte.txt*     For Vim version 7.3.  Last change: 2012 Jun 06
+*mbyte.txt*     For Vim version 7.4a.  Last change: 2013 May 18
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar et al.
@@ -48,9 +48,9 @@ COMPILING
 If you already have a compiled Vim program, check if the |+multi_byte| feature
 is included.  The |:version| command can be used for this.
 
-If +multi_byte is not included, you should compile Vim with "big" features.
-You can further tune what features are included.  See the INSTALL files in the
-source directory.
+If +multi_byte is not included, you should compile Vim with "normal", "big" or
+"huge" features.  You can further tune what features are included.  See the
+INSTALL files in the source directory.
 
 
 LOCALE
@@ -1067,7 +1067,7 @@ The actual mappings are in the lines below "loadkeymap".  In the example "a"
 is mapped to "A" and "b" to "B".  Thus the first item is mapped to the second
 item.  This is done for each line, until the end of the file.
 These items are exactly the same as what can be used in a |:lnoremap| command,
-using "<buffer>" to make the mappings local to the buffer..
+using "<buffer>" to make the mappings local to the buffer.
 You can check the result with this command: >
 	:lmap
 The two items must be separated by white space.  You cannot include white
@@ -1084,6 +1084,13 @@ also add this line: >
 Since the mapping is defined with |:lnoremap| the resulting quote will not be
 used for the start of another character.
 The "accents" keymap uses this.				*keymap-accents*
+
+The first column can also be in |<>| form:
+	<C-c>		Ctrl-C
+	<A-c>		Alt-c
+	<A-C>		Alt-C
+Note that the Alt mappings may not work, depending on your keyboard and
+terminal.
 
 Although it's possible to have more than one character in the second column,
 this is unusual.  But you can use various ways to specify the character: >
