@@ -38,9 +38,8 @@
 - (void)enterFullScreen;
 - (void)leaveFullScreen;
 - (void)centerView;
+- (BOOL)isOnPrimaryScreen;
 
 - (BOOL)canBecomeKeyWindow;
 - (BOOL)canBecomeMainWindow;
-
-- (void)applicationDidChangeScreenParameters:(NSNotification *)notification;
 @end

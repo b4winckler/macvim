@@ -12,6 +12,8 @@
 	<string></string>
 	<key>clearRecentDocuments:</key>
 	<string></string>
+	<key>closeFileBrowser:</key>
+	<string></string>
 	<key>copy:</key>
 	<string></string>
 	<key>cut:</key>
@@ -34,6 +36,8 @@
 	<string></string>
 	<key>newWindow:</key>
 	<string></string>
+	<key>openFileBrowser:</key>
+	<string></string>
 	<key>openWebsite:</key>
 	<string></string>
 	<key>orderFrontCharacterPalette:</key>
@@ -54,6 +58,8 @@
 	<string></string>
 	<key>redo:</key>
 	<string></string>
+	<key>revealInFileBrowser:</key>
+	<string></string>
 	<key>selectAll:</key>
 	<string></string>
 	<key>selectNextWindow:</key>
@@ -63,6 +69,10 @@
 	<key>showVimHelp:</key>
 	<string></string>
 	<key>terminate:</key>
+	<string></string>
+	<key>toggleFileBrowser:</key>
+	<string></string>
+	<key>selectInFileBrowser:</key>
 	<string></string>
 	<key>undo:</key>
 	<string></string>

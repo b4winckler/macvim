@@ -74,6 +74,7 @@ if has("gui_macvim")
   an <silent> 9998.310 Window.Zoom		    <Nop>
   an <silent> 9998.311 Window.Zoom\ All		    <Nop>
   an <silent> 9998.320 Window.Toggle\ Full\ Screen\ Mode :set invfullscreen<CR>
+  an <silent> 9998.325 Window.Toggle\ File\ Browser <Nop>
   an 9998.330 Window.-SEP1-			    <Nop>
   " TODO! Grey out if no tabs are visible.
   an <silent> 9998.340 Window.Select\ Next\ Tab	    :tabnext<CR>
@@ -942,6 +943,9 @@ noremenu  <script> <silent> 1.100 PopUp.Select\ &All	:<C-U>call <SID>SelectAll()
 inoremenu <script> <silent> 1.100 PopUp.Select\ &All	<C-O>:call <SID>SelectAll()<CR>
 cnoremenu <script> <silent> 1.100 PopUp.Select\ &All	<C-U>call <SID>SelectAll()<CR>
 
+an 1.100 PopUp.-SEP3-			<Nop>
+nnoremenu <script> <silent> 1.110 PopUp.Reveal\ in\ File\ Browser	:<C-U>macaction revealInFileBrowser:<CR>
+
 if has("spell")
   " Spell suggestions in the popup menu.  Note that this will slow down the
   " appearance of the menu!
@@ -1223,6 +1227,7 @@ if has("gui_macvim")
   macm Window.Zoom		key=<D-C-z>	action=performZoom:
   macm Window.Zoom\ All		key=<D-M-C-z>	action=zoomAll:		alt=YES
   macm Window.Toggle\ Full\ Screen\ Mode	key=<D-C-f>
+  macm Window.Toggle\ File\ Browser   key=<D-D> action=toggleFileBrowser:
   macm Window.Select\ Next\ Tab			key=<D-}>
   macm Window.Select\ Previous\ Tab		key=<D-{>
   macm Window.Bring\ All\ To\ Front		action=arrangeInFront:

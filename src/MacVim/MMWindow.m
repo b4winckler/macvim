@@ -58,8 +58,12 @@
     [contentView setAutoresizesSubviews:YES];
     [contentView addSubview:tablineSeparator];
 
+#if 0   // Enabling this breaks NSSplitView's mouse cursor handling
     // NOTE: Vim needs to process mouse moved events, so enable them here.
     [self setAcceptsMouseMovedEvents:YES];
+#endif
+
+    [self setPreservesContentDuringLiveResize:YES];
 
     return self;
 }
@@ -68,8 +72,6 @@
 {
     ASLogDebug(@"");
 
-    // TODO: Is there any reason why we would want the following call?
-    //[tablineSeparator removeFromSuperviewWithoutNeedingDisplay];
     [tablineSeparator release];  tablineSeparator = nil;
     [super dealloc];
 }
@@ -143,6 +145,7 @@
     return YES;
 }
 
+#if 0
 - (IBAction)zoom:(id)sender
 {
     // NOTE: We shortcut the usual zooming behavior and provide custom zooming
@@ -151,6 +154,7 @@
     // (Use performSelector:: to avoid compilation warning.)
     [[self delegate] performSelector:@selector(zoom:) withObject:sender];
 }
+#endif
 
 - (IBAction)toggleFullScreen:(id)sender
 {
@@ -173,6 +177,13 @@
     if ([NSWindow instancesRespondToSelector:@selector(toggleFullScreen:)])
         [super toggleFullScreen:sender];
 #endif
+}
+
+- (NSTimeInterval)animationResizeTime:(NSRect)newWindowFrame
+{
+    // HACK! By overriding this method Cocoa won't try to animate the window
+    // during a zoom.
+    return 0;
 }
 
 @end // MMWindow

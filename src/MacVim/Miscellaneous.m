@@ -45,6 +45,9 @@ NSString *MMLastWindowClosedBehaviorKey = @"MMLastWindowClosedBehavior";
 NSString *MMUseInlineImKey              = @"MMUseInlineIm";
 #endif // INCLUDE_OLD_IM_CODE
 NSString *MMSuppressTerminationAlertKey = @"MMSuppressTerminationAlert";
+NSString *MMSidebarOnLeftEdgeKey        = @"MMSidebarOnLeftEdge";
+NSString *MMSidebarWidthKey             = @"MMSidebarWidth";
+NSString *MMSidebarVisibleKey           = @"MMSidebarVisible";
 NSString *MMNativeFullScreenKey         = @"MMNativeFullScreen";
 
 
@@ -263,6 +266,85 @@ NSString *MMNativeFullScreenKey         = @"MMNativeFullScreen";
 }
 
 @end // NSNumber (MMExtras)
+
+
+
+
+@implementation NSView (MMExtras)
+
+// Convert from view coordinate to screen coordinate
+- (NSPoint)convertToScreen:(NSPoint)point
+{
+    NSWindow *win = [self window];
+    return [win convertBaseToScreen:[self convertPoint:point toView:nil]];
+}
+
+// Convert to view coordinate from screen coordinate
+- (NSPoint)convertFromScreen:(NSPoint)point
+{
+    NSWindow *win = [self window];
+    return [win convertScreenToBase:[self convertPoint:point fromView:nil]];
+}
+
+- (NSSize)calculateDesiredSize
+{
+    // Call 'desiredSize' to get desired size for view _if_ we respond to this
+    // selector.  Since 'desiredSize' returns an NSSize we have to jump through
+    // hoops to actually call this selector.
+    // If we do not support this selector then it is assumed that the desired
+    // size equals the current size.
+    NSSize size = [self frame].size;
+    if ([self respondsToSelector:@selector(desiredSize)]) {
+        // Get method signature for method which takes no argument and returns
+        // an NSSize (we don't use 'desiredSize' since it is defined in a class
+        // which should not included here).
+        NSMethodSignature *sig = [NSWindow instanceMethodSignatureForSelector:
+                                                    @selector(contentMaxSize)];
+        NSInvocation *inv = [NSInvocation invocationWithMethodSignature:sig];
+        [inv setSelector:@selector(desiredSize)];
+        [inv setTarget:self];
+        [inv invoke];
+        [inv getReturnValue:&size];
+    }
+
+    NSEnumerator *e = [[self subviews] objectEnumerator];
+    NSView *v;
+    while ((v = [e nextObject])) {
+        NSSize desiredSize = [v calculateDesiredSize];
+        NSSize actualSize  = [v frame].size;
+
+        size.width  += desiredSize.width  - actualSize.width + 1;
+        size.height += desiredSize.height - actualSize.height + 2;
+    }
+
+    return size;
+}
+
+@end
+
+
+
+
+@implementation NSScreen (MMExtras)
+
+// Return the frame (in screen coordinates) where it is possible to drag to
+// resize a window.
+- (NSRect)resizableFrame
+{
+    NSRect f = [self frame];
+    NSRect v = [self visibleFrame];
+
+    // We assume that "visibleFrame" may be smaller than "frame" to compensate
+    // for the Dock or menu bar.  The Dock is assumed to be positioned
+    // left/right/bottom of the screen and the menu at the top.
+    v.size.width = f.size.width;
+    v.size.height += v.origin.y - f.origin.y;
+    v.origin = f.origin;
+
+    return v;
+}
+
+@end
 
 
 

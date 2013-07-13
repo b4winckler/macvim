@@ -40,6 +40,9 @@
     CGSize                      *advances;
     NSMutableArray              *fontCache;
 
+    NSPoint                     lastLowerLeft;
+    NSPoint                     lastUpperRight;
+
     // These are used in MMCoreTextView+ToolTip.m
     id trackingRectOwner_;              // (not retained)
     void *trackingRectUserData_;
@@ -102,6 +105,7 @@
 // MMCoreTextView methods
 //
 - (void)performBatchDrawWithData:(NSData *)data;
+- (void)batchDrawNow;
 - (NSSize)desiredSize;
 - (NSSize)minSize;
 - (NSSize)constrainRows:(int *)rows columns:(int *)cols toSize:(NSSize)size;

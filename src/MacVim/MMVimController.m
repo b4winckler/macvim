@@ -584,12 +584,10 @@ static BOOL isUnsafeMessage(int msgid);
         // NOTE: When a resize message originated in the frontend, Vim
         // acknowledges it with a reply message.  When this happens the window
         // should not move (the frontend would already have moved the window).
-        BOOL onScreen = SetTextDimensionsReplyMsgID!=msgid;
-
         [windowController setTextDimensionsWithRows:rows
                                  columns:cols
                                   isLive:(LiveResizeMsgID==msgid)
-                            keepOnScreen:onScreen];
+                                 isReply:(SetTextDimensionsReplyMsgID==msgid)];
     } else if (SetWindowTitleMsgID == msgid) {
         const void *bytes = [data bytes];
         int len = *((int*)bytes);  bytes += sizeof(int);
@@ -801,6 +799,16 @@ static BOOL isUnsafeMessage(int msgid);
     } else if (SetVimStateMsgID == msgid) {
         NSDictionary *dict = [NSDictionary dictionaryWithData:data];
         if (dict) {
+            // HACK! Post notification if pwd changed.
+            NSString *oldPwd = [vimState objectForKey:@"pwd"];
+            NSString *newPwd = [dict objectForKey:@"pwd"];
+            if (![oldPwd isEqualToString:newPwd]) {
+                [[NSNotificationCenter defaultCenter]
+                    postNotificationName:@"MMPwdChanged"
+                                  object:self
+                                userInfo:dict];
+            }
+
             [vimState release];
             vimState = [dict retain];
         }

@@ -30,6 +30,7 @@
 
 - (void)setPreEditRow:(int)row column:(int)col;
 - (void)performBatchDrawWithData:(NSData *)data;
+- (void)batchDrawNow;
 - (void)setMouseShape:(int)shape;
 - (void)setAntialias:(BOOL)antialias;
 - (void)setImControl:(BOOL)enable;

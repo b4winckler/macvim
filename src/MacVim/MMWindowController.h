@@ -12,26 +12,32 @@
 
 
 
+@class PSMTabBarControl;
 @class MMWindow;
 @class MMFullScreenWindow;
 @class MMVimController;
 @class MMVimView;
+@class MMFileBrowserController;
 
 @interface MMWindowController : NSWindowController
 #if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
     // 10.6 has turned delegate messages into formal protocols
-    <NSWindowDelegate>
+    <NSWindowDelegate, NSSplitViewDelegate>
 #endif
 {
+    NSTabView           *tabView;
+    PSMTabBarControl    *tabBarControl;
     MMVimController     *vimController;
+    NSSplitView         *splitView;
     MMVimView           *vimView;
+    NSView              *sidebarView;
     BOOL                setupDone;
     BOOL                windowPresented;
-    BOOL                shouldResizeVimView;
+    BOOL                shouldPlaceVimView;
+    BOOL                shouldResizeWindow;
     BOOL                shouldRestoreUserTopLeft;
     BOOL                shouldMaximizeWindow;
     int                 updateToolbarFlag;
-    BOOL                keepOnScreen;
     NSString            *windowAutosaveKey;
     BOOL                fullScreenEnabled;
     MMFullScreenWindow  *fullScreenWindow;
@@ -44,6 +50,8 @@
     int                 userCols;
     NSPoint             userTopLeft;
     NSPoint             defaultTopLeft;
+    BOOL                vimTaskSelectedTab;
+    MMFileBrowserController *fileBrowserController;
     NSToolbar           *toolbar;
 }
 
@@ -55,10 +63,10 @@
 - (void)cleanup;
 - (void)openWindow;
 - (BOOL)presentWindow:(id)unused;
-- (void)updateTabsWithData:(NSData *)data;
-- (void)selectTabWithIndex:(int)idx;
-- (void)setTextDimensionsWithRows:(int)rows columns:(int)cols isLive:(BOOL)live
-                     keepOnScreen:(BOOL)onScreen;
+- (void)setTextDimensionsWithRows:(int)rows
+                          columns:(int)cols
+                           isLive:(BOOL)live
+                          isReply:(BOOL)reply;
 - (void)zoomWithRows:(int)rows columns:(int)cols state:(int)state;
 - (void)setTitle:(NSString *)title;
 - (void)setDocumentFilename:(NSString *)filename;
@@ -89,6 +97,13 @@
 - (void)setTopLeft:(NSPoint)pt;
 - (BOOL)getDefaultTopLeft:(NSPoint*)pt;
 
+- (void)updateTabsWithData:(NSData *)data;
+- (void)selectTabWithIndex:(int)idx;
+
+- (void)collapseSidebar:(BOOL)on;
+- (BOOL)isSidebarCollapsed;
+- (void)setSidebarView:(NSView *)view leftEdge:(BOOL)left;
+
 - (IBAction)addNewTab:(id)sender;
 - (IBAction)toggleToolbar:(id)sender;
 - (IBAction)performClose:(id)sender;
@@ -100,5 +115,11 @@
 - (IBAction)fontSizeDown:(id)sender;
 - (IBAction)findAndReplace:(id)sender;
 - (IBAction)zoom:(id)sender;
+- (IBAction)openFileBrowser:(id)sender;
+- (IBAction)closeFileBrowser:(id)sender;
+- (IBAction)toggleFileBrowser:(id)sender;
+- (IBAction)selectInFileBrowser:(id)sender;
+- (IBAction)revealInFileBrowser:(id)sender;
+- (IBAction)sidebarEdgePreferenceChanged:(id)sender;
 
 @end

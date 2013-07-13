@@ -53,6 +53,9 @@ extern NSString *MMLastWindowClosedBehaviorKey;
 extern NSString *MMUseInlineImKey;
 #endif // INCLUDE_OLD_IM_CODE
 extern NSString *MMSuppressTerminationAlertKey;
+extern NSString *MMSidebarOnLeftEdgeKey;
+extern NSString *MMSidebarWidthKey;
+extern NSString *MMSidebarVisibleKey;
 extern NSString *MMNativeFullScreenKey;
 
 
@@ -81,13 +84,18 @@ enum {
 };
 
 
-
 enum {
     // These values are chosen so that the min text view size is not too small
     // with the default font (they only affect resizing with the mouse, you can
     // still use e.g. ":set lines=2" to go below these values).
     MMMinRows = 4,
     MMMinColumns = 30
+};
+
+
+enum {
+    MMSidebarMinWidth     = 100,
+    MMSidebarDefaultWidth = 240
 };
 
 
@@ -139,6 +147,20 @@ enum {
 @interface NSNumber (MMExtras)
 // HACK to allow font size to be changed via menu (bound to Cmd+/Cmd-)
 - (NSInteger)tag;
+@end
+
+
+@interface NSView (MMExtras)
+// Convert from view coordinate to screen coordinate
+- (NSPoint)convertToScreen:(NSPoint)point;
+// Convert to view coordinate from screen coordinate
+- (NSPoint)convertFromScreen:(NSPoint)point;
+- (NSSize)calculateDesiredSize;
+@end
+
+
+@interface NSScreen (MMExtras)
+- (NSRect)resizableFrame;
 @end
 
 

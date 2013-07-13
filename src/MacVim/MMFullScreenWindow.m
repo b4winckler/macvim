@@ -30,7 +30,7 @@
 #import "MMWindowController.h"
 #import "Miscellaneous.h"
 #import <Carbon/Carbon.h>
-#import <PSMTabBarControl/PSMTabBarControl.h>
+//#import <PSMTabBarControl/PSMTabBarControl.h>
 
 // These have to be the same as in option.h
 #define FUOPT_MAXVERT         0x001
@@ -46,10 +46,6 @@ enum {
 
 
 @interface MMFullScreenWindow (Private)
-- (BOOL)isOnPrimaryScreen;
-- (void)windowDidBecomeMain:(NSNotification *)notification;
-- (void)windowDidResignMain:(NSNotification *)notification;
-- (void)windowDidMove:(NSNotification *)notification;
 - (void)resizeVimView;
 @end
 
@@ -86,24 +82,10 @@ enum {
     [self setBackgroundColor:back];
     [self setReleasedWhenClosed:NO];
 
-    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-    [nc addObserver:self
-           selector:@selector(windowDidBecomeMain:)
-               name:NSWindowDidBecomeMainNotification
-             object:self];
-
-    [nc addObserver:self
-           selector:@selector(windowDidResignMain:)
-               name:NSWindowDidResignMainNotification
-             object:self];
-
-    [nc addObserver:self
-           selector:@selector(windowDidMove:)
-               name:NSWindowDidMoveNotification
-             object:self];
-
+#if 0   // Enabling this breaks NSSplitView's mouse cursor handling
     // NOTE: Vim needs to process mouse moved events, so enable them here.
     [self setAcceptsMouseMovedEvents:YES];
+#endif
 
     return self;
 }
@@ -111,8 +93,6 @@ enum {
 - (void)dealloc
 {
     ASLogDebug(@"");
-
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
 
     [target release];  target = nil;
     [view release];  view = nil;
@@ -154,8 +134,8 @@ enum {
     // make target's window controller believe that it's now controlling us
     [[target windowController] setWindow:self];
 
-    oldTabBarStyle = [[view tabBarControl] styleName];
-    [[view tabBarControl] setStyleNamed:@"Unified"];
+    //oldTabBarStyle = [[view tabBarControl] styleName];
+    //[[view tabBarControl] setStyleNamed:@"Unified"];
 
     // add text view
     oldPosition = [view frame].origin;
@@ -260,7 +240,7 @@ enum {
     [self retain];  // NSWindowController releases us once
     [[self windowController] setWindow:target];
 
-    [[view tabBarControl] setStyleNamed:oldTabBarStyle];
+    //[[view tabBarControl] setStyleNamed:oldTabBarStyle];
 
     // fix delegate
     id delegate = [self delegate];
@@ -344,33 +324,6 @@ enum {
     return YES;
 }
 
-- (void)applicationDidChangeScreenParameters:(NSNotification *)notification
-{
-    if (state != InFullScreen)
-        return;
-
-    // This notification is sent when screen resolution may have changed (e.g.
-    // due to a monitor being unplugged or the resolution being changed
-    // manually) but it also seems to get called when the Dock is
-    // hidden/displayed.
-    ASLogDebug(@"Screen unplugged / resolution changed");
-
-    NSScreen *screen = [target screen];
-    if (!screen) {
-        // Paranoia: if window we originally used for full-screen is gone, try
-        // screen window is on now, and failing that (not sure this can happen)
-        // use main screen.
-        screen = [self screen];
-        if (!screen)
-            screen = [NSScreen mainScreen];
-    }
-
-    // Ensure the full-screen window is still covering the entire screen and
-    // then resize view according to 'fuopt'.
-    [self setFrame:[screen frame] display:NO];
-    [self resizeVimView];
-}
-
 - (void)centerView
 {
     NSRect outer = [self frame], inner = [view frame];
@@ -382,6 +335,18 @@ enum {
                        floor((outer.size.height - inner.size.height)/2) };
 
     [view setFrameOrigin:origin];
+}
+
+- (BOOL)isOnPrimaryScreen
+{
+    // The primary screen is the screen the menu bar is on. This is different
+    // from [NSScreen mainScreen] (which returns the screen containing the
+    // key window).
+    NSArray *screens = [NSScreen screens];
+    if (screens == nil || [screens count] < 1)
+        return NO;
+
+    return [self screen] == [screens objectAtIndex:0];
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent
@@ -413,58 +378,6 @@ enum {
 
 
 @implementation MMFullScreenWindow (Private)
-
-- (BOOL)isOnPrimaryScreen
-{
-    // The primary screen is the screen the menu bar is on. This is different
-    // from [NSScreen mainScreen] (which returns the screen containing the
-    // key window).
-    NSArray *screens = [NSScreen screens];
-    if (screens == nil || [screens count] < 1)
-        return NO;
-
-    return [self screen] == [screens objectAtIndex:0];
-}
-
-- (void)windowDidBecomeMain:(NSNotification *)notification
-{
-    // Hide menu and dock, both appear on demand.
-    //
-    // Another way to deal with several full-screen windows would be to hide/
-    // reveal the dock only when the first full-screen window is created and
-    // show it again after the last one has been closed, but toggling on each
-    // focus gain/loss works better with Spaces. The downside is that the
-    // menu bar flashes shortly when switching between two full-screen windows.
-
-    // XXX: If you have a full-screen window on a secondary monitor and unplug
-    // the monitor, this will probably not work right.
-
-    if ([self isOnPrimaryScreen]) {
-        SetSystemUIMode(kUIModeAllSuppressed, 0); //requires 10.3
-    }
-}
-
-- (void)windowDidResignMain:(NSNotification *)notification
-{
-    // order menu and dock back in
-    if ([self isOnPrimaryScreen]) {
-        SetSystemUIMode(kUIModeNormal, 0);
-    }
-}
-
-- (void)windowDidMove:(NSNotification *)notification
-{
-    if (state != InFullScreen)
-        return;
-
-    // Window may move as a result of being dragged between Spaces.
-    ASLogDebug(@"Full-screen window moved, ensuring it covers the screen...");
-
-    // Ensure the full-screen window is still covering the entire screen and
-    // then resize view according to 'fuopt'.
-    [self setFrame:[[self screen] frame] display:NO];
-    [self resizeVimView];
-}
 
 - (void)resizeVimView
 {

@@ -92,9 +92,12 @@ test1.out: test1.in
 		  fi \
 		else echo $* NO OUTPUT >>test.log; \
 		fi"
+<<<<<<< HEAD
+=======
 	@/bin/sh -c "if test -f valgrind; then\
 		  mv -f valgrind valgrind.$*; \
 		fi"
+>>>>>>> af9e2355e31265cf9ad2e6e3e10e621f8635b65b
 	-rm -rf X* test.ok viminfo
 
 test49.out: test49.vim

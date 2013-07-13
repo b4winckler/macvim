@@ -65,6 +65,10 @@
 		1DE9B9500D341AB8008FEDD4 /* MMWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 1DE9B94E0D341AB8008FEDD4 /* MMWindow.m */; };
 		1DED78600C6DE43D0079945F /* vimrc in Copy Vim Runtime Files */ = {isa = PBXBuildFile; fileRef = 1DED785F0C6DE43D0079945F /* vimrc */; };
 		1DFE25A50C527BC4003000F7 /* PSMTabBarControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D493DB90C52533B00AB718C /* PSMTabBarControl.framework */; };
+		51D1D9321350AE1900323896 /* MMFileBrowserController.m in Sources */ = {isa = PBXBuildFile; fileRef = 51D1D9301350AE1900323896 /* MMFileBrowserController.m */; };
+		51D1D93E135120FF00323896 /* MMFileBrowserCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 51D1D93D135120FF00323896 /* MMFileBrowserCell.m */; };
+		51D410EB1615020A008CAF15 /* MMFileBrowserFSItem.m in Sources */ = {isa = PBXBuildFile; fileRef = 51D410EA1615020A008CAF15 /* MMFileBrowserFSItem.m */; };
+		51D410EE1615022B008CAF15 /* MMFileBrowser.m in Sources */ = {isa = PBXBuildFile; fileRef = 51D410ED1615022B008CAF15 /* MMFileBrowser.m */; };
 		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
@@ -209,6 +213,14 @@
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		32CA4F630368D1EE00C91783 /* MacVim_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MacVim_Prefix.pch; sourceTree = "<group>"; };
+		51D1D92F1350AE1900323896 /* MMFileBrowserController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MMFileBrowserController.h; sourceTree = "<group>"; };
+		51D1D9301350AE1900323896 /* MMFileBrowserController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MMFileBrowserController.m; sourceTree = "<group>"; };
+		51D1D93C135120FF00323896 /* MMFileBrowserCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MMFileBrowserCell.h; sourceTree = "<group>"; };
+		51D1D93D135120FF00323896 /* MMFileBrowserCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MMFileBrowserCell.m; sourceTree = "<group>"; };
+		51D410E91615020A008CAF15 /* MMFileBrowserFSItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MMFileBrowserFSItem.h; sourceTree = "<group>"; };
+		51D410EA1615020A008CAF15 /* MMFileBrowserFSItem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MMFileBrowserFSItem.m; sourceTree = "<group>"; };
+		51D410EC1615022B008CAF15 /* MMFileBrowser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MMFileBrowser.h; sourceTree = "<group>"; };
+		51D410ED1615022B008CAF15 /* MMFileBrowser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MMFileBrowser.m; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* MacVim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacVim.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -269,6 +281,7 @@
 				1D1474960C56703C0038FA2B /* MacVim.m */,
 				32CA4F630368D1EE00C91783 /* MacVim_Prefix.pch */,
 				29B97316FDCFA39411CA2CEA /* main.m */,
+				51D410E81615018B008CAF15 /* MMFileBrowser */,
 			);
 			name = "MacVim Source";
 			sourceTree = "<group>";
@@ -404,6 +417,21 @@
 				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		51D410E81615018B008CAF15 /* MMFileBrowser */ = {
+			isa = PBXGroup;
+			children = (
+				51D1D92F1350AE1900323896 /* MMFileBrowserController.h */,
+				51D1D9301350AE1900323896 /* MMFileBrowserController.m */,
+				51D410E91615020A008CAF15 /* MMFileBrowserFSItem.h */,
+				51D410EA1615020A008CAF15 /* MMFileBrowserFSItem.m */,
+				51D410EC1615022B008CAF15 /* MMFileBrowser.h */,
+				51D410ED1615022B008CAF15 /* MMFileBrowser.m */,
+				51D1D93C135120FF00323896 /* MMFileBrowserCell.h */,
+				51D1D93D135120FF00323896 /* MMFileBrowserCell.m */,
+			);
+			path = MMFileBrowser;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -560,6 +588,10 @@
 				1D60088B0E96A0B2003763F0 /* MMFindReplaceController.m in Sources */,
 				1DE63FFB0E71820F00959BDB /* MMCoreTextView.m in Sources */,
 				1D44972211FCA9B400B0630F /* MMCoreTextView+ToolTip.m in Sources */,
+				51D1D9321350AE1900323896 /* MMFileBrowserController.m in Sources */,
+				51D1D93E135120FF00323896 /* MMFileBrowserCell.m in Sources */,
+				51D410EB1615020A008CAF15 /* MMFileBrowserFSItem.m in Sources */,
+				51D410EE1615022B008CAF15 /* MMFileBrowser.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

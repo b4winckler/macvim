@@ -71,9 +71,10 @@
 #import "MMVimView.h"
 #import "MMWindow.h"
 #import "MMWindowController.h"
+#import "MMFileBrowserController.h"
 #import "Miscellaneous.h"
 #import <PSMTabBarControl/PSMTabBarControl.h>
-
+#import <Carbon/Carbon.h>
 
 // These have to be the same as in option.h
 #define FUOPT_MAXVERT         0x001
@@ -84,6 +85,7 @@
 
 @interface MMWindowController (Private)
 - (NSSize)contentSize;
+- (void)adjustWindowFrame;
 - (void)resizeWindowToFitContentSize:(NSSize)contentSize
                         keepOnScreen:(BOOL)onScreen;
 - (NSSize)constrainContentSizeToScreenSize:(NSSize)contentSize;
@@ -91,12 +93,16 @@
 - (void)updateResizeConstraints;
 - (NSTabViewItem *)addNewTabViewItem;
 - (BOOL)askBackendForStarRegister:(NSPasteboard *)pb;
+- (BOOL)hasTablineSeparator;
 - (void)updateTablineSeparator;
 - (void)hideTablineSeparator:(BOOL)hide;
 - (void)doFindNext:(BOOL)next;
 - (void)updateToolbar;
-- (BOOL)maximizeWindow:(int)options;
+- (NSUInteger)representedIndexOfTabViewItem:(NSTabViewItem *)tvi;
+- (void)enterCustomFullscreen;
+- (void)leaveCustomFullscreen;
 - (void)applicationDidChangeScreenParameters:(NSNotification *)notification;
+- (BOOL)maximizeWindow:(int)options;
 - (void)enterNativeFullScreen;
 @end
 
@@ -132,7 +138,8 @@
 
     // Use textured background on Leopard or later (skip the 'if' on Tiger for
     // polished metal window).
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:MMTexturedWindowKey]
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    if ([ud boolForKey:MMTexturedWindowKey]
             || (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_4))
         styleMask |= NSTexturedBackgroundWindowMask;
 
@@ -161,12 +168,77 @@
     // because of full-screen considerations, and because its size depends
     // on whether the tabline separator is visible or not.
     NSView *contentView = [win contentView];
+    NSRect frame = [contentView frame];
     [contentView setAutoresizesSubviews:YES];
 
-    vimView = [[MMVimView alloc] initWithFrame:[contentView frame]
+    // Create the tab view (which is never visible, but the tab bar control
+    // needs it to function).
+    tabView = [[NSTabView alloc] initWithFrame:NSZeroRect];
+
+    // Create the tab bar control (which is responsible for actually
+    // drawing the tabline and tabs).
+    NSRect tabFrame = { { 0, frame.size.height - 22 },
+                        { frame.size.width, 22 } };
+    tabBarControl = [[PSMTabBarControl alloc] initWithFrame:tabFrame];
+
+    [tabView setDelegate:tabBarControl];
+
+    [tabBarControl setTabView:tabView];
+    [tabBarControl setDelegate:self];
+    [tabBarControl setHidden:YES];
+
+    [tabBarControl setCellMinWidth:[ud integerForKey:MMTabMinWidthKey]];
+    [tabBarControl setCellMaxWidth:[ud integerForKey:MMTabMaxWidthKey]];
+    [tabBarControl setCellOptimumWidth:
+                                     [ud integerForKey:MMTabOptimumWidthKey]];
+
+    [tabBarControl setShowAddTabButton:[ud boolForKey:MMShowAddTabButtonKey]];
+    [[tabBarControl addTabButton] setTarget:self];
+    [[tabBarControl addTabButton] setAction:@selector(addNewTab:)];
+    [tabBarControl setAllowsDragBetweenWindows:NO];
+    [tabBarControl registerForDraggedTypes:
+                            [NSArray arrayWithObject:NSFilenamesPboardType]];
+
+    [tabBarControl setAutoresizingMask:NSViewWidthSizable|NSViewMinYMargin];
+    
+    // Tab bar resizing only works if awakeFromNib is called (that's where the
+    // NSViewFrameDidChangeNotification callback is installed). Sounds like a
+    // PSMTabBarControl bug, let's live with it for now.
+    [tabBarControl awakeFromNib];
+
+    [contentView addSubview:tabBarControl];
+
+    //frame.size.height -= 22;
+    if (styleMask & NSTexturedBackgroundWindowMask)
+        --frame.size.height;
+
+    vimView = [[MMVimView alloc] initWithFrame:frame
                                  vimController:vimController];
-    [vimView setAutoresizingMask:NSViewNotSizable];
-    [contentView addSubview:vimView];
+    [vimView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
+
+    // Avoid Vim view sending dimension change messages during startup.
+    [vimView disableTextViewDimensionMessages:YES];
+
+    splitView = [[NSSplitView alloc] initWithFrame:frame];
+    [splitView setVertical:YES];
+    [splitView setDividerStyle:NSSplitViewDividerStyleThin];
+    [splitView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
+    [splitView setDelegate:self];
+
+    //[tabBarControl setPartnerView:splitView];
+    
+#if 0
+    NSRect tempFrame = frame;
+    tempFrame.size.width = 150;
+    NSImageView *view = [[NSImageView alloc] initWithFrame:tempFrame];
+    [view setImage:[NSImage imageNamed:@"Attention"]];
+    [view setImageFrameStyle:NSImageFrameGroove];
+    [self setSidebarView:view leftEdge:NO];
+#else
+    [splitView addSubview:vimView];
+    [splitView adjustSubviews];
+#endif
+    [contentView addSubview:splitView];
 
     [win setDelegate:self];
     [win setInitialFirstResponder:[vimView textView]];
@@ -197,6 +269,22 @@
     if ([win respondsToSelector:@selector(_setContentHasShadow:)])
         [win _setContentHasShadow:NO];
 
+    fileBrowserController = nil;
+    if ([ud boolForKey:MMSidebarVisibleKey]) {
+        [self openFileBrowser:nil];
+        [win makeFirstResponder:[vimView textView]];
+    }
+
+    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+    [nc addObserver:self
+           selector:@selector(applicationDidChangeScreenParameters:)
+               name:NSApplicationDidChangeScreenParametersNotification
+             object:NSApp];
+
+#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7)
+    [win setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
+#endif
+
 #if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
     // Building on Mac OS X 10.7 or greater.
 
@@ -209,8 +297,7 @@
         [win setAnimationBehavior:NSWindowAnimationBehaviorDocumentWindow];
 #endif
 
-    [[NSNotificationCenter defaultCenter]
-        addObserver:self
+    [nc addObserver:self
            selector:@selector(applicationDidChangeScreenParameters:)
                name:NSApplicationDidChangeScreenParametersNotification
              object:NSApp];
@@ -222,9 +309,14 @@
 {
     ASLogDebug(@"");
 
+    [fileBrowserController release];  fileBrowserController = nil;
     [decoratedWindow release];  decoratedWindow = nil;
     [windowAutosaveKey release];  windowAutosaveKey = nil;
     [vimView release];  vimView = nil;
+    [sidebarView release];  sidebarView = nil;
+    [splitView release];  splitView = nil;
+    [tabBarControl release];  tabBarControl = nil;
+    [tabView release];  tabView = nil;
     [toolbar release];  toolbar = nil;
 
     [super dealloc];
@@ -266,7 +358,8 @@
     // NOTE: Must set this before possibly leaving full-screen.
     setupDone = NO;
 
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+    [nc removeObserver:self];
 
     if (fullScreenEnabled) {
         // If we are closed while still in full-screen, end full-screen mode,
@@ -277,15 +370,34 @@
 
     vimController = nil;
 
-    [vimView removeFromSuperviewWithoutNeedingDisplay];
-    [vimView cleanup];
+    // NOTE! There is a bug in PSMTabBarControl in that it retains the delegate
+    // so reset the delegate here, otherwise the delegate may never get
+    // released.
+    [tabView setDelegate:nil];
+    [tabBarControl setDelegate:nil];
+    [tabBarControl setTabView:nil];
 
-    // It is feasible (though unlikely) that the user quits before the window
+    // NOTE! There is another bug in PSMTabBarControl where the control is not
+    // removed as an observer, so remove it here (failing to remove an observer
+    // may lead to very strange bugs).
+    [nc removeObserver:tabBarControl];
+
+    [vimView cleanup];
+    [fileBrowserController cleanup];
+
+    // It is possible (though unlikely) that the user quits before the window
     // controller is released, make sure the edit flag is cleared so no warning
     // dialog is displayed.
     [decoratedWindow setDocumentEdited:NO];
 
-    [[self window] orderOut:self];
+    // NOTE! Calling orderOut: here will cause the views to set the 'needs
+    // display' flag under certain conditions (such as clicking the close
+    // button on a window).  Obviously having the views display themselves just
+    // as the window is about to close is a bad idea, so clear this flag
+    // immediately.  If we do not call orderOut: then the next window will not
+    // get focus when a window is closed.
+    [decoratedWindow orderOut:self];
+    [decoratedWindow setViewsNeedDisplay:NO];
 }
 
 - (void)openWindow
@@ -312,11 +424,12 @@
     // made as to which screen the window should be on.  This means that all
     // code that is executed before this point must not depend on the screen!
 
+    [self adjustWindowFrame];
+    [vimView disableTextViewDimensionMessages:NO];
     [[MMAppController sharedInstance] windowControllerWillOpen:self];
     [self updateResizeConstraints];
-    [self resizeWindowToFitContentSize:[vimView desiredSize]
-                          keepOnScreen:YES];
-
+    //[self resizeWindowToFitContentSize:[vimView desiredSize]
+    //                      keepOnScreen:YES];
 
     [decoratedWindow makeKeyAndOrderFront:self];
 
@@ -335,7 +448,7 @@
     if (fullScreenWindow) {
         // Delayed entering of full-screen happens here (a ":set fu" in a
         // GUIEnter auto command could cause this).
-        [fullScreenWindow enterFullScreen];
+        [self enterCustomFullscreen];
         fullScreenEnabled = YES;
     } else if (delayEnterFullScreen) {
         // Set alpha to zero so that the decorated window doesn't pop up
@@ -347,21 +460,17 @@
     return YES;
 }
 
-- (void)updateTabsWithData:(NSData *)data
+- (void)setTextDimensionsWithRows:(int)rows
+                          columns:(int)cols
+                           isLive:(BOOL)live
+                          isReply:(BOOL)reply
 {
-    [vimView updateTabsWithData:data];
-}
+    int maxRows, maxCols;
+    [[vimView textView] getMaxRows:&maxRows columns:&maxCols];
 
-- (void)selectTabWithIndex:(int)idx
-{
-    [vimView selectTabWithIndex:idx];
-}
-
-- (void)setTextDimensionsWithRows:(int)rows columns:(int)cols isLive:(BOOL)live
-                     keepOnScreen:(BOOL)onScreen
-{
     ASLogDebug(@"setTextDimensionsWithRows:%d columns:%d isLive:%d "
-            "keepOnScreen:%d", rows, cols, live, onScreen);
+            "isReply:%d (rows=%d, cols=%d, setupDone=%d)",
+            rows, cols, live, reply, maxRows, maxCols, setupDone);
 
     // NOTE: The only place where the (rows,columns) of the vim view are
     // modified is here and when entering/leaving full-screen.  Setting these
@@ -374,11 +483,25 @@
     // size when this flag is set, otherwise the window might jitter when the
     // user drags to resize the window.
 
+    if (maxRows == rows && maxCols == cols)
+        return;
+
     [vimView setDesiredRows:rows columns:cols];
 
     if (setupDone && !live) {
-        shouldResizeVimView = YES;
-        keepOnScreen = onScreen;
+        shouldPlaceVimView = YES;
+        shouldResizeWindow = !reply && !fullScreenWindow;
+    }
+
+    // Autosave rows and columns.
+    if (windowAutosaveKey && !fullScreenEnabled && [tabBarControl isHidden]
+            && rows > MMMinRows && cols > MMMinColumns) {
+        // NOTE: Don't save if tabline is visible.  Otherwise new windows will
+        // look like they are missing a line or two (depending on font size).
+        NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+        [ud setInteger:rows forKey:MMAutosaveRowsKey];
+        [ud setInteger:cols forKey:MMAutosaveColumnsKey];
+        [ud synchronize];
     }
 
     // Autosave rows and columns.
@@ -395,7 +518,7 @@
         // for example if 'showtabline=2').
         // TODO: Store window pixel dimensions instead of rows/columns?
         int autosaveRows = rows;
-        if (![[vimView tabBarControl] isHidden])
+        if (![tabBarControl isHidden])
             ++autosaveRows;
 
         NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
@@ -410,7 +533,7 @@
     [self setTextDimensionsWithRows:rows
                             columns:cols
                              isLive:NO
-                       keepOnScreen:YES];
+                            isReply:NO];
 
     // NOTE: If state==0 then the window should be put in the non-zoomed
     // "user state".  That is, move the window back to the last stored
@@ -480,7 +603,7 @@
 - (BOOL)destroyScrollbarWithIdentifier:(int32_t)ident
 {
     BOOL scrollbarHidden = [vimView destroyScrollbarWithIdentifier:ident];   
-    shouldResizeVimView = shouldResizeVimView || scrollbarHidden;
+    shouldPlaceVimView = shouldPlaceVimView || scrollbarHidden;
     shouldMaximizeWindow = shouldMaximizeWindow || scrollbarHidden;
 
     return scrollbarHidden;
@@ -490,7 +613,7 @@
 {
     BOOL scrollbarToggled = [vimView showScrollbarWithIdentifier:ident
                                                            state:visible];
-    shouldResizeVimView = shouldResizeVimView || scrollbarToggled;
+    shouldPlaceVimView = shouldPlaceVimView || scrollbarToggled;
     shouldMaximizeWindow = shouldMaximizeWindow || scrollbarToggled;
 
     return scrollbarToggled;
@@ -534,6 +657,9 @@
 
 - (void)processInputQueueDidFinish
 {
+    ASLogDebug(@"presented=%d  place view=%d  should resize=%d",
+            windowPresented, shouldPlaceVimView, shouldResizeWindow);
+
     // NOTE: Resizing is delayed until after all commands have been processed
     // since it often happens that more than one command will cause a resize.
     // If we were to immediately resize then the vim view size would jitter
@@ -548,11 +674,12 @@
     if (updateToolbarFlag != 0)
         [self updateToolbar];
 
+#if 0
     // NOTE: If the window has not been presented then we must avoid resizing
     // the views since it will cause them to be constrained to the screen which
     // has not yet been set!
-    if (windowPresented && shouldResizeVimView) {
-        shouldResizeVimView = NO;
+    if (windowPresented && shouldPlaceVimView) {
+        shouldPlaceVimView = NO;
 
         // Make sure full-screen window stays maximized (e.g. when scrollbar or
         // tabline is hidden) according to 'fuopt'.
@@ -593,16 +720,57 @@
                                       keepOnScreen:keepOnScreen];
             }
         }
-
-        keepOnScreen = NO;
     }
+#else
+    if (windowPresented && shouldPlaceVimView) {
+        if (fullScreenEnabled) {
+            // This has the effect of disallowing dimension changes while in
+            // full-screen mode.
+            [vimView adjustTextViewDimensions];
+        } else {
+            if (shouldResizeWindow) {
+                [self adjustWindowFrame];
+                shouldResizeWindow = NO;
+            }
+        }
+
+        [vimView placeViews];
+        shouldPlaceVimView = NO;
+    }
+
+    // NOTE! Actual drawing must take place after window has been resized etc.,
+    // else parts of the view will not draw properly after a resize.  (This
+    // applies to the Core Text renderer only.)
+    // See -[MMCoreTextView batchDrawNow] as to why we don't rely on the 'needs
+    // resize' flag.
+    [[vimView textView] batchDrawNow];
+#endif
 }
 
 - (void)showTabBar:(BOOL)on
 {
-    [[vimView tabBarControl] setHidden:!on];
+    [tabBarControl setHidden:!on];
     [self updateTablineSeparator];
     shouldMaximizeWindow = YES;
+    shouldPlaceVimView = YES;
+
+#if 1
+    NSSize size;
+    if (fullScreenWindow) {
+        size = [[fullScreenWindow contentView] frame].size;
+    } else {
+        size = [[decoratedWindow contentView] frame].size;
+        if ([self hasTablineSeparator])
+            size.height -= 1;
+    }
+
+    if (on)
+        size.height -= 22;
+
+    if (!NSEqualSizes(size, [splitView frame].size)) {
+        [splitView setFrameSize:size];
+    }
+#endif
 }
 
 - (void)showToolbar:(BOOL)on size:(int)size mode:(int)mode
@@ -633,7 +801,7 @@
 {
     if (vimView && [vimView textView]) {
         [[vimView textView] setLinespace:(float)linespace];
-        shouldMaximizeWindow = shouldResizeVimView = YES;
+        shouldMaximizeWindow = shouldPlaceVimView = YES;
     }
 }
 
@@ -693,8 +861,9 @@
         // Sending of synchronous message failed.  Force the window size to
         // match the last dimensions received from Vim, otherwise we end up
         // with inconsistent states.
-        [self resizeWindowToFitContentSize:[vimView desiredSize]
-                              keepOnScreen:NO];
+        //[self resizeWindowToFitContentSize:[vimView desiredSize]
+        //                      keepOnScreen:NO];
+        [self adjustWindowFrame];
     }
 
     // If we saved the original title while resizing, restore it.
@@ -743,12 +912,12 @@
         // custom full-screen can appear on any screen, as opposed to native
         // full-screen which always uses the main screen.)
         if (windowPresented) {
-            [fullScreenWindow enterFullScreen];
+            [self enterCustomFullscreen];
             fullScreenEnabled = YES;
 
             // The resize handle disappears so the vim view needs to update the
             // scrollbars.
-            shouldResizeVimView = YES;
+            shouldPlaceVimView = YES;
         }
     }
 }
@@ -762,12 +931,12 @@
     fullScreenEnabled = NO;
     if (fullScreenWindow) {
         // Using custom full-screen
-        [fullScreenWindow leaveFullScreen];
+        [self leaveCustomFullscreen];
         [fullScreenWindow release];
         fullScreenWindow = nil;
 
         // The vim view may be too large to fit the screen, so update it.
-        shouldResizeVimView = YES;
+        shouldPlaceVimView = YES;
     } else {
         // Using native full-screen
         // NOTE: fullScreenEnabled is used to detect if we enter full-screen
@@ -821,10 +990,141 @@
     return NO;
 }
 
+- (void)updateTabsWithData:(NSData *)data
+{
+    const void *p = [data bytes];
+    const void *end = p + [data length];
+    int tabIdx = 0;
+
+    // HACK!  Current tab is first in the message.  This way it is not
+    // necessary to guess which tab should be the selected one (this can be
+    // problematic for instance when new tabs are created).
+    int curtabIdx = *((int*)p);  p += sizeof(int);
+
+    NSArray *tabViewItems = [tabBarControl representedTabViewItems];
+
+    while (p < end) {
+        NSTabViewItem *tvi = nil;
+
+        //int wincount = *((int*)p);  p += sizeof(int);
+        int infoCount = *((int*)p); p += sizeof(int);
+        unsigned i;
+        for (i = 0; i < infoCount; ++i) {
+            int length = *((int*)p);  p += sizeof(int);
+            if (length <= 0)
+                continue;
+
+            NSString *val = [[NSString alloc]
+                    initWithBytes:(void*)p length:length
+                         encoding:NSUTF8StringEncoding];
+            p += length;
+
+            switch (i) {
+                case MMTabLabel:
+                    // Set the label of the tab, adding a new tab when needed.
+                    tvi = [tabView numberOfTabViewItems] <= tabIdx
+                            ? [self addNewTabViewItem]
+                            : [tabViewItems objectAtIndex:tabIdx];
+                    [tvi setLabel:val];
+                    ++tabIdx;
+                    break;
+                case MMTabToolTip:
+                    if (tvi)
+                        [tabBarControl setToolTip:val
+                                          forTabViewItem:tvi];
+                    break;
+                default:
+                    ASLogWarn(@"Unknown tab info for index: %d", i);
+            }
+
+            [val release];
+        }
+    }
+
+    // Remove unused tabs from the NSTabView.  Note that when a tab is closed
+    // the NSTabView will automatically select another tab, but we want Vim to
+    // take care of which tab to select so set the vimTaskSelectedTab flag to
+    // prevent the tab selection message to be passed on to the VimTask.
+    vimTaskSelectedTab = YES;
+    int i, count = [tabView numberOfTabViewItems];
+    for (i = count-1; i >= tabIdx; --i) {
+        id tvi = [tabViewItems objectAtIndex:i];
+        [tabView removeTabViewItem:tvi];
+    }
+    vimTaskSelectedTab = NO;
+
+    [self selectTabWithIndex:curtabIdx];
+}
+
+- (void)selectTabWithIndex:(int)idx
+{
+    NSArray *tabViewItems = [tabBarControl representedTabViewItems];
+    if (idx < 0 || idx >= [tabViewItems count]) {
+        ASLogWarn(@"No tab with index %d exists.", idx);
+        return;
+    }
+
+    // Do not try to select a tab if already selected.
+    NSTabViewItem *tvi = [tabViewItems objectAtIndex:idx];
+    if (tvi != [tabView selectedTabViewItem]) {
+        vimTaskSelectedTab = YES;
+        [tabView selectTabViewItem:tvi];
+        vimTaskSelectedTab = NO;
+    }
+}
+
+- (void)collapseSidebar:(BOOL)on
+{
+    if (!sidebarView)
+        return;
+
+    if (on != [sidebarView isHidden]) {
+        [sidebarView setHidden:on];
+        [splitView adjustSubviews];
+    }
+}
+
+- (BOOL)isSidebarCollapsed
+{
+    return !sidebarView || [sidebarView isHidden];
+}
+
+- (void)setSidebarView:(NSView *)view leftEdge:(BOOL)left
+{
+    NSArray *subviews = left
+                      ? [NSArray arrayWithObjects:view, vimView, nil]
+                      : [NSArray arrayWithObjects:vimView, view, nil];
+
+    [sidebarView autorelease];
+    sidebarView = [view retain];
+
+    // Restore autosaved sidebar width
+    CGFloat w = (CGFloat)[[NSUserDefaults standardUserDefaults]
+                                            integerForKey:MMSidebarWidthKey];
+    if (w < MMSidebarMinWidth)
+        w = MMSidebarMinWidth;
+
+    NSRect frame = [splitView frame];
+    frame.size.width = w;
+    [view setFrame:frame];
+
+    [splitView setSubviews:subviews];
+    [splitView adjustSubviews];
+
+    // The resize indicator should always be enabled if the sidebar view is
+    // rightmost.
+    if (!left)
+        [decoratedWindow setShowsResizeIndicator:YES];
+
+    // Need to place views to make sure scrollbars are positioned properly now
+    // that the view layout may have changed.
+    shouldPlaceVimView = YES;
+}
+
 
 - (IBAction)addNewTab:(id)sender
 {
-    [vimView addNewTab:sender];
+    [vimController sendMessage:AddNewTabMsgID data:nil];
 }
 
 - (IBAction)toggleToolbar:(id)sender
@@ -937,6 +1237,23 @@
 
 - (void)windowDidBecomeMain:(NSNotification *)notification
 {
+    if (fullScreenWindow) {
+        // Hide menu and dock, both appear on demand.
+        //
+        // Another way to deal with several full-screen windows would be to
+        // hide/reveal the dock only when the first full-screen window is
+        // created and show it again after the last one has been closed, but
+        // toggling on each focus gain/loss works better with Spaces. The
+        // downside is that the menu bar flashes shortly when switching between
+        // two full-screen windows.
+
+        // XXX: If you have a full-screen window on a secondary monitor and
+        // unplug the monitor, this will probably not work right.
+
+        if ([fullScreenWindow isOnPrimaryScreen])
+            SetSystemUIMode(kUIModeAllSuppressed, 0); //requires 10.3
+    }
+
     [[MMAppController sharedInstance] setMainMenu:[vimController mainMenu]];
     [vimController sendMessage:GotFocusMsgID data:nil];
 
@@ -948,6 +1265,12 @@
 
 - (void)windowDidResignMain:(NSNotification *)notification
 {
+    if (fullScreenWindow) {
+        // Order menu and dock back in
+        if ([fullScreenWindow isOnPrimaryScreen])
+            SetSystemUIMode(kUIModeNormal, 0);
+    }
+
     [vimController sendMessage:LostFocusMsgID data:nil];
 }
 
@@ -964,42 +1287,66 @@
     if (!setupDone)
         return;
 
-    if (fullScreenEnabled) {
+    if (fullScreenWindow) {
+        // Window may move as a result of being dragged between Spaces.
+        ASLogDebug(@"Full-screen window moved, "
+                "ensuring it covers the screen...");
+
+        // The full-screen window may have moved to/off the screen with the
+        // menu bar, so we hide/show the menu bar as a precaution.
+        if ([fullScreenWindow isOnPrimaryScreen])
+            SetSystemUIMode(kUIModeAllSuppressed, 0);
+        else
+            SetSystemUIMode(kUIModeNormal, 0);
+
+        [fullScreenWindow setFrame:[[fullScreenWindow screen] frame]
+                           display:NO];
+    } else if (fullScreenEnabled) {
         // NOTE: The full-screen is not supposed to be able to be moved.  If we
         // do get here while in full-screen something unexpected happened (e.g.
         // the full-screen window was on an external display that got
         // unplugged).
         return;
+    } else {
+        NSRect frame = [decoratedWindow frame];
+        NSPoint topLeft = { frame.origin.x, NSMaxY(frame) };
+        if (windowAutosaveKey) {
+            NSString *topLeftString = NSStringFromPoint(topLeft);
+
+            [[NSUserDefaults standardUserDefaults]
+                setObject:topLeftString forKey:windowAutosaveKey];
+        }
+
+        // NOTE: This method is called when the user drags the window, but not
+        // when the top left point changes programmatically.
+        // NOTE 2: Vim counts Y-coordinates from the top of the screen.
+        int pos[2] = {
+                (int)topLeft.x,
+                (int)(NSMaxY([[decoratedWindow screen] frame]) - topLeft.y) };
+        NSData *data = [NSData dataWithBytes:pos length:2*sizeof(int)];
+        [vimController sendMessage:SetWindowPositionMsgID data:data];
     }
-
-    NSRect frame = [decoratedWindow frame];
-    NSPoint topLeft = { frame.origin.x, NSMaxY(frame) };
-    if (windowAutosaveKey) {
-        NSString *topLeftString = NSStringFromPoint(topLeft);
-
-        [[NSUserDefaults standardUserDefaults]
-            setObject:topLeftString forKey:windowAutosaveKey];
-    }
-
-    // NOTE: This method is called when the user drags the window, but not when
-    // the top left point changes programmatically.
-    // NOTE 2: Vim counts Y-coordinates from the top of the screen.
-    int pos[2] = {
-            (int)topLeft.x,
-            (int)(NSMaxY([[decoratedWindow screen] frame]) - topLeft.y) };
-    NSData *data = [NSData dataWithBytes:pos length:2*sizeof(int)];
-    [vimController sendMessage:SetWindowPositionMsgID data:data];
 }
 
-- (void)windowDidResize:(id)sender
+- (NSRect)windowWillUseStandardFrame:(NSWindow *)window
+                        defaultFrame:(NSRect)newFrame
 {
-    if (!setupDone || fullScreenEnabled) return;
+    // Decide whether too zoom horizontally or not (always zoom vertically).
+    NSEvent *event = [NSApp currentEvent];
+    BOOL cmdLeftClick = [event type] == NSLeftMouseUp &&
+                        [event modifierFlags] & NSCommandKeyMask;
+    BOOL zoomBoth = [[NSUserDefaults standardUserDefaults]
+                                                    boolForKey:MMZoomBothKey];
+    zoomBoth = (zoomBoth && !cmdLeftClick) || (!zoomBoth && cmdLeftClick);
 
-    // NOTE: Since we have no control over when the window may resize (Cocoa
-    // may resize automatically) we simply set the view to fill the entire
-    // window.  The vim view takes care of notifying Vim if the number of
-    // (rows,columns) changed.
-    [vimView setFrameSize:[self contentSize]];
+    if (!zoomBoth) {
+        // Only zoom vertically.
+        NSRect frame = [window frame];
+        newFrame.origin.x = frame.origin.x;
+        newFrame.size.width = frame.size.width;
+    }
+
+    return newFrame;
 }
 
 - (void)windowDidChangeBackingProperties:(NSNotification *)notification
@@ -1071,7 +1418,54 @@
     [vimController sendMessage:ZoomMsgID data:data];
 }
 
+- (IBAction)openFileBrowser:(id)sender
+{
+    if (fileBrowserController == nil) {
+      fileBrowserController = [[MMFileBrowserController alloc]
+                                            initWithWindowController:self];
+      NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+      [self setSidebarView:fileBrowserController.view
+                  leftEdge:[ud boolForKey:MMSidebarOnLeftEdgeKey]];
+      [fileBrowserController setNextKeyView:[vimView textView]];
+    }
+    [self collapseSidebar:NO];
+    [fileBrowserController makeFirstResponder:self];
+}
 
+- (IBAction)closeFileBrowser:(id)sender
+{
+    [self collapseSidebar:YES];
+}
+
+- (IBAction)toggleFileBrowser:(id)sender
+{
+    if ([self isSidebarCollapsed])
+        [self openFileBrowser:sender];
+    else
+        [self closeFileBrowser:sender];
+}
+
+- (IBAction)selectInFileBrowser:(id)sender
+{
+    [fileBrowserController selectInBrowser];
+}
+
+- (IBAction)revealInFileBrowser:(id)sender
+{
+    [fileBrowserController selectInBrowserByExpandingItems];
+}
+
+- (IBAction)sidebarEdgePreferenceChanged:(id)sender
+{
+    if (!sidebarView || [[splitView subviews] count] != 2)
+        return;
+
+    BOOL leftEdge = [[NSUserDefaults standardUserDefaults]
+                                            boolForKey:MMSidebarOnLeftEdgeKey];
+    [self setSidebarView:sidebarView leftEdge:leftEdge];
+    //[vimView placeViews];
+    [vimController sendMessage:BackingPropertiesChangedMsgID data:nil];
+}
 
 // -- Services menu delegate -------------------------------------------------
 
@@ -1109,6 +1503,198 @@
 }
 
 
+// -- Split view delegate ----------------------------------------------------
+
+// NOTE: A general assumption in these delegate messages is that there is a
+// main view (the Vim view) and a side view, and that the split is vertical.
+// If more views are added to the split view or if the split is changed to
+// horizontal then these delegate methods need to be updated.
+
+#if 0
+- (void)splitView:(NSSplitView *)sv resizeSubviewsWithOldSize:(NSSize)oldSize
+{
+    // This code assumes that there are at most two views in a vertical split
+    // arrangement.  Horizontal space changes are accumulated into the vimView,
+    // the other view has a fixed width.
+
+    NSSize size = [splitView frame].size;
+
+    if (sidebarView && ![sidebarView isHidden]) {
+        CGFloat d = size.width - oldSize.width;
+        NSSize vsize = [vimView frame].size;
+        NSSize ssize = [sidebarView frame].size;
+
+        vsize.width += d;
+        vsize.height = ssize.height = size.height;
+
+        [vimView setFrameSize:vsize];
+        [sidebarView setFrameSize:ssize];
+    } else {
+        [vimView setFrameSize:size];
+    }
+}
+
+#else
+
+- (BOOL)splitView:(NSSplitView *)sv shouldAdjustSizeOfSubview:(NSView *)subview
+{
+    // Only the Vim view should resize when the split view changes size.
+    return subview == vimView;
+}
+
+#endif
+
+- (BOOL)splitView:(NSSplitView *)splitView
+    shouldHideDividerAtIndex:(NSInteger)dividerIndex
+{
+    // This ensures that the divider hides when the side view is collapsed.
+    return [self isSidebarCollapsed];
+}
+
+- (BOOL)splitView:(NSSplitView *)sv canCollapseSubview:(NSView *)subview
+{
+    // Only the side view can collapse
+    return sidebarView && subview == sidebarView;
+}
+
+- (BOOL)splitView:(NSSplitView *)sv
+                shouldCollapseSubview:(NSView *)subview
+       forDoubleClickOnDividerAtIndex:(NSInteger)idx
+{
+    // Only the side view can collapse
+    return sidebarView && subview == sidebarView;
+}
+
+- (CGFloat)splitView:(NSSplitView *)sv
+        constrainMinCoordinate:(CGFloat)proposedMin
+                   ofSubviewAt:(NSInteger)idx
+{
+    // Constrain Vim size minimum size when on the left.  Note that this only
+    // applies when dragging the divider.
+
+    NSArray *views = [splitView subviews];
+    if ([views count] < 1)
+        return proposedMin;
+
+    return ([views objectAtIndex:0] == vimView) ? [vimView minSize].width
+                                                : proposedMin;
+}
+
+- (CGFloat)splitView:(NSSplitView *)sv
+        constrainMaxCoordinate:(CGFloat)proposedMax
+                   ofSubviewAt:(NSInteger)idx
+{
+    // Constrain Vim size minimum size when on the right.  Note that this only
+    // applies when dragging the divider.
+
+    NSArray *views = [splitView subviews];
+    if ([views count] < 2)
+        return proposedMax;
+
+    return [views objectAtIndex:1] == vimView
+                    ? [splitView frame].size.width - [vimView minSize].width
+                    : proposedMax;
+}
+
+- (void)splitViewDidResizeSubviews:(NSNotification *)notification
+{
+    if (windowAutosaveKey && ![self isSidebarCollapsed]) {
+        // Autosave the width of the sidebar
+        NSInteger w = (NSInteger)[sidebarView frame].size.width;
+        NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+        [ud setInteger:w forKey:MMSidebarWidthKey];
+        [ud synchronize];
+    }
+}
+
+
+// -- PSMTabBarControl delegate ----------------------------------------------
+
+
+- (BOOL)tabView:(NSTabView *)theTabView shouldSelectTabViewItem:
+    (NSTabViewItem *)tabViewItem
+{
+    // NOTE: It would be reasonable to think that 'shouldSelect...' implies
+    // that this message only gets sent when the user clicks the tab.
+    // Unfortunately it is not so, which is why we need the
+    // 'vimTaskSelectedTab' flag.
+    //
+    // HACK!  The selection message should not be propagated to Vim if Vim
+    // selected the tab (e.g. as opposed the user clicking the tab).  The
+    // delegate method has no way of knowing who initiated the selection so a
+    // flag is set when Vim initiated the selection.
+    if (!vimTaskSelectedTab) {
+        // Propagate the selection message to Vim.
+        NSUInteger idx = [self representedIndexOfTabViewItem:tabViewItem];
+        if (NSNotFound != idx) {
+            int i = (int)idx;   // HACK! Never more than MAXINT tabs?!
+            NSData *data = [NSData dataWithBytes:&i length:sizeof(int)];
+            [vimController sendMessage:SelectTabMsgID data:data];
+        }
+    }
+
+    // Unless Vim selected the tab, return NO, and let Vim decide if the tab
+    // should get selected or not.
+    return vimTaskSelectedTab;
+}
+
+- (BOOL)tabView:(NSTabView *)theTabView shouldCloseTabViewItem:
+        (NSTabViewItem *)tabViewItem
+{
+    // HACK!  This method is only called when the user clicks the close button
+    // on the tab.  Instead of letting the tab bar close the tab, we return NO
+    // and pass a message on to Vim to let it handle the closing.
+    NSUInteger idx = [self representedIndexOfTabViewItem:tabViewItem];
+    int i = (int)idx;   // HACK! Never more than MAXINT tabs?!
+    NSData *data = [NSData dataWithBytes:&i length:sizeof(int)];
+    [vimController sendMessage:CloseTabMsgID data:data];
+
+    return NO;
+}
+
+- (void)tabView:(NSTabView *)theTabView didDragTabViewItem:
+        (NSTabViewItem *)tabViewItem toIndex:(int)idx
+{
+    NSMutableData *data = [NSMutableData data];
+    [data appendBytes:&idx length:sizeof(int)];
+
+    [vimController sendMessage:DraggedTabMsgID data:data];
+}
+
+- (NSDragOperation)tabBarControl:(PSMTabBarControl *)theTabBarControl
+        draggingEntered:(id <NSDraggingInfo>)sender
+        forTabAtIndex:(NSUInteger)tabIndex
+{
+    NSPasteboard *pb = [sender draggingPasteboard];
+    return [[pb types] containsObject:NSFilenamesPboardType]
+            ? NSDragOperationCopy
+            : NSDragOperationNone;
+}
+
+- (BOOL)tabBarControl:(PSMTabBarControl *)theTabBarControl
+        performDragOperation:(id <NSDraggingInfo>)sender
+        forTabAtIndex:(NSUInteger)tabIndex
+{
+    NSPasteboard *pb = [sender draggingPasteboard];
+    if ([[pb types] containsObject:NSFilenamesPboardType]) {
+        NSArray *filenames = [pb propertyListForType:NSFilenamesPboardType];
+        if ([filenames count] == 0)
+            return NO;
+        if (tabIndex != NSNotFound) {
+            // If dropping on a specific tab, only open one file
+            [vimController file:[filenames objectAtIndex:0]
+                draggedToTabAtIndex:tabIndex];
+        } else {
+            // Files were dropped on empty part of tab bar; open them all
+            [vimController filesDraggedToTabBar:filenames];
+        }
+        return YES;
+    } else {
+        return NO;
+    }
+}
+
+
 #if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
 
 // -- Full-screen delegate ---------------------------------------------------
@@ -1135,7 +1721,7 @@
         [[window animator] setAlphaValue:0];
     } completionHandler:^{
         [window setStyleMask:([window styleMask] | NSFullScreenWindowMask)];
-        [[vimView tabBarControl] setStyleNamed:@"Unified"];
+        [tabBarControl setStyleNamed:@"Unified"];
         [self updateTablineSeparator];
         [self maximizeWindow:fullScreenOptions];
 
@@ -1179,7 +1765,7 @@
     fullScreenEnabled = NO;
     [window setAlphaValue:1];
     [window setStyleMask:([window styleMask] & ~NSFullScreenWindowMask)];
-    [[vimView tabBarControl] setStyleNamed:@"Metal"];
+    [tabBarControl setStyleNamed:@"Metal"];
     [self updateTablineSeparator];
     [window setFrame:preFullScreenFrame display:YES];
 }
@@ -1209,7 +1795,7 @@
         [[window animator] setAlphaValue:0];
     } completionHandler:^{
         [window setStyleMask:([window styleMask] & ~NSFullScreenWindowMask)];
-        [[vimView tabBarControl] setStyleNamed:@"Metal"];
+        [tabBarControl setStyleNamed:@"Metal"];
         [self updateTablineSeparator];
         [window setFrame:preFullScreenFrame display:YES];
 
@@ -1245,7 +1831,7 @@
     fullScreenEnabled = YES;
     [window setAlphaValue:1];
     [window setStyleMask:([window styleMask] | NSFullScreenWindowMask)];
-    [[vimView tabBarControl] setStyleNamed:@"Unified"];
+    [tabBarControl setStyleNamed:@"Unified"];
     [self updateTablineSeparator];
     [self maximizeWindow:fullScreenOptions];
 }
@@ -1265,6 +1851,59 @@
     // windowed mode and the tabline separator is visible)!
     NSWindow *win = [self window];
     return [win contentRectForFrameRect:[win frame]].size;
+}
+
+- (void)adjustWindowFrame
+{
+    NSSize cs = [[vimView textView] cellSize];
+    if (cs.width == 0 || cs.height == 0) return;
+
+    NSSize s0 = [vimView frame].size;
+    NSSize s1 = [vimView desiredSize];
+    CGFloat dw = s1.width - s0.width;
+    CGFloat dh = s1.height - s0.height;
+
+    if (abs(dw) > 0 || abs(dh) > 0) {
+        NSRect frame = [decoratedWindow frame];
+        frame.size.width += dw;
+        frame.size.height += dh;
+        frame.origin.y -= dh;
+
+        // Make sure window still fits on the screen before resizing it.  If
+        // there are multiple screens, this will cause the window to be
+        // constrained to fit on one screen only.  Constraining the window so
+        // that it fits on multiple screens is tricky, which is why we
+        // constrain it to one screen only.
+        NSScreen *screen = [decoratedWindow screen];
+        NSRect origFrame = frame;
+        if (screen) {
+            // HACK: Use resizableFrame (a custom method) instead of
+            // visibleFrame, otherwise it would not be possible to
+            // programmatically resize the window to be as large as when
+            // dragged to resize.
+            NSRect container = [screen resizableFrame];
+            if (frame.size.height > container.size.height)
+                frame.size.height = container.size.height;
+            if (frame.size.width > container.size.width)
+                frame.size.width = container.size.width;
+            if (frame.origin.y < container.origin.y)
+                frame.origin.y = container.origin.y;
+            CGFloat delta = NSMaxX(frame) - NSMaxX(container);
+            if (delta > 0)
+                frame.origin.x -= delta;
+        }
+
+        // NOTE: This should be the only place where the window is resized!
+        [decoratedWindow setFrame:frame display:YES];
+
+        // If we had to adjust the window frame to fit the screen then we need
+        // to tell the Vim view to adjust its text view dimensions to fit the
+        // current size of the window.  If we fail to do this, then repeated
+        // ":set lines=900" calls could cause the text view to be too large to
+        // fit the window.
+        if (!NSEqualRects(frame, origFrame))
+            [vimView adjustTextViewDimensions];
+    }
 }
 
 - (void)resizeWindowToFitContentSize:(NSSize)contentSize
@@ -1380,6 +2019,7 @@
 
 - (void)updateResizeConstraints
 {
+#if 0
     if (!setupDone) return;
 
     // Set the resize increments to exactly match the font size; this way the
@@ -1389,11 +2029,25 @@
 
     NSSize minSize = [vimView minSize];
     [decoratedWindow setContentMinSize:minSize];
+#endif
 }
 
 - (NSTabViewItem *)addNewTabViewItem
 {
-    return [vimView addNewTabViewItem];
+    // NOTE!  A newly created tab is not by selected by default; Vim decides
+    // which tab should be selected at all times.  However, the AppKit will
+    // automatically select the first tab added to a tab view.
+
+    NSTabViewItem *tvi = [[NSTabViewItem alloc] initWithIdentifier:nil];
+
+    // NOTE: If this is the first tab it will be automatically selected.
+    vimTaskSelectedTab = YES;
+    [tabView addTabViewItem:tvi];
+    vimTaskSelectedTab = NO;
+
+    [tvi autorelease];
+
+    return tvi;
 }
 
 - (BOOL)askBackendForStarRegister:(NSPasteboard *)pb
@@ -1415,20 +2069,23 @@
     return reply;
 }
 
+- (BOOL)hasTablineSeparator
+{
+    BOOL tabBarVisible = ![tabBarControl isHidden];
+    if (fullScreenEnabled || tabBarVisible) {
+        return NO;
+    } else {
+        BOOL toolbarVisible = [decoratedWindow toolbar] != nil;
+        BOOL windowTextured = ([decoratedWindow styleMask] &
+                                NSTexturedBackgroundWindowMask) != 0;
+        return toolbarVisible || windowTextured;
+    }
+    return NO;
+}
+
 - (void)updateTablineSeparator
 {
-    BOOL tabBarVisible  = ![[vimView tabBarControl] isHidden];
-    BOOL toolbarHidden  = [decoratedWindow toolbar] == nil;
-    BOOL windowTextured = ([decoratedWindow styleMask] &
-                            NSTexturedBackgroundWindowMask) != 0;
-    BOOL hideSeparator  = NO;
-
-    if (fullScreenEnabled || tabBarVisible)
-        hideSeparator = YES;
-    else
-        hideSeparator = toolbarHidden && !windowTextured;
-
-    [self hideTablineSeparator:hideSeparator];
+    [self hideTablineSeparator:![self hasTablineSeparator]];
 }
 
 - (void)hideTablineSeparator:(BOOL)hide
@@ -1439,7 +2096,15 @@
         // The tabline separator was toggled so the content view must change
         // size.
         [self updateResizeConstraints];
-        shouldResizeVimView = YES;
+        shouldPlaceVimView = YES;
+
+#if 1
+        NSSize size = [[decoratedWindow contentView] frame].size;
+        if (hide) ++size.height;
+        else      --size.height;
+
+        [splitView setFrameSize:size];
+#endif
     }
 }
 
@@ -1497,8 +2162,196 @@
     updateToolbarFlag = 0;
 }
 
+- (NSUInteger)representedIndexOfTabViewItem:(NSTabViewItem *)tvi
+{
+    NSArray *tabViewItems = [tabBarControl representedTabViewItems];
+    return [tabViewItems indexOfObject:tvi];
+}
+
+- (void)enterCustomFullscreen
+{
+    ASLogDebug(@"Enable full-screen now");
+
+    // Hide Dock and menu bar now to avoid the hide animation from playing
+    // after the fade to black (see also windowDidBecomeMain:).
+    if ([fullScreenWindow isOnPrimaryScreen])
+        SetSystemUIMode(kUIModeAllSuppressed, 0);
+
+    // Fade to black
+    Boolean didBlend = NO;
+    CGDisplayFadeReservationToken token;
+    if (CGAcquireDisplayFadeReservation(.5, &token) == kCGErrorSuccess) {
+        CGDisplayFade(token, .25, kCGDisplayBlendNormal,
+            kCGDisplayBlendSolidColor, .0, .0, .0, true);
+        didBlend = YES;
+    }
+
+    // NOTE: The window may have moved to another screen in between init.. and
+    // this call so set the frame again just in case.
+    [fullScreenWindow setFrame:[[decoratedWindow screen] frame] display:NO];
+
+    [decoratedWindow setDelegate:nil];
+    [self setWindow:fullScreenWindow];
+
+    // Move views from decorated to full-screen window
+    [tabBarControl removeFromSuperviewWithoutNeedingDisplay];
+    [splitView removeFromSuperviewWithoutNeedingDisplay];
+    NSView *view = [fullScreenWindow contentView];
+    [view addSubview:tabBarControl];
+    [view addSubview:splitView];
+
+    // Adjust view sizes
+    NSRect frame = [view frame];
+    NSRect tabFrame = { { 0, frame.size.height - 22 },
+                        { frame.size.width, 22 } };
+    [tabBarControl setFrame:tabFrame];
+
+    if (![tabBarControl isHidden])
+        frame.size.height -= 22;
+    [splitView setFrame:frame];
+
+    [fullScreenWindow setInitialFirstResponder:[vimView textView]];
+
+    // NOTE: Calling setTitle:nil causes an exception to be raised (and it is
+    // possible that the decorated window has no title when we get here).
+    if ([decoratedWindow title]) {
+        [self setTitle:[decoratedWindow title]];
+
+        // NOTE: Cocoa does not add borderless windows to the "Window" menu so
+        // we have to do it manually.
+        [NSApp changeWindowsItem:fullScreenWindow
+                           title:[decoratedWindow title]
+                        filename:NO];
+    }
+
+    [fullScreenWindow setOpaque:[decoratedWindow isOpaque]];
+
+    // Don't set this sooner, so we don't get an additional focus gained
+    // message.
+    [fullScreenWindow setDelegate:self];
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // HACK! Put window on all Spaces to avoid Spaces (available on OS X 10.5
+    // and later) from moving the full screen window to a separate Space from
+    // the one the decorated window is occupying.  The collection behavior is
+    // restored further down.
+    NSWindowCollectionBehavior wcb = [fullScreenWindow collectionBehavior];
+    [fullScreenWindow setCollectionBehavior:
+                                NSWindowCollectionBehaviorCanJoinAllSpaces];
+#endif
+
+    [decoratedWindow orderOut:self];
+    [fullScreenWindow makeKeyAndOrderFront:self];
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // Restore collection behavior (see hack above).
+    [fullScreenWindow setCollectionBehavior:wcb];
+#endif
+
+    // Fade back in
+    if (didBlend) {
+        CGDisplayFade(token, .25, kCGDisplayBlendSolidColor,
+            kCGDisplayBlendNormal, .0, .0, .0, false);
+        CGReleaseDisplayFadeReservation(token);
+    }
+}
+
+- (void)leaveCustomFullscreen
+{
+    // Fade to black
+    Boolean didBlend = NO;
+    CGDisplayFadeReservationToken token;
+    if (CGAcquireDisplayFadeReservation(.5, &token) == kCGErrorSuccess) {
+        CGDisplayFade(token, .25, kCGDisplayBlendNormal,
+            kCGDisplayBlendSolidColor, .0, .0, .0, true);
+        didBlend = YES;
+    }
+
+    // Enusre menu bar / Dock is visible
+    SetSystemUIMode(kUIModeNormal, 0);
+
+    [self setWindow:decoratedWindow];
+    [fullScreenWindow setDelegate:nil];
+
+    // Move views from full-screen to decorated window.
+    // Do this _after_ resetting delegate and window controller, so the window
+    // controller doesn't get a focus lost message from the full-screen window.
+    NSView *view = [decoratedWindow contentView];
+    [tabBarControl removeFromSuperviewWithoutNeedingDisplay];
+    [splitView removeFromSuperviewWithoutNeedingDisplay];
+    [view addSubview:tabBarControl];
+    [view addSubview:splitView];
+
+    // Adjust view sizes
+    NSRect frame = [decoratedWindow contentRectForFrameRect:
+                                                    [decoratedWindow frame]];
+    NSRect tabFrame = { { 0, frame.size.height - 22 },
+                        { frame.size.width, 22 } };
+    [tabBarControl setFrame:tabFrame];
+
+    if (![tabBarControl isHidden])
+        frame.size.height -= 22;
+    frame.origin.x = frame.origin.y = 0;
+    [splitView setFrame:frame];
+
+    // Set the text view to initial first responder, otherwise the 'plus'
+    // button on the tabline steals the first responder status.
+    [decoratedWindow setInitialFirstResponder:[vimView textView]];
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // HACK! Put decorated window on all Spaces (available on OS X 10.5 and
+    // later) so that the decorated window stays on the same Space as the full
+    // screen window (they may occupy different Spaces e.g. if the full screen
+    // window was dragged to another Space).  The collection behavior is
+    // restored further down.
+    NSWindowCollectionBehavior wcb = [decoratedWindow collectionBehavior];
+    [decoratedWindow setCollectionBehavior:
+                                NSWindowCollectionBehaviorCanJoinAllSpaces];
+#endif
+
+    [fullScreenWindow close];
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
+    // HACK! On Mac OS X 10.7 windows animate when makeKeyAndOrderFront: is
+    // called.  This is distracting here, so disable the animation and restore
+    // animation behavior after calling makeKeyAndOrderFront:.
+    NSWindowAnimationBehavior a = NSWindowAnimationBehaviorNone;
+    if ([decoratedWindow respondsToSelector:@selector(animationBehavior)]) {
+        a = [decoratedWindow animationBehavior];
+        [decoratedWindow setAnimationBehavior:NSWindowAnimationBehaviorNone];
+    }
+#endif
+
+    [decoratedWindow makeKeyAndOrderFront:self];
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
+    // HACK! Restore animation behavior.
+    if (NSWindowAnimationBehaviorNone != a)
+        [decoratedWindow setAnimationBehavior:a];
+#endif
+
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+    // Restore collection behavior (see hack above).
+    [decoratedWindow setCollectionBehavior:wcb];
+#endif
+
+    // ...but we don't want a focus gained message either, so don't set this
+    // sooner
+    [decoratedWindow setDelegate:self];
+
+    // Fade back in  
+    if (didBlend) {
+        CGDisplayFade(token, .25, kCGDisplayBlendSolidColor,
+            kCGDisplayBlendNormal, .0, .0, .0, false);
+        CGReleaseDisplayFadeReservation(token);
+    }
+
+    ASLogDebug(@"Disabled full-screen");
+}
+
 - (BOOL)maximizeWindow:(int)options
 {
+#if 0
     int currRows, currColumns;
     [[vimView textView] getMaxRows:&currRows columns:&currColumns];
 
@@ -1550,12 +2403,36 @@
 
     // Indicate that window was not resized
     return NO;
+#else
+    [decoratedWindow setFrame:[[decoratedWindow screen] frame] display:NO];
+    return NO;
+#endif
 }
 
 - (void)applicationDidChangeScreenParameters:(NSNotification *)notification
 {
     if (fullScreenWindow) {
-        [fullScreenWindow applicationDidChangeScreenParameters:notification];
+        // This notification is sent when screen resolution may have changed (e.g.
+        // due to a monitor being unplugged or the resolution being changed
+        // manually) but it also seems to get called when the Dock is
+        // hidden/displayed.
+        ASLogDebug(@"Screen unplugged / resolution changed");
+
+        if (fullScreenEnabled) {
+            NSScreen *screen = [decoratedWindow screen];
+            if (!screen) {
+                // Paranoia: if window we originally used for full screen is gone,
+                // try screen window is on now, and failing that (not sure this can
+                // happen) use main screen.
+                screen = [fullScreenWindow screen];
+                if (!screen)
+                    screen = [NSScreen mainScreen];
+            }
+
+            // Ensure the full screen window is still covering the entire screen
+            // and then resize view according to 'fuopt'.
+            [fullScreenWindow setFrame:[screen frame] display:NO];
+        }
     } else if (fullScreenEnabled) {
         ASLogDebug(@"Re-maximizing full-screen window...");
         [self maximizeWindow:fullScreenOptions];
