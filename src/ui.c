@@ -3262,6 +3262,17 @@ ui_focus_change(in_focus)
 im_save_status(psave)
     long *psave;
 {
+# if defined(FEAT_EVAL) && defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
+    if (!p_imdisable && KeyTyped && !KeyStuffed && p_imsf[0] != NUL)
+    {
+	if (vgetc_im_active)
+	    *psave = B_IMODE_IM;
+	else if (*psave == B_IMODE_IM)
+	    *psave = B_IMODE_NONE;
+	return;
+    }
+# endif
+
     /* Don't save when 'imdisable' is set or "xic" is NULL, IM is always
      * disabled then (but might start later).
      * Also don't save when inside a mapping, vgetc_im_active has not been set

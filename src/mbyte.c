@@ -4478,7 +4478,22 @@ im_set_active(int active)
     im_is_active = (active && !p_imdisable);
 
     if (im_is_active != was_active)
+    {
+#  ifdef FEAT_EVAL
+	if (p_imaf[0] != NUL)
+	{
+	    char_u *argv[1];
+
+	    if (active)
+		argv[0] = (char_u *)"1";
+	    else
+		argv[0] = (char_u *)"0";
+	    (void)call_func_retnr(p_imaf, 1, argv, FALSE);
+	    return;
+	}
+#  endif
 	xim_reset();
+    }
 }
 
     void

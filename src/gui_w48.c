@@ -2786,7 +2786,7 @@ _OnPaint(
 
 	out_flush();	    /* make sure all output has been processed */
 	(void)BeginPaint(hwnd, &ps);
-#if defined(FEAT_DIRECTX)
+#ifdef FEAT_DIRECTX
 	if (IS_ENABLE_DIRECTX())
 	    DWriteContext_BeginDraw(s_dwc);
 #endif
@@ -2806,7 +2806,7 @@ _OnPaint(
 
 	if (!IsRectEmpty(&ps.rcPaint))
 	{
-#if defined(FEAT_DIRECTX)
+#ifdef FEAT_DIRECTX
 	    if (IS_ENABLE_DIRECTX())
 		DWriteContext_BindDC(s_dwc, s_hdc, &ps.rcPaint);
 #endif
@@ -2815,7 +2815,7 @@ _OnPaint(
 		    ps.rcPaint.bottom - ps.rcPaint.top + 1);
 	}
 
-#if defined(FEAT_DIRECTX)
+#ifdef FEAT_DIRECTX
 	if (IS_ENABLE_DIRECTX())
 	    DWriteContext_EndDraw(s_dwc);
 #endif
@@ -2936,7 +2936,7 @@ gui_mswin_get_valid_dimensions(
     base_height = gui_get_base_height()
 	+ (GetSystemMetrics(SM_CYFRAME) +
            GetSystemMetrics(SM_CXPADDEDBORDER)) * 2
-	+ GetSystemMetrics(SM_CYCAPTION)
+	+ get_caption_height()
 #ifdef FEAT_MENU
 	+ gui_mswin_get_menu_height(FALSE)
 #endif
@@ -3059,7 +3059,7 @@ gui_mch_insert_lines(
     void
 gui_mch_exit(int rc)
 {
-#if defined(FEAT_DIRECTX)
+#ifdef FEAT_DIRECTX
     DWriteContext_Close(s_dwc);
     DWrite_Final();
     s_dwc = NULL;
@@ -3309,7 +3309,7 @@ gui_mch_newfont()
 		     rect.bottom - rect.top
 			- (GetSystemMetrics(SM_CYFRAME) +
                            GetSystemMetrics(SM_CXPADDEDBORDER)) * 2
-			- GetSystemMetrics(SM_CYCAPTION)
+			- get_caption_height()
 #ifdef FEAT_MENU
 			- gui_mswin_get_menu_height(FALSE)
 #endif
