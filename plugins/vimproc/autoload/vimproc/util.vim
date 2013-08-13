@@ -1,6 +1,6 @@
 "=============================================================================
 " FILE: util.vim
-" Last Modified: 09 Jun 2013.
+" Last Modified: 20 Jul 2013.
 " License: MIT license  {{{
 "     Permission is hereby granted, free of charge, to any person obtaining
 "     a copy of this software and associated documentation files (the
@@ -61,8 +61,11 @@ function! vimproc#util#stderrencoding() "{{{
         \ g:stderrencoding : vimproc#util#termencoding()
 endfunction"}}}
 function! vimproc#util#expand(path) "{{{
-  return expand(escape(a:path,
-        \ vimproc#util#is_windows() ? '*?"={}' : '*?"={}[]'), 1)
+  return vimproc#util#substitute_path_separator(
+        \ (a:path =~ '^\~') ? substitute(a:path, '^\~', expand('~'), '') :
+        \ (a:path =~ '^\$\h\w*') ? substitute(a:path,
+        \               '^\$\h\w*', '\=eval(submatch(0))', '') :
+        \ a:path)
 endfunction"}}}
 function! vimproc#util#is_windows() "{{{
   return s:is_windows

@@ -1,9 +1,9 @@
-                   Vim version 7.3 香り屋版 導入マニュアル
+                   Vim version 7.4 香り屋版 導入マニュアル
 
-                                                         Version: 1.7.3
+                                                         Version: 1.7.5
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 17-Jun-2013.
+                                                     Last Change: 10-Aug-2013.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -20,12 +20,12 @@
   いるので、解凍してシステム内の好きな場所に配置してください。
 
   32bit版
-    配布ファイル: vim73-kaoriya-win32-YYYYMMDD.zip
-    Vimプログラムフォルダ: vim73-kaoriya-win32.zip
+    配布ファイル: vim74-kaoriya-win32-YYYYMMDD.zip
+    Vimプログラムフォルダ: vim74-kaoriya-win32.zip
 
   64bit版
-    配布ファイル: vim73-kaoriya-win64-YYYYMMDD.zip
-    Vimプログラムフォルダ: vim73-kaoriya-win64
+    配布ファイル: vim74-kaoriya-win64-YYYYMMDD.zip
+    Vimプログラムフォルダ: vim74-kaoriya-win64
 
   上記のYYYYMMDDにはリリースの年月日が入ります。
 

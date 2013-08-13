@@ -751,6 +751,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 'regexpengine'	options.txt	/*'regexpengine'*
 'relativenumber'	options.txt	/*'relativenumber'*
 'remap'	options.txt	/*'remap'*
+'renderoptions'	options.txt	/*'renderoptions'*
 'report'	options.txt	/*'report'*
 'restorescreen'	options.txt	/*'restorescreen'*
 'revins'	options.txt	/*'revins'*
@@ -761,6 +762,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 'rlc'	options.txt	/*'rlc'*
 'rnu'	options.txt	/*'rnu'*
 'ro'	options.txt	/*'ro'*
+'rop'	options.txt	/*'rop'*
 'rs'	options.txt	/*'rs'*
 'rtp'	options.txt	/*'rtp'*
 'ru'	options.txt	/*'ru'*
@@ -1165,6 +1167,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 +dialog_gui	various.txt	/*+dialog_gui*
 +diff	various.txt	/*+diff*
 +digraphs	various.txt	/*+digraphs*
++directx	various.txt	/*+directx*
 +dnd	various.txt	/*+dnd*
 +emacs_tags	various.txt	/*+emacs_tags*
 +eval	various.txt	/*+eval*
@@ -6259,7 +6262,6 @@ hebrew.txt	hebrew.txt	/*hebrew.txt*
 help	helphelp.txt	/*help*
 help-context	help.txt	/*help-context*
 help-summary	usr_02.txt	/*help-summary*
-help-tags	tags	1
 help-translated	helphelp.txt	/*help-translated*
 help-writing	helphelp.txt	/*help-writing*
 help-xterm-window	helphelp.txt	/*help-xterm-window*
