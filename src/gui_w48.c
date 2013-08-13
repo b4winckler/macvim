@@ -129,6 +129,7 @@ typedef void *HDC;
 typedef void VOID;
 typedef int LPNMHDR;
 typedef int LONG;
+typedef int WNDPROC;
 #endif
 
 #ifndef GET_X_LPARAM
@@ -178,10 +179,12 @@ static HBRUSH	s_brush = NULL;
 
 #ifdef FEAT_TOOLBAR
 static HWND		s_toolbarhwnd = NULL;
+static WNDPROC		s_toolbar_wndproc = NULL;
 #endif
 
 #ifdef FEAT_GUI_TABLINE
 static HWND		s_tabhwnd = NULL;
+static WNDPROC		s_tabline_wndproc = NULL;
 static int		showing_tabline = 0;
 #endif
 
@@ -2458,6 +2461,7 @@ gui_mch_update_tabline(void)
     TCITEM	tie;
     int		nr = 0;
     int		curtabidx = 0;
+    int		tabadded = 0;
 #ifdef FEAT_MBYTE
     static int	use_unicode = FALSE;
     int		uu;
@@ -2498,6 +2502,7 @@ gui_mch_update_tabline(void)
 	    /* Add the tab */
 	    tie.pszText = "-Empty-";
 	    TabCtrl_InsertItem(s_tabhwnd, nr, &tie);
+	    tabadded = 1;
 	}
 
 	get_tabline_label(tp, FALSE);
@@ -2530,13 +2535,16 @@ gui_mch_update_tabline(void)
     while (nr < TabCtrl_GetItemCount(s_tabhwnd))
 	TabCtrl_DeleteItem(s_tabhwnd, nr);
 
-    if (TabCtrl_GetCurSel(s_tabhwnd) != curtabidx)
+    if (!tabadded && TabCtrl_GetCurSel(s_tabhwnd) != curtabidx)
 	TabCtrl_SetCurSel(s_tabhwnd, curtabidx);
 
     /* Re-enable redraw and redraw. */
     SendMessage(s_tabhwnd, WM_SETREDRAW, (WPARAM)TRUE, 0);
     RedrawWindow(s_tabhwnd, NULL, NULL,
 		    RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
+
+    if (tabadded && TabCtrl_GetCurSel(s_tabhwnd) != curtabidx)
+	TabCtrl_SetCurSel(s_tabhwnd, curtabidx);
 }
 
 /*
@@ -2549,8 +2557,8 @@ gui_mch_set_curtab(nr)
     if (s_tabhwnd == NULL)
 	return;
 
-    if (TabCtrl_GetCurSel(s_tabhwnd) != nr -1)
-	TabCtrl_SetCurSel(s_tabhwnd, nr -1);
+    if (TabCtrl_GetCurSel(s_tabhwnd) != nr - 1)
+	TabCtrl_SetCurSel(s_tabhwnd, nr - 1);
 }
 
 #endif
@@ -2778,7 +2786,7 @@ _OnPaint(
 
 	out_flush();	    /* make sure all output has been processed */
 	(void)BeginPaint(hwnd, &ps);
-#if defined(FEAT_DIRECTX)
+#ifdef FEAT_DIRECTX
 	if (IS_ENABLE_DIRECTX())
 	    DWriteContext_BeginDraw(s_dwc);
 #endif
@@ -2798,7 +2806,7 @@ _OnPaint(
 
 	if (!IsRectEmpty(&ps.rcPaint))
 	{
-#if defined(FEAT_DIRECTX)
+#ifdef FEAT_DIRECTX
 	    if (IS_ENABLE_DIRECTX())
 		DWriteContext_BindDC(s_dwc, s_hdc, &ps.rcPaint);
 #endif
@@ -2807,7 +2815,7 @@ _OnPaint(
 		    ps.rcPaint.bottom - ps.rcPaint.top + 1);
 	}
 
-#if defined(FEAT_DIRECTX)
+#ifdef FEAT_DIRECTX
 	if (IS_ENABLE_DIRECTX())
 	    DWriteContext_EndDraw(s_dwc);
 #endif
@@ -2923,9 +2931,11 @@ gui_mswin_get_valid_dimensions(
     int	    base_width, base_height;
 
     base_width = gui_get_base_width()
-	+ GetSystemMetrics(SM_CXFRAME) * 2;
+	+ (GetSystemMetrics(SM_CXFRAME) +
+           GetSystemMetrics(SM_CXPADDEDBORDER)) * 2;
     base_height = gui_get_base_height()
-	+ GetSystemMetrics(SM_CYFRAME) * 2
+	+ (GetSystemMetrics(SM_CYFRAME) +
+           GetSystemMetrics(SM_CXPADDEDBORDER)) * 2
 	+ get_caption_height()
 #ifdef FEAT_MENU
 	+ gui_mswin_get_menu_height(FALSE)
@@ -3049,7 +3059,7 @@ gui_mch_insert_lines(
     void
 gui_mch_exit(int rc)
 {
-#if defined(FEAT_DIRECTX)
+#ifdef FEAT_DIRECTX
     DWriteContext_Close(s_dwc);
     DWrite_Final();
     s_dwc = NULL;
@@ -3294,9 +3304,11 @@ gui_mch_newfont()
 
     GetWindowRect(s_hwnd, &rect);
     gui_resize_shell(rect.right - rect.left
-			- GetSystemMetrics(SM_CXFRAME) * 2,
+			- (GetSystemMetrics(SM_CXFRAME) +
+                           GetSystemMetrics(SM_CXPADDEDBORDER)) * 2,
 		     rect.bottom - rect.top
-			- GetSystemMetrics(SM_CYFRAME) * 2
+			- (GetSystemMetrics(SM_CYFRAME) +
+                           GetSystemMetrics(SM_CXPADDEDBORDER)) * 2
 			- get_caption_height()
 #ifdef FEAT_MENU
 			- gui_mswin_get_menu_height(FALSE)

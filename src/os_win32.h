@@ -103,6 +103,9 @@
 #endif
 #ifndef PROTO
 # include <windows.h>
+# ifndef SM_CXPADDEDBORDER
+#  define SM_CXPADDEDBORDER     92
+# endif
 #endif
 
 /*

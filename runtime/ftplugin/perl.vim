@@ -3,7 +3,7 @@
 " Maintainer:    vim-perl <vim-perl@googlegroups.com>
 " Homepage:      http://github.com/vim-perl/vim-perl
 " Bugs/requests: http://github.com/vim-perl/vim-perl/issues
-" Last Change:   2013-05-11
+" Last Change:   2013-07-21
 
 if exists("b:did_ftplugin") | finish | endif
 let b:did_ftplugin = 1

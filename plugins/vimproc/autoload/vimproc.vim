@@ -2,7 +2,7 @@
 " FILE: vimproc.vim
 " AUTHOR:  Shougo Matsushita <Shougo.Matsu@gmail.com> (Modified)
 "          Yukihiro Nakadaira <yukihiro.nakadaira at gmail.com> (Original)
-" Last Modified: 25 Jun 2013.
+" Last Modified: 02 Aug 2013.
 " License: MIT license  {{{
 "     Permission is hereby granted, free of charge, to any person obtaining
 "     a copy of this software and associated documentation files (the
@@ -205,7 +205,7 @@ function! vimproc#get_command_name(command, ...) "{{{
     return files
   endif
 
-  let file = get(files, 0, '')
+  let file = get(files, cnt-1, '')
 
   if file == ''
     throw printf(
@@ -781,12 +781,12 @@ function! vimproc#write(filename, string, ...) "{{{
 endfunction"}}}
 
 function! vimproc#readdir(dirname) "{{{
-  let dirname = substitute(substitute(
-        \ vimproc#util#expand(a:dirname),
-        \ '\\', '/', 'g'), '/$', '', '')
+  let dirname = vimproc#util#expand(a:dirname)
   if dirname == ''
     let dirname = getcwd()
   endif
+  let dirname = substitute(dirname, '.\zs/$', '', '')
+  let dirname = substitute(dirname, '//', '/', 'g')
 
   if !isdirectory(dirname)
     return []
@@ -801,11 +801,12 @@ function! vimproc#readdir(dirname) "{{{
     return []
   endtry
 
-  call map(files, 'vimproc#util#iconv(
+  call map(filter(files, 'v:val !~ "/\\.\\.\\?$"'), 'vimproc#util#iconv(
         \ v:val, vimproc#util#termencoding(), &encoding)')
   if vimproc#util#is_windows()
     call map(files, 'vimproc#util#substitute_path_separator(v:val)')
   endif
+  call map(files, "substitute(v:val, '/\\./', '/', 'g')")
 
   return files
 endfunction"}}}
@@ -906,22 +907,13 @@ function! s:read_lines(...) dict "{{{
 
   let lines = split(res, '\r\?\n', 1)
 
-  if self.eof
-    let self.buffer = ''
-    return lines
-  else
-    let self.buffer = empty(lines)? '' : lines[-1]
-    let lines = lines[ : -2]
-  endif
-
-  let self.eof = (self.buffer != '') ? 0 : self.__eof
-  return lines
+  let self.buffer = get(lines, -1, 0)
+  return lines[ : -2]
 endfunction"}}}
 function! s:read_line(...) dict "{{{
   let lines = call(self.read_lines, a:000, self)
   let self.buffer = join(lines[1:], "\n") . self.buffer
-  let self.eof = (self.buffer != '') ? 0 : self.__eof
-
+  let self.eof = (self.buffer != '') ? (self.__eof && self.buffer == '') : self.__eof
   return get(lines, 0, '')
 endfunction"}}}
 
@@ -1117,51 +1109,55 @@ let s:read_timeout = 100
 let s:write_timeout = 100
 let s:bg_processes = {}
 
-function! s:split(str, sep)
-  let [result, pos] = [[], 0]
-  while 1
-    let tmp = stridx(a:str, a:sep, pos)
-    if tmp == -1
-      call add(result, strpart(a:str, pos))
-      break
-    endif
-    call add(result, strpart(a:str, pos, tmp - pos))
-    let pos = tmp + 1
-  endwhile
+if vimproc#util#has_lua()
+  function! s:split(str, sep)
+    let result = []
+    lua << EOF
+    do
+    local result = vim.eval('result')
+    local str = vim.eval('a:str')
+    local sep = vim.eval('a:sep')
+    local last
 
-  return result
-endfunction
+    if string.find(str, sep, 1, true) == nil then
+      result:add(str)
+    else
+      for part, pos in string.gmatch(str,
+          '(.-)' .. sep .. '()') do
+        result:add(part)
+        last = pos
+      end
 
-function! s:split_lua(str, sep)
-  let result = []
-  lua << EOF
-do
-  local pos = 1
-  local result = vim.eval('result')
-  local str = vim.eval('a:str')
-  local sep = vim.eval('a:sep')
-  local tmp = string.find(str, sep, pos, true)
-
-  while tmp ~= nil do
-    result:add(string.sub(str, pos, tmp-1))
-    pos = tmp + 1
-    tmp = string.find(str, sep, pos, true)
+      result:add(string.sub(str, last))
+    end
   end
-
-  result:add(string.sub(str, pos))
-end
 EOF
 
-  return result
-endfunction
+    return result
+  endfunction
+else
+  function! s:split(str, sep)
+    let [result, pos] = [[], 0]
+    while 1
+      let tmp = stridx(a:str, a:sep, pos)
+      if tmp == -1
+        call add(result, strpart(a:str, pos))
+        break
+      endif
+      call add(result, strpart(a:str, pos, tmp - pos))
+      let pos = tmp + 1
+    endwhile
+
+    return result
+  endfunction
+endif
 
 function! s:libcall(func, args) "{{{
   " End Of Value
   let EOV = "\xFF"
   let args = empty(a:args) ? '' : (join(reverse(copy(a:args)), EOV) . EOV)
   let stack_buf = libcall(g:vimproc#dll_path, a:func, args)
-  let result = vimproc#util#has_lua() ?
-        \ s:split_lua(stack_buf, EOV) : s:split(stack_buf, EOV)
+  let result = s:split(stack_buf, EOV)
   if !empty(result) && result[-1] != ''
     if stack_buf[len(stack_buf) - 1] ==# EOV
       " Note: If &encoding equals "cp932" and output ends multibyte first byte,
@@ -1230,7 +1226,8 @@ function! s:vp_file_write(hd, timeout) dict
 endfunction
 
 function! s:quote_arg(arg)
-  return a:arg =~ '[ "]' ? '"' . substitute(a:arg, '"', '\\"', 'g') . '"' : a:arg
+  return (a:arg == '' || a:arg =~ '[ "]') ?
+        \ '"' . substitute(a:arg, '"', '\\"', 'g') . '"' : a:arg
 endfunction
 
 function! s:vp_pipe_open(npipe, hstdin, hstdout, hstderr, argv) "{{{

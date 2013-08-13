@@ -105,30 +105,6 @@ getGvimNameW(wchar_t *nameW)
 getRuntimeDir(char *buf)
 {
     int		idx;
-    HKEY	hkey;
-
-    /*
-     * Get runtime path from the registry if entry exists.
-     */
-    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Vim\\Gvim", 0,
-		KEY_READ, &hkey) == ERROR_SUCCESS)
-    {
-	DWORD dwLen = MAX_PATH;
-	LONG result = RegQueryValueEx(hkey, "runtime", 0, NULL, (BYTE*)buf,
-		&dwLen);
-
-	RegCloseKey(hkey);
-	if (result == ERROR_SUCCESS)
-	{
-	    /* Add directory separater if needs */
-	    if (dwLen > 1 && !strchr("\\/", buf[dwLen - 2]))
-	    {
-		buf[dwLen - 1]	= '\\';
-		buf[dwLen    ]	= '\0';
-	    }
-	    return; /* success to obtain runtime entry */
-	}
-    }
 
     getGvimName(buf, 1);
     if (buf[0] != 0)

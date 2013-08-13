@@ -716,6 +716,8 @@ LUA_LIBS
 LUA_PRO
 LUA_OBJ
 LUA_SRC
+vi_cv_path_plain_lua
+vi_cv_path_luajit
 vi_cv_path_lua
 compiledby
 dogvimdiff
@@ -801,6 +803,7 @@ enable_xsmp
 enable_xsmp_interact
 enable_luainterp
 with_lua_prefix
+with_luajit
 enable_lua52interp
 with_lua52_prefix
 enable_mzschemeinterp
@@ -1525,6 +1528,7 @@ Optional Packages:
   --with-features=TYPE    tiny, small, normal, big or huge (default: normal)
   --with-compiledby=NAME  name to show in :version message
   --with-lua-prefix=PFX   Prefix where Lua is installed.
+  --with-luajit           Link with LuaJIT instead of Lua.
   --with-lua52-prefix=PFX   Prefix where Lua52 is installed.
   --with-plthome=PLTHOME   Use PLTHOME.
   --with-python-config-dir=PATH  Python's config directory
@@ -4741,18 +4745,32 @@ $as_echo "not set, default to /usr" >&6; }
     fi
   fi
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking --with-luajit" >&5
+$as_echo_n "checking --with-luajit... " >&6; }
+
+# Check whether --with-luajit was given.
+if test "${with_luajit+set}" = set; then :
+  withval=$with_luajit; vi_cv_with_luajit="$withval"
+else
+  vi_cv_with_luajit="no"
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_with_luajit" >&5
+$as_echo "$vi_cv_with_luajit" >&6; }
+
   LUA_INC=
   if test "X$vi_cv_path_lua_pfx" != "X"; then
-        # Extract the first word of "lua", so it can be a program name with args.
-set dummy lua; ac_word=$2
+    if test "x$vi_cv_with_luajit" != "xno"; then
+            # Extract the first word of "luajit", so it can be a program name with args.
+set dummy luajit; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_vi_cv_path_lua+:} false; then :
+if ${ac_cv_path_vi_cv_path_luajit+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  case $vi_cv_path_lua in
+  case $vi_cv_path_luajit in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_vi_cv_path_lua="$vi_cv_path_lua" # Let the user override the test with a path.
+  ac_cv_path_vi_cv_path_luajit="$vi_cv_path_luajit" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -4762,7 +4780,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_vi_cv_path_lua="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_vi_cv_path_luajit="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -4773,95 +4791,242 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-vi_cv_path_lua=$ac_cv_path_vi_cv_path_lua
-if test -n "$vi_cv_path_lua"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_path_lua" >&5
-$as_echo "$vi_cv_path_lua" >&6; }
+vi_cv_path_luajit=$ac_cv_path_vi_cv_path_luajit
+if test -n "$vi_cv_path_luajit"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_path_luajit" >&5
+$as_echo "$vi_cv_path_luajit" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-    if test "X$vi_cv_path_lua" != "X"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking Lua version" >&5
-$as_echo_n "checking Lua version... " >&6; }
-if ${vi_cv_version_lua+:} false; then :
+      if test "X$vi_cv_path_luajit" != "X"; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking LuaJIT version" >&5
+$as_echo_n "checking LuaJIT version... " >&6; }
+if ${vi_cv_version_luajit+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-   vi_cv_version_lua=`${vi_cv_path_lua} -e "print(_VERSION)" | sed 's/.* //'`
+   vi_cv_version_luajit=`${vi_cv_path_luajit} -v | sed 's/LuaJIT \([0-9.]*\)\.[0-9] .*/\1/'`
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_version_lua" >&5
-$as_echo "$vi_cv_version_lua" >&6; }
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if lua.h can be found in $vi_cv_path_lua_pfx/include" >&5
-$as_echo_n "checking if lua.h can be found in $vi_cv_path_lua_pfx/include... " >&6; }
-    if test -f $vi_cv_path_lua_pfx/include/lua.h; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_version_luajit" >&5
+$as_echo "$vi_cv_version_luajit" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking Lua version of LuaJIT" >&5
+$as_echo_n "checking Lua version of LuaJIT... " >&6; }
+if ${vi_cv_version_lua_luajit+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+   vi_cv_version_lua_luajit=`${vi_cv_path_luajit} -e "print(_VERSION)" | sed 's/.* //'`
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_version_lua_luajit" >&5
+$as_echo "$vi_cv_version_lua_luajit" >&6; }
+	vi_cv_path_lua="$vi_cv_path_luajit"
+	vi_cv_version_lua="$vi_cv_version_lua_luajit"
+      fi
     else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+            # Extract the first word of "lua", so it can be a program name with args.
+set dummy lua; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_vi_cv_path_plain_lua+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $vi_cv_path_plain_lua in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_vi_cv_path_plain_lua="$vi_cv_path_plain_lua" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_vi_cv_path_plain_lua="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+vi_cv_path_plain_lua=$ac_cv_path_vi_cv_path_plain_lua
+if test -n "$vi_cv_path_plain_lua"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_path_plain_lua" >&5
+$as_echo "$vi_cv_path_plain_lua" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if lua.h can be found in $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua" >&5
-$as_echo_n "checking if lua.h can be found in $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua... " >&6; }
-      if test -f $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua/lua.h; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+fi
+
+
+      if test "X$vi_cv_path_plain_lua" != "X"; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking Lua version" >&5
+$as_echo_n "checking Lua version... " >&6; }
+if ${vi_cv_version_plain_lua+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+   vi_cv_version_plain_lua=`${vi_cv_path_plain_lua} -e "print(_VERSION)" | sed 's/.* //'`
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_version_plain_lua" >&5
+$as_echo "$vi_cv_version_plain_lua" >&6; }
+      fi
+      vi_cv_path_lua="$vi_cv_path_plain_lua"
+      vi_cv_version_lua="$vi_cv_version_plain_lua"
+    fi
+    if test "x$vi_cv_with_luajit" != "xno" && test "X$vi_cv_version_luajit" != "X"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if lua.h can be found in $vi_cv_path_lua_pfx/include/luajit-$vi_cv_version_luajit" >&5
+$as_echo_n "checking if lua.h can be found in $vi_cv_path_lua_pfx/include/luajit-$vi_cv_version_luajit... " >&6; }
+      if test -f $vi_cv_path_lua_pfx/include/luajit-$vi_cv_version_luajit/lua.h; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        LUA_INC=/lua$vi_cv_version_lua
+	LUA_INC=/luajit-$vi_cv_version_luajit
+      fi
+    fi
+    if test "X$LUA_INC" = "X"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if lua.h can be found in $vi_cv_path_lua_pfx/include" >&5
+$as_echo_n "checking if lua.h can be found in $vi_cv_path_lua_pfx/include... " >&6; }
+      if test -f $vi_cv_path_lua_pfx/include/lua.h; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-        vi_cv_path_lua_pfx=
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if lua.h can be found in $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua" >&5
+$as_echo_n "checking if lua.h can be found in $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua... " >&6; }
+	if test -f $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua/lua.h; then
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	  LUA_INC=/lua$vi_cv_version_lua
+	else
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	  vi_cv_path_lua_pfx=
+	fi
       fi
     fi
   fi
 
   if test "X$vi_cv_path_lua_pfx" != "X"; then
-    if test "X$LUA_INC" != "X"; then
-            LUA_LIBS="-L${vi_cv_path_lua_pfx}/lib -llua$vi_cv_version_lua"
+    if test "x$vi_cv_with_luajit" != "xno"; then
+      multiarch=`dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null`
+      if test "X$multiarch" != "X"; then
+	lib_multiarch="lib/${multiarch}"
+      else
+	lib_multiarch="lib"
+      fi
+      if test "X$vi_cv_version_lua" = "X"; then
+	LUA_LIBS="-L${vi_cv_path_lua_pfx}/${lib_multiarch} -lluajit"
+      else
+	LUA_LIBS="-L${vi_cv_path_lua_pfx}/${lib_multiarch} -lluajit-$vi_cv_version_lua"
+      fi
     else
-      LUA_LIBS="-L${vi_cv_path_lua_pfx}/lib -llua"
+      if test "X$LUA_INC" != "X"; then
+		LUA_LIBS="-L${vi_cv_path_lua_pfx}/lib -llua$vi_cv_version_lua"
+      else
+	LUA_LIBS="-L${vi_cv_path_lua_pfx}/lib -llua"
+      fi
     fi
-    LUA_CFLAGS="-I${vi_cv_path_lua_pfx}/include${LUA_INC}"
-    LUA_SRC="if_lua.c"
-    LUA_OBJ="objects/if_lua.o"
-    LUA_PRO="if_lua.pro"
-    $as_echo "#define FEAT_LUA 1" >>confdefs.h
-
     if test "$enable_luainterp" = "dynamic"; then
+      lua_ok="yes"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if link with ${LUA_LIBS} is sane" >&5
+$as_echo_n "checking if link with ${LUA_LIBS} is sane... " >&6; }
+      libs_save=$LIBS
+      LIBS="$LIBS $LUA_LIBS"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }; lua_ok="yes"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }; lua_ok="no"; LUA_LIBS=""
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+      LIBS=$libs_save
+    fi
+    if test "x$lua_ok" = "xyes"; then
+      LUA_CFLAGS="-I${vi_cv_path_lua_pfx}/include${LUA_INC}"
+      LUA_SRC="if_lua.c"
+      LUA_OBJ="objects/if_lua.o"
+      LUA_PRO="if_lua.pro"
+      $as_echo "#define FEAT_LUA 1" >>confdefs.h
+
+    fi
+    if test "$enable_luainterp" = "dynamic"; then
+      if test "x$vi_cv_with_luajit" != "xno"; then
+	luajit="jit"
+      fi
       if test -f "${vi_cv_path_lua_pfx}/bin/cyglua-${vi_cv_version_lua}.dll"; then
 	vi_cv_dll_name_lua="cyglua-${vi_cv_version_lua}.dll"
       else
-	multiarch=`dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null`
-	if test "X$multiarch" != "X"; then
-	  lib_multiarch="lib/${multiarch}"
+	if test "x$MACOSX" = "xyes"; then
+	  ext="dylib"
+	  indexes=""
+	else
+	  ext="so"
+	  indexes=".0 .1 .2 .3 .4 .5 .6 .7 .8 .9"
+	  multiarch=`dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null`
+	  if test "X$multiarch" != "X"; then
+	    lib_multiarch="lib/${multiarch}"
+	  fi
 	fi
-			for subdir in "${lib_multiarch}" lib64 lib; do
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if liblua${luajit}*.${ext}* can be found in $vi_cv_path_lua_pfx" >&5
+$as_echo_n "checking if liblua${luajit}*.${ext}* can be found in $vi_cv_path_lua_pfx... " >&6; }
+	for subdir in "${lib_multiarch}" lib64 lib; do
 	  if test -z "$subdir"; then
 	    continue
 	  fi
-	  for sover in ".dylib" "${vi_cv_version_lua}.so" "-${vi_cv_version_lua}.so" ".so.${vi_cv_version_lua}"; do
-	    for i in .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 ""; do
-	      if test -f "${vi_cv_path_lua_pfx}/${subdir}/liblua${sover}$i"; then
+	  for sover in "${vi_cv_version_lua}.${ext}" "-${vi_cv_version_lua}.${ext}" \
+	    ".${vi_cv_version_lua}.${ext}" ".${ext}.${vi_cv_version_lua}"; do
+	    for i in $indexes ""; do
+	      if test -f "${vi_cv_path_lua_pfx}/${subdir}/liblua${luajit}${sover}$i"; then
 		sover2="$i"
 		break 3
 	      fi
 	    done
 	  done
+	  sover=""
 	done
-	vi_cv_dll_name_lua="liblua${sover}$sover2"
+	if test "X$sover" = "X"; then
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	  lua_ok="no"
+	  vi_cv_dll_name_lua="liblua${luajit}.${ext}"
+	else
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	  lua_ok="yes"
+	  vi_cv_dll_name_lua="liblua${luajit}${sover}$sover2"
+	fi
       fi
       $as_echo "#define DYNAMIC_LUA 1" >>confdefs.h
 
       LUA_LIBS=""
       LUA_CFLAGS="-DDYNAMIC_LUA_DLL=\\\"${vi_cv_dll_name_lua}\\\" $LUA_CFLAGS"
     fi
-    if test "x$MACOSX" = "xyes" && \
-      test "`(uname -m) 2>/dev/null`" = "x86_64"; then
-        LUA_LIBS="-pagezero_size 10000 -image_base 100000000 $LUA_LIBS"
+    if test "X$LUA_CFLAGS$LUA_LIBS" != "X" && \
+       test "x$MACOSX" = "xyes" && \
+       test "`(uname -m) 2>/dev/null`" = "x86_64"; then
+            LUA_LIBS="-pagezero_size 10000 -image_base 100000000 $LUA_LIBS"
     fi
   fi
-  if test "$fail_if_missing" = "yes" -a -z "$LUA_SRC"; then
+  if test "$fail_if_missing" = "yes" -a "$lua_ok" != "yes"; then
     as_fn_error $? "could not configure lua" "$LINENO" 5
   fi
 
@@ -5014,9 +5179,10 @@ $as_echo "no" >&6; }
 	  if test -z "$subdir"; then
 	    continue
 	  fi
-	  for sover in ".dylib" "${vi_cv_version_lua52}.so" "-${vi_cv_version_lua52}.so" ".so.${vi_cv_version_lua52}"; do
-	    for i in .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 ""; do
-	      if test -f "${vi_cv_path_lua52_pfx}/${subdir}/liblua${sover}$i"; then
+	  for sover in "${vi_cv_version_lua52}.${ext}" "-${vi_cv_version_lua52}.${ext}" \
+	    ".${vi_cv_version_lua52}.${ext}" ".${ext}.${vi_cv_version_lua52}"; do
+	    for i in $indexes ""; do
+	      if test -f "${vi_cv_path_lua52_pfx}/${subdir}/liblua${luajit}${sover}$i"; then
 		sover2="$i"
 		break 3
 	      fi
@@ -5287,13 +5453,90 @@ $as_echo "needed" >&6; }
 $as_echo "not needed" >&6; }
     fi
 
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_type_void in -lffi" >&5
+$as_echo_n "checking for ffi_type_void in -lffi... " >&6; }
+if ${ac_cv_lib_ffi_ffi_type_void+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lffi  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ffi_type_void ();
+int
+main ()
+{
+return ffi_type_void ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ffi_ffi_type_void=yes
+else
+  ac_cv_lib_ffi_ffi_type_void=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_type_void" >&5
+$as_echo "$ac_cv_lib_ffi_ffi_type_void" >&6; }
+if test "x$ac_cv_lib_ffi_ffi_type_void" = xyes; then :
+  MZSCHEME_LIBS="$MZSCHEME_LIBS -lffi"
+fi
+
+
     MZSCHEME_CFLAGS="${MZSCHEME_CFLAGS} -I${SCHEME_INC} \
       -DMZSCHEME_COLLECTS='\"${SCHEME_COLLECTS}collects\"'"
-    MZSCHEME_SRC="if_mzsch.c"
-    MZSCHEME_OBJ="objects/if_mzsch.o"
-    MZSCHEME_PRO="if_mzsch.pro"
-    $as_echo "#define FEAT_MZSCHEME 1" >>confdefs.h
 
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compile and link flags for MzScheme are sane" >&5
+$as_echo_n "checking if compile and link flags for MzScheme are sane... " >&6; }
+    cflags_save=$CFLAGS
+    libs_save=$LIBS
+    CFLAGS="$CFLAGS $MZSCHEME_CFLAGS"
+    LIBS="$LIBS $MZSCHEME_LIBS"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }; mzs_ok=yes
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no: MZSCHEME DISABLED" >&5
+$as_echo "no: MZSCHEME DISABLED" >&6; }; mzs_ok=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    CFLAGS=$cflags_save
+    LIBS=$libs_save
+    if test $mzs_ok = yes; then
+      MZSCHEME_SRC="if_mzsch.c"
+      MZSCHEME_OBJ="objects/if_mzsch.o"
+      MZSCHEME_PRO="if_mzsch.pro"
+      $as_echo "#define FEAT_MZSCHEME 1" >>confdefs.h
+
+    else
+      MZSCHEME_CFLAGS=
+      MZSCHEME_LIBS=
+      MZSCHEME_EXTRA=
+      MZSCHEME_MZC=
+    fi
   fi
 
 
@@ -5961,10 +6204,7 @@ if ${vi_cv_path_python3_conf+:} false; then :
 else
 
        vi_cv_path_python3_conf=
-       config_dir="config"
-       if test "${vi_cv_var_python3_abiflags}" != ""; then
-         config_dir="${config_dir}-${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags}"
-       fi
+       config_dir="config-${vi_cv_var_python3_version}${vi_cv_var_python3_abiflags}"
        d=`${vi_cv_path_python3} -c "import distutils.sysconfig; print(distutils.sysconfig.get_config_var('LIBPL'))"`
        if test -d "$d" && test -f "$d/config.c"; then
          vi_cv_path_python3_conf="$d"
@@ -6278,6 +6518,38 @@ elif test "$python_ok" = yes && test "$enable_pythoninterp" = "dynamic"; then
   PYTHON_OBJ="objects/if_python.o"
   PYTHON_CFLAGS="$PYTHON_CFLAGS -DDYNAMIC_PYTHON_DLL=\\\"${python_INSTSONAME}\\\""
   PYTHON_LIBS=
+elif test "$python_ok" = yes; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if -fPIE can be added for Python" >&5
+$as_echo_n "checking if -fPIE can be added for Python... " >&6; }
+  cflags_save=$CFLAGS
+  libs_save=$LIBS
+  CFLAGS="$CFLAGS $PYTHON_CFLAGS -fPIE"
+  LIBS="$LIBS $PYTHON_LIBS"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }; fpie_ok=yes
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }; fpie_ok=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  CFLAGS=$cflags_save
+  LIBS=$libs_save
+  if test $fpie_ok = yes; then
+    PYTHON_CFLAGS="$PYTHON_CFLAGS -fPIE"
+  fi
 elif test "$python3_ok" = yes && test "$enable_python3interp" = "dynamic"; then
   $as_echo "#define DYNAMIC_PYTHON3 1" >>confdefs.h
 
@@ -6285,6 +6557,38 @@ elif test "$python3_ok" = yes && test "$enable_python3interp" = "dynamic"; then
   PYTHON3_OBJ="objects/if_python3.o"
   PYTHON3_CFLAGS="$PYTHON3_CFLAGS -DDYNAMIC_PYTHON3_DLL=\\\"${python3_INSTSONAME}\\\""
   PYTHON3_LIBS=
+elif test "$python3_ok" = yes; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if -fPIE can be added for Python3" >&5
+$as_echo_n "checking if -fPIE can be added for Python3... " >&6; }
+  cflags_save=$CFLAGS
+  libs_save=$LIBS
+  CFLAGS="$CFLAGS $PYTHON3_CFLAGS -fPIE"
+  LIBS="$LIBS $PYTHON3_LIBS"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }; fpie_ok=yes
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }; fpie_ok=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  CFLAGS=$cflags_save
+  LIBS=$libs_save
+  if test $fpie_ok = yes; then
+    PYTHON3_CFLAGS="$PYTHON3_CFLAGS -fPIE"
+  fi
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking --enable-tclinterp argument" >&5
@@ -6721,6 +7025,9 @@ $as_echo "$rubyhdrdir" >&6; }
           RUBY_CFLAGS="$RUBY_CFLAGS -I$rubyhdrdir/$rubyarch"
         fi
         rubyversion=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig::CONFIG['ruby_version'].gsub(/\./, '')[0,2]"`
+	if test "X$rubyversion" = "X"; then
+	  rubyversion=`$vi_cv_path_ruby -e "print ((VERSION rescue RUBY_VERSION)).gsub(/\./, '')[0,2]"`
+	fi
         RUBY_CFLAGS="$RUBY_CFLAGS -DRUBY_VERSION=$rubyversion"
 	rubylibs=`$vi_cv_path_ruby -r rbconfig -e "print $ruby_rbconfig::CONFIG['LIBS']"`
 	if test "X$rubylibs" != "X"; then

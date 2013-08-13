@@ -5456,13 +5456,6 @@ in_history(type, str, move_to_front, sep, writing)
 		&& !(writing && history[type][i].viminfo)
 		&& (type != HIST_SEARCH || sep == p[STRLEN(p) + 1]))
 	{
-	    char_u *p = history[type][i].hisstr;
-
-	    /* For search history, equation check includes first characters
-	     * equation. */
-	    if (type == HIST_SEARCH && sep != p[STRLEN(p) + 1])
-		break;
-
 	    if (!move_to_front)
 		return TRUE;
 	    last_i = i;
