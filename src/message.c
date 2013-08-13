@@ -1004,7 +1004,7 @@ wait_return(redraw)
 			quit_more = FALSE;
 			got_int = FALSE;
 		    }
-		    else
+		    else if (c != K_IGNORE)
 		    {
 			c = K_IGNORE;
 			hit_return_msg();
@@ -3067,7 +3067,7 @@ msg_clr_cmdline()
 msg_end()
 {
     /*
-     * if the string is larger than the window,
+     * If the string is larger than the window,
      * or the ruler option is set and we run into it,
      * we have to redraw the window.
      * Do not do this if we are abandoning the file or editing the command line.

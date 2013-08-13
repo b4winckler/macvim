@@ -2124,6 +2124,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 :doautoa	autocmd.txt	/*:doautoa*
 :doautoall	autocmd.txt	/*:doautoall*
 :doautocmd	autocmd.txt	/*:doautocmd*
+:dp	change.txt	/*:dp*
 :dr	windows.txt	/*:dr*
 :drop	windows.txt	/*:drop*
 :ds	tagsrch.txt	/*:ds*
@@ -4850,6 +4851,7 @@ beos-timeout	os_beos.txt	/*beos-timeout*
 beos-unicode	os_beos.txt	/*beos-unicode*
 beos-utf8	os_beos.txt	/*beos-utf8*
 beos-vimdir	os_beos.txt	/*beos-vimdir*
+better-python-interface	version7.txt	/*better-python-interface*
 beval_bufnr-variable	eval.txt	/*beval_bufnr-variable*
 beval_col-variable	eval.txt	/*beval_col-variable*
 beval_lnum-variable	eval.txt	/*beval_lnum-variable*
@@ -5376,6 +5378,7 @@ dip	motion.txt	/*dip*
 dircolors.vim	syntax.txt	/*dircolors.vim*
 dis	motion.txt	/*dis*
 disable-menus	gui.txt	/*disable-menus*
+discard	editing.txt	/*discard*
 distribute-script	usr_41.txt	/*distribute-script*
 distribution	intro.txt	/*distribution*
 diw	motion.txt	/*diw*
@@ -6732,6 +6735,7 @@ map-<SID>	map.txt	/*map-<SID>*
 map-ambiguous	map.txt	/*map-ambiguous*
 map-backtick	tips.txt	/*map-backtick*
 map-comments	map.txt	/*map-comments*
+map-error	map.txt	/*map-error*
 map-examples	map.txt	/*map-examples*
 map-keys-fails	map.txt	/*map-keys-fails*
 map-listing	map.txt	/*map-listing*
@@ -7382,6 +7386,7 @@ py3eval()	eval.txt	/*py3eval()*
 pyeval()	eval.txt	/*pyeval()*
 python	if_pyth.txt	/*python*
 python-.locked	if_pyth.txt	/*python-.locked*
+python-2-and-3	if_pyth.txt	/*python-2-and-3*
 python-Dictionary	if_pyth.txt	/*python-Dictionary*
 python-Function	if_pyth.txt	/*python-Function*
 python-List	if_pyth.txt	/*python-List*
@@ -7504,6 +7509,7 @@ register-faq	sponsor.txt	/*register-faq*
 register-variable	eval.txt	/*register-variable*
 registers	change.txt	/*registers*
 regular-expression	pattern.txt	/*regular-expression*
+reload	editing.txt	/*reload*
 reltime()	eval.txt	/*reltime()*
 reltimestr()	eval.txt	/*reltimestr()*
 remote.txt	remote.txt	/*remote.txt*

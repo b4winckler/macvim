@@ -6992,7 +6992,7 @@ ex_exit(eap)
 # ifdef FEAT_GUI
 	need_mouse_correct = TRUE;
 # endif
-	/* quit current window, may free buffer */
+	/* Quit current window, may free the buffer. */
 	win_close(curwin, !P_HID(curwin->w_buffer));
 #endif
     }
@@ -8980,6 +8980,9 @@ ex_redraw(eap)
     /* Reset msg_didout, so that a message that's there is overwritten. */
     msg_didout = FALSE;
     msg_col = 0;
+
+    /* No need to wait after an intentional redraw. */
+    need_wait_return = FALSE;
 
     out_flush();
 }
