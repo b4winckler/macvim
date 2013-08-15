@@ -83,7 +83,7 @@ endif
 " MacOS Xメニューの日本語化 (メニュー表示前に行なう必要がある)
 if has('mac')
   if exists('$LANG') && $LANG ==# 'ja_JP.UTF-8'
-    set langmenu=ja
+    set langmenu=ja_ja.utf-8.macvim
     set encoding=utf-8
     set ambiwidth=double
   endif
