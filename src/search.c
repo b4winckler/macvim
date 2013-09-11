@@ -2077,6 +2077,9 @@ findmatchlimit(oap, initc, flags, maxtravel)
 #endif
 
     pos = curwin->w_cursor;
+#ifdef FEAT_VIRTUALEDIT
+    pos.coladd = 0;
+#endif
     linep = ml_get(pos.lnum);
 
     cpo_match = (vim_strchr(p_cpo, CPO_MATCH) != NULL);
