@@ -2,7 +2,7 @@
 " FILE: vimproc.vim
 " AUTHOR:  Shougo Matsushita <Shougo.Matsu@gmail.com> (Modified)
 "          Yukihiro Nakadaira <yukihiro.nakadaira at gmail.com> (Original)
-" Last Modified: 02 Aug 2013.
+" Last Modified: 31 Aug 2013.
 " License: MIT license  {{{
 "     Permission is hereby granted, free of charge, to any person obtaining
 "     a copy of this software and associated documentation files (the
@@ -378,7 +378,23 @@ function! vimproc#system_passwd(cmdline, ...) "{{{
 endfunction"}}}
 function! vimproc#system_bg(cmdline) "{{{
   " Open pipe.
-  let subproc = vimproc#popen3(a:cmdline)
+  if type(a:cmdline) == type('')
+    if a:cmdline =~ '&\s*$'
+      let cmdline = substitute(a:cmdline, '&\s*$', '', '')
+      return vimproc#system_bg(cmdline)
+    endif
+
+    let args = vimproc#parser#parse_statements(a:cmdline)
+    for arg in args
+      let arg.statement = vimproc#parser#parse_pipe(arg.statement)
+    endfor
+  else
+    let args = [{'statement' :
+          \ [{ 'fd' : { 'stdin' : '', 'stdout' : '', 'stderr' : '' },
+          \   'args' : a:cmdline }], 'condition' : 'always' }]
+  endif
+
+  let subproc = vimproc#pgroup_open(args)
   if empty(subproc)
     " Not supported path error.
     return ''

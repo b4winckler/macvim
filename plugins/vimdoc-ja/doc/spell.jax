@@ -1,4 +1,4 @@
-*spell.txt*	For Vim バージョン 7.3.  Last change: 2011 May 25
+*spell.txt*	For Vim バージョン 7.4.  Last change: 2013 Jul 17
 
 
 		  VIMリファレンスマニュアル	  by Bram Moolenaar
@@ -16,10 +16,10 @@
 コンパイル時に |+syntax| 機能を無効にした場合にはスペルチェックは利用すること
 ができない。
 
-Note: または vimspell プラグインがある。プラグインを入れていればそのプラグイン
+Note: あるいは vimspell プラグインがある。プラグインを入れていればそのプラグイン
 について調べるために ":help vimspell" を実行できる。しかし、おそらくそのプラグ
 インを削除し、代わりに 'spell' オプションを使いたいと思うだろう。そちらのほう
-がうまく機能する。
+がうまくいく。
 
 ==============================================================================
 1. はじめに					*spell-quickstart* *E756*
@@ -32,7 +32,7 @@ Note: または vimspell プラグインがある。プラグインを入れて�
 
 認識されない単語は以下のようにハイライトされる:
 	SpellBad	認識されない単語			|hl-SpellBad|
-	SpellCap	頭文字が大文字化されていない単語	|hl-SpellCap|
+	SpellCap	頭文字が大文字になっていない単語	|hl-SpellCap|
 	SpellRare	まれな単語				|hl-SpellRare|
 	SpellLocal	選択された地域では間違った綴り		|hl-SpellLocal|
 
@@ -49,18 +49,18 @@ won't work.
 
 							*]s*
 ]s			カーソルの後の、次の綴りの間違った単語に移動する。コマ
-                        ンドの前に count を指定することで、繰り返しができる。
-                        'wrapscan' が適用される。
+			ンドの前に count を指定することで、繰り返しができる。
+			'wrapscan' が適用される。
 
 							*[s*
 [s			"]s" と同様であるが後方検索を行い、カーソルより前の綴
-                        りの間違った単語を探す。2行に渡った単語は認識しないた
-                        め、間違いとしてハイライトされていない単語で止まること
-                        がある。行頭の大文字化されていない単語では止まらない。
+			りの間違った単語を探す。2行に渡った単語は認識しないた
+			め、間違いとしてハイライトされていない単語で止まること
+			がある。行頭が大文字になっていない単語では止まらない。
 
 							*]S*
 ]S			"]s" と同様であるが、間違った単語のみで止まり、まれな
-                        単語や他の地域の単語では止まらない。
+			単語や他の地域の単語では止まらない。
 
 							*[S*
 [S			"]S" と同様であるが、後方検索を行う。
@@ -71,83 +71,86 @@ won't work.
 							*zg*
 zg			カーソルの下の単語を正しい (good) 単語として、
 			'spellfile' の最初のファイルに追加する。
-                        コマンドの前に count を指定することで、'spellfile' 内
-                        の項目を指定することができる。count として 2 を指定す
-                        ると、二番目の項目が使われる。
+			コマンドの前に count を指定することで、'spellfile' 内
+			の項目を指定することができる。count として 2 を指定す
+			ると、二番目の項目が使われる。
 
-                        ビジュアルモードで選択された文字は単語として追加される
-                        (スペースを含む!)。
-                        When the cursor is on text that is marked as badly
-                        spelled then the marked text is used.
-			Otherwise the word under the cursor, separated by
-			non-word characters, is used.
+			ビジュアルモードで選択された文字は単語として追加される
+			(スペースを含む!)。
+			カーソルが間違った綴りとしてマークされた文章の上にある
+			時、そのマークされた文章が使われる。
+			そうでなければ、単語ではない文字で分けられたカーソルの
+			下の単語が使われる。
 
-			If the word is explicitly marked as bad word in
-			another spell file the result is unpredictable.
+			もしその単語が明示的に別のスペルファイルで間違った単語
+			としてマークされているなら、その結果は予測できない。
 
 							*zG*
 zG			"zg" と同様であるが、その単語を内部単語リスト
-                        |internal-wordlist| に加える。
+			|internal-wordlist| に加える。
 
 							*zw*
 zw			"zg" と同様であるが、間違った (wrong) 単語としてマーク
-                        する。もしその単語がすでに 'spellfile' にある場合は、
-                        コメント行に変更される。それらを取り除くには
-                        |spellfile-cleanup| を参照する。
+			する。もしその単語がすでに 'spellfile' にある場合は、
+			コメント行に変更される。それらを取り除くには
+			|spellfile-cleanup| を参照する。
 
 							*zW*
 zW			"zw" と同様であるが、その単語を内部単語リスト
-                        |internal-wordlist| に加える。
+			|internal-wordlist| に加える。
 
 zuw							*zug* *zuw*
 zug			|zw| や |zg| をundoして、'spellfile' の項目からその単
-                        語を削除する。count は |zg| と同様に使われる。
+			語を削除する。count は |zg| と同様に使われる。
 
 zuW							*zuG* *zuW*
 zuG			|zW| や |zG| をundoして、内部単語リストからその単語を
-                        削除する。count は |zg| と同様に使われる。
+			削除する。count は |zg| と同様に使われる。
 
 							*:spe* *:spellgood*
 :[count]spe[llgood] {word}
-                        |zg| と同様に、{word} を正しい単語として 'spellfile'
-                        に加える。 Without count the first name is used, with
-                        a count of two the second entry, etc.
+			|zg| と同様に、{word} を正しい単語として 'spellfile' に
+			加える。count が無いときは最初の名前が使われ、count に
+			2 を指定したときは 2 番目の項目が使われる。以下同様。
 
 :spe[llgood]! {word}	|zG| と同様に、{word} を正しい単語として内部単語リスト
-                        に加える。
+			に加える。
 
 							*:spellw* *:spellwrong*
 :[count]spellw[rong] {word}
-                        |zw| と同様に、{word} を間違った (wrong) 単語として
-                        'spellfile' に加える。Without count the first name is
-                        used, with a count of two the second entry, etc.
+			|zw| と同様に、{word} を間違った (wrong) 単語として
+			'spellfile' に加える。count が無いときは最初の名前が使
+			われ、count に 2 を指定したときは 2 番目の項目が使われ
+			る。以下同様。
 
 :spellw[rong]! {word}	|zW| と同様に、{word} を間違った (wrong) 単語として内
-                        部単語リストに追加する。
+			部単語リストに追加する。
 
 :[count]spellu[ndo] {word}				*:spellu* *:spellundo*
-			Like |zuw|.  [count] used as with |:spellgood|.
+			|zuw| と同様である。[count] は |:spellgood| と同様に使
+			われる。
 
-:spellu[ndo]! {word}	Like |zuW|.  [count] used as with |:spellgood|.
+:spellu[ndo]! {word}	|zuW| と同様である。[count] は |:spellgood| と同様に使
+			われる。
 
 
-After adding a word to 'spellfile' with the above commands its associated
-".spl" file will automatically be updated and reloaded.  If you change
-'spellfile' manually you need to use the |:mkspell| command.  This sequence of
-commands mostly works well: >
-	:edit <file in 'spellfile'>
-<	(make changes to the spell file) >
+上記のコマンドで 'spellfile' に単語を追加した後、 その関連付けられた ".spl" フ
+ァイルは自動的に更新され再読み込みされる。もし手動で 'spellfile' を変更するな
+ら |:mkspell| コマンドを用いる必要がある。このコマンドの順序でたいていうまくい
+く: >
+	:edit <'spellfile' にあるファイル>
+<	(スペルファイルに変更を加える) >
 	:mkspell! %
 
-More details about the 'spellfile' format below |spell-wordlist-format|.
+'spellfile' の形式に関する詳細は下記の |spell-wordlist-format| を参照。
 
 							*internal-wordlist*
-The internal word list is used for all buffers where 'spell' is set.  It is
-not stored, it is lost when you exit Vim.  It is also cleared when 'encoding'
-is set.
+内部単語リストは 'spell' がセットされた全てのバッファで使われる。内部単語リス
+トは蓄えられず、Vim が終了する時に失われる。また 'encoding' がセットされた時に
+クリアされる。
 
 
-Finding suggestions for bad words:
+間違った単語の候補を見つけるには:
 							*z=*
 z=			For the word under/after the cursor suggest correctly
 			spelled words.  This also works to find alternatives
@@ -193,14 +196,14 @@ In Insert mode, when the cursor is after a badly spelled word, you can use
 CTRL-X s to find suggestions.  This works like Insert mode completion.  Use
 CTRL-N to use the next suggestion, CTRL-P to go back. |i_CTRL-X_s|
 
-The 'spellsuggest' option influences how the list of suggestions is generated
-and sorted.  See |'spellsuggest'|.
+'spellsuggest' オプションは候補のリストがどのように生成、ソートされるかに影響
+する。|'spellsuggest'| を参照せよ。
 
-The 'spellcapcheck' option is used to check the first word of a sentence
-starts with a capital.  This doesn't work for the first word in the file.
-When there is a line break right after a sentence the highlighting of the next
-line may be postponed.  Use |CTRL-L| when needed.  Also see |set-spc-auto| for
-how it can be set automatically when 'spelllang' is set.
+'spellcapcheck' オプションは文の最初の単語が大文字で始まるかをチェックするのに
+用いる。これはファイルの最初の単語には働かない。When there is a line break
+right after a sentence the highlighting of the next line may be postponed.
+Use |CTRL-L| when needed.  Also see |set-spc-auto| for how it can be set
+automatically when 'spelllang' is set.
 
 Vim counts the number of times a good word is encountered.  This is used to
 sort the suggestions: words that have been seen before get a small bonus,
@@ -213,13 +216,14 @@ works in a new or short file |spell-COMMON|.
 
 性能
 
-Vim はオンザフライのスペルチェックをする。To make this work fast the word list
-is loaded in memory.  Thus this uses a lot of memory (1 Mbyte or more).  There
-might also be a noticeable delay when the word list is loaded, which happens
-when 'spell' is set and when 'spelllang' is set while 'spell' was already set.
-To minimize the delay each word list is only loaded once, it is not deleted
-when 'spelllang' is made empty or 'spell' is reset.  When 'encoding' is set
-all the word lists are reloaded, thus you may notice a delay then too.
+Vim はオンザフライのスペルチェックをする。スペルチェックを速くするために単語リ
+ストはメモリにロードされる。だがこのために多くのメモリ(1 Mbyte以上)が使われる。
+There might also be a noticeable delay when the word list is loaded, which
+happens when 'spell' is set and when 'spelllang' is set while 'spell' was
+already set.  To minimize the delay each word list is only loaded once, it is
+not deleted when 'spelllang' is made empty or 'spell' is reset.  When
+'encoding' is set all the word lists are reloaded, thus you may notice a delay
+then too.
 
 
 地域
@@ -239,14 +243,14 @@ all the word lists are reloaded, thus you may notice a delay then too.
 
 常に言語名や地域名には小文字を使う。
 
-When adding a word with |zg| or another command it's always added for all
-regions.  You can change that by manually editing the 'spellfile'.  See
-|spell-wordlist-format|.  Note that the regions as specified in the files in
-'spellfile' are only used when all entries in 'spelllang' specify the same
-region (not counting files specified by their .spl name).
+|zg| や他のコマンドで単語が追加された時、その単語は常に全ての地域に追加される。
+これは 'spellfile' を手動で編集することで変更できる。|spell-wordlist-format|
+を参照せよ。  Note that the regions as specified in the files in 'spellfile'
+are only used when all entries in 'spelllang' specify the same region (not
+counting files specified by their .spl name).
 
 							*spell-german*
-Specific exception: For German these special regions are used:
+特有の例外: ドイツ語ではこれらの特別な地域が使われる:
 	de		all German words accepted
 	de_de		old and new spelling
 	de_19		old spelling
@@ -255,7 +259,7 @@ Specific exception: For German these special regions are used:
 	de_ch		Switzerland
 
 							*spell-russian*
-Specific exception: For Russian these special regions are used:
+特有の例外: ロシア語ではこれらの特別な地域が使われる:
 	ru		all Russian words accepted
 	ru_ru		"IE" letter spelling
 	ru_yo		"YO" letter spelling
@@ -273,10 +277,10 @@ In a table:
 
 スペルファイル						*spell-load*
 
-Vim searches for spell files in the "spell" subdirectory of the directories in
-'runtimepath'.  The name is: LL.EEE.spl, where:
-	LL	the language name
-	EEE	the value of 'encoding'
+Vim は 'runtimepath' のディレクトリの中の "spell" という名前のサブディレクトリ
+にあるスペルファイルを探す。The name is: LL.EEE.spl, where:
+	LL	言語名
+	EEE	'encoding' の値
 
 The value for "LL" comes from 'spelllang', but excludes the region name.
 Examples:
@@ -345,9 +349,9 @@ If there is a file with exactly the same name as the ".spl" file but ending in
 before suggestions are made to reduce memory use.
 
 				    *E758* *E759* *E778* *E779* *E780* *E782*
-When loading a spell file Vim checks that it is properly formatted.  If you
-get an error the file may be truncated, modified or intended for another Vim
-version.
+スペルファイルを読み込む時 Vim はそれが正しくフォーマットされているかチェック
+する。If you get an error the file may be truncated, modified or intended for
+another Vim version.
 
 
 SPELLFILE CLEANUP					*spellfile-cleanup*
@@ -669,8 +673,7 @@ buffer the user was editing.
 ==============================================================================
 4. スペルファイルの形式					*spell-file-format*
 
-This is the format of the files that are used by the person who creates and
-maintains a word list.
+これは単語リストを作成、管理する人が使うファイルのフォーマットである。
 
 Note that we avoid the word "dictionary" here.  That is because the goal of
 spell checking differs from writing a dictionary (as in the book).  For
@@ -929,9 +932,13 @@ When the encoding is UTF-8 no word characters need to be specified.
 Vim allows you to use spell checking for several languages in the same file.
 You can list them in the 'spelllang' option.  As a consequence all spell files
 for the same encoding must use the same word characters, otherwise they can't
-be combined without errors.  If you get a warning that the word tables differ
-you may need to generate the .spl file again with |:mkspell|.  Check the FOL,
-LOW and UPP lines in the used .aff file.
+be combined without errors.
+
+If you get an E763 warning that the word tables differ you need to update your
+".spl" spell files.  If you downloaded the files, get the latest version of
+all spell files you use.  Otherwise generate the .spl file again with
+|:mkspell|.  If you still get errors check the FOL, LOW and UPP lines in the
+used .aff files.
 
 The XX.ascii.spl spell file generated with the "-ascii" argument will not
 contain the table with characters, so that it can be combine with spell files
@@ -1130,7 +1137,7 @@ WORDS WITH A SLASH					*spell-SLASH*
 
 The slash is used in the .dic file to separate the basic word from the affix
 letters and other flags.  Unfortunately, this means you cannot use a slash in
-a word.  Thus "TCP/IP" is not a word but "TCP with the flags "IP".  To include
+a word.  Thus "TCP/IP" is not a word but "TCP" with the flags "IP".  To include
 a slash in the word put a backslash before it: "TCP\/IP".  In the rare case
 you want to use a backslash inside a word you need to use two backslashes.
 Any other use of the backslash is reserved for future expansion.
@@ -1379,7 +1386,7 @@ Only case-folded letters need to be included.
 
 Another way to restrict compounding was mentioned above: Adding the
 |spell-COMPOUNDFORBIDFLAG| flag to an affix causes all words that are made
-with that affix not be be used for compounding.
+with that affix to not be used for compounding.
 
 
 UNLIMITED COMPOUNDING					*spell-NOBREAK*

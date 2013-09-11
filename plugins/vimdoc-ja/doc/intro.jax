@@ -1,4 +1,4 @@
-*intro.txt*     For Vim バージョン 7.3.  Last change: 2012 Sep 05
+*intro.txt*     For Vim バージョン 7.4.  Last change: 2013 Jun 17
 
 
 		  VIMリファレンスマニュアル    by Bram Moolenaar
@@ -264,6 +264,7 @@ Vim エディタは Stevie をベースにしており、下記の方々のソ�
 で彼らの名前について触れることはできませんが。これらの人々のアイディアがなけれ
 ば、Vim は今の Vim にはならなかったことでしょう: 彼らが Vim を生かしつづけたの
 です！
+*love* *peace* *friendship* *gross-national-happiness* 
 
 
 この文書には他のバージョンの Vi に対するいくつかの参照があります:

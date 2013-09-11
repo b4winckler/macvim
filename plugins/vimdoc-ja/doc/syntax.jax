@@ -1,4 +1,4 @@
-*syntax.txt*	For Vim バージョン 7.3.  Last change: 2013 May 31
+*syntax.txt*	For Vim バージョン 7.4.  Last change: 2013 May 31
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -402,6 +402,7 @@ Vimはロードした構文の名前を変数 "b:current_syntax" に記憶して
 例えば次の Unix シェルスクリプトですべての .c と .h ファイルを変換できる: >
    for f in *.[ch]; do gvim -f +"syn on" +"run! syntax/2html.vim" +"wq" +"q" $f; done
 <
+					*g:html_start_line* *g:html_end_line*
 変換の範囲を指定するには、|:TOhtml| コマンドに範囲を指定するか、
 "g:html_start_line" と "g:html_end_line" に変換したい範囲の最初と最後の行を設
 定する。例えば、最後に選択された範囲だけを変換するには: >

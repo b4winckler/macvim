@@ -1,4 +1,4 @@
-*quickref.txt*  For Vim バージョン 7.3.  Last change: 2013 May 20
+*quickref.txt*  For Vim バージョン 7.4.  Last change: 2013 May 20
 
 
 		  VIMリファレンスマニュアル    by Bram Moolenaar
@@ -623,7 +623,7 @@
 'autoindent'	  'ai'      直前の行から新しい行のインデントを得る
 'autoread'	  'ar'      vim以外でファイル変更した時に自動再読み込みする
 'autowrite'	  'aw'      変更があったら、自動的に書き出す
-'autowriteall'	  'awa'     'autowritea' と同様だが、より多くのコマンドと連動
+'autowriteall'	  'awa'     'autowrite' と同様だが、より多くのコマンドと連動
 'background'	  'bg'      "dark"/"light": ハイライト色の指定に使用
 'backspace'	  'bs'      行頭でのバックスペースの振る舞いをカスタマイズ
 'backup'	  'bk'      上書きした時にバックアップを作成する。
