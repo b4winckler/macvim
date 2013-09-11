@@ -1,4 +1,4 @@
-*repeat.txt*    For Vim バージョン 7.3.  Last change: 2012 Mar 23
+*repeat.txt*    For Vim バージョン 7.4.  Last change: 2012 Mar 23
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -161,8 +161,7 @@ Vimスクリプトの書き方はユーザーマニュアルの41章|usr_41.txt|
 			自動コマンド |SourcePre| が発生する。
 
 :so[urce]! {file}	Vimコマンドを{file}から読込む。ノーマルモードでファイ
-			ルの内容をあなたがタイプしたのと同じように実行されな
-			い。
+			ルの内容をあなたがタイプしたのと同じように実行される。
 			|:global|, |:argdo|, |:windo|, |:bufdo|で使ったとき、
 			ループ中や他のコマンドが続けられたときは、コマンドの実
 			行中は表示は更新されない。

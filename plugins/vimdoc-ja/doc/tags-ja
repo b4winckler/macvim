@@ -4361,6 +4361,7 @@ N	pattern.jax	/*N*
 N%	motion.jax	/*N%*
 N:	cmdline.jax	/*N:*
 N<Del>	various.jax	/*N<Del>*
+NFA	pattern.jax	/*NFA*
 NL-used-for-Nul	pattern.jax	/*NL-used-for-Nul*
 NetBSD-backspace	options.jax	/*NetBSD-backspace*
 NetUserPass()	pi_netrw.jax	/*NetUserPass()*
@@ -5283,6 +5284,7 @@ dip	motion.jax	/*dip*
 dircolors.vim	syntax.jax	/*dircolors.vim*
 dis	motion.jax	/*dis*
 disable-menus	gui.jax	/*disable-menus*
+discard	editing.jax	/*discard*
 distribute-script	usr_41.jax	/*distribute-script*
 distribution	intro.jax	/*distribution*
 diw	motion.jax	/*diw*
@@ -5563,6 +5565,7 @@ format-comments	change.jax	/*format-comments*
 formatting	change.jax	/*formatting*
 formfeed	intro.jax	/*formfeed*
 fortran.vim	syntax.jax	/*fortran.vim*
+friendship	intro.jax	/*friendship*
 frombook	usr_01.jax	/*frombook*
 ft-abel-syntax	syntax.jax	/*ft-abel-syntax*
 ft-ada-commands	ft_ada.jax	/*ft-ada-commands*
@@ -5784,6 +5787,7 @@ g:html_charset_override	syntax.jax	/*g:html_charset_override*
 g:html_diff_one_file	syntax.jax	/*g:html_diff_one_file*
 g:html_dynamic_folds	syntax.jax	/*g:html_dynamic_folds*
 g:html_encoding_override	syntax.jax	/*g:html_encoding_override*
+g:html_end_line	syntax.jax	/*g:html_end_line*
 g:html_expand_tabs	syntax.jax	/*g:html_expand_tabs*
 g:html_hover_unfold	syntax.jax	/*g:html_hover_unfold*
 g:html_ignore_conceal	syntax.jax	/*g:html_ignore_conceal*
@@ -5795,6 +5799,7 @@ g:html_no_progress	syntax.jax	/*g:html_no_progress*
 g:html_number_lines	syntax.jax	/*g:html_number_lines*
 g:html_pre_wrap	syntax.jax	/*g:html_pre_wrap*
 g:html_prevent_copy	syntax.jax	/*g:html_prevent_copy*
+g:html_start_line	syntax.jax	/*g:html_start_line*
 g:html_use_css	syntax.jax	/*g:html_use_css*
 g:html_use_encoding	syntax.jax	/*g:html_use_encoding*
 g:html_use_xhtml	syntax.jax	/*g:html_use_xhtml*
@@ -6027,6 +6032,7 @@ graphic-option-gone	version4.jax	/*graphic-option-gone*
 greek	options.jax	/*greek*
 grep	quickfix.jax	/*grep*
 groff.vim	syntax.jax	/*groff.vim*
+gross-national-happiness	intro.jax	/*gross-national-happiness*
 group-name	syntax.jax	/*group-name*
 gs	various.jax	/*gs*
 gsp.vim	syntax.jax	/*gsp.vim*
@@ -6539,6 +6545,7 @@ location-list	quickfix.jax	/*location-list*
 location-list-window	quickfix.jax	/*location-list-window*
 log()	eval.jax	/*log()*
 log10()	eval.jax	/*log10()*
+love	intro.jax	/*love*
 lowercase	change.jax	/*lowercase*
 lpc.vim	syntax.jax	/*lpc.vim*
 lua	if_lua.jax	/*lua*
@@ -7031,6 +7038,7 @@ pattern-searches	pattern.jax	/*pattern-searches*
 pattern.txt	pattern.jax	/*pattern.txt*
 patterns-composing	pattern.jax	/*patterns-composing*
 pdev-option	print.jax	/*pdev-option*
+peace	intro.jax	/*peace*
 penc-option	print.jax	/*penc-option*
 perl	if_perl.jax	/*perl*
 perl-Append	if_perl.jax	/*perl-Append*
@@ -7158,6 +7166,7 @@ python-options	if_pyth.jax	/*python-options*
 python-output	if_pyth.jax	/*python-output*
 python-pyeval	if_pyth.jax	/*python-pyeval*
 python-range	if_pyth.jax	/*python-range*
+python-tabpage	if_pyth.jax	/*python-tabpage*
 python-tabpages	if_pyth.jax	/*python-tabpages*
 python-vars	if_pyth.jax	/*python-vars*
 python-vim	if_pyth.jax	/*python-vim*
@@ -7245,6 +7254,7 @@ register-faq	sponsor.jax	/*register-faq*
 register-variable	eval.jax	/*register-variable*
 registers	change.jax	/*registers*
 regular-expression	pattern.jax	/*regular-expression*
+reload	editing.jax	/*reload*
 reltime()	eval.jax	/*reltime()*
 reltimestr()	eval.jax	/*reltimestr()*
 remote.txt	remote.jax	/*remote.txt*
@@ -7741,6 +7751,7 @@ t_cri	version4.jax	/*t_cri*
 t_cs	term.jax	/*t_cs*
 t_csc	version4.jax	/*t_csc*
 t_cv	version4.jax	/*t_cv*
+t_cvv	version4.jax	/*t_cvv*
 t_da	term.jax	/*t_da*
 t_db	term.jax	/*t_db*
 t_dl	term.jax	/*t_dl*

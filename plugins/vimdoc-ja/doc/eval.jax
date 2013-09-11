@@ -1,4 +1,4 @@
-*eval.txt*	For Vim バージョン 7.3.  Last change: 2013 May 21
+*eval.txt*	For Vim バージョン 7.4.  Last change: 2013 May 21
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -1772,7 +1772,7 @@ histadd( {history},{item})	文字列	ヒストリに追加
 histdel( {history} [, {item}])	文字列	ヒストリからitemを削除
 histget( {history} [, {index}])	文字列	ヒストリから{index}アイテムを取得
 histnr( {history})		数値	ヒストリの数
-hlexists( {name})		数値	highligth group {name}が存在したらTRUE
+hlexists( {name})		数値	highlight group {name}が存在したらTRUE
 hlID( {name})			数値	highlight group {name}のID
 hostname()			文字列	vimが動作しているマシンの名前
 iconv( {expr}, {from}, {to})	文字列	{expr}のエンコーディングを変換する

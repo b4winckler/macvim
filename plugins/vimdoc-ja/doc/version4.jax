@@ -1,4 +1,4 @@
-*version4.txt*  For Vim バージョン 7.3.  Last change: 2006 Apr 24
+*version4.txt*  For Vim バージョン 7.4.  Last change: 2006 Apr 24
 
 
 		  VIMリファレンスマニュアル	  by Bram Moolenaar
@@ -225,7 +225,7 @@ t_cil		t_AL		指定行数を挿入する		*t_cil*
 t_cm		t_cm		カーソルを移動
 t_cri		t_RI		カーソルを指定数右へ移動	*t_cri*
 t_cv		t_ve		カーソルを見えるようにする	*t_cv*
-t_cvv		t_vs		カーソルを明確に見えるようにする*t_cvv*
+t_cvv		t_vs		カーソルを明確に見えるようにする *t_cvv*
 t_dl		t_dl		行を削除する
 t_cs		t_cs		スクロールする範囲
 t_ed		t_cl		画面をクリアする		*t_ed*

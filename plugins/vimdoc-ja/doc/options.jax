@@ -1,4 +1,4 @@
-*options.txt*	For Vim バージョン 7.3.  Last change: 2013 May 23
+*options.txt*	For Vim バージョン 7.4.  Last change: 2013 May 23
 
 
 		  VIMリファレンスマニュアル    by Bram Moolenaar
@@ -5646,7 +5646,7 @@ Note 1番目の形式では、行全体がオプション指定に使われる�
 'regexpengine' 're'	数値	(既定では 0)
 			グローバル
 			{Vi にはない}
-	デフォルトで使う正規表現エンジンを選択する。 |two-engine|
+	デフォルトで使う正規表現エンジンを選択する。 |two-engines|
 	設定できる値:
 		0	自動選択
 		1	古いエンジン

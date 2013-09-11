@@ -1,4 +1,4 @@
-*uganda.txt*    For Vim バージョン 7.3.  Last change: 2012 Dec 02
+*uganda.txt*    For Vim バージョン 7.4.  Last change: 2013 Jul 06
 
 
 		  VIMリファレンスマニュアル	  by Bram Moolenaar
@@ -349,12 +349,11 @@ Academy Outreach Society の監督下にあります。センターは約 1 年�
 
 
 小切手の送り先:
-			stichting ICCF Holland
 			Bram Moolenaar
 			Finsterruetihof 1
 			8134 Adliswil
 			Switzerland
 
-この住所はとうぶん先まで使えると思います。
+この住所は当分先まで使えると思います。
 
  vim:tw=78:ts=8:ft=help:norl:
