@@ -2,7 +2,7 @@
 " FILE: vimproc.vim
 " AUTHOR:  Shougo Matsushita <Shougo.Matsu@gmail.com> (Modified)
 "          Yukihiro Nakadaira <yukihiro.nakadaira at gmail.com> (Original)
-" Last Modified: 31 Aug 2013.
+" Last Modified: 06 Oct 2013.
 " License: MIT license  {{{
 "     Permission is hereby granted, free of charge, to any person obtaining
 "     a copy of this software and associated documentation files (the
@@ -251,9 +251,8 @@ function! s:system(cmdline, is_passwd, input, timeout, is_pty) "{{{
       let end = split(reltimestr(reltime(start)))[0] * 1000
       if end > timeout && !subproc.stdout.eof
         " Kill process.
-        " 15 == SIGTERM
         try
-          call subproc.kill(15)
+          call subproc.kill(g:vimproc#SIGTERM)
           call subproc.waitpid()
         catch
           " Ignore error.
@@ -686,7 +685,7 @@ function! vimproc#kill(pid, sig) "{{{
 
   try
     let [ret] = s:libcall('vp_kill', [a:pid, a:sig])
-  catch /kill() error:/
+  catch
     let s:last_errmsg = v:exception
     return 1
   endtry
@@ -695,41 +694,43 @@ function! vimproc#kill(pid, sig) "{{{
 endfunction"}}}
 
 function! vimproc#decode_signal(signal) "{{{
-  if a:signal == 2
+  if a:signal == g:vimproc#SIGINT
     return 'SIGINT'
-  elseif a:signal == 3
+  elseif a:signal == g:vimproc#SIGQUIT
     return 'SIGQUIT'
-  elseif a:signal == 4
+  elseif a:signal == g:vimproc#SIGILL
     return 'SIGILL'
-  elseif a:signal == 6
+  elseif a:signal == g:vimproc#SIGABRT
     return 'SIGABRT'
-  elseif a:signal == 8
+  elseif a:signal == g:vimproc#SIGFPE
     return 'SIGFPE'
-  elseif a:signal == 9
+  elseif a:signal == g:vimproc#SIGKILL
     return 'SIGKILL'
-  elseif a:signal == 11
+  elseif a:signal == g:vimproc#SIGSEGV
     return 'SIGSEGV'
-  elseif a:signal == 13
+  elseif a:signal == g:vimproc#SIGPIPE
     return 'SIGPIPE'
-  elseif a:signal == 14
+  elseif a:signal == g:vimproc#SIGALRM
     return 'SIGALRM'
-  elseif a:signal == 15
+  elseif a:signal == g:vimproc#SIGTERM
     return 'SIGTERM'
-  elseif a:signal == 10
+  elseif a:signal == g:vimproc#SIGUSR1
     return 'SIGUSR1'
-  elseif a:signal == 12
+  elseif a:signal == g:vimproc#SIGUSR2
     return 'SIGUSR2'
-  elseif a:signal == 17
+  elseif a:signal == g:vimproc#SIGCHLD
     return 'SIGCHLD'
-  elseif a:signal == 18
+  elseif a:signal == g:vimproc#SIGCONT
     return 'SIGCONT'
-  elseif a:signal == 19
+  elseif a:signal == g:vimproc#SIGSTOP
     return 'SIGSTOP'
-  elseif a:signal == 20
+  elseif a:signal == g:vimproc#SIGTSTP
     return 'SIGTSTP'
-  elseif a:signal == 21
+  elseif a:signal == g:vimproc#SIGTTIN
     return 'SIGTTIN'
-  elseif a:signal == 22
+  elseif a:signal == g:vimproc#SIGTTOU
+    return 'SIGTTOU'
+  elseif a:signal == g:vimproc#SIGWINCH
     return 'SIGTTOU'
   else
     return 'UNKNOWN'
@@ -921,7 +922,7 @@ function! s:read_lines(...) dict "{{{
     let res .= out
   endwhile
 
-  let lines = split(res, '\r\?\n', 1)
+  let lines = split(res, '\r*\n', 1)
 
   let self.buffer = get(lines, -1, 0)
   return lines[ : -2]
@@ -994,8 +995,7 @@ function! s:garbage_collect(is_force) "{{{
       if cond !=# 'run' || a:is_force
         if cond !=# 'exit'
           " Kill process.
-          " 15 == SIGTERM
-          call vimproc#kill(pid, 15)
+          call vimproc#kill(pid, g:vimproc#SIGTERM)
         endif
 
         if vimproc#util#is_windows()
@@ -1174,7 +1174,7 @@ function! s:libcall(func, args) "{{{
   let args = empty(a:args) ? '' : (join(reverse(copy(a:args)), EOV) . EOV)
   let stack_buf = libcall(g:vimproc#dll_path, a:func, args)
   let result = s:split(stack_buf, EOV)
-  if !empty(result) && result[-1] != ''
+  if get(result, -1, 'error') != ''
     if stack_buf[len(stack_buf) - 1] ==# EOV
       " Note: If &encoding equals "cp932" and output ends multibyte first byte,
       "       will fail split.
@@ -1460,22 +1460,24 @@ function! s:vp_set_winsize(width, height) dict
   endfor
 endfunction
 
-function! s:vp_kill(sig) dict
-  if a:sig != 0
+function! s:vp_kill(...) dict
+  let sig = get(a:000, 0, g:vimproc#SIGTERM)
+  if sig != 0
     call s:close_all(self)
     let self.is_valid = 0
   endif
 
   let ret = 0
   for pid in get(self, 'pid_list', [self.pid])
-    let ret = vimproc#kill(pid, a:sig)
+    let ret = vimproc#kill(pid, sig)
   endfor
 
   return ret
 endfunction
 
-function! s:vp_pgroup_kill(sig) dict
-  if a:sig != 0
+function! s:vp_pgroup_kill(...) dict
+  let sig = get(a:000, 0, g:vimproc#SIGTERM)
+  if sig != 0
     call s:close_all(self)
     let self.is_valid = 0
   endif
@@ -1485,7 +1487,7 @@ function! s:vp_pgroup_kill(sig) dict
     return
   endif
 
-  return self.current_proc.kill(a:sig)
+  return self.current_proc.kill(sig)
 endfunction
 
 function! s:waitpid(pid)

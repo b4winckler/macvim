@@ -55,8 +55,9 @@ VIM_KEYBOARD か HANGUL_KEYBOARD_TYPE 環境変数を使うことによって、
 
 ハングル・フォント
 ------------------
-$HOME/.Xdefaults か ユーザの.gvimrc でテキストのフォントを設定することができま
-す。しかし、ハングルを使うには、vimrc で 'guifontset' を設定する必要があります。
+$HOME/.Xdefaults か、ユーザーの .gvimrc でテキストのフォントを設定することがで
+きます。しかし、ハングルを使うには、vimrc で 'guifontset' を設定する必要があり
+ます。
 
 $HOME/.Xdefaults: >
     Vim.font: english_font
@@ -86,7 +87,7 @@ $HOME/.gvimrc: >
    :hi Comment guifg=Cyan font=another_eng_font,another_your_font
 単に次のようにした場合は: >
    :hi Comment font=another_eng_font
-たくさんのエラー・メッセージが表示されることになります。注意してください!
+たくさんのエラーメッセージが表示されることになります。注意してください!
 
 ハングル・フォントの幅は、英語フォントの幅の2倍である必要があります。
 

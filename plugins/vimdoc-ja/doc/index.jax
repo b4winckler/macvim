@@ -1182,12 +1182,12 @@ You found it, Arthur!				*holy-grail*
 |:copy|		:co[py]		行のコピー
 |:colder|	:col[der]	より古いエラーリストを使用する
 |:colorscheme|	:colo[rscheme]	指定した色テーマをロードする
-|:command|	:com[mand]	ユーザ定義コマンドの作成
-|:comclear|	:comc[lear]	すべてのユーザ定義コマンドの削除
+|:command|	:com[mand]	ユーザー定義コマンドの作成
+|:comclear|	:comc[lear]	すべてのユーザー定義コマンドの削除
 |:compiler|	:comp[iler]	指定したコンパイラ用の設定をする
 |:continue|	:con[tinue]	:while に戻って実行を続ける
-|:confirm|	:conf[irm]	コマンドを実行し、ユーザの確認が必要ならプロン
-				プトを表示する
+|:confirm|	:conf[irm]	コマンドを実行し、ユーザーの確認が必要ならプロ
+				ンプトを表示する
 |:copen|	:cope[n]	クイックフィックスウィンドウを開く
 |:cprevious|	:cp[revious]	直前のエラーへジャンプ
 |:cpfile|	:cpf[ile]	エラーリストの前のファイルの最後のエラーへ
@@ -1206,8 +1206,8 @@ You found it, Arthur!				*holy-grail*
 |:delmarks|	:delm[arks]	マークを削除する
 |:debug|	:deb[ug]	コマンドをデバッグモードで実行する
 |:debuggreedy|	:debugg[reedy]	デバッグモードのコマンドを標準入力から読み込む
-|:delcommand|	:delc[ommand]	ユーザ定義コマンドの削除
-|:delfunction|	:delf[unction]	ユーザ定義関数の削除
+|:delcommand|	:delc[ommand]	ユーザー定義コマンドの削除
+|:delfunction|	:delf[unction]	ユーザー定義関数の削除
 |:diffupdate|	:dif[fupdate]	'diff' バッファを更新する
 |:diffget|	:diffg[et]	カレントバッファの差異を他方に合わせる
 |:diffoff|	:diffo[ff]	差分モードをオフにする
@@ -1238,7 +1238,7 @@ You found it, Arthur!				*holy-grail*
 |:emenu|	:em[enu]	名前を指定してメニューを実行
 |:endif|	:en[dif]	直前の :if の終了
 |:endfor|	:endfo[r]	直前の :for の終了
-|:endfunction|	:endf[unction]	ユーザ定義関数の終了
+|:endfunction|	:endf[unction]	ユーザー定義関数の終了
 |:endtry|	:endt[ry]	直前の:tryを終了する
 |:endwhile|	:endw[hile]	直前の :while の終了
 |:enew|		:ene[w]		新しい名無しバッファを開く
@@ -1260,7 +1260,7 @@ You found it, Arthur!				*holy-grail*
 |:folddoclosed|	:folddoc[losed]	閉じている折畳の中の行にコマンドを実行する
 |:foldopen|	:foldo[pen]	折畳を開く
 |:for|		:for		for ループ
-|:function|	:fu[nction]	ユーザ定義関数を定義
+|:function|	:fu[nction]	ユーザー定義関数を定義
 |:global|	:g[lobal]	パターンにマッチした行でコマンドを実行する
 |:goto|		:go[to]		バッファ内の指定したバイト数の場所へジャンプ
 |:grep|		:gr[ep]		'grepprg' を実行し、最初にマッチした位置へジャ
@@ -1472,7 +1472,7 @@ You found it, Arthur!				*holy-grail*
 |:registers|	:reg[isters]	レジスタの内容を表示
 |:resize|	:res[ize]	カレントウィンドウの高さを変更
 |:retab|	:ret[ab]	タブの大きさを変更
-|:return|	:retu[rn]	ユーザファンクションからリターンする
+|:return|	:retu[rn]	ユーザーファンクションからリターンする
 |:rewind|	:rew[ind]	引数リストの先頭のファイルを開く
 |:right|	:ri[ght]	テキストを右寄せに整形
 |:rightbelow|	:rightb[elow]	ウィンドウが右もしくは下に分割されるようにする

@@ -154,8 +154,8 @@ colormapを使うように指定することで回避できる: >
   Cannot go back to previous directory
 
 ファイル名を展開中に、Vimが以前使われていたディレクトリに戻ることに失敗した。
-こうなると、使われている全てのファイル名が無効になるかもしれない。ユーザはカレ
-ントディレクトリに実行パーミッションを持っている必要がある。
+こうなると、使われている全てのファイル名が無効になるかもしれない。ユーザーはカ
+レントディレクトリに実行パーミッションを持っている必要がある。
 
 							*E190* *E212*  >
   Cannot open "{filename}" for writing
@@ -669,8 +669,8 @@ http://groups.yahoo.com/group/solarisonintel/message/12179.
 						*connection-refused*  >
   Xlib: connection to "<machine-name:0.0" refused by server
 
-VimがXサーバへ接続を試みたが、接続を確立できなかった場合にこれが起こる。Xサー
-バへの接続は、タイトルとxtermのクリップボードをサポートするために必要とされ
+VimがXサーバーへ接続を試みたが、接続を確立できなかった場合にこれが起こる。Xサー
+バーへの接続は、タイトルとxtermのクリップボードをサポートするために必要とされ
 る。残念なことに、|+xterm_clipboard|と|+X11|の機能を無効にしない限り、このエ
 ラーメッセージは避けることはできない。
 
@@ -728,8 +728,8 @@ Vimが一時ファイルを読み込めなかった。特に Windows では、cm
 							*E464*  >
   Ambiguous use of user-defined command
 
-名前の先頭部分が一致するユーザ定義コマンドが2つあり、そのうちの1つを実行しよう
-とコマンドライン補完をした。|user-cmd-ambiguous|を参照。
+名前の先頭部分が一致するユーザー定義コマンドが2つあり、そのうちの1つを実行しよ
+うとコマンドライン補完をした。|user-cmd-ambiguous|を参照。
 例: >
 	:command MyCommand1 echo "one"
 	:command MyCommand2 echo "two"
@@ -738,7 +738,7 @@ Vimが一時ファイルを読み込めなかった。特に Windows では、cm
 							*E492*  >
   Not an editor command
 
-Exコマンドでもユーザ定義コマンドでもないコマンドを実行しようとした。
+Exコマンドでもユーザー定義コマンドでもないコマンドを実行しようとした。
 
 ==============================================================================
 3. メッセージ						*messages*

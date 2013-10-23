@@ -113,7 +113,7 @@ vimdiff (|08.7|) が便利です。例: >
 		    所有者: mool   日付: Tue May 29 21:00:25 2001 ~
 		ファイル名: ~mool/vim/vim6/src/main.c ~
 		  変更状態: あり ~
-		  ユーザ名: mool   ホスト名: masaka.moolenaar.net ~
+		  ユーザー名: mool   ホスト名: masaka.moolenaar.net ~
 		プロセスID: 12525 ~
 	   ディレクトリ ~/tmp: ~
 	      -- なし -- ~
@@ -164,7 +164,7 @@ Vim には、うっかりミスを防止するための仕組みがあります�
 		    所有者: mool   日付: Tue May 29 21:09:28 2001 ~
 		ファイル名: ~mool/vim/vim6/src/main.c ~
 		  変更状態: なし ~
-		  ユーザ名: mool   ホスト名: masaka.moolenaar.net ~
+		  ユーザー名: mool   ホスト名: masaka.moolenaar.net ~
 		プロセスID: 12559 (まだ実行中) ~
 	次のファイルを開いている最中 "main.c" ~
 		     日付: Tue May 29 19:46:12 2001 ~

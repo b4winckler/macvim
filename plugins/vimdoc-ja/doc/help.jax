@@ -37,13 +37,13 @@ VIM は Vi IMproved の略です。VIM の大部分は Bram Moolenaar によっ�
 |tutor|		30分の初心者向けトレーニングコース
 |copying|	著作権について
 |iccf|		ウガンダの恵まれない子供達への支援活動
-|sponsor|	Vim 開発スポンサー制度、Vim の登録ユーザになろう
+|sponsor|	Vim 開発スポンサー制度、Vim の登録ユーザーになろう
 |www|		インターネット上の Vim 情報
 |bugs|		バグレポートの送信先
 
-ユーザマニュアルでは編集作業の進め方を説明します。
+ユーザーマニュアルでは編集作業の進め方を説明します。
 
-|usr_toc.txt|	ユーザマニュアル目次
+|usr_toc.txt|	ユーザーマニュアル目次
 
 初級編 ~
 |usr_01.txt|  マニュアルについて
@@ -86,8 +86,7 @@ VIM は Vi IMproved の略です。VIM の大部分は Bram Moolenaar によっ�
 |usr_90.txt|  Vim のインストール
 
 
-								*reference_toc*
-リファレンスマニュアルでは Vim の詳細を説明します。
+リファレンスマニュアルでは Vim の詳細を説明します。		*reference_toc*
 
 一般事項 ~
 |intro.txt|	Vimについての前書き。と、ヘルプの表記について
@@ -137,7 +136,7 @@ VIM は Vi IMproved の略です。VIM の大部分は Bram Moolenaar によっ�
 
 特定機能 ~
 |print.txt|	印刷
-|remote.txt|	クライアント/サーバ機能
+|remote.txt|	クライアント/サーバー機能
 |term.txt|	いろいろな端末やマウスについて
 |digraph.txt|	利用可能なダイグラフ (digraph) の一覧
 |mbyte.txt|	マルチバイトテキストのサポート
@@ -152,7 +151,7 @@ VIM は Vi IMproved の略です。VIM の大部分は Bram Moolenaar によっ�
 |rileft.txt|	右横書き (書字方向が右から左になるモード)
 
 GUI ~
-|gui.txt|	グラフィカルユーザインターフェース (GUI)
+|gui.txt|	グラフィカルユーザーインターフェース (GUI)
 |gui_w16.txt|	Windows 3.1 GUI
 |gui_w32.txt|	Win32 GUI
 |gui_x11.txt|	X11 GUI

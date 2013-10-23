@@ -3776,25 +3776,39 @@ do_put(regname, dir, count, flags)
 	 */
 	if (y_type == MCHAR && y_size == 1)
 	{
-	    totlen = count * yanklen;
-	    if (totlen)
-	    {
-		oldp = ml_get(lnum);
-		newp = alloc_check((unsigned)(STRLEN(oldp) + totlen + 1));
-		if (newp == NULL)
-		    goto end;		/* alloc() will give error message */
-		mch_memmove(newp, oldp, (size_t)col);
-		ptr = newp + col;
-		for (i = 0; i < count; ++i)
+	    do {
+		totlen = count * yanklen;
+		if (totlen > 0)
 		{
-		    mch_memmove(ptr, y_array[0], (size_t)yanklen);
-		    ptr += yanklen;
+		    oldp = ml_get(lnum);
+		    newp = alloc_check((unsigned)(STRLEN(oldp) + totlen + 1));
+		    if (newp == NULL)
+			goto end;	/* alloc() gave an error message */
+		    mch_memmove(newp, oldp, (size_t)col);
+		    ptr = newp + col;
+		    for (i = 0; i < count; ++i)
+		    {
+			mch_memmove(ptr, y_array[0], (size_t)yanklen);
+			ptr += yanklen;
+		    }
+		    STRMOVE(ptr, oldp + col);
+		    ml_replace(lnum, newp, FALSE);
+		    /* Place cursor on last putted char. */
+		    if (lnum == curwin->w_cursor.lnum)
+			curwin->w_cursor.col += (colnr_T)(totlen - 1);
 		}
-		STRMOVE(ptr, oldp + col);
-		ml_replace(lnum, newp, FALSE);
-		/* Put cursor on last putted char. */
-		curwin->w_cursor.col += (colnr_T)(totlen - 1);
-	    }
+#ifdef FEAT_VISUAL
+		if (VIsual_active)
+		    lnum++;
+#endif
+	    } while (
+#ifdef FEAT_VISUAL
+		    VIsual_active && lnum <= curbuf->b_visual.vi_end.lnum
+#else
+		    FALSE /* stop after 1 paste */
+#endif
+		    );
+
 	    curbuf->b_op_end = curwin->w_cursor;
 	    /* For "CTRL-O p" in Insert mode, put cursor after last char */
 	    if (totlen && (restart_edit != 0 || (flags & PUT_CURSEND)))
@@ -3954,6 +3968,10 @@ end:
 	vim_free(insert_string);
     if (regname == '=')
 	vim_free(y_array);
+
+#ifdef FEAT_VISUAL
+    VIsual_active = FALSE;
+#endif
 
     /* If the cursor is past the end of the line put it at the end. */
     adjust_cursor_eol();
@@ -4971,7 +4989,7 @@ format_lines(line_count, avoid_fex)
 
 	    /*
 	     * When still in same paragraph, join the lines together.  But
-	     * first delete the comment leader from the second line.
+	     * first delete the leader from the second line.
 	     */
 	    if (!is_end_par)
 	    {
@@ -4981,11 +4999,25 @@ format_lines(line_count, avoid_fex)
 		if (line_count < 0 && u_save_cursor() == FAIL)
 		    break;
 #ifdef FEAT_COMMENTS
-		(void)del_bytes((long)next_leader_len, FALSE, FALSE);
 		if (next_leader_len > 0)
+		{
+		    (void)del_bytes((long)next_leader_len, FALSE, FALSE);
 		    mark_col_adjust(curwin->w_cursor.lnum, (colnr_T)0, 0L,
 						      (long)-next_leader_len);
+		} else
 #endif
+		    if (second_indent > 0)  /* the "leader" for FO_Q_SECOND */
+		{
+		    char_u *p = ml_get_curline();
+		    int indent = skipwhite(p) - p;
+
+		    if (indent > 0)
+		    {
+			(void)del_bytes(indent, FALSE, FALSE);
+			mark_col_adjust(curwin->w_cursor.lnum,
+					       (colnr_T)0, 0L, (long)-indent);
+		      }
+		}
 		curwin->w_cursor.lnum--;
 		if (do_join(2, TRUE, FALSE, FALSE) == FAIL)
 		{

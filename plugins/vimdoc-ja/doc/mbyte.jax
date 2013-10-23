@@ -9,7 +9,7 @@
 ることができないほど多くの文字を持つ言語の、テキストの編集について説明する。
 Unicodeについても説明する。
 
-ユーザマニュアルの|usr_45.txt|で、共通する事柄を簡単に紹介している。
+ユーザーマニュアルの|usr_45.txt|で、共通する事柄を簡単に紹介している。
 メッセージやメニューの言語を変更するには|mlang.txt|を参照。
 
 {|+multi_byte|が有効な場合のみ利用可能}
@@ -709,7 +709,7 @@ Note: Vim.font はテキストエリアの設定
 
 	xrdb -merge ~/.Xdefaults
 
-もしくはXサーバを停止して再起動する。
+もしくはXサーバーを停止して再起動する。
 
 
 GTK+版のVimは.Xdefaultsを使わず~/.gtkrcの設定を使用する。初期設定は恐らくうま
@@ -743,7 +743,7 @@ XIMはXの国際化入力機構である。Xlibユニット型と|IM-server| (In
 server) 型の2種類がある。|IM-server|型はCJK(日中韓)で使われるような複雑な入力
 方式に適している。
 
-- インプットメソッドサーバ (IM-server)
+- インプットメソッドサーバー (IM-server)
 							*IM-server*
   |IM-server|型の入力方式では、FrontEndシステムかBackEndシステムのどちらかの方
   法で入力イベントを処理する。FrontEndシステムでは、まず|IM-server|が入力イベ
@@ -753,37 +753,37 @@ server) 型の2種類がある。|IM-server|型はCJK(日中韓)で使われる�
   BackEndシステムには通信のオーバーヘッドが大きく掛かるというデメリットはある
   が、アプリケーションに制限を加えず、安全に同期することができる。
 
-  たとえばxwnmoとkinput2という日本語インプットメソッドサーバがあるが、両方とも
-  FrontEndシステムである。xwnmoはWnn(下記参照)と一緒に提供されている。kinput2
-  はここから入手できる: ftp://ftp.sra.co.jp/pub/x11/kinput2/
+  たとえばxwnmoとkinput2という日本語インプットメソッドサーバーがあるが、両方と
+  もFrontEndシステムである。xwnmoはWnn(下記参照)と一緒に提供されている。
+  kinput2はここから入手できる: ftp://ftp.sra.co.jp/pub/x11/kinput2/
 
-  中国語用には、"xcin" というよくできたXIMサーバがあり、簡体中国語と繁体中国語
-  の両方を入力できる。適切な入力テーブルを作成すれば、他のロケールも受け付け
+  中国語用には、"xcin" というよくできたXIMサーバーがあり、簡体中国語と繁体中国
+  語の両方を入力できる。適切な入力テーブルを作成すれば、他のロケールも受け付け
   る。Xcinはここから入手できる: http://cle.linux.org.tw/xcin/
   他にはscim: http://scim.freedesktop.org/ と fcitx:
   http://www.fcitx.org/ がある。
 
-- 変換サーバ (Conversion Server)
+- 変換サーバー (Conversion Server)
 							*conversion-server*
-  いくつかのシステムではさらに、変換サーバが必要である。ほとんどの日本語イン
-  プットメソッドサーバは仮名漢字変換サーバを必要とする。中国語の入力では、入力
-  方式に依存する。いくつかの方式では、PinYinやZhuYinからHanZiへの変換サーバが
-  必要である。韓国語の入力では、Hanjaを入力するには、Hangul-Hanja変換サーバが
-  必要である。
+  いくつかのシステムではさらに、変換サーバーが必要である。ほとんどの日本語イン
+  プットメソッドサーバーは仮名漢字変換サーバーを必要とする。中国語の入力では、
+  入力方式に依存する。いくつかの方式では、PinYinやZhuYinからHanZiへの変換サー
+  バーが必要である。韓国語の入力では、Hanjaを入力するには、Hangul-Hanja変換サー
+  バーが必要である。
 
   例えば、日本語の入力は2段階に分けられる。最初に平仮名を入力し、次に漢字へ変
   換する。多くの漢字(JIS X 0208には6349文字が定義されている)と76文字の平仮名が
   あるため、まず平仮名を入力し、必要なら、それを漢字や片仮名に変換する。仮名漢
-  字変換サーバにはjserver(Wnnと一緒に提供されている。下記参照)やcannaなどがあ
-  る。Cannaはここから入手できる:
+  字変換サーバーにはjserver(Wnnと一緒に提供されている。下記参照)やcannaなどが
+  ある。Cannaはここから入手できる:
   http://canna.sourceforge.jp/
 
 Wnn4.2というよくできた入力システムがある。Wnn4.2は以下のものを含んでいる。
     xwnmo (|IM-server|)
-    jserver (日本語仮名漢字変換サーバ)
-    cserver (中国語のPinYin、ZhuYinから簡体漢字への変換サーバ)
-    tserver (中国語のPinYin、ZhuYinから繁体漢字への変換サーバ)
-    kserver (Hangul-Hanja変換サーバ)
+    jserver (日本語仮名漢字変換サーバー)
+    cserver (中国語のPinYin、ZhuYinから簡体漢字への変換サーバー)
+    tserver (中国語のPinYin、ZhuYinから繁体漢字への変換サーバー)
+    kserver (Hangul-Hanja変換サーバー)
 Wnn4.2は多くのシステムで動作し、インターネットのさまざまな場所で入手することが
 できる。あなたのシステム用のRPMやportを使用すること。
 
@@ -835,11 +835,11 @@ Note 表示と入力は独立している。インプットメソッドがなく
 違って表示される。
 
 	Note: 'guifontset' を設定しないとインプットメソッドを使用できない。従っ
-	て、ラテン語のユーザも、インプットメソッドを使用するなら、'guifontset'
+	て、ラテン語のユーザーも、インプットメソッドを使用するなら、'guifontset'
 	を設定しなければならない。
 
-あなたの言語を入力するには、その言語をサポートしているインプットメソッドサーバ
-|IM-server|を実行する。必要なら変換サーバ|conversion-server|も実行する。
+あなたの言語を入力するには、その言語をサポートしているインプットメソッドサーバー
+|IM-server|を実行する。必要なら変換サーバー|conversion-server|も実行する。
 
 次の3行を~/.Xdefaultsファイルに書き込む。これは|XIM|を使用するすべてのXアプリ
 ケーションに共通する設定である。すでに|XIM|を使用している場合は、これを読み飛
@@ -849,7 +849,7 @@ Note 表示と入力は独立している。インプットメソッドがなく
 	*.inputMethod: your_input_server_name
 	*.preeditType: your_input_style
 <
-input_server_name	インプットサーバ|IM-server|の名前。(|IM-server|のマ
+input_server_name	インプットサーバー|IM-server|の名前。(|IM-server|のマ
 			ニュアルを確認すること)。
 your_input_style	|OverTheSpot|、|OffTheSpot|、|Root|のどれか。
 			|xim-input-style|を参照。
@@ -864,12 +864,12 @@ kinput2を|IM-server|として使う場合の例: >
 	*.preeditType: OverTheSpot
 <
 |OverTheSpot|を使用する場合、GUI Vimはノーマルモードでも常にインプットメソッド
-サーバに接続する。そのため "f" や "r" コマンドであなたの言語を入力することがで
-きる。しかし、他の入力スタイルの場合は、GUI Vimはノーマルモードのときにはイン
-プットメソッドサーバに接続しない。
+サーバーに接続する。そのため "f" や "r" コマンドであなたの言語を入力することが
+できる。しかし、他の入力スタイルの場合は、GUI Vimはノーマルモードのときにはイ
+ンプットメソッドサーバーに接続しない。
 
-インプットメソッドサーバが|OverTheSpot|をサポートしていない場合、"f" や "r" な
-どのノーマルモードコマンドであなたの言語を使用するには、ローカライズされた
+インプットメソッドサーバーが|OverTheSpot|をサポートしていない場合、"f" や "r"
+などのノーマルモードコマンドであなたの言語を使用するには、ローカライズされた
 xtermか、|XIM|をサポートしたxtermを使用する。
 
 必要なら、環境変数XMODIFIERSを設定する:
@@ -877,7 +877,7 @@ xtermか、|XIM|をサポートしたxtermを使用する。
 	sh:  export XMODIFIERS="@im=input_server_name"
 	csh: setenv XMODIFIERS "@im=input_server_name"
 
-インプットメソッドサーバにkinput2を使用する場合のshでの設定例: >
+インプットメソッドサーバーにkinput2を使用する場合のshでの設定例: >
 
 	export XMODIFIERS="@im=kinput2"
 <
@@ -888,7 +888,7 @@ MS-WindowsのIME(|multibyte-ime|参照)のように、XIMを制御すること�
 この機能は現在GTK GUIでのみ利用可能。
 
 XIMを制御するには、使用しているインプットメソッドのトグルキーを、オプション
-'imactivatekey' に設定する必要がある。たとえば、インプットメソッドサーバに
+'imactivatekey' に設定する必要がある。たとえば、インプットメソッドサーバーに
 kinput2 + cannaの組み合せを使用している場合、トグルキーは恐らくShift+Spaceなの
 で、このように設定する: >
 

@@ -4,7 +4,7 @@
 		VIMリファレンスマニュアル    by Bram Moolenaar
 
 
-Vimのグラフィカルユーザインターフェース			*gui-w16* *win16-gui*
+Vimのグラフィカルユーザーインターフェース		*gui-w16* *win16-gui*
 
 1. GUIを始める			|win16-start|
 2. デフォルトエディタVim	|win16-default-editor|

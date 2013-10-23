@@ -798,7 +798,7 @@ version vers	インターフェイスの実装のバージョンを報告しま�
 ACCEPT		未使用。
 
 AUTH password	editor -> IDE: エディタが IDE に送る最初のメッセージ。|-nb|
-		で指定された、ソケットサーバのパスワードを含んでいなければな
+		で指定された、ソケットサーバーのパスワードを含んでいなければな
 		りません。引用符は使われません。
 
 DISCONNECT	IDE -> editor: 接続を切断します。その後エディタは終了しま
@@ -909,8 +909,8 @@ NetBeans IDE は netbeans.org からダウンロードできます。リリー�
 す。ソースをダウンロードした場合、ビルド方法については netbeans.org にある説明
 に従ってください。
 
-NetBeans のバージョンによっては、External Editor モジュールを使うためにもう少し
-手を加えなければならないかもしれません。External Editor モジュールによって
+NetBeans のバージョンによっては、External Editor モジュールを使うためにもう少
+し手を加えなければならないかもしれません。External Editor モジュールによって
 NetBeansは gvim と協調して動作できるようになります(xemacs とも :-)。
 このモジュールが NetBeans に含まれていない場合、
 http://externaleditor.netbeans.org を参照してください。

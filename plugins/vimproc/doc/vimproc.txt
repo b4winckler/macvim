@@ -193,6 +193,8 @@ vimproc#system_bg({expr})			*vimproc#system_bg()*
 		Same as |vimproc#parser#system()|.  But it executes a command in
 		the background.
 		Note: It disables user input.
+		Note: This function is not supported statements(";", "&&",
+		"||").
 
 vimproc#system_gui({expr})			*vimproc#system_gui()*
 		Same as |vimproc#system_bg()|.  But it executes a GUI command in

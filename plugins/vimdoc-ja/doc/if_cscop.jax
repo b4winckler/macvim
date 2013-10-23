@@ -380,7 +380,7 @@ http://cscope.sourceforge.net でダウンロードできる、 DJGPP でビル�
 常のtagコマンドはctagsが生成したtagファイルだけでなく、cscopeデータベースも検
 索するようになる。
 
-あるユーザは通常のtagの振る舞いはそのままに、:cstagへアクセスする異なった
+あるユーザーは通常のtagの振る舞いはそのままに、:cstagへアクセスする異なった
 ショートカットを望むかもしれない。例えば次のコマンドでCTRL-_(アンダースコア)
 に:cstagをマップできる: >
 
@@ -463,7 +463,7 @@ Solaris 2.xでは、Cコンパイラのライセンスを入手していれば�
 SGIの開発者もまた入手可能である。このページからCscopeを検索すること
 	http://freeware.sgi.com/index-by-alpha.html
 	https://toolbox.sgi.com/toolbox/utilities/cscope/
-2番目のアドレスはSGIツールボックスのパスワードを持っているユーザ用である。
+2番目のアドレスはSGIツールボックスのパスワードを持っているユーザー用である。
 
 古いcscopeのクローン("cs" という名)のソースコードがネットで入手可能である。た
 だし様々な理由で、これはVimではサポートされない。
