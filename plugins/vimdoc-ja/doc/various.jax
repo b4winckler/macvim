@@ -413,7 +413,7 @@ N  *+textobjects*	|text-objects| 選択
    *+tgetent*		非Unix のみ: 外部termcapを使用可能
 N  *+title*		ウィンドウタイトルとアイコン設定 |'title'| |'icon'|
 N  *+toolbar*		|gui-toolbar|
-N  *+user_commands*	ユーザ定義コマンド |user-commands|
+N  *+user_commands*	ユーザー定義コマンド |user-commands|
 N  *+viminfo*		|'viminfo'|
 N  *+vertsplit*		ウィンドウの垂直分割 |:vsplit|
 N  *+virtualedit*	|'virtualedit'|
@@ -469,7 +469,7 @@ N  *+X11*		Unix のみ: ウィンドウタイトルを復帰可能 |X11|
 			スタ名が大文字 {A-Z} の場合は、そのレジスタに追記され
 			ます。レジスタ名の後ろの ">" は省略可能です。
 			{Vi にはない}
-:redi[r] @{a-z}>>	メッセージをレジスタ {a-z} に追記します。 {Vi にはない}
+:redi[r] @{a-z}>>	メッセージをレジスタ {a-z} に追記します。{Vi にはない}
 
 :redi[r] @*>
 :redi[r] @+>		メッセージをセレクションまたはクリップボードにリダイレ
@@ -526,10 +526,10 @@ N  *+X11*		Unix のみ: ウィンドウタイトルを復帰可能 |X11|
 			ログラムを実行したとき、その出力は表示されたままになっ
 			てしまいます。その場合は|CTRL-L|でスクリーンを綺麗にで
 			きます。
-			":silent menu ..." はコマンドをコマンドラインにエコーし
-			ないメニューを定義できます。しかしメニューに割り当てた
-			コマンドのメッセージは表示されます。表示しないようにす
-			るにはそのコマンド自身に ":silent" を付けてください:
+			":silent menu ..." はコマンドをコマンドラインにエコー
+			しないメニューを定義できます。しかしメニューに割り当て
+			たコマンドのメッセージは表示されます。表示しないように
+			するにはそのコマンド自身に ":silent" を付けてください:
 			":silent menu .... :silent command"
 
 						*:uns* *:unsilent*

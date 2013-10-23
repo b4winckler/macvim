@@ -794,7 +794,7 @@
 'matchpairs'	  'mps'     |%|で探す文字ペア
 'matchtime'	  'mat'     'showmatch' で対応カッコを表示する時間。0.1秒単位
 'maxcombine'	  'mco'     表示できる文字の組合せの最大数
-'maxfuncdepth'	  'mfd'     ユーザ定義関数の再帰呼び出しの最大数
+'maxfuncdepth'	  'mfd'     ユーザー定義関数の再帰呼び出しの最大数
 'maxmapdepth'	  'mmd'     マッピングの再帰定義の最大数
 'maxmem'	  'mm'      1つのバッファに使える最大メモリ(Kbyte単位)
 'maxmempattern'	  'mmp'     検索に使える最大メモリ(Kbyte単位)

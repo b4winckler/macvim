@@ -16,10 +16,10 @@
 コンパイル時に |+syntax| 機能を無効にした場合にはスペルチェックは利用すること
 ができない。
 
-Note: あるいは vimspell プラグインがある。プラグインを入れていればそのプラグイン
-について調べるために ":help vimspell" を実行できる。しかし、おそらくそのプラグ
-インを削除し、代わりに 'spell' オプションを使いたいと思うだろう。そちらのほう
-がうまくいく。
+Note: 他にも vimspell プラグインがある。そのプラグインを入れていれば ":help
+vimspell" を実行することでそれについて調べることができる。しかし、おそらくその
+プラグインを削除し、代わりにオプション 'spell' を使いたいと思うだろう。そちら
+のほうがうまくいく。
 
 ==============================================================================
 1. はじめに					*spell-quickstart* *E756*
@@ -28,7 +28,7 @@ Note: あるいは vimspell プラグインがある。プラグインを入れ�
 
 	:setlocal spell spelllang=en_us
 
-'spell' オプションをオンにし、アメリカ英語のチェックを指定する。
+これはオプション 'spell' をオンにし、アメリカ英語のチェックを指定する。
 
 認識されない単語は以下のようにハイライトされる:
 	SpellBad	認識されない単語			|hl-SpellBad|
@@ -53,17 +53,17 @@ won't work.
 			'wrapscan' が適用される。
 
 							*[s*
-[s			"]s" と同様であるが後方検索を行い、カーソルより前の綴
-			りの間違った単語を探す。2行に渡った単語は認識しないた
-			め、間違いとしてハイライトされていない単語で止まること
-			がある。行頭が大文字になっていない単語では止まらない。
+[s			"]s" と同様だが後方検索を行い、カーソルより前の綴りの
+			間違った単語を探す。2行に渡った単語は認識しないため、
+			間違いとしてハイライトされていない単語で止まることがあ
+			る。行頭が大文字になっていない単語では止まらない。
 
 							*]S*
-]S			"]s" と同様であるが、間違った単語のみで止まり、まれな
-			単語や他の地域の単語では止まらない。
+]S			"]s" と同様だが、間違った単語のみで止まり、まれな単語
+			や他の地域の単語では止まらない。
 
 							*[S*
-[S			"]S" と同様であるが、後方検索を行う。
+[S			"]S" と同様だが、後方検索を行う。
 
 
 単語をあなた自身の単語リストに追加するには:
@@ -73,7 +73,7 @@ zg			カーソルの下の単語を正しい (good) 単語として、
 			'spellfile' の最初のファイルに追加する。
 			コマンドの前に count を指定することで、'spellfile' 内
 			の項目を指定することができる。count として 2 を指定す
-			ると、二番目の項目が使われる。
+			ると、2 番目の項目が使われる。
 
 			ビジュアルモードで選択された文字は単語として追加される
 			(スペースを含む!)。
@@ -150,14 +150,14 @@ zuG			|zW| や |zG| をundoして、内部単語リストからその単語を
 クリアされる。
 
 
-間違った単語の候補を見つけるには:
+間違った単語に対しての提案を調べるには:
 							*z=*
-z=			For the word under/after the cursor suggest correctly
-			spelled words.  This also works to find alternatives
-			for a word that is not highlighted as a bad word,
-			e.g., when the word after it is bad.
-			In Visual mode the highlighted text is taken as the
-			word to be replaced.
+z=			カーソルの下や後の単語に対して正しい綴りの単語を提案す
+			る。これはまた間違った単語としてハイライトされていない
+			単語に対しての代わりを調べることもできる。例えば、その
+			後の単語が間違っている場合など。 
+			ビジュアルモードでハイライトされたテキストは置換される
+			単語として見なされる。
 			The results are sorted on similarity to the word being
 			replaced.
 			This may take a long time.  Hit CTRL-C when you get
@@ -192,14 +192,14 @@ z=			For the word under/after the cursor suggest correctly
 :spellr[epall]		Repeat the replacement done by |z=| for all matches
 			with the replaced word in the current window.
 
-In Insert mode, when the cursor is after a badly spelled word, you can use
-CTRL-X s to find suggestions.  This works like Insert mode completion.  Use
-CTRL-N to use the next suggestion, CTRL-P to go back. |i_CTRL-X_s|
+挿入モードでは、カーソルが間違った綴りの単語の後にある場合、提案を見つけるため
+に CTRL-X s を使うことができる。これは挿入モード補完のように動作する。次の提案
+を使うには CTRL-N を、戻るには CTRL-P を使うこと。|i_CTRL-X_s|
 
-'spellsuggest' オプションは候補のリストがどのように生成、ソートされるかに影響
+オプション 'spellsuggest' は候補のリストがどのように生成、ソートされるかに影響
 する。|'spellsuggest'| を参照せよ。
 
-'spellcapcheck' オプションは文の最初の単語が大文字で始まるかをチェックするのに
+オプション 'spellcapcheck' は文の最初の単語が大文字で始まるかをチェックするのに
 用いる。これはファイルの最初の単語には働かない。When there is a line break
 right after a sentence the highlighting of the next line may be postponed.
 Use |CTRL-L| when needed.  Also see |set-spc-auto| for how it can be set
@@ -251,12 +251,12 @@ counting files specified by their .spl name).
 
 							*spell-german*
 特有の例外: ドイツ語ではこれらの特別な地域が使われる:
-	de		all German words accepted
-	de_de		old and new spelling
-	de_19		old spelling
-	de_20		new spelling
-	de_at		Austria
-	de_ch		Switzerland
+	de		全てのドイツ語単語を許容する
+	de_de		新旧正書法
+	de_19		旧正書法
+	de_20		新正書法
+	de_at		オーストリア
+	de_ch		スイス
 
 							*spell-russian*
 特有の例外: ロシア語ではこれらの特別な地域が使われる:

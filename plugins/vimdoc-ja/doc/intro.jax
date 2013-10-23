@@ -177,8 +177,8 @@ Vim の strftime() 関数は strftime() システムコールを直接使いま�
 は time() システムコールを、getftime() は stat() システムコールで返される時間
 をそれぞれ使用します。システムライブラリが 2000 年対応なら、Vim もそうです。
 
-ユーザは外部コマンドを使用する Vim スクリプトを作るかもしれません。このことが
-Y2K 問題を招くかもしれませんが、Vim 自身の問題ではありません。
+ユーザーは外部コマンドを使用する Vim スクリプトを作るかもしれません。このこと
+が Y2K 問題を招くかもしれませんが、Vim 自身の問題ではありません。
 
 ==============================================================================
 3. クレジット				*credits* *author* *Bram* *Moolenaar*
@@ -213,7 +213,7 @@ Vim エディタは Stevie をベースにしており、下記の方々のソ�
 	Henk Elbers		最初のVMSへの移植
 	Daniel Elstner		GTK+ 2 への移植
 	Eric Fischer		Macへの移植、'cindent'、その他の改良
-	Benji Fisher		たくさんのユーザの質問に答えてくれた
+	Benji Fisher		たくさんのユーザーの質問に答えてくれた
 	Bill Foster		Athena GUIへの移植
 	Google			週に一日 Vim の仕事をさせてくれる
 	Loic Grenie		xvim (マルチウィンドウバージョンのアイディア)
@@ -241,7 +241,7 @@ Vim エディタは Stevie をベースにしており、下記の方々のソ�
 	A.Politz		たくさんのバグ報告と修正
 	George V. Reilly	Win32移植、Win32 GUIへの移植を始める
 	Stephen Riehm		バグ収集家
-	Stefan Roemer		さまざまなパッチとユーザへのヘルプ
+	Stefan Roemer		さまざまなパッチとユーザーへのヘルプ
 	Ralf Schandl		IBM OS/390への移植
 	Olaf Seibert		DICEとBeBoxバージョン、regexpの改良
 	Mortaza Shiran		Farsiのパッチ

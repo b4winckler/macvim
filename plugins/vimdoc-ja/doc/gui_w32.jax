@@ -4,7 +4,7 @@
 		VIMリファレンスマニュアル    by Bram Moolenaar
 
 
-Win32でのVimのグラフィカルユーザインターフェース	*gui-w32* *win32-gui*
+Win32でのVimのグラフィカルユーザーインターフェース	*gui-w32* *win32-gui*
 
 1. GUIを始める			|gui-w32-start|
 2. デフォルトエディタVim	|vim-default-editor|
@@ -340,8 +340,8 @@ Sys_WindowText
 Gray, Grey, LightYellow, SeaGreen, Orange, Purple, SlateBlue, Violet,
 
 								*rgb.txt*
-付け加えて、"rgb.txt" で定義される色も使うことができる。このファイルはX11のもの
-として知られている。何行かを抜粋する: >
+付け加えて、"rgb.txt" で定義される色も使うことができる。このファイルはX11のも
+のとして知られている。何行かを抜粋する: >
 
   255 218 185		   peach puff
   205 133  63		   peru
