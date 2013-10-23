@@ -5246,8 +5246,12 @@ dozet:
 		    {
 			pos_T	pos = curwin->w_cursor;
 
-			/* Find bad word under the cursor. */
+			/* Find bad word under the cursor.  When 'spell' is
+			 * off this fails and find_ident_under_cursor() is
+			 * used below. */
+			emsg_off++;
 			len = spell_move_to(curwin, FORWARD, TRUE, TRUE, NULL);
+			emsg_off--;
 			if (len != 0 && curwin->w_cursor.col <= pos.col)
 			    ptr = ml_get_pos(&curwin->w_cursor);
 			curwin->w_cursor = pos;
@@ -9547,6 +9551,8 @@ nv_put(cap)
 		/* cursor is at the end of the line or end of file, put
 		 * forward. */
 		dir = FORWARD;
+	    /* May have been reset in do_put(). */
+	    VIsual_active = TRUE;
 	}
 #endif
 	do_put(cap->oap->regname, dir, cap->count1, flags);

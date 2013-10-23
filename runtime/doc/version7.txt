@@ -1,4 +1,4 @@
-*version7.txt*  For Vim version 7.4.  Last change: 2013 Aug 10
+*version7.txt*  For Vim version 7.4.  Last change: 2013 Sep 03
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -2395,7 +2395,7 @@ with special attributes were redrawn.  Now only do this for characters that
 actually are bold.  Speeds up displaying considerably.
 
 When only highlighting changes and the text is scrolled at the same time
-everything is redraw instead of using a scroll and updating the changed text.
+everything is redrawn instead of using a scroll and updating the changed text.
 E.g., when using ":match" to highlight a paren that the cursor landed on.
 Added SOME_VALID: Redraw the whole window but also try to scroll to minimize
 redrawing.
@@ -10293,7 +10293,7 @@ Functions:
 	Added special |expand()| argument that expands to the current line 
 	number.
 
-	Made it possible to force |char2nr()| always give unicode codepoints 
+	Made it possible to force |char2nr()| to always give unicode codepoints 
 	regardless of current encoding. (Yasuhiro Matsumoto)
 
 	Made it possible for functions generating file list generate |List| 
