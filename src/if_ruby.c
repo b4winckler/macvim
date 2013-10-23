@@ -107,13 +107,13 @@
 # define rb_num2int rb_num2int_stub
 #endif
 
-#ifdef FEAT_GUI_MACVIM
+#ifdef RUBY_FRAMEWORK
 # include <Ruby/ruby.h>
 #else
 # include <ruby.h>
 #endif
 #ifdef RUBY19_OR_LATER
-# ifdef FEAT_GUI_MACVIM
+# ifdef RUBY_FRAMEWORK
 #  include <Ruby/ruby/encoding.h>
 # else
 #  include <ruby/encoding.h>
