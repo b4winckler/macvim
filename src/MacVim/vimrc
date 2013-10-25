@@ -82,10 +82,10 @@ if !(has('win32') || has('mac')) && has('multi_lang')
 endif
 " MacOS Xメニューの日本語化 (メニュー表示前に行なう必要がある)
 if has('mac')
+  set encoding=utf-8
+  set ambiwidth=double
   if exists('$LANG') && $LANG ==# 'ja_JP.UTF-8'
     set langmenu=ja_ja.utf-8.macvim
-    set encoding=utf-8
-    set ambiwidth=double
   endif
 endif
 " 日本語入力用のkeymapの設定例 (コメントアウト)
