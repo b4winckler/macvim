@@ -38,6 +38,7 @@
     BOOL                isPreloading;
     NSDate              *creationDate;
     BOOL                hasModifiedBuffer;
+    BOOL                emojiEnabled;
 }
 
 - (id)initWithBackend:(id)backend pid:(int)processIdentifier;
@@ -68,4 +69,5 @@
 - (id)evaluateVimExpressionCocoa:(NSString *)expr
                      errorString:(NSString **)errstr;
 - (void)processInputQueue:(NSArray *)queue;
+- (BOOL)emojiEnabled;
 @end

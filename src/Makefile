@@ -2568,7 +2568,7 @@ objects/fold.o: fold.c
 objects/getchar.o: getchar.c
 	$(CCC) -o $@ getchar.c
 
-objects/guess.o: guess.c
+objects/guess.o: guess.c guess_tab.c
 	$(CCC) -o $@ guess.c
 
 objects/hardcopy.o: hardcopy.c
