@@ -968,7 +968,7 @@ au BufNewFile,BufRead *.java,*.jav		setf java
 au BufNewFile,BufRead *.jj,*.jjt		setf javacc
 
 " JavaScript, ECMAScript
-au BufNewFile,BufRead *.js,*.javascript,*.es,*.jsx,*.json   setf javascript
+au BufNewFile,BufRead *.js,*.javascript,*.es,*.jsx   setf javascript
 
 " Java Server Pages
 au BufNewFile,BufRead *.jsp			setf jsp
