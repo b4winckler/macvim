@@ -762,7 +762,7 @@ g@{motion}		'operatorfunc' に設定された関数を実行します。
 			関数の引数には、文字列が一つ渡されます:
 			    "line"  {motion} は行単位 |linewise|
 			    "char"  {motion} は文字単位 |characterwise|
-			    "block" {motion} はブロック選択 |blockwise-visual|
+			    "block" {motion} は矩形 |blockwise-visual|
 			"block" はたまにしか使われません。ビジュアルモードの場
 			合だけ渡されるのですが、"g@" と合わせてもそれほど便利
 			ではないからです。

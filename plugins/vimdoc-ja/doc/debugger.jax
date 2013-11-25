@@ -104,7 +104,7 @@ XmNballoonEvalBackground, XmNballoonEvalForeground)。
 2. Vimのコンパイルオプション				*debugger-compilation*
 
 デバッガ機能はSunの「Visual WorkShop Integrated Programming Environment」(ipe)
-と一緒に使うために明示的に加えられた。しかし、それらのSunのipeと供に使用する機
+と一緒に使うために明示的に加えられた。しかし、それらのSunのipeと共に使用する機
 能は他のデバッガも一部もしくは全部を使うことができるように、可能な限り一般的な
 様式で実現されている。
 

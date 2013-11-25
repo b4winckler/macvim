@@ -167,9 +167,9 @@ TARGETOS = BOTH
 # interfaces.
 # If you change something else, do "make clean" first!
 !if "$(GUI)" == "yes"
-OBJDIR = .\Obj\G
+OBJDIR = .\ObjG
 !else
-OBJDIR = .\Obj\C
+OBJDIR = .\ObjC
 !endif
 !if "$(DIRECTX)" == "yes"
 OBJDIR = $(OBJDIR)X
@@ -200,9 +200,6 @@ OBJDIR = $(OBJDIR)Z
 !endif
 !if "$(DEBUG)" == "yes"
 OBJDIR = $(OBJDIR)d
-!endif
-!ifdef PROCESSOR_ARCHITECTURE
-OBJDIR = $(OBJDIR)-$(PROCESSOR_ARCHITECTURE)
 !endif
 
 # Win32.mak requires that CPU be set appropriately.
@@ -321,12 +318,9 @@ XPM = no
 !if "$(XPM)" != "no"
 # XPM - Include support for XPM signs
 # See the xpm directory for more information.
-!ifndef XPM_ARCH
-XPM_ARCH=
-!endif
 XPM_OBJ   = $(OBJDIR)/xpm_w32.obj
 XPM_DEFS  = -DFEAT_XPM_W32
-XPM_LIB   = $(XPM)\lib$(XPM_ARCH)\libXpm.lib
+XPM_LIB   = $(XPM)\lib\libXpm.lib
 XPM_INC	  = -I $(XPM)\include -I $(XPM)\..\include
 !endif
 !endif

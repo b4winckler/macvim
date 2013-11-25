@@ -7048,6 +7048,16 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf,
     }
 #endif
 
+#if defined(FEAT_GUI) && defined(FEAT_RENDER_OPTIONS)
+    else if (varp == &p_rop && gui.in_use)
+    {
+	int gui_mch_set_rendering_options(char_u *);
+
+	if (!gui_mch_set_rendering_options(p_rop))
+	    errmsg = e_invarg;
+    }
+#endif
+
     /* Options that are a list of flags. */
     else
     {

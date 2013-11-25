@@ -38,9 +38,6 @@ src/Obj*/pathdef.c
 gvimext.dll
 gvimext.lib
 
-# Android
-*.o.d
-
 # Mac OSX
 src/xxd/xxd.dSYM
 
@@ -61,10 +58,6 @@ src/testdir/lua.vim
 src/testdir/small.vim 
 src/testdir/tiny.vim 
 src/testdir/test*.out
+src/testdir/test*.failed
 src/testdir/test.log
-
-# KaoriYa
-src/*.lib
-src/Obj/*/pathdef.c
-src/if_perl.c
-src/po/vim.pot
+src/testdir/dostmp/*

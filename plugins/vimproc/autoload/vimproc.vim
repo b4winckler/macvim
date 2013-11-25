@@ -2,7 +2,7 @@
 " FILE: vimproc.vim
 " AUTHOR:  Shougo Matsushita <Shougo.Matsu@gmail.com> (Modified)
 "          Yukihiro Nakadaira <yukihiro.nakadaira at gmail.com> (Original)
-" Last Modified: 06 Oct 2013.
+" Last Modified: 24 Oct 2013.
 " License: MIT license  {{{
 "     Permission is hereby granted, free of charge, to any person obtaining
 "     a copy of this software and associated documentation files (the
@@ -785,13 +785,13 @@ function! vimproc#write(filename, string, ...) "{{{
   else
     " Write file.
 
-    let mode = 'O_WRONLY | O_CREAT'
-    if mode =~ 'a'
+    let cmode = 'O_WRONLY | O_CREAT'
+    if mode =~# 'a'
       " Append mode.
-      let mode .= '| O_APPEND'
+      let cmode .= '| O_APPEND'
     endif
 
-    let hfile = vimproc#fopen(filename, mode)
+    let hfile = vimproc#fopen(filename, cmode)
     call hfile.write(a:string)
     call hfile.close()
   endif
@@ -922,15 +922,20 @@ function! s:read_lines(...) dict "{{{
     let res .= out
   endwhile
 
+  let self.buffer = ''
   let lines = split(res, '\r*\n', 1)
+  if !self.__eof
+    let self.buffer = get(lines, -1, '')
+    let lines = lines[ : -2]
+  endif
 
-  let self.buffer = get(lines, -1, 0)
-  return lines[ : -2]
+  return lines
 endfunction"}}}
 function! s:read_line(...) dict "{{{
   let lines = call(self.read_lines, a:000, self)
   let self.buffer = join(lines[1:], "\n") . self.buffer
-  let self.eof = (self.buffer != '') ? (self.__eof && self.buffer == '') : self.__eof
+  let self.eof = (self.buffer != '') ?
+        \ (self.__eof && self.buffer == '') : self.__eof
   return get(lines, 0, '')
 endfunction"}}}
 
