@@ -1086,12 +1086,11 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
                     surrogatePair = YES;
                     g += 2;
                     c += 2;
-                    p += 2;
                 } else {
                     ++g;
                     ++c;
-                    ++p;
                 }
+                ++p;
             }
 
             int count = g-glyphs;
@@ -1113,12 +1112,11 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
                 if (emojiEnabled && CFStringIsSurrogateHighCharacter(*c)) {
                     g += 2;
                     c += 2;
-                    p += 2;
                 } else {
                     ++g;
                     ++c;
-                    ++p;
                 }
+                ++p;
             }
 
             // Figure out which font to draw these chars with.
