@@ -1060,7 +1060,6 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
 
     if (CTFontGetGlyphsForCharacters(fontRef, chars, glyphs, length)) {
         // All chars were mapped to glyphs, so draw all at once and return.
-        CGContextSetTextPosition(context, x, y);
         if (emojiEnabled) {
             length = gatherGlyphs(glyphs, length);
             CTFontDrawGlyphs(fontRef, glyphs, positions, length, context);
@@ -1096,7 +1095,6 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
             }
 
             int count = g-glyphs;
-            CGContextSetTextPosition(context, x0, y);
             if (emojiEnabled) {
                 if (surrogatePair)
                     count = gatherGlyphs(glyphs, count);
@@ -1254,7 +1252,7 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
 
     CGContextSetTextPosition(context, x, y+fontDescent);
     recurseDraw(chars, glyphs, positions, length, context, fontRef, fontCache,
-                y+fontDescent, fontCache, (flags & DRAW_WIDE) && emojiEnabled);
+                fontCache, (flags & DRAW_WIDE) && emojiEnabled);
 
     CFRelease(fontRef);
     CGContextRestoreGState(context);
