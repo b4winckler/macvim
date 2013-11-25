@@ -149,7 +149,6 @@ defaultAdvanceForFont(NSFont *font)
     [helper release];  helper = nil;
 
     if (glyphs) { free(glyphs); glyphs = NULL; }
-    if (advances) { free(advances); advances = NULL; }
     if (positions) { free(positions); positions = NULL; }
 
     [super dealloc];
@@ -1054,26 +1053,9 @@ gatherGlyphs(CGGlyph glyphs[], UniCharCount count)
 }
 
     static void
-drawGlyphs(CTFontRef fontRef, const CGGlyph glyphs[], const CGSize advances[],
-           CGPoint positions[], size_t count, CGContextRef context)
-{
-    CGAffineTransform matrix =
-        CGAffineTransformInvert(CGContextGetTextMatrix(context));
-    positions[0] = CGPointZero;
-    NSUInteger i;
-    for (i = 1; i < count; ++i) {
-        CGSize advance = CGSizeApplyAffineTransform(advances[i - 1], matrix);
-        positions[i].x = positions[i - 1].x + advance.width;
-        positions[i].y = positions[i - 1].y + advance.height;
-    }
-    CTFontDrawGlyphs(fontRef, glyphs, positions, count, context);
-}
-
-    static void
-recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
-            CGPoint *positions, UniCharCount length, CGContextRef context,
-            CTFontRef fontRef, float x, float y, NSMutableArray *fontCache,
-            BOOL emojiEnabled)
+recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
+            UniCharCount length, CGContextRef context, CTFontRef fontRef,
+            NSMutableArray *fontCache, BOOL emojiEnabled)
 {
 
     if (CTFontGetGlyphsForCharacters(fontRef, chars, glyphs, length)) {
@@ -1081,20 +1063,19 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
         CGContextSetTextPosition(context, x, y);
         if (emojiEnabled) {
             length = gatherGlyphs(glyphs, length);
-            drawGlyphs(fontRef, glyphs, advances, positions, length, context);
+            CTFontDrawGlyphs(fontRef, glyphs, positions, length, context);
         } else {
             CGFontRef cgFontRef = CTFontCopyGraphicsFont(fontRef, NULL);
             CGContextSetFont(context, cgFontRef);
-            CGContextShowGlyphsWithAdvances(context, glyphs, advances, length);
+            CGContextShowGlyphsAtPositions(context, glyphs, positions, length);
             CGFontRelease(cgFontRef);
         }
         return;
     }
 
     CGGlyph *glyphsEnd = glyphs+length, *g = glyphs;
-    CGSize *a = advances;
+    CGPoint *p = positions;
     const unichar *c = chars;
-    float x0 = x;
     while (glyphs < glyphsEnd) {
         if (*g) {
             // Draw as many consecutive glyphs as possible in the current font
@@ -1106,12 +1087,12 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
                     surrogatePair = YES;
                     g += 2;
                     c += 2;
+                    p += 2;
                 } else {
                     ++g;
                     ++c;
+                    ++p;
                 }
-                x += a->width;
-                ++a;
             }
 
             int count = g-glyphs;
@@ -1119,13 +1100,12 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
             if (emojiEnabled) {
                 if (surrogatePair)
                     count = gatherGlyphs(glyphs, count);
-                drawGlyphs(fontRef,
-                    glyphs, advances, positions, count, context);
+                CTFontDrawGlyphs(fontRef, glyphs, positions, count, context);
             } else {
                 CGFontRef cgFontRef = CTFontCopyGraphicsFont(fontRef, NULL);
                 CGContextSetFont(context, cgFontRef);
-                CGContextShowGlyphsWithAdvances(
-                    context, glyphs, advances, count);
+                CGContextShowGlyphsAtPositions(context, glyphs, positions,
+                                               count);
                 CGFontRelease(cgFontRef);
             }
         } else {
@@ -1135,12 +1115,12 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
                 if (emojiEnabled && CFStringIsSurrogateHighCharacter(*c)) {
                     g += 2;
                     c += 2;
+                    p += 2;
                 } else {
                     ++g;
                     ++c;
+                    ++p;
                 }
-                x += a->width;
-                ++a;
             }
 
             // Figure out which font to draw these chars with.
@@ -1149,16 +1129,15 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
             if (!newFontRef)
                 return;
 
-            recurseDraw(chars, glyphs, advances, positions, count, context,
-                        newFontRef, x0, y, fontCache, emojiEnabled);
+            recurseDraw(chars, glyphs, positions, count, context, newFontRef,
+                        fontCache, emojiEnabled);
 
             CFRelease(newFontRef);
         }
 
         chars = c;
         glyphs = g;
-        advances = a;
-        x0 = x;
+        positions = p;
     }
 }
 
@@ -1237,10 +1216,8 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
 
     if (length > maxlen) {
         if (glyphs) free(glyphs);
-        if (advances) free(advances);
         if (positions) free(positions);
         glyphs = (CGGlyph*)malloc(length*sizeof(CGGlyph));
-        advances = (CGSize*)calloc(length, sizeof(CGSize));
         positions = (CGPoint*)calloc(length, sizeof(CGPoint));
         maxlen = length;
     }
@@ -1250,9 +1227,13 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
     CGContextSetRGBFillColor(context, RED(fg), GREEN(fg), BLUE(fg), ALPHA(fg));
     CGContextSetFontSize(context, [font pointSize]);
 
+    // Calculate position of each glyph relative to (x,y).
     NSUInteger i;
-    for (i = 0; i < length; ++i)
-        advances[i].width = w;
+    float xrel = 0;
+    for (i = 0; i < length; ++i) {
+        positions[i].x = xrel;
+        xrel += w;
+    }
 
     CTFontRef fontRef = (CTFontRef)(flags & DRAW_WIDE ? [fontWide retain]
                                                       : [font retain]);
@@ -1271,7 +1252,8 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGSize *advances,
         }
     }
 
-    recurseDraw(chars, glyphs, advances, positions, length, context, fontRef, x,
+    CGContextSetTextPosition(context, x, y+fontDescent);
+    recurseDraw(chars, glyphs, positions, length, context, fontRef, fontCache,
                 y+fontDescent, fontCache, (flags & DRAW_WIDE) && emojiEnabled);
 
     CFRelease(fontRef);
