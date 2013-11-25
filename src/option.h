@@ -1065,6 +1065,7 @@ enum
     , BV_TW
     , BV_TX
     , BV_UDF
+    , BV_UL
     , BV_WM
     , BV_COUNT	    /* must be the last one */
 };
@@ -1143,3 +1144,6 @@ enum
     , WV_WRAP
     , WV_COUNT	    /* must be the last one */
 };
+
+/* Value for b_p_ul indicating the global value must be used. */
+#define NO_LOCAL_UNDOLEVEL -123456

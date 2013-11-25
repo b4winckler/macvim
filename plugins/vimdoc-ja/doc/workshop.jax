@@ -52,7 +52,7 @@ WorkShop関数に{verb}を渡し、関数は幾つかの引数を集めて{verb}
 ==============================================================================
 4. Configuring gvim for a WorkShop release tree		*workshop-configure*
 
-VimをSun Visual WorkShop 6と供に使えるようにするためには、幾つかの仮定をしなけ
+VimをSun Visual WorkShop 6と共に使えるようにするためには、幾つかの仮定をしなけ
 ればならない。
 
     o gccではなくVWSに付属のコンパイラを使わなければならない。gccでは構築もテ

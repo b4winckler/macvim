@@ -268,7 +268,7 @@
 #endif
 
 /* Some "prep work" definition to be able to compile the MacOS X
- * version with os_unix.x instead of os_mac.c. Based on the result
+ * version with os_unix.c instead of os_mac.c. Based on the result
  * of ./configure for console MacOS X.
  */
 

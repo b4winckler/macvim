@@ -32,66 +32,86 @@ SCRIPTS =	test3.out test4.out test5.out test6.out test7.out \
 		test79.out test80.out test81.out test82.out test83.out \
 		test84.out test85.out test86.out test87.out test88.out \
 		test89.out test90.out test91.out test92.out test93.out \
-		test94.out test95.out test96.out test98.out test99.out
+		test94.out test95.out test96.out test98.out test99.out \
+		test100.out test101.out test102.out test103.out
 
 SCRIPTS32 =	test50.out test70.out
 
-SCRIPTS_GUI = test16.out
+SCRIPTS_GUI =	test16.out
+
+TEST_OUTFILES = $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS32) $(SCRIPTS_GUI)
+DOSTMP = dostmp
+DOSTMP_OUTFILES = $(TEST_OUTFILES:test=dostmp\test)
+DOSTMP_INFILES = $(DOSTMP_OUTFILES:.out=.in)
 
 .SUFFIXES: .in .out
 
-nongui:	clean fixff_dos $(SCRIPTS16) $(SCRIPTS) fixff_unix report
+nongui:	clear_report $(SCRIPTS16) $(SCRIPTS) report
 
-small:	clean fixff_unix report
+small:	clear_report report
 
-gui:	clean fixff_dos $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS_GUI) fixff_unix \
-	report
+gui:	clear_report $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS_GUI) report
 
-win32:	clean fixff_dos $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS32) fixff_unix report
+win32:	clear_report $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS32) report
 
-fixff_dos:
-	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=dos|upd" +q \
-		*.in *.ok > NUL
+$(DOSTMP_INFILES): $(*B).in
+	IF NOT EXIST $(DOSTMP)\NUL MD $(DOSTMP)
+	IF EXIST $@ DEL $@
+	$(VIMPROG) -u dos.vim --noplugin "+set ff=dos|f $@|wq" $(*B).in
+
+$(DOSTMP_OUTFILES): $*.in
+	-@IF EXIST test.out DEL test.out
+	MOVE $(*B).in $(*B).in.bak
+	COPY $*.in $(*B).in
+	COPY $(*B).ok test.ok
+	$(VIMPROG) -u dos.vim -U NONE --noplugin -s dotest.in $(*B).in
+	-@IF EXIST test.out MOVE /y test.out $@
+	-@IF EXIST $(*B).in.bak \
+		( DEL $(*B).in & MOVE $(*B).in.bak $(*B).in )
+	-@IF EXIST test.in DEL test.in
+	-@IF EXIST X* DEL X*
+	-@IF EXIST test.ok DEL test.ok
+	-@IF EXIST Xdir1 RD /s /q Xdir1
+	-@IF EXIST Xfind RD /s /q Xfind
+	-@IF EXIST viminfo DEL viminfo
+
+$(TEST_OUTFILES): $(DOSTMP)\$(*B).out
+	IF EXIST test.out DEL test.out
+	$(VIMPROG) -u dos.vim --noplugin "+set ff=unix|f test.out|wq" \
+		$(DOSTMP)\$(*B).out
+	@diff test.out $*.ok & IF ERRORLEVEL 1 \
+		( MOVE /y test.out $*.failed \
+		 & DEL $(DOSTMP)\$(*B).out \
+		 & ECHO $* FAILED >> test.log ) \
+		ELSE ( MOVE /y test.out $*.out )
+
+fixff:
+	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=dos|upd" +q *.in *.ok
 	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=unix|upd" +q \
-		dotest.in test60.ok test71.ok test74.ok > NUL
-
-fixff_unix:
-	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=unix|upd" +q \
-		*.in *.ok > NUL
+		dotest.in test60.ok test71.ok test74.ok
 
 report:
-	@echo ""
-	@echo Test results:
-	@IF EXIST test.log ( type test.log & echo TEST FAILURE & exit /b 1 ) \
+	@ECHO ""
+	@ECHO Test results:
+	@IF EXIST test.log ( TYPE test.log & ECHO TEST FAILURE & EXIT /b 1 ) \
 		ELSE ( ECHO ALL DONE )
 
 clean:
-	-del *.out
-	-del *.failed
-	-if exist test.ok del test.ok
-	-if exist small.vim del small.vim
-	-if exist tiny.vim del tiny.vim
-	-if exist mbyte.vim del mbyte.vim
-	-if exist mzscheme.vim del mzscheme.vim
-	-if exist lua.vim del lua.vim
-	-del X*
-	-if exist Xdir1 rd /s /q Xdir1
-	-if exist Xfind rd /s /q Xfind
-	-if exist viminfo del viminfo
-	-del test.log
+	-IF EXIST *.out DEL *.out
+	-IF EXIST *.failed DEL *.failed
+	-IF EXIST $(DOSTMP) RD /s /q $(DOSTMP)
+	-IF EXIST test.in DEL test.in
+	-IF EXIST test.ok DEL test.ok
+	-IF EXIST test.log DEL test.log
+	-IF EXIST small.vim DEL small.vim
+	-IF EXIST tiny.vim DEL tiny.vim
+	-IF EXIST mbyte.vim DEL mbyte.vim
+	-IF EXIST mzscheme.vim DEL mzscheme.vim
+	-IF EXIST lua.vim DEL lua.vim
+	-IF EXIST X* DEL X*
+	-IF EXIST Xdir1 RD /s /q Xdir1
+	-IF EXIST Xfind RD /s /q Xfind
+	-IF EXIST viminfo DEL viminfo
 
-.in.out:
-	-if exist $*.failed del $*.failed
-	copy $*.ok test.ok
-	$(VIMPROG) -u dos.vim -U NONE --noplugin -s dotest.in $*.in
-	@diff test.out $*.ok & if errorlevel 1 \
-		( move /y test.out $*.failed & echo $* FAILED >> test.log ) \
-		else ( move /y test.out $*.out )
-	-del X*
-	-del test.ok
-	-if exist Xdir1 rd /s /q Xdir1
-	-if exist Xfind rd /s /q Xfind
-	-if exist viminfo del viminfo
-
-nolog:
-	-del test.log
+clear_report:
+	-IF EXIST test.log DEL test.log

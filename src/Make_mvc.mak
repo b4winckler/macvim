@@ -167,9 +167,9 @@ TARGETOS = BOTH
 # interfaces.
 # If you change something else, do "make clean" first!
 !if "$(GUI)" == "yes"
-OBJDIR = .\Obj\G
+OBJDIR = .\ObjG
 !else
-OBJDIR = .\Obj\C
+OBJDIR = .\ObjC
 !endif
 !if "$(DIRECTX)" == "yes"
 OBJDIR = $(OBJDIR)X
@@ -200,9 +200,6 @@ OBJDIR = $(OBJDIR)Z
 !endif
 !if "$(DEBUG)" == "yes"
 OBJDIR = $(OBJDIR)d
-!endif
-!ifdef PROCESSOR_ARCHITECTURE
-OBJDIR = $(OBJDIR)-$(PROCESSOR_ARCHITECTURE)
 !endif
 
 # Win32.mak requires that CPU be set appropriately.
@@ -321,12 +318,9 @@ XPM = no
 !if "$(XPM)" != "no"
 # XPM - Include support for XPM signs
 # See the xpm directory for more information.
-!ifndef XPM_ARCH
-XPM_ARCH=
-!endif
 XPM_OBJ   = $(OBJDIR)/xpm_w32.obj
 XPM_DEFS  = -DFEAT_XPM_W32
-XPM_LIB   = $(XPM)\lib$(XPM_ARCH)\libXpm.lib
+XPM_LIB   = $(XPM)\lib\libXpm.lib
 XPM_INC	  = -I $(XPM)\include -I $(XPM)\..\include
 !endif
 !endif
@@ -443,6 +437,9 @@ MSVCVER = 11.0
 !if "$(_NMAKE_VER)" == "11.00.60610.1"
 MSVCVER = 11.0
 !endif
+!if "$(_NMAKE_VER)" == "12.00.21005.1"
+MSVCVER = 12.0
+!endif
 !endif
 
 # Abort building VIM if version of VC is unrecognised.
@@ -457,7 +454,7 @@ MSVCVER = 11.0
 !endif
 
 # Convert processor ID to MVC-compatible number
-!if ("$(MSVCVER)" != "8.0") && ("$(MSVCVER)" != "9.0") && ("$(MSVCVER)" != "10.0") && ("$(MSVCVER)" != "11.0")
+!if ("$(MSVCVER)" != "8.0") && ("$(MSVCVER)" != "9.0") && ("$(MSVCVER)" != "10.0") && ("$(MSVCVER)" != "11.0") && ("$(MSVCVER)" != "12.0")
 !if "$(CPUNR)" == "i386"
 CPUARG = /G3
 !elseif "$(CPUNR)" == "i486"
@@ -491,7 +488,7 @@ OPTFLAG = /O2
 OPTFLAG = /Ox
 !endif
 
-!if ("$(MSVCVER)" == "8.0") || ("$(MSVCVER)" == "9.0") || ("$(MSVCVER)" == "10.0") || ("$(MSVCVER)" == "11.0")
+!if ("$(MSVCVER)" == "8.0") || ("$(MSVCVER)" == "9.0") || ("$(MSVCVER)" == "10.0") || ("$(MSVCVER)" == "11.0") || ("$(MSVCVER)" == "12.0")
 # Use link time code generation if not worried about size
 !if "$(OPTIMIZE)" != "SPACE"
 OPTFLAG = $(OPTFLAG) /GL
@@ -504,7 +501,7 @@ CFLAGS=$(CFLAGS) $(WP64CHECK)
 !endif
 
 # Static code analysis generally available starting with VS2012
-!if ("$(ANALYZE)" == "yes") && ("$(MSVCVER)" == "11.0")
+!if ("$(ANALYZE)" == "yes") && (("$(MSVCVER)" == "10.0") || ("$(MSVCVER)" == "11.0") || ("$(MSVCVER)" == "12.0"))
 CFLAGS=$(CFLAGS) /analyze
 !endif
 
@@ -976,7 +973,7 @@ LINKARGS2 = $(CON_LIB) $(GUI_LIB) $(LIBC) $(OLE_LIB)  user32.lib $(SNIFF_LIB) \
 
 # Report link time code generation progress if used. 
 !ifdef NODEBUG
-!if ("$(MSVCVER)" == "8.0") || ("$(MSVCVER)" == "9.0") || ("$(MSVCVER)" == "10.0") || ("$(MSVCVER)" == "11.0")
+!if ("$(MSVCVER)" == "8.0") || ("$(MSVCVER)" == "9.0") || ("$(MSVCVER)" == "10.0") || ("$(MSVCVER)" == "11.0") || ("$(MSVCVER)" == "12.0")
 !if "$(OPTIMIZE)" != "SPACE"
 LINKARGS1 = $(LINKARGS1) /LTCG:STATUS
 !endif
