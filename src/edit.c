@@ -199,7 +199,7 @@ static void check_spell_redraw __ARGS((void));
 static void spell_back_to_badword __ARGS((void));
 static int  spell_bad_len = 0;	/* length of located bad word */
 #endif
-static void stop_insert __ARGS((pos_T *end_insert_pos, int esc));
+static void stop_insert __ARGS((pos_T *end_insert_pos, int esc, int nomove));
 static int  echeck_abbr __ARGS((int));
 static int  replace_pop __ARGS((void));
 static void replace_join __ARGS((int off));
@@ -6698,7 +6698,7 @@ start_arrow(end_insert_pos)
     if (!arrow_used)	    /* something has been inserted */
     {
 	AppendToRedobuff(ESC_STR);
-	stop_insert(end_insert_pos, FALSE);
+	stop_insert(end_insert_pos, FALSE, FALSE);
 	arrow_used = TRUE;	/* this means we stopped the current insert */
     }
 #ifdef FEAT_SPELL
@@ -6787,9 +6787,10 @@ stop_arrow()
  * to another window/buffer.
  */
     static void
-stop_insert(end_insert_pos, esc)
+stop_insert(end_insert_pos, esc, nomove)
     pos_T	*end_insert_pos;
     int		esc;			/* called by ins_esc() */
+    int		nomove;			/* <c-\><c-o>, don't move cursor */
 {
     int		cc;
     char_u	*ptr;
@@ -6860,7 +6861,7 @@ stop_insert(end_insert_pos, esc)
 	 * Do this when ESC was used or moving the cursor up/down.
 	 * Check for the old position still being valid, just in case the text
 	 * got changed unexpectedly. */
-	if (did_ai && (esc || (vim_strchr(p_cpo, CPO_INDENT) == NULL
+	if (!nomove && did_ai && (esc || (vim_strchr(p_cpo, CPO_INDENT) == NULL
 			&& curwin->w_cursor.lnum != end_insert_pos->lnum))
 		&& end_insert_pos->lnum <= curbuf->b_ml.ml_line_count)
 	{
@@ -7856,8 +7857,7 @@ in_cinkeys(keytyped, when, line_is_empty)
 	    if (try_match && keytyped == ':')
 	    {
 		p = ml_get_curline();
-		if (cin_iscase(p, FALSE) || cin_isscopedecl(p)
-							   || cin_islabel(30))
+		if (cin_iscase(p, FALSE) || cin_isscopedecl(p) || cin_islabel())
 		    return TRUE;
 		/* Need to get the line again after cin_islabel(). */
 		p = ml_get_curline();
@@ -7867,7 +7867,7 @@ in_cinkeys(keytyped, when, line_is_empty)
 		{
 		    p[curwin->w_cursor.col - 1] = ' ';
 		    i = (cin_iscase(p, FALSE) || cin_isscopedecl(p)
-							  || cin_islabel(30));
+							    || cin_islabel());
 		    p = ml_get_curline();
 		    p[curwin->w_cursor.col - 1] = ':';
 		    if (i)
@@ -8377,7 +8377,7 @@ ins_esc(count, cmdchar, nomove)
 	    disabled_redraw = TRUE;
 	    return FALSE;	/* repeat the insert */
 	}
-	stop_insert(&curwin->w_cursor, TRUE);
+	stop_insert(&curwin->w_cursor, TRUE, nomove);
 	undisplay_dollar();
     }
 
@@ -8957,7 +8957,7 @@ ins_bs(c, mode, inserted_space_p)
 
 	    *inserted_space_p = FALSE;
 	    if (p_sta && in_indent)
-		ts = (int)get_sw_value();
+		ts = (int)get_sw_value(curbuf);
 	    else
 		ts = (int)get_sts_value();
 	    /* Compute the virtual column where we want to be.  Since
@@ -9646,7 +9646,7 @@ ins_tab()
      * When nothing special, insert TAB like a normal character
      */
     if (!curbuf->b_p_et
-	    && !(p_sta && ind && curbuf->b_p_ts != get_sw_value())
+	    && !(p_sta && ind && curbuf->b_p_ts != get_sw_value(curbuf))
 	    && get_sts_value() == 0)
 	return TRUE;
 
@@ -9662,7 +9662,7 @@ ins_tab()
     AppendToRedobuff((char_u *)"\t");
 
     if (p_sta && ind)		/* insert tab in indent, use 'shiftwidth' */
-	temp = (int)get_sw_value();
+	temp = (int)get_sw_value(curbuf);
     else if (curbuf->b_p_sts != 0) /* use 'softtabstop' when set */
 	temp = (int)get_sts_value();
     else			/* otherwise use 'tabstop' */

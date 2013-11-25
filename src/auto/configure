@@ -4221,7 +4221,7 @@ rm -f core conftest.err conftest.$ac_objext \
     MACOSX=yes
     OS_EXTRA_SRC="os_macosx.m os_mac_conv.c";
     OS_EXTRA_OBJ="objects/os_macosx.o objects/os_mac_conv.o"
-        CPPFLAGS="$CPPFLAGS -DMACOS_X_UNIX -no-cpp-precomp"
+            CPPFLAGS="$CPPFLAGS -DMACOS_X_UNIX"
 
                 # On IRIX 5.3, sys/types and inttypes.h are conflicting.
 for ac_header in sys/types.h sys/stat.h stdlib.h string.h memory.h strings.h \
@@ -4263,6 +4263,19 @@ else
 $as_echo "no" >&6; }
 fi
 
+for ac_header in AvailabilityMacros.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "AvailabilityMacros.h" "ac_cv_header_AvailabilityMacros_h" "$ac_includes_default"
+if test "x$ac_cv_header_AvailabilityMacros_h" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_AVAILABILITYMACROS_H 1
+_ACEOF
+
+fi
+
+done
+
+
 
 
 
@@ -4298,7 +4311,7 @@ fi
 
   if test "$GCC" = yes -a "$local_dir" != no; then
     echo 'void f(){}' > conftest.c
-        have_local_include=`${CC-cc} -no-cpp-precomp -c -v conftest.c 2>&1 | grep "${local_dir}/include"`
+        have_local_include=`${CC-cc} -c -v conftest.c 2>&1 | grep "${local_dir}/include"`
     have_local_lib=`${CC-cc} -c -v conftest.c 2>&1 | grep "${local_dir}/lib"`
     rm -f conftest.c conftest.o
   fi
@@ -4730,7 +4743,7 @@ $as_echo_n "checking LuaJIT version... " >&6; }
 if test "${vi_cv_version_luajit+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
-   vi_cv_version_luajit=`${vi_cv_path_luajit} -v | sed 's/LuaJIT \([0-9.]*\)\.[0-9] .*/\1/'`
+   vi_cv_version_luajit=`${vi_cv_path_luajit} -v 2>&1 | sed 's/LuaJIT \([0-9.]*\)\.[0-9]\(-[a-z0-9]*\)* .*/\1/'`
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_version_luajit" >&5
 $as_echo "$vi_cv_version_luajit" >&6; }
@@ -12677,6 +12690,8 @@ $as_echo_n "checking for NLS... " >&6; }
   if test -f po/Makefile; then
     have_gettext="no"
     if test -n "$MSGFMT"; then
+      olibs=$LIBS
+      LIBS=""
       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <libintl.h>
@@ -12690,10 +12705,9 @@ gettext("Test");
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: gettext() works" >&5
-$as_echo "gettext() works" >&6; }; have_gettext="yes"
+$as_echo "gettext() works" >&6; }; have_gettext="yes"; LIBS=$olibs
 else
-  olibs=$LIBS
-	  LIBS="$LIBS -lintl"
+  LIBS="-lintl"
 	  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <libintl.h>
@@ -12707,7 +12721,8 @@ gettext("Test");
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: gettext() works with -lintl" >&5
-$as_echo "gettext() works with -lintl" >&6; }; have_gettext="yes"
+$as_echo "gettext() works with -lintl" >&6; }; have_gettext="yes";
+	      LIBS="$olibs -lintl"
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: gettext() doesn't work" >&5
 $as_echo "gettext() doesn't work" >&6; };
