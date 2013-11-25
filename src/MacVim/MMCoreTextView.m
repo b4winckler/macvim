@@ -1252,7 +1252,7 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
 
     CGContextSetTextPosition(context, x, y+fontDescent);
     recurseDraw(chars, glyphs, positions, length, context, fontRef, fontCache,
-                fontCache, (flags & DRAW_WIDE) && emojiEnabled);
+                (flags & DRAW_WIDE) && emojiEnabled);
 
     CFRelease(fontRef);
     CGContextRestoreGState(context);
