@@ -1037,19 +1037,16 @@ lookupFont(NSMutableArray *fontCache, const unichar *chars,
 gatherGlyphs(CGGlyph glyphs[], UniCharCount count)
 {
     // Gather scattered glyphs that was happended by Surrogate pair chars
-    UniCharCount glyphLength = 0;
-    NSUInteger pos = NSIntegerMax;
+    UniCharCount glyphCount = 0;
+    NSUInteger pos = 0;
     NSUInteger i;
     for (i = 0; i < count; ++i) {
-        if (glyphs[i] == 0) {
-            pos = i;
-        } else {
-            ++glyphLength;
-            if (pos != NSIntegerMax)
-                glyphs[pos++] = glyphs[i];
+        if (glyphs[i] != 0) {
+            ++glyphCount;
+            glyphs[pos++] = glyphs[i];
         }
     }
-    return glyphLength;
+    return glyphCount;
 }
 
     static void
