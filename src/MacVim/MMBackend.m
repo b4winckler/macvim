@@ -998,11 +998,9 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
     }
 
     int len = [fontName lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
-    int emojiEnabled = vim_strchr(p_go, GO_EMOJI) != NULL;
     NSMutableData *data = [NSMutableData data];
     [data appendBytes:&size length:sizeof(float)];
     [data appendBytes:&len length:sizeof(int)];
-    [data appendBytes:&emojiEnabled length:sizeof(int)];
 
     if (len > 0)
         [data appendBytes:[fontName UTF8String] length:len];

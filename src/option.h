@@ -237,8 +237,7 @@
 #define GO_FOOTER	'F'		/* add footer */
 #define GO_VERTICAL	'v'		/* arrange dialog buttons vertically */
 #define GO_NOCAPTION	'C'		/* remove caption bar */
-#define GO_EMOJI	'E'		/* use emoji */
-#define GO_ALL		"aAbcCeEfFghilmMprtTv" /* all possible flags for 'go' */
+#define GO_ALL		"aAbcCefFghilmMprtTv" /* all possible flags for 'go' */
 
 /* flags for 'comments' option */
 #define COM_NEST	'n'		/* comments strings nest */
