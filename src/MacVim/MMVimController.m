@@ -221,11 +221,6 @@ static BOOL isUnsafeMessage(int msgid);
     isPreloading = yn;
 }
 
-- (BOOL)emojiEnabled
-{
-    return emojiEnabled;
-}
-
 - (BOOL)hasModifiedBuffer
 {
     return hasModifiedBuffer;
@@ -698,7 +693,6 @@ static BOOL isUnsafeMessage(int msgid);
         const void *bytes = [data bytes];
         float size = *((float*)bytes);  bytes += sizeof(float);
         int len = *((int*)bytes);  bytes += sizeof(int);
-        emojiEnabled = *((int*)bytes);  bytes += sizeof(int);
         NSString *name = [[NSString alloc]
                 initWithBytes:(void*)bytes length:len
                      encoding:NSUTF8StringEncoding];
@@ -716,7 +710,6 @@ static BOOL isUnsafeMessage(int msgid);
         const void *bytes = [data bytes];
         float size = *((float*)bytes);  bytes += sizeof(float);
         int len = *((int*)bytes);  bytes += sizeof(int);
-        emojiEnabled = *((int*)bytes);  bytes += sizeof(int);
         if (len > 0) {
             NSString *name = [[NSString alloc]
                     initWithBytes:(void*)bytes length:len
@@ -1669,4 +1662,3 @@ isUnsafeMessage(int msgid)
 
     return NO;
 }
-
