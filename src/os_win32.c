@@ -2509,7 +2509,7 @@ fname_casew(
     WCHAR		*porig, *porigPrev;
     int			flen;
     WIN32_FIND_DATAW	fb;
-    HANDLE		hFind;
+    HANDLE		hFind = INVALID_HANDLE_VALUE;
     int			c;
     int			slen;
 
@@ -2528,8 +2528,8 @@ fname_casew(
 	/* copy leading drive letter */
 	*ptrue++ = *porig++;
 	*ptrue++ = *porig++;
-	*ptrue = NUL;	    /* in case nothing follows */
     }
+    *ptrue = NUL;	    /* in case nothing follows */
 
     while (*porig != NUL)
     {
@@ -2673,8 +2673,8 @@ fname_case(
 	/* copy leading drive letter */
 	*ptrue++ = *porig++;
 	*ptrue++ = *porig++;
-	*ptrue = NUL;	    /* in case nothing follows */
     }
+    *ptrue = NUL;	    /* in case nothing follows */
 
     while (*porig != NUL)
     {
@@ -2768,6 +2768,26 @@ mch_get_user_name(
     char szUserName[256 + 1];	/* UNLEN is 256 */
     DWORD cch = sizeof szUserName;
 
+#ifdef FEAT_MBYTE
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+    {
+	WCHAR wszUserName[256 + 1];	/* UNLEN is 256 */
+	DWORD wcch = sizeof(wszUserName) / sizeof(WCHAR);
+
+	if (GetUserNameW(wszUserName, &wcch))
+	{
+	    char_u  *p = utf16_to_enc(wszUserName, NULL);
+
+	    if (p != NULL)
+	    {
+		vim_strncpy(s, p, len - 1);
+		vim_free(p);
+		return OK;
+	    }
+	}
+	/* Retry with non-wide function (for Windows 98). */
+    }
+#endif
     if (GetUserName(szUserName, &cch))
     {
 	vim_strncpy(s, szUserName, len - 1);
@@ -2788,6 +2808,26 @@ mch_get_host_name(
 {
     DWORD cch = len;
 
+#ifdef FEAT_MBYTE
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+    {
+	WCHAR wszHostName[256 + 1];
+	DWORD wcch = sizeof(wszHostName) / sizeof(WCHAR);
+
+	if (GetComputerNameW(wszHostName, &wcch))
+	{
+	    char_u  *p = utf16_to_enc(wszHostName, NULL);
+
+	    if (p != NULL)
+	    {
+		vim_strncpy(s, p, len - 1);
+		vim_free(p);
+		return;
+	    }
+	}
+	/* Retry with non-wide function (for Windows 98). */
+    }
+#endif
     if (!GetComputerName(s, &cch))
 	vim_strncpy(s, "PC (Win32 Vim)", len - 1);
 }
@@ -3788,6 +3828,50 @@ mch_set_winsize_now(void)
 }
 #endif /* FEAT_GUI_W32 */
 
+    static BOOL
+vim_create_process(
+    char		*cmd,
+    DWORD		flags,
+    BOOL		inherit_handles,
+    STARTUPINFO		*si,
+    PROCESS_INFORMATION *pi)
+{
+#  ifdef FEAT_MBYTE
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+    {
+	WCHAR	*wcmd = enc_to_utf16(cmd, NULL);
+
+	if (wcmd != NULL)
+	{
+	    BOOL ret;
+	    ret = CreateProcessW(
+		NULL,			/* Executable name */
+		wcmd,			/* Command to execute */
+		NULL,			/* Process security attributes */
+		NULL,			/* Thread security attributes */
+		inherit_handles,	/* Inherit handles */
+		flags,			/* Creation flags */
+		NULL,			/* Environment */
+		NULL,			/* Current directory */
+		(LPSTARTUPINFOW)si,	/* Startup information */
+		pi);			/* Process information */
+	    vim_free(wcmd);
+	    return ret;
+	}
+    }
+#endif
+    return CreateProcess(
+	NULL,			/* Executable name */
+	cmd,			/* Command to execute */
+	NULL,			/* Process security attributes */
+	NULL,			/* Thread security attributes */
+	inherit_handles,	/* Inherit handles */
+	flags,			/* Creation flags */
+	NULL,			/* Environment */
+	NULL,			/* Current directory */
+	si,			/* Startup information */
+	pi);			/* Process information */
+}
 
 
 #if defined(FEAT_GUI_W32) || defined(PROTO)
@@ -3834,18 +3918,8 @@ mch_system_classic(char *cmd, int options)
 	cmd += 3;
 
     /* Now, run the command */
-    CreateProcess(NULL,			/* Executable name */
-		  cmd,			/* Command to execute */
-		  NULL,			/* Process security attributes */
-		  NULL,			/* Thread security attributes */
-		  FALSE,		/* Inherit handles */
-		  CREATE_DEFAULT_ERROR_MODE |	/* Creation flags */
-			CREATE_NEW_CONSOLE,
-		  NULL,			/* Environment */
-		  NULL,			/* Current directory */
-		  &si,			/* Startup information */
-		  &pi);			/* Process information */
-
+    vim_create_process(cmd, FALSE,
+	    CREATE_DEFAULT_ERROR_MODE |	CREATE_NEW_CONSOLE, &si, &pi);
 
     /* Wait for the command to terminate before continuing */
     if (g_PlatformId != VER_PLATFORM_WIN32s)
@@ -4177,22 +4251,11 @@ mch_system_piped(char *cmd, int options)
 	    p = cmd;
     }
 
-    /* Now, run the command */
-    CreateProcess(NULL,			/* Executable name */
-		  p,			/* Command to execute */
-		  NULL,			/* Process security attributes */
-		  NULL,			/* Thread security attributes */
-
-		  // this command can be litigious, handle inheritance was
-		  // deactivated for pending temp file, but, if we deactivate
-		  // it, the pipes don't work for some reason.
-		  TRUE,			/* Inherit handles, first deactivated,
-					 * but needed */
-		  CREATE_DEFAULT_ERROR_MODE, /* Creation flags */
-		  NULL,			/* Environment */
-		  NULL,			/* Current directory */
-		  &si,			/* Startup information */
-		  &pi);			/* Process information */
+    /* Now, run the command.
+     * About "Inherit handles" being TRUE: this command can be litigious,
+     * handle inheritance was deactivated for pending temp file, but, if we
+     * deactivate it, the pipes don't work for some reason. */
+     vim_create_process(p, TRUE, CREATE_DEFAULT_ERROR_MODE, &si, &pi);
 
     if (p != cmd)
 	vim_free(p);
@@ -4219,10 +4282,10 @@ mch_system_piped(char *cmd, int options)
     {
 	MSG	msg;
 
-	if (PeekMessage(&msg, (HWND)NULL, 0, 0, PM_REMOVE))
+	if (pPeekMessage(&msg, (HWND)NULL, 0, 0, PM_REMOVE))
 	{
 	    TranslateMessage(&msg);
-	    DispatchMessage(&msg);
+	    pDispatchMessage(&msg);
 	}
 
 	/* write pipe information in the window */
@@ -4410,7 +4473,25 @@ mch_system(char *cmd, int options)
 }
 #else
 
-# define mch_system(c, o) system(c)
+# ifdef FEAT_MBYTE
+    static int
+mch_system(char *cmd, int options)
+{
+    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+    {
+	WCHAR	*wcmd = enc_to_utf16(cmd, NULL);
+	if (wcmd != NULL)
+	{
+	    int ret = _wsystem(wcmd);
+	    vim_free(wcmd);
+	    return ret;
+	}
+    }
+    return system(cmd);
+}
+# else
+#  define mch_system(c, o) system(c)
+# endif
 
 #endif
 
@@ -4578,16 +4659,7 @@ mch_call_shell(
 	     * inherit our handles which causes unpleasant dangling swap
 	     * files if we exit before the spawned process
 	     */
-	    if (CreateProcess(NULL,		// Executable name
-		    newcmd,			// Command to execute
-		    NULL,			// Process security attributes
-		    NULL,			// Thread security attributes
-		    FALSE,			// Inherit handles
-		    flags,			// Creation flags
-		    NULL,			// Environment
-		    NULL,			// Current directory
-		    &si,			// Startup information
-		    &pi))			// Process information
+	    if (vim_create_process(newcmd, FALSE, flags, &si, &pi))
 		x = 0;
 	    else
 	    {
@@ -6272,6 +6344,7 @@ get_cmd_argsW(char ***argvp)
 		    while (i > 0)
 			free(argv[--i]);
 		    free(argv);
+		    argv = NULL;
 		    argc = 0;
 		}
 	    }
