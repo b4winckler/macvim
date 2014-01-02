@@ -416,10 +416,8 @@ static struct {
     {"perl_parse", (PERL_PROC*)&perl_parse, FALSE},
     {"Perl_get_context", (PERL_PROC*)&Perl_get_context, FALSE},
     {"Perl_croak", (PERL_PROC*)&Perl_croak, FALSE},
-#ifndef PERL5180_OR_LATER
 #ifdef PERL5101_OR_LATER
     {"Perl_croak_xs_usage", (PERL_PROC*)&Perl_croak_xs_usage, TRUE},
-#endif
 #endif
     {"Perl_croak_nocontext", (PERL_PROC*)&Perl_croak_nocontext, FALSE},
     {"Perl_dowantarray", (PERL_PROC*)&Perl_dowantarray, FALSE},
