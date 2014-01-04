@@ -498,6 +498,7 @@
 				1D1C31F00EFFBFD6003FE9A5 /* Make Document Icons */,
 				528DA6671426D456003380F1 /* Copy Scripts */,
 				528DA28A1426C479003380F1 /* Copy KaoriYa Runtime Files */,
+				52F1931D1877EC5E007C4A82 /* Copy gettext Files */,
 			);
 			buildRules = (
 			);
@@ -515,6 +516,8 @@
 /* Begin PBXProject section */
 		29B97313FDCFA39411CA2CEA /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+			};
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "MacVim" */;
 			compatibilityVersion = "Xcode 2.4";
 			developmentRegion = English;
@@ -615,6 +618,20 @@
 			shellPath = /bin/sh;
 			shellScript = "# Clear deployment target, else the python script always thinks we're building on Tiger\nunset MACOSX_DEPLOYMENT_TARGET\n\n# Generate the icons (redirect stderr to ignore warnings)\ncd \"$PROJECT_DIR\"/icons/\nmake OUTDIR=\"$TARGET_BUILD_DIR\"/$UNLOCALIZED_RESOURCES_FOLDER_PATH 2> /dev/null\n";
 			showEnvVarsInLog = 0;
+		};
+		52F1931D1877EC5E007C4A82 /* Copy gettext Files */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Copy gettext Files";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp \"$PROJECT_DIR/../po/ja.mo\" \"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/vim/runtime/lang\"";
 		};
 /* End PBXShellScriptBuildPhase section */
 
