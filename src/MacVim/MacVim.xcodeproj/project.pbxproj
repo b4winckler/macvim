@@ -631,7 +631,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cp \"$PROJECT_DIR/../po/ja.mo\" \"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/vim/runtime/lang\"";
+			shellScript = "DSTDIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/vim/runtime/lang/ja_JP.UTF-8/LC_MESSAGES\"\nmkdir -p \"$DSTDIR\"\ncp \"$PROJECT_DIR/../po/ja.mo\" \"$DSTDIR/vim.mo\"";
 		};
 /* End PBXShellScriptBuildPhase section */
 
