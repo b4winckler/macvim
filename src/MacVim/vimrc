@@ -240,9 +240,16 @@ endif
 " Copyright (C) 2009-2012 KaoriYa/MURAOKA Taro
 
 
-"
+"---------------------------------------------------------------------------
 " MacVim-KaoriYa固有の設定
-"
+
+" migemo:
 let $PATH = simplify($VIM . '/../../MacOS') . ':' . $PATH
 set migemodict=$VIMRUNTIME/dict/migemo-dict
 set migemo
+
+" 印刷に関する設定:
+set printmbfont=r:HiraMinProN-W3,b:HiraMinProN-W6
+set printencoding=utf-8
+set printmbcharset=UniJIS
+
