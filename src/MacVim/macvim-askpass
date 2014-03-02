@@ -18,12 +18,12 @@ TITLE=${MACOS_ASKPASS_TITLE:-"SSH"}
 DIALOG="display dialog \"$@\" default answer \"\" with title \"$TITLE\""
 DIALOG="$DIALOG with icon caution with hidden answer"
 
-result=`osascript -e 'tell application "Finder"' -e "activate"  -e "$DIALOG" -e 'end tell'`
+result=`osascript -e 'tell application "Finder"' -e "activate"  -e "$DIALOG" -e "text returned of result" -e 'end tell'`
 osascript -e 'tell application "MacVim"' -e "activate" -e 'end tell'
 
 if [ "$result" = "" ]; then
     exit 1
 else
-    echo "$result" | sed -e 's/^text returned://' -e 's/, button returned:.*$//'
+    echo "$result"
     exit 0
 fi
