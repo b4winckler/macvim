@@ -124,7 +124,7 @@ NOTE: Vi互換とは全てのオプションがグローバルであることを
 	filetype detection:ON  plugin:ON  indent:OFF
 
 ファイル形式は構文強調にも利用される。":syntax on" コマンドが使用されると、ファ
-イル形式検出もインストールされる。":filetype on" の後に ":syntax on" を実行す
+イル形式検出もインストールされる。":syntax on" の後に ":filetype on" を実行す
 る必要はない。
 
 特定のファイル形式を無効にするには、自分のファイル形式ファイルに1行追加する。

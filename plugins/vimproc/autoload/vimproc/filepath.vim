@@ -1,8 +1,5 @@
 " This file from vital.vim.
 " https://github.com/vim-jp/vital.vim
-function! vimproc#filepath#which(command, path)
-  return s:which(a:command, a:path)
-endfunction
 
 " You should check the following related builtin functions.
 " fnamemodify()
@@ -156,6 +153,10 @@ endfunction
 let s:is_case_tolerant = filereadable(expand('<sfile>:r') . '.VIM')
 function! s:is_case_tolerant()
   return s:is_case_tolerant
+endfunction
+
+function! vimproc#filepath#which(command, path)
+  return s:which(a:command, a:path)
 endfunction
 
 let &cpo = s:save_cpo

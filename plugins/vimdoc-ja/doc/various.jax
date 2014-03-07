@@ -292,6 +292,7 @@ g8			カーソル位置の文字のバイト列を 16 進数で表示します�
 			normal、big、huge バージョンの Vim に含まれます。
 
 							*+feature-list*
+   *+acl*		|ACL| サポートを含む
    *+ARP*		Amiga のみ: ARP サポートを含む
 B  *+arabic*		|Arabic|言語サポート
 N  *+autocmd*		|:autocmd|, 自動コマンド実行
@@ -426,6 +427,7 @@ S  *+windows*		複数ウィンドウ
 m  *+writebackup*	|'writebackup'|がデフォルトで有効
 m  *+xim*		Xインプットメソッド |xim|
    *+xfontset*		Xフォントセットサポート |xfontset|
+   *+xpm*		pixmap サポート
 m  *+xpm_w32*		Win32 GUI のみ: pixmap サポート |w32-xpm-support|
    *+xsmp*		XSMP(X session management)サポート
    *+xsmp_interact*	対話型XSMP(X session management)サポート

@@ -738,14 +738,18 @@ Evimでは以下のオプションが標準設定から変更される:
 	は同じタイプのファイルであるが、"exrc" が常にViによって使われるのに対
 	して、"vimrc" はVim特有のものである。|vimrc-intro|も参照。
 
-	個人の初期化ファイルの推奨される配置場所:
-		Unix		    $HOME/.vimrc
-		OS/2		    $HOME/.vimrc or $VIM/.vimrc (or _vimrc)
-		MS-DOS and Win32    $HOME/_vimrc or $VIM/_vimrc
-		Amiga		    s:.vimrc or $VIM/.vimrc
+	個人の初期化ファイルの配置場所:
+		Unix		$HOME/.vimrc か $HOME/.vim/vimrc
+		OS/2		$HOME/.vimrc, $HOME/vimfiles/vimrc
+				か $VIM/.vimrc (または _vimrc)
+		MS-Windows	$HOME/_vimrc, $HOME/vimfiles/vimrc
+				か $VIM/_vimrc
+		Amiga		s:.vimrc, home:.vimrc, home:vimfiles:vimrc
+				か $VIM/.vimrc
 
 	Vimが "-u filename" で起動された場合、デフォルトのvimrcの代わりに
 	"filename" が使われる。続く初期化処理の4.までがスキップされる。
+	$MYVIMRC は設定されない。
 	"vim -u NORC" によりファイルを読み込むことなくこれらの初期化を省略する
 	ことができる。"vim -u NONE" を使用するとさらにプラグインも読み込まな
 	い。|-u|
@@ -772,12 +776,15 @@ Evimでは以下のオプションが標準設定から変更される:
 	-  環境変数VIMINIT(|compatible-default|も参照) (*)
 	   その内容はExコマンドとして解釈される。
 	-  ユーザーvimrcファイル:
-		    "$HOME/.vimrc"	(for Unix and OS/2) (*)
-		    "s:.vimrc"		(for Amiga) (*)
-		    "home:.vimrc"	(for Amiga) (*)
-		    "$VIM/.vimrc"	(for OS/2 and Amiga) (*)
-		    "$HOME/_vimrc"	(for MS-DOS and Win32) (*)
-		    "$VIM/_vimrc"	(for MS-DOS and Win32) (*)
+		    "$HOME/.vimrc"	   (for Unix and OS/2) (*)
+		    "$HOME/.vim/vimrc"	   (for Unix and OS/2) (*)
+		    "s:.vimrc"		   (for Amiga) (*)
+		    "home:.vimrc"	   (for Amiga) (*)
+		    "home:vimfiles:vimrc"  (for Amiga) (*)
+		    "$VIM/.vimrc"	   (for OS/2 and Amiga) (*)
+		    "$HOME/_vimrc"	   (for MS-DOS and Win32) (*)
+		    "$HOME/vimfiles/vimrc" (for MS-DOS and Win32) (*)
+		    "$VIM/_vimrc"	   (for MS-DOS and Win32) (*)
 		Note: Unix, OS/2そしてAmigaでは、".vimrc" がなかった場合には、
 		MS-DOS互換のファイルシステムを使用することを考え、"_vimrc" も
 		試みられる。MS-DOSとWin32では "_vimrc" を探したあとで、ロング

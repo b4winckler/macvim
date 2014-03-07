@@ -1,4 +1,4 @@
-*spell.txt*	For Vim バージョン 7.4.  Last change: 2013 Jul 17
+*spell.txt*	For Vim バージョン 7.4.  Last change: 2013 Nov 12
 
 
 		  VIMリファレンスマニュアル	  by Bram Moolenaar
@@ -155,13 +155,13 @@ zuG			|zW| や |zG| をundoして、内部単語リストからその単語を
 z=			カーソルの下や後の単語に対して正しい綴りの単語を提案す
 			る。これはまた間違った単語としてハイライトされていない
 			単語に対しての代わりを調べることもできる。例えば、その
-			後の単語が間違っている場合など。 
+			後の単語が間違っている場合など。
 			ビジュアルモードでハイライトされたテキストは置換される
 			単語として見なされる。
-			The results are sorted on similarity to the word being
-			replaced.
-			This may take a long time.  Hit CTRL-C when you get
-			bored.
+			結果は、置換されようとしている単語との類似度でソートさ
+			れる。
+			これには長い時間が掛かることがある。うんざりした場合は
+			CTRL-C を打つこと。
 
 			If the command is used without a count the
 			alternatives are listed and you can enter the number
@@ -183,14 +183,15 @@ z=			カーソルの下や後の単語に対して正しい綴りの単語を提
 			with the suggestions to indicate the likeliness to the
 			badly spelled word (the higher the score the more
 			different).
-			When a word was replaced the redo command "." will
-			repeat the word replacement.  This works like "ciw",
-			the good word and <Esc>.  This does NOT work for Thai
-			and other languages without spaces between words.
+			単語が置換された後は、リドゥコマンド "." はその単語の
+			置換を繰り返す。これは、"ciw" の後に正しい単語を入力し
+			<Esc> を入力したように動作する。これは、単語の間にス
+			ペースを含まないタイ語やその他の言語に対しては動かな
+			い。
 
 					*:spellr* *:spellrepall* *E752* *E753*
-:spellr[epall]		Repeat the replacement done by |z=| for all matches
-			with the replaced word in the current window.
+:spellr[epall]		|z=| によって行われた置換を、現在のウィンドウの全ての
+			マッチする単語に対して繰り返す。
 
 挿入モードでは、カーソルが間違った綴りの単語の後にある場合、提案を見つけるため
 に CTRL-X s を使うことができる。これは挿入モード補完のように動作する。次の提案
@@ -199,11 +200,11 @@ z=			カーソルの下や後の単語に対して正しい綴りの単語を提
 オプション 'spellsuggest' は候補のリストがどのように生成、ソートされるかに影響
 する。|'spellsuggest'| を参照せよ。
 
-オプション 'spellcapcheck' は文の最初の単語が大文字で始まるかをチェックするのに
-用いる。これはファイルの最初の単語には働かない。When there is a line break
-right after a sentence the highlighting of the next line may be postponed.
-Use |CTRL-L| when needed.  Also see |set-spc-auto| for how it can be set
-automatically when 'spelllang' is set.
+オプション 'spellcapcheck' は文の最初の単語が大文字で始まるかをチェックするの
+に用いる。これはファイルの最初の単語には働かない。文の直後に改行があるとき、次
+の行のハイライティングが後回しにされるかもしれない。必要であれば |CTRL-L| を使
+用せよ。また、'spelllang' が設定される時にどのように自動で設定されるのかについ
+ては |set-spc-auto| を参照せよ。
 
 Vim counts the number of times a good word is encountered.  This is used to
 sort the suggestions: words that have been seen before get a small bonus,
@@ -218,12 +219,12 @@ works in a new or short file |spell-COMMON|.
 
 Vim はオンザフライのスペルチェックをする。スペルチェックを速くするために単語リ
 ストはメモリにロードされる。だがこのために多くのメモリ(1 Mbyte以上)が使われる。
-There might also be a noticeable delay when the word list is loaded, which
-happens when 'spell' is set and when 'spelllang' is set while 'spell' was
-already set.  To minimize the delay each word list is only loaded once, it is
-not deleted when 'spelllang' is made empty or 'spell' is reset.  When
-'encoding' is set all the word lists are reloaded, thus you may notice a delay
-then too.
+さらに、単語リストがロードされている時に著しい遅延が生じるかもしれない。これは
+'spell' が既に設定されていたのに、'spell' を設定する時や 'spelllang' を設定す
+る時に発生する。遅延を最小限にするには各単語リストが1回だけ読み込まれるように
+する。そうすれば、'spelllang' が空になる時か 'spell' がリセットされる時に単語
+リストは削除されない。'encoding' を設定して全ての単語リストが再読み込みされる
+時に、上のようにまた遅延に気づくかもしれない。
 
 
 地域
@@ -260,7 +261,7 @@ counting files specified by their .spl name).
 
 							*spell-russian*
 特有の例外: ロシア語ではこれらの特別な地域が使われる:
-	ru		all Russian words accepted
+	ru		全てのロシア語単語を許容する
 	ru_ru		"IE" letter spelling
 	ru_yo		"YO" letter spelling
 
@@ -274,6 +275,13 @@ In a table:
 	latin1		yi		transliterated Yiddish
 	utf-8		yi-tr		transliterated Yiddish
 
+							*spell-cjk*
+中国語、日本語、あるいはその他の東アジアの文字に対するスペルチェックはサポート
+されていないため、これらの文字は通常、エラーとしてマークされる。'spelllang' が
+"cjk" を含んでいる場合、これらの文字はエラーとしてマークされなくなる。これは、
+いくつかのアジアの単語が含まれるテキストを、スペルチェックを有効にして編集する
+際に有用である。
+
 
 スペルファイル						*spell-load*
 
@@ -282,8 +290,8 @@ Vim は 'runtimepath' のディレクトリの中の "spell" という名前の�
 	LL	言語名
 	EEE	'encoding' の値
 
-The value for "LL" comes from 'spelllang', but excludes the region name.
-Examples:
+"LL" の値は 'spelllang' から来るが、地域名を除く。
+例:
 	'spelllang'	LL ~
 	en_us		en
 	en-rare		en-rare
@@ -300,7 +308,7 @@ downloading the spell file.
 Additionally, the files related to the names in 'spellfile' are loaded.  These
 are the files that |zg| and |zw| add good and wrong words to.
 
-Exceptions:
+例外:
 - Vim uses "latin1" when 'encoding' is "iso-8859-15".  The euro sign doesn't
   matter for spelling.
 - When no spell file for 'encoding' is found "ascii" is tried.  This only
@@ -336,9 +344,9 @@ out the non-ASCII characters).
 
 Spelling for EBCDIC is currently not supported.
 
-A spell file might not be available in the current 'encoding'.  See
-|spell-mkspell| about how to create a spell file.  Converting a spell file
-with "iconv" will NOT work!
+現在の 'encoding' でスペルファイルが利用できないかもしれない。スペルファイルの
+作成の仕方については |spell-mkspell| を参照せよ。"iconv" でスペルファイルを変
+換するのは機能しないだろう!
 
 Note: on VMS ".{enc}.spl" is changed to "_{enc}.spl" to avoid trouble with
 filenames.
@@ -349,7 +357,7 @@ If there is a file with exactly the same name as the ".spl" file but ending in
 before suggestions are made to reduce memory use.
 
 				    *E758* *E759* *E778* *E779* *E780* *E782*
-スペルファイルを読み込む時 Vim はそれが正しくフォーマットされているかチェック
+スペルファイルを読み込む時、Vim はそれが正しくフォーマットされているかチェック
 する。If you get an error the file may be truncated, modified or intended for
 another Vim version.
 
@@ -426,12 +434,12 @@ Also see |:syn-spell| for text that is not in a syntax item.
 
 VIM スクリプト
 
-If you want to write a Vim script that does something with spelling, you may
-find these functions useful:
+スペルに関するVim スクリプトを書きたいと思うと、これらの関数が役に立つことが分
+かるだろう:
 
-    spellbadword()	find badly spelled word at the cursor
-    spellsuggest()	get list of spelling suggestions
-    soundfold()		get the sound-a-like version of a word
+    spellbadword()	カーソル下の間違ったつづりの単語を見つける
+    spellsuggest()	正しいつづりの候補を得る
+    soundfold()		同音(sound-a-like)の単語を得る
 
 
 'spellcapcheck' の自動設定				*set-spc-auto*
@@ -472,8 +480,8 @@ preferred method for scoring the suggestions.
 ==============================================================================
 3. スペルファイルの生成					*spell-mkspell*
 
-Vim uses a binary file format for spelling.  This greatly speeds up loading
-the word list and keeps it small.
+Vimはつづりのためのバイナリフォーマットを使用する。このことにより単語リストの
+読み込みを大幅に速くし、単語リストを小さく保つ。
 						    *.aff* *.dic* *Myspell*
 You can create a Vim spell file from the .aff and .dic files that Myspell
 uses.  Myspell is used by OpenOffice.org and Mozilla. The OpenOffice .oxt 
@@ -498,7 +506,7 @@ then Vim will try to guess.
 
 							*:mksp* *:mkspell*
 :mksp[ell][!] [-ascii] {outname} {inname} ...
-			Generate a Vim spell file from word lists.  Example: >
+			単語リストからVimスペルファイルを生成する。例: >
 		:mkspell /tmp/nl nl_NL.words
 <								*E751*
 			When {outname} ends in ".spl" it is used as the output

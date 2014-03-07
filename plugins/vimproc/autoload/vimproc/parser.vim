@@ -1,7 +1,7 @@
 "=============================================================================
 " FILE: parser.vim
 " AUTHOR:  Shougo Matsushita <Shougo.Matsu@gmail.com>
-" Last Modified: 21 Jul 2013.
+" Last Modified: 17 Jan 2014.
 " License: MIT license  {{{
 "     Permission is hereby granted, free of charge, to any person obtaining
 "     a copy of this software and associated documentation files (the
@@ -524,8 +524,11 @@ function! s:parse_block(script) "{{{
       " Truncate script.
       let script = script[: -len(head)-1]
       let block = matchstr(a:script, '{\zs.*[^\\]\ze}', i)
-      let foot = join(vimproc#parser#split_args(s:parse_cmdline(
-            \ a:script[matchend(a:script, '{.*[^\\]}', i) :])))
+      let rest = a:script[matchend(a:script, '{.*[^\\]}', i) :]
+      let rest = (rest =~ '^\s\+' ? ' ' : '') .
+            \ join(vimproc#parser#split_args(s:parse_cmdline(rest)))
+      let foot = matchstr(rest, '^\S\+')
+      let rest = rest[len(foot):]
       if block == ''
         throw 'Exception: Block is not found.'
       elseif block =~ '^\d\+\.\.\d\+$'
@@ -545,6 +548,8 @@ function! s:parse_block(script) "{{{
           let script .= head . escape(b, ' ') . foot . ' '
         endfor
       endif
+
+      let script .= rest
       return script
     else
       let [script, i] = s:skip_else(script, a:script, i)
@@ -597,7 +602,6 @@ function! s:parse_equal(script) "{{{
         endif
 
         " Consume `a:script` until an end of `prog`.
-        " 
         " e.g.
         "   'echo  =ls hoge'  ->  'echo  =ls hoge'
         "         ^                         ^
@@ -669,7 +673,7 @@ function! s:parse_redirection(script) "{{{
       " Input redirection.
       let fd.stdin = matchstr(a:script, '<\s*\zs\f*', i)
       let i = matchend(a:script, '<\s*\zs\f*', i)
-    elseif a:script[i] =~ '^[12]' && a:script[i :] =~ '^[12]>' 
+    elseif a:script[i] =~ '^[12]' && a:script[i :] =~ '^[12]>'
       " Output redirection.
       let i += 2
       if a:script[i-2] == 1
@@ -683,6 +687,11 @@ function! s:parse_redirection(script) "{{{
       endif
 
       let i = matchend(a:script, '^\s*\zs\(\f\+\|&\d\+\)', i)
+    elseif a:script[i] == '&' && a:script[i :] =~ '^&>'
+      " Output stderr.
+      let i += 2
+      let fd.stderr = matchstr(a:script, '^\s*\zs\f*', i)
+      let i = matchend(a:script, '^\s*\zs\f*', i)
     elseif a:script[i] == '>'
       " Output redirection.
       if a:script[i :] =~ '^>&'

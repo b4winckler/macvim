@@ -3,6 +3,20 @@
 " license that can be found in the LICENSE file.
 "
 " godoc.vim: Vim command to see godoc.
+"
+"
+" Commands:
+"
+"   :Godoc
+"
+"       Open the relevant Godoc for either the word[s] passed to the command or
+"       the, by default, the word under the cursor.
+"
+" Options:
+"
+"   g:go_godoc_commands [default=1]
+"
+"       Flag to indicate whether to enable the commands listed above.
 
 if exists("g:loaded_godoc")
   finish
@@ -11,6 +25,16 @@ let g:loaded_godoc = 1
 
 let s:buf_nr = -1
 let s:last_word = ''
+
+if !exists('g:go_godoc_commands')
+  let g:go_godoc_commands = 1
+endif
+
+if g:go_godoc_commands
+  command! -nargs=* -range -complete=customlist,go#complete#Package Godoc :call s:Godoc(<f-args>)
+endif
+
+nnoremap <silent> <Plug>(godoc-keyword) :<C-u>call <SID>Godoc('')<CR>
 
 function! s:GodocView()
   if !bufexists(s:buf_nr)
@@ -42,6 +66,13 @@ function! s:GodocView()
 endfunction
 
 function! s:GodocWord(word)
+  if !executable('godoc')
+    echohl WarningMsg
+    echo "godoc command not found."
+    echo "  install with: go get code.google.com/p/go.tools/cmd/godoc"
+    echohl None
+    return 0
+  endif
   let word = a:word
   silent! let content = system('godoc ' . word)
   if v:shell_error || !len(content)
@@ -49,12 +80,12 @@ function! s:GodocWord(word)
       silent! let content = system('godoc ' . s:last_word.'/'.word)
       if v:shell_error || !len(content)
         echo 'No documentation found for "' . word . '".'
-        return
+        return 0
       endif
       let word = s:last_word.'/'.word
     else
       echo 'No documentation found for "' . word . '".'
-      return
+      return 0
     endif
   endif
   let s:last_word = word
@@ -65,39 +96,35 @@ function! s:GodocWord(word)
   silent! normal gg
   setlocal nomodifiable
   setfiletype godoc
+  return 1
 endfunction
 
 function! s:Godoc(...)
-  let word = join(a:000, ' ')
-  if !len(word)
+  if !len(a:000)
     let oldiskeyword = &iskeyword
     setlocal iskeyword+=.
     let word = expand('<cword>')
     let &iskeyword = oldiskeyword
+    let word = substitute(word, '[^a-zA-Z0-9\\/._~-]', '', 'g')
+    let words = split(word, '\.\ze[^./]\+$')
+  else
+    let words = a:000
   endif
-  let word = substitute(word, '[^a-zA-Z0-9\\/._~-]', '', 'g')
-  let words = split(word, '\.')
   if !len(words)
     return
   endif
-  " Doc for imported package.
-  if word =~ '/'
-    call s:GodocWord(word)
-    return
-  end
-  call s:GodocWord(words[0])
-  if len(words) > 1
-    if search('^\%(const\|var\|type\|\s\+\) ' . words[1] . '\s\+=\s')
-      return
+  if s:GodocWord(words[0])
+    if len(words) > 1
+      if search('^\%(const\|var\|type\|\s\+\) ' . words[1] . '\s\+=\s')
+        return
+      endif
+      if search('^func ' . words[1] . '(')
+        silent! normal zt
+        return
+      endif
+      echo 'No documentation found for "' . words[1] . '".'
     endif
-    if search('^func ' . words[1] . '(')
-      return
-    endif
-    echo 'No documentation found for "' . word . '".'
   endif
 endfunction
-
-command! -nargs=* -range -complete=customlist,go#complete#Package Godoc :call s:Godoc(<q-args>)
-nnoremap <silent> <Plug>(godoc-keyword) :<C-u>call <SID>Godoc('')<CR>
 
 " vim:ts=4:sw=4:et

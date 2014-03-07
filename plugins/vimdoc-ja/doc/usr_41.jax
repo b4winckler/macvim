@@ -1,4 +1,4 @@
-*usr_41.txt*	For Vim バージョン 7.4.  Last change: 2013 Feb 20
+*usr_41.txt*	For Vim バージョン 7.4.  Last change: 2014 Jan 10
 
 		     VIM USER MANUAL - by Bram Moolenaar
 
@@ -571,13 +571,17 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	matchlist()		matchstr()と同様だが、部分マッチも返す
 	stridx()		文字列の中で部分文字列が見つかった最初の位置
 	strridx()		文字列の中で部分文字列が見つかった最後の位置
-	strlen()		文字列の長さ
+	strlen()		文字列のバイト単位での長さ
+	strchars()		文字列の文字単位での長さ
+	strwidth()		表示された文字列のサイズ
+	strdisplaywidth()	表示された文字列のサイズ、タブに関係する
 	substitute()		パターンにマッチする文字列を置換
 	submatch()		":s" と substitute() の中で部分マッチを得る
 	strpart()		文字列の一部分を得る
 	expand()		特殊キーワードを展開する
 	iconv()			テキストのエンコーディングを変換する
 	byteidx()		文字列中の文字のバイトインデックス
+	byteidxcomp()		byteidx() と同様だが合成文字を数に入れる
 	repeat()		文字列を複数回繰り返す
 	eval()			文字列を式として評価する
 
@@ -634,6 +638,9 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	ceil()			切り上げ
 	floor()			切り下げ
 	trunc()			少数切り捨て
+	fmod()			除法の余り
+	exp()			指数
+	log()			自然対数 (eを底とする対数)
 	log10()			10 を底とする対数
 	pow()			x の y 乗
 	sqrt()			平方根
@@ -653,6 +660,7 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	invert()		ビットごとの否定
 	or()			ビットごとの論理和
 	xor()			ビットごとの排他的論理和
+	sha256()		SHA-256 ハッシュ
 
 変数:							*var-functions*
 	type()			変数の型
@@ -675,11 +683,15 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	wincol()		カーソルのウィンドウでの列番号
 	winline()		カーソルのウィンドウでの行番号
 	cursor()		カーソルを指定した位置に移動させる
+	screencol()		カーソルのスクリーン列を得る
+	screenrow()		カーソルのスクリーン行を得る
 	getpos()		カーソルやマークなどの位置を取得する
 	setpos()		カーソルやマークなどの位置を設定する
 	byte2line()		指定のバイト位置の行番号を得る
 	line2byte()		指定の行のバイト位置を得る
 	diff_filler()		ある行より上の詰め行の数を取得する
+	screenattr()		スクリーン列/行の属性を得る
+	screenchar()		スクリーン列/行の文字コードを得る
 
 カレントバッファで動作するもの:				*text-functions*
 	getline()		バッファから行を得る
@@ -859,14 +871,22 @@ Vimサーバー:					*server-functions*
 	libcall()		外部ライブラリの関数を呼ぶ
 	libcallnr()		同上、数値を返す
 
+	undofile()		アンドゥファイルの名前を得る
+	undotree()		アンドゥツリーの状態を返す
+
 	getreg()		レジスタの値を得る
 	getregtype()		レジスタのタイプを得る
 	setreg()		レジスタの値を設定する
 
+	shiftwidth()		'shiftwidth' の実際の値
+
 	taglist()		マッチするタグのリストを取得
 	tagfiles()		タグファイルのリストを取得
 
+	luaeval()		Luaの式を評価する
 	mzeval()		|MzScheme| の式を評価する
+	py3eval()		Pythonの式を評価する (|+python3|)
+	pyeval()		Pythonの式を評価する (|+python|)
 
 ==============================================================================
 *41.7*	関数を定義する
