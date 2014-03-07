@@ -616,7 +616,7 @@ ifdef XPM
 ifeq (yes, $(GUI))
 OBJ += $(OUTDIR)/xpm_w32.o
 # You'll need libXpm.a from http://gnuwin32.sf.net
-LIB += -L $(XPM)/lib -lXpm
+LIB += -L$(XPM)/lib -lXpm
 endif
 endif
 
