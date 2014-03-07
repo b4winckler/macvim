@@ -39,6 +39,7 @@ STARTTEST
 py << EOF
 d=vim.bindeval('d')
 d['1']='asd'
+d.update()  # Must not do anything, including throwing errors
 d.update(b=[1, 2, f])
 d.update((('-1', {'a': 1}),))
 d.update({'0': -1})
@@ -135,6 +136,18 @@ EOF
 :py l=vim.bindeval('l')
 :py del l[-6:2]
 :$put =string(l)
+:let l = [0, 1, 2, 3]
+:py l=vim.bindeval('l')
+:py del l[::2]
+:$put =string(l)
+:let l = [0, 1, 2, 3]
+:py l=vim.bindeval('l')
+:py del l[3:0:-2]
+:$put =string(l)
+:let l = [0, 1, 2, 3]
+:py l=vim.bindeval('l')
+:py del l[2:4:-2]
+:$put =string(l)
 :"
 :" Slice assignment to a list
 :let l = [0, 1, 2, 3]
@@ -168,6 +181,26 @@ EOF
 :let l = []
 :py l=vim.bindeval('l')
 :py l[0:0]=['h']
+:$put =string(l)
+:let l = range(8)
+:py l=vim.bindeval('l')
+:py l[2:6:2] = [10, 20]
+:$put =string(l)
+:let l = range(8)
+:py l=vim.bindeval('l')
+:py l[6:2:-2] = [10, 20]
+:$put =string(l)
+:let l = range(8)
+:py l=vim.bindeval('l')
+:py l[6:2] = ()
+:$put =string(l)
+:let l = range(8)
+:py l=vim.bindeval('l')
+:py l[6:2:1] = ()
+:$put =string(l)
+:let l = range(8)
+:py l=vim.bindeval('l')
+:py l[2:2:1] = ()
 :$put =string(l)
 :"
 :" Locked variables
@@ -390,6 +423,13 @@ EOF
 :$put =string(pyeval('l'))
 :py l = ll[-10:10]
 :$put =string(pyeval('l'))
+:py l = ll[4:2:-1]
+:$put =string(pyeval('l'))
+:py l = ll[::2]
+:$put =string(pyeval('l'))
+:py l = ll[4:2:1]
+:$put =string(pyeval('l'))
+:py del l
 :"
 :" Vars
 :let g:foo = 'bac'
@@ -467,6 +507,11 @@ EOF
 :py bopts1=vim.buffers[vim.bindeval("g:bufs")[2]].options
 :py bopts2=vim.buffers[vim.bindeval("g:bufs")[1]].options
 :py bopts3=vim.buffers[vim.bindeval("g:bufs")[0]].options
+:$put ='wopts iters equal: '.pyeval('list(wopts1) == list(wopts2)')
+:$put ='bopts iters equal: '.pyeval('list(bopts1) == list(bopts2)')
+:py gset=set(iter(gopts1))
+:py wset=set(iter(wopts1))
+:py bset=set(iter(bopts1))
 :set path=.,..,,
 :let lst=[]
 :let lst+=[['paste',          1,     0,     1,     2,      1,    1,      0    ]]
@@ -497,6 +542,8 @@ EOF
 :       py oval3=bool(oval3)
 :   endif
 :   put ='>>> '.oname
+:   $put ='  g/w/b:'.pyeval('oname in gset').'/'.pyeval('oname in wset').'/'.pyeval('oname in bset')
+:   $put ='  g/w/b (in):'.pyeval('oname in gopts1').'/'.pyeval('oname in wopts1').'/'.pyeval('oname in bopts1')
 :   for v in ['gopts1', 'wopts1', 'bopts1']
 :       try
 :           put ='  p/'.v.': '.Ev('repr('.v.'['''.oname.'''])')
@@ -907,6 +954,7 @@ dl.locked = True
 l = vim.List()
 ll = vim.List('abcE')
 ll.locked = True
+nel = vim.List('abcO')
 f = vim.Function('string')
 fd = vim.Function('F')
 fdel = vim.Function('D')
@@ -994,6 +1042,20 @@ class FailingIterNext(object):
     def next(self):
         raise NotImplementedError('next')
 
+class FailingIterNextN(object):
+    def __init__(self, n):
+        self.n = n
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self.n:
+            self.n -= 1
+            return 1
+        else:
+            raise NotImplementedError('next N')
+
 class FailingMappingKey(object):
     def __getitem__(self, item):
         raise NotImplementedError('getitem:mappingkey')
@@ -1068,6 +1130,13 @@ ee('import failing_import')
 ee('import failing')
 vim.options['rtp'] = old_rtp
 del old_rtp
+cb.append("> Options")
+cb.append(">> OptionsItem")
+ee('vim.options["abcQ"]')
+ee('vim.options[""]')
+stringtochars_test('vim.options[%s]')
+cb.append(">> OptionsContains")
+stringtochars_test('%s in vim.options')
 cb.append("> Dictionary")
 cb.append(">> DictionaryConstructor")
 ee('vim.Dictionary("abcI")')
@@ -1098,6 +1167,7 @@ cb.append(">>> kwargs")
 cb.append(">>> iter")
 ee('d.update(FailingMapping())')
 ee('d.update([FailingIterNext()])')
+ee('d.update([FailingIterNextN(1)])')
 iter_test('d.update(%s)')
 convertfrompyobject_test('d.update(%s)')
 stringtochars_test('d.update(((%s, 0),))')
@@ -1120,6 +1190,14 @@ ee('l[1000] = 3')
 cb.append(">> ListAssSlice")
 ee('ll[1:100] = "abcJ"')
 iter_test('l[:] = %s')
+ee('nel[1:10:2]  = "abcK"')
+cb.append(repr(tuple(nel)))
+ee('nel[1:10:2]  = "a"')
+cb.append(repr(tuple(nel)))
+ee('nel[1:1:-1]  = "a"')
+cb.append(repr(tuple(nel)))
+ee('nel[:] = FailingIterNextN(2)')
+cb.append(repr(tuple(nel)))
 convertfrompyobject_test('l[:] = [%s]')
 cb.append(">> ListConcatInPlace")
 iter_test('l.extend(%s)')
@@ -1201,6 +1279,7 @@ del ned
 del dl
 del l
 del ll
+del nel
 del f
 del fd
 del fdel
@@ -1214,6 +1293,7 @@ del number_test
 del FailingTrue
 del FailingIter
 del FailingIterNext
+del FailingIterNextN
 del FailingMapping
 del FailingMappingKey
 del FailingList
