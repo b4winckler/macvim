@@ -1,4 +1,4 @@
-*gui.txt*       For Vim バージョン 7.4.  Last change: 2011 Jul 22
+*gui.txt*       For Vim バージョン 7.4.  Last change: 2013 Jun 12
 
 
 		  VIMリファレンスマニュアル    by Bram Moolenaar
@@ -92,10 +92,13 @@ GUIウィンドウを開いた直後にいくつかのコマンドを実行し�
 初期化をするために、gvimrcファイルを使用することができる。
 
 ユーザーの個人的なGUI初期化ファイルを置くのに推奨される場所:
-	Unix		    $HOME/.gvimrc
-	OS/2		    $HOME/.gvimrcあるいは$VIM/.gvimrc
-	MS-DOSとWin32	    $HOME/_gvimrcあるいは$VIM/_gvimrc
-	Amiga		    s:.gvimrcあるいは$VIM/.gvimrc
+	Unix		    $HOME/.gvimrc あるいは $HOME/.vim/gvimrc
+	OS/2		    $HOME/.gvimrc、$HOME/vimfiles/gvimrc あるいは
+			    $VIM/.gvimrc
+	MS-DOSとWin32	    $HOME/_gvimrc、$HOME/vimfiles/gvimrc あるいは
+			    $VIM/_gvimrc
+	Amiga		    s:.gvimrc、home:.gvimrc、home:vimfiles:gvimrc
+			    あるいは $VIM/.gvimrc
 
 GUI版のVimでだけ意味を持つオプションがある。'guicursor'、'guifont'、'guipty'、
 'guioptions' である。それらは他の全てのオプションと共に|options.txt|で説明され

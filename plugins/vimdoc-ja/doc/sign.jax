@@ -1,4 +1,4 @@
-*sign.txt*      For Vim バージョン 7.4.  Last change: 2012 Jul 10
+*sign.txt*      For Vim バージョン 7.4.  Last change: 2013 Nov 17
 
 
 		VIMリファレンスマニュアル    by Gordon Prieur
@@ -172,7 +172,7 @@ SignColumnの色を使う|hl-SignColumn|。色を設定するには次のよう�
 		カーソル位置に設置されている目印を解除する。
 
 
-(設置した)目印を一覧表示する
+(設置した)目印を一覧表示する				*:sign-place-list*
 
 :sign place file={fname}
 		ファイル{fname}に設置されている目印を一覧表示する。

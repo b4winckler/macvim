@@ -1,4 +1,4 @@
-*eval.txt*	For Vim バージョン 7.4.  Last change: 2013 May 21
+*eval.txt*	For Vim バージョン 7.4.  Last change: 2013 Nov 08
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -972,7 +972,7 @@ number			数定数				*expr-number*
 
 ダブルクォートが使われていることに注意。
 
-文字列定数には以下の特殊文字が使用できる: 
+文字列定数には以下の特殊文字が使用できる:
 \...	3桁の8進数字 (例 "\316")
 \..	2桁の8進数字 (非数字が続かなければならない)
 \.	1桁の8進数字 (非数字が続かなければならない)
@@ -1661,6 +1661,7 @@ bufnr( {expr})			数値	バッファ{expr}の番号
 bufwinnr( {nr})			数値	バッファ{nr}のウィンドウ番号
 byte2line( {byte})		数値	{byte}番目のバイトの行番号
 byteidx( {expr}, {nr})		数値	{expr}の{nr}文字目のバイトインデックス
+byteidxcomp( {expr}, {nr})	数値	{expr}の{nr}文字目のバイトインデックス
 call( {func}, {arglist} [, {dict}])
 				任意	引数{arglist}をつけて{func}を呼ぶ
 ceil( {expr})			浮動小数点数	{expr} を切り上げる
@@ -1859,6 +1860,8 @@ repeat( {expr}, {count})	文字列	{expr}を{count}回繰り返す
 resolve( {filename})		文字列	ショートカットが指す先のファイル名
 reverse( {list})		文字列	{list}をその場で反転させる
 round( {expr})			浮動小数点数	{expr} を四捨五入する
+screenattr( {row}, {col})	数値	スクリーン位置の属性
+screenchar( {row}, {col})	数値	スクリーン位置の文字
 screencol()			数値	現在のカーソル列
 screenrow()			数値	現在のカーソル行
 search( {pattern} [, {flags} [, {stopline} [, {timeout}]]])
@@ -3078,23 +3081,23 @@ getbufvar({expr}, {varname} [, {def}])				*getbufvar()*
 <
 getchar([expr])						*getchar()*
 		ユーザーまたは入力ストリームから1文字を取得する。
-		[expr]が省略されたときは1文字を取得できるまで待つ。
-		[expr]が0のときは1文字を取得できる場合のみ取得する。取得できな
-		ければ0を返す。
-		[expr]が1のときは1文字を取得できるか判定し、実際には取得しない。
-		取得できないときは0を返す。
+		[expr] が省略されたときは1文字を取得できるまで待つ。
+		[expr] が0のときは1文字を取得できる場合のみ取得する。取得でき
+		なければ0を返す。
+		[expr] が1のときは1文字を取得できるか判定し、実際には取得しな
+		い。取得できないときは0を返す。
 
-		{expr}が省略されたときや{expr}が0のときは、文字全体または特殊
-		キーを返す。それが8ビット文字なら戻り値は数値である。これを文
-		字列に戻すにはnr2char()を使う。8ビット文字でないならばエンコー
-		ドして文字列にして返す。
+		[expr] が省略されたときや [expr] が0のときは、文字全体または特
+		殊キーを返す。それが8ビット文字なら戻り値は数値である。これを
+		文字列に戻すにはnr2char()を使う。8ビット文字でないならばエン
+		コードして文字列にして返す。
 		特殊キーとは0x80(10進数で128)で始まるバイト列である。これは
 		文字列 "\<Key>" と同じ値である(例: "\<Left>")。戻り値は文字列
 		であり、修飾キー(shift, control, alt)は含まれない。
 
-		{expr}が1のときは最初のバイトだけを返す。1バイト文字の場合、こ
-		れはその文字そのものを表す数値である。これを文字列に変換するに
-		はnr2char()を使う。
+		[expr] が1のときは最初のバイトだけを返す。1バイト文字の場合、
+		これはその文字そのものを表す数値である。これを文字列に変換する
+		にはnr2char()を使う。
 
 		修飾キーを取得するには getcharmod() を使う。
 
@@ -3329,7 +3332,7 @@ getregtype([{regname}])					*getregtype()*
 		    "v"			文字単位|characterwise|の場合
 		    "V"			行単位|linewise|の場合
 		    "<CTRL-V>{width}"	矩形|blockwise-visual|の場合
-		    0			空、または未知のレジスタの場合
+		    ""			空、または未知のレジスタの場合
 		<CTRL-V>は値0x16の1文字である。
 		{regname}を指定しないときは|v:register|が使われる。
 
@@ -5250,12 +5253,13 @@ sort({list} [, {func} [, {dict}]])			*sort()* *E702*
 <
 							*soundfold()*
 soundfold({word})
-		{word}と同値でsound-foldされた単語を返す。カレントウィンドウの
-		'spelllang' で設定された言語のうち、soundfoldingに対応する最初
-		の言語が使用される。'spell' がオンでなければならない。
-		soundfoldingができない場合、{word}がそのまま返される。
-		この関数はスペリング候補を作るために使われる。Note この方法は
-		とても遅くなる可能性がある。
+		{word} の soundfold 値を返す。カレントウィンドウの 'spelllang'
+		で設定された言語のうち、soundfold に対応している最初の言語が使
+		用される。'spell' がオンでなければならない。soundfold ができな
+		い場合は {word} がそのまま返される。
+		この関数はスペル修正候補の作成に使える。Note この方法はとても
+		遅くなる可能性がある。
+		{訳注: phonetic algorithm の一種}
 
 							*spellbadword()*
 spellbadword([{sentence}])
@@ -5368,12 +5372,13 @@ str2nr( {expr} [, {base}])				*str2nr()*
 		数値の後のテキストは暗黙に無視される。
 
 strchars({expr})					*strchars()*
-		文字列 {expr} 内の文字の数を返す。合成文字は別々にカウントされ
-		る。
+		結果は数値で、文字列 {expr} 内の文字の数を返す。合成文字は別々
+		にカウントされる。
 		|strlen()|, |strdisplaywidth()|, |strwidth()| も参照。
 
 strdisplaywidth({expr}[, {col}])			*strdisplaywidth()*
-		文字列 {expr} のスクリーン上での表示セル幅を返す。
+		結果は数値で、文字列 {expr} のスクリーン上での表示セル幅を返
+		す。
 		{col} が省略されたときはゼロが使われる。{col} には計算を開始す
 		るスクリーン上の列の位置を指定する。これはタブ文字の幅の計算に
 		影響する。
@@ -5438,7 +5443,7 @@ string({expr})	{expr}を文字列に変換して返す。{expr}が数値、浮�
 		|strtrans()|も参照。
 
 							*strlen()*
-strlen({expr})	結果は数値で、文字列{expr}の長さ。
+strlen({expr})	結果は数値で、文字列{expr}のバイト単位での長さ。
 		マルチバイト文字の個数を数えるには次のようなことをする(合成文
 		字は数えない): >
 
@@ -5491,9 +5496,9 @@ strtrans({expr})
 		表示する。
 
 strwidth({expr})					*strwidth()*
-		文字列 {expr} のスクリーン上での表示セル幅を返す。タブ文字の幅
-		は 1 として数えられる (タブ文字の幅も考慮したい場合は
-		|strdisplaywidth()| を使うこと)。
+		結果は数値で、文字列 {expr} のスクリーン上での表示セル幅を返
+		す。タブ文字の幅は 1 として数えられる (タブ文字の幅も考慮した
+		い場合は|strdisplaywidth()| を使うこと)。
 		{expr} に幅が曖昧 (Ambiguous) な東アジアの文字が含まれていると
 		きは、文字幅は 'ambiwidth' の設定に依存する。
 		|strlen()|, |strdisplaywidth()|, |strchars()| も参照。
@@ -6086,6 +6091,7 @@ xor({expr}, {expr})					*xor()*
 	:if v:version > 602 || v:version == 602 && has("patch148")
 <   Note 148が適用されていても、147が抜けていることもありうるので注意。
 
+acl			|ACL| をサポート
 all_builtin_terms	全ての組込みターミナルを有効にしてコンパイル
 amiga			AMIGAバージョン
 arabic			アラビア語をサポート |Arabic|
@@ -6239,7 +6245,9 @@ windows			複数ウィンドウをサポート
 writebackup		オプション 'writebackup' が起動時にonになる
 xfontset		X fontsetをサポート |xfontset|
 xim			XIMをサポート |xim|
-xpm_w32			Win32 で pixmap をサポート
+xpm			pixmap をサポート
+xpm_w32			Win32 で pixmap をサポート(後方互換性のためのみ。
+			代わりに "xpm" を使用せよ。)
 xsmp			Xセッションマネージメントをサポート
 xsmp_interact		対話的Xセッションマネージメントをサポート
 xterm_clipboard		xtermのクリップボードサポート
@@ -6333,7 +6341,7 @@ x11			X11をサポート
 
 			引数{arguments}については|function-argument|を参照。
 
-						*a:firstline* *a:lastline*
+					*:func-range* *a:firstline* *a:lastline*
 			引数[range]を追加した場合、関数は「範囲」を管理するこ
 			とができる。「範囲」は "a:firstline" と "a:lastline"
 			によって渡される。[range]がなかった場合、
@@ -6342,10 +6350,10 @@ x11			X11をサポート
 			を呼び出すことになる。|function-range-example|を参照。
 			他の Ex コマンドと同様に、カーソルは選択範囲の最初の行
 			に移動される。
-
+								*:func-abort*
 			引数[abort]を追加すると、関数の実行中にエラーに遭遇し
 			次第、即関数は中断される。
-
+								*:func-dict*
 			引数[dict]を追加すると、この関数は辞書|Dictionary|の要
 			素を通してしか呼べなくなる。そしてその辞書にローカル変
 			数 "self" が定義される。|Dictionary-function|を参照。

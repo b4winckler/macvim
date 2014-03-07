@@ -1,4 +1,4 @@
-*syntax.txt*	For Vim バージョン 7.4.  Last change: 2013 May 31
+*syntax.txt*	For Vim バージョン 7.4.  Last change: 2013 Aug 22
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -2759,10 +2759,25 @@ tcsh_minlines に "fromstart" をセットすると、ファイルの先頭か�
 再描画が遅くなることである。
 
 
-TEX						*tex.vim* *ft-tex-syntax*
+TEX				*tex.vim* *ft-tex-syntax* *latex-syntax*
 
-								*tex-folding*
- Tex: 構文折り畳み? ~
+			Tex 目次~
+	Tex: 構文折り畳みをするには			      |tex-folding|
+	Tex: スペルチェックを行いたくない場合		      |g:tex_nospell|
+	Tex: コメントの中ではスペルチェックを行いたくない場合 |tex-nospell|
+	Tex: Verbatim ゾーンをスペルチェックするには	      |tex-verb|
+	Tex: コメントや MathZone の区切り		      |tex-runon|
+	Tex: 構文ハイライトが遅いならば			      |tex-slow|
+	Tex: もっとコマンドをハイライトさせるには	      |tex-morecommands|
+	Tex: エラーのハイライトが行き過ぎならば		      |tex-error|
+	Tex: 新しいMathグループが必要ならば		      |tex-math|
+	Tex: 新しいスタイルを始めるには			      |tex-style|
+	Tex: Conceal モードを活用する			      |tex-conceal|
+	Tex: Conceal モードの選択			      |g:tex_conceal|
+	Tex: iskeyword を制御する			      |g:tex_isk|
+
+				*tex-folding* *g:tex_fold_enabled*
+ Tex: 構文折り畳みをするには ~
 
 <syntax/tex.vim>のバージョン28以降では、構文による部分、章、節、小節などの折り
 畳みに対応している。それを有効にするには次の行を<.vimrc>に書き、 >
@@ -2771,25 +2786,28 @@ TEX						*tex.vim* *ft-tex-syntax*
 といいかもしれない: >
 	% vim: fdm=syntax
 これによってシステムが遅くなり過ぎる場合は次のリンクを参照すること >
- 	http://vim.wikia.com/wiki/Keep_folds_closed_while_inserting_text
+	https://vimhelp.appspot.com/vim_faq.txt.html#faq-29.7
 <
-								*tex-nospell*
- Tex: コメントの中ではスペルチェックを行わせたくない場合 ~
+						*g:tex_nospell*
+ Tex: スペルチェックを行いたくない場合~
+
+LaTeX 文章でどこにもスペルチェックを行わせたくない場合は、 >
+	let g:tex_nospell=1
+を .vimrc に書けばよい。ただ単にコメント内だけでスペルチェックを抑制したい場合
+は、|g:tex_comment_nospell| を参照せよ。
+
+				*tex-nospell* *g:tex_comment_nospell*
+ Tex: コメントの中ではスペルチェックを行いたくない場合 ~
 
 LaTeX ファイルのコメントの中にソースコードのようなものを含めることがあるので、
 コメントの中ではスペルチェックを無効にしたいという人もいる。そのようにするには
 次の行を .vimrc に加える: >
       let g:tex_comment_nospell= 1
-次のコメント行は >
-	% nospell{
-	...
-	% nospell}
-囲まれた範囲のスペルチェックを抑制する。これらのコメント行のスペルチェック制御
-は壊れやすいことがわかっている。例えば、セクションコマンド (\part, \chapter,
-\section, \paragraph, etc) や環境 (math など) が nospell ブロック内にあっては
-いけない。
-								*tex-verb*
- Tex: Verbatim ゾーンをスペルチェックするには?~
+LaTeX 文章中のどこででもスペルチェックを抑制したい場合は、|g:tex_nospell| を参
+照せよ。
+
+				*tex-verb* *g:tex_verbspell*
+ Tex: Verbatim ゾーンをスペルチェックするには~
 
 たいてい verbatim リージョンはソースコードのようなものを書くのに使われる。
 ソースコードをスペルチェックしたいと思うことはほとんどないだろう。とはいえ、も
@@ -2797,7 +2815,7 @@ LaTeX ファイルのコメントの中にソースコードのようなもの�
 すること: >
 	let g:tex_verbspell= 1
 <
-								*tex-runon*
+					*tex-runon* *tex-stopzone*
  Tex: コメントや MathZone の区切り ~
 
 <syntax/tex.vim>の構文ハイライトはTeX, LaTeX, AmsTeXをサポートしている。normal,
@@ -2809,7 +2827,7 @@ texZone, texMathZoneの3つの主な区間・範囲がサポートされてい�
 このコメントがあると、ここで強制的にtexZoneまたはtexMathZoneのハイライトを終わ
 らせる。
 
-								*tex-slow*
+					*tex-slow* *tex-sync*
  Tex: 構文ハイライトが遅いならば ~
 
 遅いコンピュータを使っているなら、これらの値を減らすとよいかもしれない >
@@ -2822,7 +2840,7 @@ texZone, texMathZoneの3つの主な区間・範囲がサポートされてい�
 構文による折り畳みによって遅くなる場合もある。回避方法については
 |tex-folding| を参照のこと。
 
-								*g:tex_fast*
+					*g:tex_fast*
 
 最後に、もし構文強調表示がまだ遅い場合は、.vimrc で次のように設定するとよい >
 
@@ -2849,7 +2867,7 @@ g:tex_fast 変数を設定すると、構文強調表示でリージョンや同
 例えば、let g:tex_fast= "M" は 数学関連の強調表示を有効化する。他のリージョン
 ベースの構文強調表示は有効化されない。
 
-					    *tex-morecommands* *tex-package*
+					*tex-morecommands* *tex-package*
  Tex: もっとコマンドをハイライトさせるには ~
 
 LaTeXはプログラミング言語であり、特殊化されたLaTeXのコマンド、構文、フォントが
@@ -2860,13 +2878,13 @@ syntax/tex.vimにそのパッケージを対応させてほしいと思うだろ
 (典型的には $HOME/after/syntax/tex/[pkgname].vim に置いて使う) を書いたら、そ
 れを http://vim.sf.net/ にアップロードすることを検討してみてください。
 
-								*tex-error*
+					*tex-error* *g:tex_no_error*
  Tex: エラーのハイライトが行き過ぎならば ~
 
 <tex.vim>は様々な種類のレキシカルエラーチェックをサポートしている。すなわち、
 エラーチェックはとても便利だが、実際にはエラーでない箇所もエラーと示すかもしれ
 ない。それが嫌なら、次の行を<.vimrc>に置くとよい: >
-	let tex_no_error=1
+	let g:tex_no_error=1
 すると<syntax/tex.vim>によるすべてのエラーチェックが行われなくなる。
 
 								*tex-math*
@@ -2888,7 +2906,7 @@ syntax/tex.vimにそのパッケージを対応させてほしいと思うだろ
 LOCALMATHをあなたが決めた新しいmathグループに書き換える必要がある。そしてこれ
 を.vim/after/syntax/tex.vimに加えること。
 
-								*tex-style*
+					*tex-style* *b:tex_stylish*
  Tex: 新しいスタイルを始めるには ~
 
 *.texファイルで "\makeatletter" を使う人がいるかもしれないので、コマンド中で
@@ -2916,11 +2934,12 @@ ltx を持たないので @ をエラーと判断してハイライトする。�
 |'conceallevel'| を 0 に設定してもう一方は 2 に設定し、両方で |'scrollbind'|
 を設定するような使い方がある。
 
-							*g:tex_conceal*
+					*g:tex_conceal*
  Tex: Conceal モードの選択 ~
 
 g:tex_conceal を <.vimrc> で設定することで Conceal モードの表示を変更できる。
-初期設定は "admgs" で、これは次の文字セットが Conceal 表示される: >
+初期設定では、g:tex_conceal には "admgs" が設定されており、これによって次の文
+字セットが Conceal 表示される: >
 
 	a = アクセント/合字 (accents/ligatures)
 	b = 太字と斜体 (bold and italic)
@@ -2932,8 +2951,8 @@ g:tex_conceal を <.vimrc> で設定することで Conceal モードの表示�
 これらの文字を設定から外すことで、それに関連した文字が Conceal 表示されなくな
 る。
 
-						*g:tex_isk*
- Tex: 何がキーワードかを制御する~
+						*g:tex_isk* *g:tex_stylish*
+ Tex: iskeyword を制御する ~
 
 (La)Tex キーワードは普通は 0-9,a-z,A-Z,192-255 の文字だけを使い、"_" だけが問
 題となる。したがって、初期設定では、syntax/tex.vim は通常の |'iskeyword'| の設
@@ -2951,8 +2970,7 @@ tfの構文ハイライトには1つのオプションがある。
 には、"tf_minlines" に望みの値をセットする。例: >
 
 	:let tf_minlines = your choice
-
-
+<
 VIM						*vim.vim* *ft-vim-syntax*
 			*g:vimsyn_minlines*	*g:vimsyn_maxlines*
 正確な構文ハイライトと画面更新速度はトレードオフの問題である。正確さを向上させ
@@ -3803,7 +3821,7 @@ skipパターンも "\n" を含んでよい。ただし次の行の最初の文�
 
 リージョンのパターンでは特別に以下の正規表現が使える:
 
-						*/\z(* */\z(\)* *E50* *E52*
+					*/\z(* */\z(\)* *E50* *E52* *E879*
     \z(\)	一部を「external」としてマークする。これをつけると他のパターン
 		からアクセスできるようになる。現在はリージョンのstartパターン
 		内でのみ使用可能。
@@ -4140,7 +4158,7 @@ Note: "*/" を含む文字列で行をまたぐものがあると、Cコメン�
 			は "unknown" と表示される。
 
 :colo[rscheme] {name}	カラースキーム{name}を読み込む。これは 'runtimepath'
-			中から "colors/{name}.vim" というファイルを検索する。
+			の中から "colors/{name}.vim" というファイルを検索する。
 			最初に見つかったものが読み込まれる。
 			現在使われているカラースキームの名前を見るには次のよう
 			にする: >
@@ -4733,8 +4751,8 @@ types.vim: *.[ch]
 る。構文ファイルによって設定された値が "w:current_syntax" に代入される。
 
 ウィンドウの独自構文が定義されると、同じバッファの他のウィンドウで実行された構
-文コマンドが影響しなくなる。逆に、そのウィンドウで実行された構文コマンドも他の
-ウィンドウには影響しなくなる。
+文コマンド (:syntax clear を含む) が影響しなくなる。逆に、そのウィンドウで実行
+された構文コマンドも他のウィンドウには影響しなくなる。
 
 独自構文を持ったウィンドウは他のバッファを読み込むかファイルを再読み込みするこ
 とで通常の動作に戻る。

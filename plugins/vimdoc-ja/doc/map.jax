@@ -1,4 +1,4 @@
-*map.txt*       For Vim バージョン 7.4.  Last change: 2013 May 05
+*map.txt*       For Vim バージョン 7.4.  Last change: 2013 Aug 22
 
 
 		  VIMリファレンスマニュアル	  by Bram Moolenaar
@@ -158,8 +158,9 @@
 
 1.2 特別な引数						*:map-arguments*
 
-引数に "<buffer>"、"<silent>"、"<special>"、"<script>"、"<expr>"、"<unique>"、
-を指定できます。マップコマンドの直後 (他の引数の前) に置いてください。
+引数に "<buffer>"、"<nowait>"、"<silent>"、"<special>"、"<script>"、"<expr>"、
+"<unique>" を指定できます。マップコマンドの直後 (他の引数の前) に置いてくださ
+い。
 
 				*:map-local* *:map-<buffer>* *E224* *E225*
 カレントバッファだけで使用できるマップを作成するには、マップコマンドの引数に
@@ -173,6 +174,7 @@
 	:mapclear <buffer>
 バッファローカルのマップはそのバッファが削除されるときにいっしょに消去されま
 す。アンロード(|:bunload|)では消去されません。ローカルオプションと同じです。
+また、|map-precedence| を参照して下さい。
 
 						*:map-<silent>* *:map-silent*
 実行するコマンドがコマンドラインに表示されないようにするには、マップコマンドの
@@ -584,6 +586,7 @@ Note: 変数 "mapleader" はマップを定義するときに使用されます�
 は、その文字を入力する前に CTRL-V を (1回) 押してください。'paste' がオンの場
 合には、挿入モードでマップを使用できません。
 
+							*map-error*
 Note: マップを使用したときに、エラーが起きた場合 (エラーメッセージやビープ音が
 出ます)、マップのまだ実行されていない部分は実行されません。これはVi互換です。
 
@@ -1221,6 +1224,7 @@ script2.vimを実行すると "None" が表示されます。期待した結果�
 	-complete=shellcmd	シェルコマンド
 	-complete=sign		|:sign| サブオプション
 	-complete=syntax	シンタックスファイル名 |'syntax'|
+	-complete=syntime       |:syntime| サブオプション
 	-complete=tag		タグ
 	-complete=tag_listfiles	CTRL-D を押した時にタグ、ファイル名を表示
 	-complete=user		ユーザー名

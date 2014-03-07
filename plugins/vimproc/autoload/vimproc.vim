@@ -2,7 +2,7 @@
 " FILE: vimproc.vim
 " AUTHOR:  Shougo Matsushita <Shougo.Matsu@gmail.com> (Modified)
 "          Yukihiro Nakadaira <yukihiro.nakadaira at gmail.com> (Original)
-" Last Modified: 24 Oct 2013.
+" Last Modified: 31 Dec 2013.
 " License: MIT license  {{{
 "     Permission is hereby granted, free of charge, to any person obtaining
 "     a copy of this software and associated documentation files (the
@@ -25,6 +25,11 @@
 " }}}
 "=============================================================================
 
+
+if exists('g:vimproc#disable')
+  finish
+endif
+
 " Saving 'cpoptions' {{{
 let s:save_cpo = &cpo
 set cpo&vim
@@ -33,12 +38,6 @@ set cpo&vim
 function! s:print_error(string)
   echohl Error | echomsg a:string | echohl None
 endfunction
-
-" MacVim trouble shooter {{{
-if vimproc#util#is_mac() && !&encoding
-  set encoding=utf-8
-endif
-"}}}
 
 " Check 'encoding' "{{{
 if &encoding =~# '^euc-jp'
@@ -93,25 +92,15 @@ call vimproc#util#set_default(
 "}}}
 
 " Constants {{{
-let g:vimproc#SIGINT = 2
-let g:vimproc#SIGQUIT = 3
-let g:vimproc#SIGILL = 4
-let g:vimproc#SIGABRT = 6
-let g:vimproc#SIGFPE = 8
-let g:vimproc#SIGKILL = 9
-let g:vimproc#SIGSEGV = 11
-let g:vimproc#SIGPIPE = 13
-let g:vimproc#SIGALRM = 14
-let g:vimproc#SIGTERM = 15
-let g:vimproc#SIGUSR1 = 10
-let g:vimproc#SIGUSR2 = 12
-let g:vimproc#SIGCHLD = 17
-let g:vimproc#SIGCONT = 18
-let g:vimproc#SIGSTOP = 19
-let g:vimproc#SIGTSTP = 20
-let g:vimproc#SIGTTIN = 21
-let g:vimproc#SIGTTOU = 22
-let g:vimproc#SIGWINCH = 28
+function! s:define_signals()
+  let s:signames = []
+  let xs = s:libcall('vp_get_signals', [])
+  for x in xs
+    let [name, val] = split(x, ':')
+    let g:vimproc#{name} = str2nr(val)
+    call add(s:signames, name)
+  endfor
+endfunction
 " }}}
 
 let g:vimproc#dll_path =
@@ -527,8 +516,8 @@ function! s:plineopen(npipe, commands, is_pty) "{{{
     let command_name = fnamemodify(args[0], ':t:r')
     let pty_npipe = cnt == 0
           \ && hstdin == 0 && hstdout == 0 && hstderr == 0
-          \ && exists('g:vimproc_popen2_commands')
-          \ && get(g:vimproc_popen2_commands, command_name, 0) != 0 ?
+          \ && exists('g:vimproc#popen2_commands')
+          \ && get(g:vimproc#popen2_commands, command_name, 0) != 0 ?
           \ 2 : npipe
 
     if is_pty && (cnt == 0 || cnt == len(a:commands)-1)
@@ -694,47 +683,12 @@ function! vimproc#kill(pid, sig) "{{{
 endfunction"}}}
 
 function! vimproc#decode_signal(signal) "{{{
-  if a:signal == g:vimproc#SIGINT
-    return 'SIGINT'
-  elseif a:signal == g:vimproc#SIGQUIT
-    return 'SIGQUIT'
-  elseif a:signal == g:vimproc#SIGILL
-    return 'SIGILL'
-  elseif a:signal == g:vimproc#SIGABRT
-    return 'SIGABRT'
-  elseif a:signal == g:vimproc#SIGFPE
-    return 'SIGFPE'
-  elseif a:signal == g:vimproc#SIGKILL
-    return 'SIGKILL'
-  elseif a:signal == g:vimproc#SIGSEGV
-    return 'SIGSEGV'
-  elseif a:signal == g:vimproc#SIGPIPE
-    return 'SIGPIPE'
-  elseif a:signal == g:vimproc#SIGALRM
-    return 'SIGALRM'
-  elseif a:signal == g:vimproc#SIGTERM
-    return 'SIGTERM'
-  elseif a:signal == g:vimproc#SIGUSR1
-    return 'SIGUSR1'
-  elseif a:signal == g:vimproc#SIGUSR2
-    return 'SIGUSR2'
-  elseif a:signal == g:vimproc#SIGCHLD
-    return 'SIGCHLD'
-  elseif a:signal == g:vimproc#SIGCONT
-    return 'SIGCONT'
-  elseif a:signal == g:vimproc#SIGSTOP
-    return 'SIGSTOP'
-  elseif a:signal == g:vimproc#SIGTSTP
-    return 'SIGTSTP'
-  elseif a:signal == g:vimproc#SIGTTIN
-    return 'SIGTTIN'
-  elseif a:signal == g:vimproc#SIGTTOU
-    return 'SIGTTOU'
-  elseif a:signal == g:vimproc#SIGWINCH
-    return 'SIGTTOU'
-  else
-    return 'UNKNOWN'
-  endif
+  for signame in s:signames
+    if a:signal == g:vimproc#{signame}
+      return signame
+    endif
+  endfor
+  return 'UNKNOWN'
 endfunction"}}}
 
 function! vimproc#write(filename, string, ...) "{{{
@@ -803,7 +757,10 @@ function! vimproc#readdir(dirname) "{{{
     let dirname = getcwd()
   endif
   let dirname = substitute(dirname, '.\zs/$', '', '')
-  let dirname = substitute(dirname, '//', '/', 'g')
+
+  if !vimproc#util#is_windows()
+    let dirname = substitute(dirname, '//', '/', 'g')
+  endif
 
   if !isdirectory(dirname)
     return []
@@ -1012,6 +969,11 @@ function! s:garbage_collect(is_force) "{{{
       " Ignore error.
     endtry
   endfor
+endfunction"}}}
+
+" For debug API.
+function! vimproc#_get_bg_processes() "{{{
+  return s:bg_processes
 endfunction"}}}
 
 "-----------------------------------------------------------
@@ -1266,7 +1228,7 @@ function! s:vp_pipe_open(npipe, hstdin, hstdout, hstderr, argv) "{{{
 
   if a:npipe != len(fdlist)
     call s:print_error(printf('a:npipe = %d, a:argv = %s', a:npipe, string(a:argv)))
-    call s:print_error(printf('fdlist = %s', string(fdlist)))
+    call s:print_error(printf('pid = %d, fdlist = %s', pid, string(fdlist)))
     echoerr 'Bug behavior is detected!: ' . pid
   endif
 
@@ -1371,6 +1333,8 @@ function! s:read_pgroup(...) dict "{{{
 
       let self.pid = proc.pid
       let self.pid_list = proc.pid_list
+      let self.proc.pid = proc.pid
+      let self.proc.pid_list = proc.pid_list
       let self.proc.condition = self.proc.statements[0].condition
       let self.proc.statements = self.proc.statements[1:]
 
@@ -1461,7 +1425,7 @@ function! s:vp_set_winsize(width, height) dict
 
   " Send SIGWINCH = 28 signal.
   for pid in self.pid_list
-    call vimproc#kill(pid, 28)
+    call vimproc#kill(pid, g:vimproc#SIGWINCH)
   endfor
 endfunction
 
@@ -1498,7 +1462,7 @@ endfunction
 function! s:waitpid(pid)
   try
     let [cond, status] = s:libcall('vp_waitpid', [a:pid])
-    " echomsg string([cond, status])
+    " echomsg string([a:pid, cond, status])
     if cond ==# 'run'
       " Add process list.
       let s:bg_processes[a:pid] = a:pid
@@ -1599,6 +1563,7 @@ if !exists('s:dll_handle')
   let s:dll_handle = s:vp_dlopen(g:vimproc#dll_path)
   let s:last_status = 0
   let s:last_errmsg = ''
+  call s:define_signals()
 endif
 
 " vimproc dll version check. "{{{

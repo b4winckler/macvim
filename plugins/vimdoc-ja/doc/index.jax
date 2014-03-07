@@ -1,4 +1,4 @@
-*index.txt*     For Vim バージョン 7.4.  Last change: 2013 May 17
+*index.txt*     For Vim バージョン 7.4.  Last change: 2013 Nov 14
 
 
 		  VIMリファレンスマニュアル	  by Bram Moolenaar
@@ -820,6 +820,10 @@ Note: 1 = カーソル移動コマンド  2 = アンドゥ/リドゥ可能
 |zF|		zF		   N 行の折畳を作成する
 |zG|		zG		   wordを正しくスペリングされた単語としてマー
 				   クする。
+|zH|		zH                 'wrap' がオフの時、スクリーンの幅の半分右へ
+				   スクロールする
+|zL|		zL                 'wrap' がオフの時、スクリーンの幅の半分左へ
+				   スクロールする
 |zM|		zM		   'foldlevel' を0に設定する
 |zN|		zN		   'foldenable' をオンにする
 |zO|		zO		   折畳を再帰的に開く
@@ -1303,6 +1307,7 @@ You found it, Arthur!				*holy-grail*
 |:keepmarks|	:kee[pmarks]	マークを変更せずにコマンドを実行する
 |:keepjumps|	:keepj[umps]	マークやジャンプリストを変更せずにコマンドを実
 				行する
+|:keeppatterns|	:keepp[atterns] 検索パターン履歴を変更せずにコマンドを実行する
 |:lNext|	:lN[ext]	ロケーションリストの前の項目の位置へ移動
 |:lNfile|	:lNf[ile]	前のファイルの最後の項目の位置へ移動
 |:list|		:l[ist]		行を表示
@@ -1567,6 +1572,7 @@ You found it, Arthur!				*holy-grail*
 				で開く
 |:swapname|	:sw[apname]	現在のスワップファイルの名前を表示
 |:syntax|	:sy[ntax]	構文強調表示 (syntax highlighting)
+|:syntime|	:synti[me]	構文強調表示の速度を測定する
 |:syncbind|	:sync[bind]	ウィンドウのスクロール状態を同期する
 |:t|		:t		":copy" と同じ。
 |:tNext|	:tN[ext]	後方へ検索し一致したタグ位置へジャンプ

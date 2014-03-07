@@ -3,7 +3,7 @@
                                                          Version: 1.7.5
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 10-Aug-2013.
+                                                     Last Change: 02-Feb-2014.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -71,7 +71,7 @@ Vimの拡張機能について
   Perl(ActivePerl)との連携
     注意: PerlをインストールしなくてもVimは使用できます。
 
-    ActiveState社により公開されているActivePerl 5.16をインストールすることで、
+    ActiveState社により公開されているActivePerl 5.18をインストールすることで、
     Perlインターフェースを使用することができます。ActivePerlをインストールして
     いない場合は、Perlインターフェースは自動的に無効となります。Perlインター
     フェースの詳細については":help perl"としてVim付属のマニュアルを参照してく
