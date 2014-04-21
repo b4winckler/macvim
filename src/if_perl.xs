@@ -138,6 +138,8 @@ typedef int HANDLE;
 #endif
 typedef int XSINIT_t;
 typedef int XSUBADDR_t;
+#endif
+#ifndef USE_ITHREADS
 typedef int perl_key;
 #endif
 
@@ -269,7 +271,9 @@ typedef int perl_key;
 # define Perl_Iscopestack_ix_ptr dll_Perl_Iscopestack_ix_ptr
 # define Perl_Iunitcheckav_ptr dll_Perl_Iunitcheckav_ptr
 # if (PERL_REVISION == 5) && (PERL_VERSION >= 14)
-#  define PL_thr_key *dll_PL_thr_key
+#  ifdef USE_ITHREADS
+#   define PL_thr_key *dll_PL_thr_key
+#  endif
 # endif
 
 /*
@@ -391,7 +395,9 @@ static AV** (*Perl_Iunitcheckav_ptr)(register PerlInterpreter*);
 #endif
 
 #if (PERL_REVISION == 5) && (PERL_VERSION >= 14)
+# ifdef USE_ITHREADS
 static perl_key* dll_PL_thr_key;
+# endif
 #else
 static GV** (*Perl_Idefgv_ptr)(register PerlInterpreter*);
 static GV** (*Perl_Ierrgv_ptr)(register PerlInterpreter*);
@@ -419,7 +425,9 @@ static struct {
 #ifdef PERL5101_OR_LATER
     {"Perl_croak_xs_usage", (PERL_PROC*)&Perl_croak_xs_usage, TRUE},
 #endif
+#ifdef PERL_IMPLICIT_CONTEXT
     {"Perl_croak_nocontext", (PERL_PROC*)&Perl_croak_nocontext, FALSE},
+#endif
     {"Perl_dowantarray", (PERL_PROC*)&Perl_dowantarray, FALSE},
     {"Perl_free_tmps", (PERL_PROC*)&Perl_free_tmps, FALSE},
     {"Perl_gv_stashpv", (PERL_PROC*)&Perl_gv_stashpv, FALSE},
@@ -511,7 +519,9 @@ static struct {
 # endif
 #endif
 #if (PERL_REVISION == 5) && (PERL_VERSION >= 14)
+#  ifdef USE_ITHREADS
     {"PL_thr_key", (PERL_PROC*)&dll_PL_thr_key},
+#  endif
 #else
     {"Perl_Idefgv_ptr", (PERL_PROC*)&Perl_Idefgv_ptr, FALSE},
     {"Perl_Ierrgv_ptr", (PERL_PROC*)&Perl_Ierrgv_ptr, FALSE},

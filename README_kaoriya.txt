@@ -1,9 +1,9 @@
                    Vim version 7.4 香り屋版 導入マニュアル
 
-                                                         Version: 1.7.5
+                                                         Version: 1.7.6
                                                           Author: MURAOKA Taro
                                                            Since: 23-Aug-1999
-                                                     Last Change: 02-Feb-2014.
+                                                     Last Change: 30-Mar-2014.
 
 概要
   Vimはviクローンに分類されるテキストエディタです。
@@ -101,7 +101,7 @@ Vimの拡張機能について
   Python3との連携
     注意: Python3をインストールしなくてもVimは使用できます。
 
-    Python.orgにより公開されているPython 3.3をインストールすることで、Pythonイ
+    Python.orgにより公開されているPython 3.4をインストールすることで、Pythonイ
     ンターフェースを使用することができます。Pythonをインストールしていない場合
     は、Pythonインターフェースは自動的に無効となります。Pythonインターフェース
     の詳細については":help python3"としてVim付属のマニュアルを参照してくださ
@@ -116,10 +116,10 @@ Vimの拡張機能について
   Rubyとの連携
     注意: RubyをインストールしなくてもVimは使用できます。
 
-    Ruby 2.0.0-p0をインストールするとRubyインターフェースを利用できます。Ruby
-    をインストールしていない場合はRubyインターフェースは自動的に無効となりま
-    す。Rubyインターフェースの詳細については":help ruby"としてVim付属のマニュ
-    アルを参照してください。
+    Ruby 2.0.0をインストールするとRubyインターフェースを利用できます。Rubyをイ
+    ンストールしていない場合はRubyインターフェースは自動的に無効となります。
+    Rubyインターフェースの詳細については":help ruby"としてVim付属のマニュアル
+    を参照してください。
 
     64bit版のVimを使う場合は64bit版のRubyを、32bit版を使う場合は32bit版の
     Rubyをインストールしてください。

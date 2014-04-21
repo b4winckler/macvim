@@ -1,4 +1,4 @@
-*gui_x11.txt*   For Vim バージョン 7.4.  Last change: 2011 Sep 14
+*gui_x11.txt*   For Vim バージョン 7.4.  Last change: 2014 Mar 08
 
 
 		  VIMリファレンスマニュアル    by Bram Moolenaar
@@ -442,7 +442,7 @@ GUI ウィンドウの位置とサイズは保存されない、それはウィ�
 
 KDE バージョンの Vim は存在しない。Qt ツールキットを使って移植する作業が行われ
 ていたが、ちゃんと動かなかったので、今は放棄されている。作業は Yzis で継続され
-ている: www.yzis.org
+ている: https://github.com/chrizel/Yzis
 
 ==============================================================================
 8. コンパイル						*gui-x11-compiling*

@@ -163,21 +163,20 @@ z=			カーソルの下や後の単語に対して正しい綴りの単語を提
 			これには長い時間が掛かることがある。うんざりした場合は
 			CTRL-C を打つこと。
 
-			If the command is used without a count the
-			alternatives are listed and you can enter the number
-			of your choice or press <Enter> if you don't want to
-			replace.  You can also use the mouse to click on your
-			choice (only works if the mouse can be used in Normal
-			mode and when there are no line wraps).  Click on the
-			first line (the header) to cancel.
+			count なしでこのコマンドを使う場合、選択肢がリストアッ
+			プされ、選びたい選択肢の番号を入力することができる。置
+			き換えたくない場合は <Enter> を押す。また、マウスを使っ
+			て選択肢をクリックすることもできる(マウスがノーマルモー
+			ドで使われ、行の折り返しがない時のみ働く)。キャンセル
+			するには最初の行(ヘッダー)をクリックする。
 
-			The suggestions listed normally replace a highlighted
-			bad word.  Sometimes they include other text, in that
-			case the replaced text is also listed after a "<".
+			リストアップされた提案はふつうハイライトされた間違った
+			単語を置き換える。その提案は時々他のテキストを含むこと
+			があるが、その場合は置き換えられるテキストが "<" の後
+			にリストアップされる。
 
-			If a count is used that suggestion is used, without
-			prompting.  For example, "1z=" always takes the first
-			suggestion.
+			count を用いた場合、プロンプトは出ずにその提案が使われ
+			る。例えば、"1z=" は常に最初の提案を利用する。
 
 			If 'verbose' is non-zero a score will be displayed
 			with the suggestions to indicate the likeliness to the
