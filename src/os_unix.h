@@ -302,7 +302,7 @@ typedef struct dsc$descriptor   DESC;
 #  define USR_VIMRC_FILE2	"$HOME/vimfiles/vimrc"
 # else
 #  ifdef VMS
-#   define USR_VIMRC_FILE2	"sys$login:vimfiles:vimrc"
+#   define USR_VIMRC_FILE2	"sys$login:vimfiles/vimrc"
 #  else
 #    define USR_VIMRC_FILE2	"~/.vim/vimrc"
 #  endif
@@ -329,7 +329,7 @@ typedef struct dsc$descriptor   DESC;
 #  define USR_GVIMRC_FILE2	"$HOME/vimfiles/gvimrc"
 # else
 #  ifdef VMS
-#   define USR_GVIMRC_FILE2	"sys$login:vimfiles:gvimrc"
+#   define USR_GVIMRC_FILE2	"sys$login:vimfiles/gvimrc"
 #  else
 #   define USR_GVIMRC_FILE2	"~/.vim/gvimrc"
 #  endif
@@ -565,7 +565,9 @@ int mch_rename __ARGS((const char *src, const char *dest));
 # endif
 #endif
 
-#define HAVE_DUP		/* have dup() */
+#ifndef HAVE_DUP
+# define HAVE_DUP		/* have dup() */
+#endif
 #define HAVE_ST_MODE		/* have stat.st_mode */
 
 /* We have three kinds of ACL support. */
