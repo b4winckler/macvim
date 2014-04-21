@@ -1,4 +1,4 @@
-*quickref.txt*  For Vim バージョン 7.4.  Last change: 2013 May 20
+*quickref.txt*  For Vim バージョン 7.4.  Last change: 2013 Jun 29
 
 
 		  VIMリファレンスマニュアル    by Bram Moolenaar
@@ -62,7 +62,7 @@
 |-|	N  -		上に N 行移動し、行頭の非空白文字に移動
 |+|	N  +		下に N 行移動し、行頭の非空白文字に移動(CTRL-M, <CR>
 			キーでも同じ)
-|_|	N  _		下に N-1 行移動し,行頭の非空白文字に移動 
+|_|	N  _		下に N-1 行移動し、行頭の非空白文字に移動
 |G|	N  G		N 行目(デフォルトは最後の行)に移動し、行頭の非空白文
 			字に移動
 |gg|	N  gg		N 行目(デフォルトは１行目)に移動し、行頭の非空白文字
@@ -169,20 +169,20 @@
     b[-num]	上の s[-num] の別名 (begin の b)
     ;{search-command}	次の{search-command}を実行する。
 ------------------------------------------------------------------------------
-*Q_ma*		マーク
+*Q_ma*		マークと移動
 
-|m|	   m{a-zA-Z}	現在の場所を {a-zA-Z} としてマーク
-|`a|	   `{a-z}	編集中のファイルのマーク{a-z} に移動
-|`A|	   `{A-Z}	任意のファイルのマーク{A-Z} に移動
-|`0|	   `{0-9}	vimが前回終了した時の場所に移動
-|``|	   ``		直前のジャンプコマンドの前の場所に移動
+|m|        m{a-zA-Z}	現在の場所を {a-zA-Z} としてマーク
+|`a|       `{a-z}	編集中のファイルのマーク{a-z} に移動
+|`A|       `{A-Z}	任意のファイルのマーク{A-Z} に移動
+|`0|       `{0-9}	vimが前回終了した時の場所に移動
+|``|       ``		直前のジャンプコマンドの前の場所に移動
 |`quote|   `"		前回このファイルを編集した時の場所に移動
-|`[|	   `[		直前に繰作もしくはプットした文字列の先頭に移動
-|`]|	   `]		直前に繰作もしくはプットした文字列の末尾に移動
-|`<|	   `<		(直前の)ビジュアルエリアの先頭に移動
-|`>|	   `>		(直前の)ビジュアルエリアの末尾に移動
-|`.|	   `.		このファイルで最後に変更した場所に移動
-|'|	   '{a-zA-Z0-9[]'"<>.}
+|`[|       `[		直前に繰作もしくはプットした文字列の先頭に移動
+|`]|       `]		直前に繰作もしくはプットした文字列の末尾に移動
+|`<|       `<		(直前の)ビジュアルエリアの先頭に移動
+|`>|       `>		(直前の)ビジュアルエリアの末尾に移動
+|`.|       `.		このファイルで最後に変更した場所に移動
+|'|        '{a-zA-Z0-9[]'"<>.}
 			` と同じだが、その行の先頭の非空白文字まで移動する
 			点が異なる。
 |:marks|  :marks	現在設定されているマークを一覧表示
@@ -190,7 +190,7 @@
 |CTRL-I|  N  CTRL-I	ジャンプリストの N 番目に新しい場所に移動
 |:ju|     :ju[mps]	ジャンプリストを一覧表示
 ------------------------------------------------------------------------------
-*Q_vm*		雑他な移動コマンド
+*Q_vm*		雑多な移動コマンド
 
 |%|	   %		呼応するカッコ類 ("(", "[", "{") や、コメント、"#if"/
 			"#else"/"#endif" のペアを検索して移動
@@ -418,9 +418,9 @@
 |:ce|	  :[range]ce[nter] [width]
 			[range]の行範囲をセンタリング
 |:le|	  :[range]le[ft] [indent]
-			[range]の行範囲を([indent] 分)左寄せ 
+			[range]の行範囲を([indent] 分)左寄せ
 |:ri|	  :[range]ri[ght] [width]
-			[range]の行範囲を([width] 桁まで)右寄せ 
+			[range]の行範囲を([width] 桁まで)右寄せ
 ------------------------------------------------------------------------------
 *Q_co*		複雑な変更処理
 
@@ -463,7 +463,7 @@
 |v_V|      V		行単位ビジュアルモードを開始、もしくは中断
 |v_CTRL-V| CTRL-V	矩形ビジュアルモードを開始、もしくは中断
 ------------------------------------------------------------------------------
-*Q_to*		文字列オブジェクト (ビジュアルモードか、オペレータ指定後
+*Q_to*		文字列オブジェクト (ビジュアルモードか、オペレータ指定後)
 
 |v_aw|	   N  aw	"a word" を選択(単語の前後の空白も削除)
 |v_iw|	   N  iw	"inner word" を選択(正味の単語だけを削除)
@@ -754,11 +754,13 @@
 'icon'			    Vimのアイコン表示でテキストを変更するようにする
 'iconstring'		    Vimのアイコン表示に使用するテキスト
 'ignorecase'	  'ic'      検索パターンで大文字と小文字を区別しない
-'imactivatekey'	  'imak'    X のインプットメソッドを有効にするキー
+'imactivatekey'	  'imak'    X のインプットメソッドをオンにするキー
+'imactivatefunc'  'imaf'    X のインプットメソッドをオン/オフにする関数
 'imcmdline'	  'imc'     コマンドライン入力時にIMを有効にする
-'imdisable'	  'imd'     IMを使わない
+'imdisable'	  'imd'     どのモードでもIMを使わない
 'iminsert'	  'imi'     挿入モードで|:lmap|やIMを使う
 'imsearch'	  'ims'     検索パターン入力時に|:lmap|やIMを使う
+'imstatusfunc'    'imsf'    X のインプットメソッドの状態を得る関数
 'include'	  'inc'     インクルードファイルの検索パターン
 'includeexpr'	  'inex'    インクルード行を処理する式
 'incsearch'	  'is'      検索パターン入力中にその文字を強調表示する
@@ -1025,7 +1027,7 @@
 |<Del>|		   <Del>	回数指定中: 最後の文字を削除
 |:version|	:ve[rsion]	バージョン情報を表示
 |:mode|		:mode N		MS-DOS: 画面モードを N (数字,C80,C4350,など)
-				に 
+				に
 
 |:normal|	:norm[al][!] {commands}
 				ノーマルモードコマンドを実行
@@ -1211,8 +1213,8 @@
 |:wN|	   :wN[ext][!] [file]	現在のファイルを保存し、１つ前のファイルを
 				編集
 
-	     in current window    in new window	~
-|:argument|  :argu[ment] N	  :sar[gument] N	ファイル N を編集 
+	   カレントウィンドウで   新しいウィンドウで ~
+|:argument|  :argu[ment] N	  :sar[gument] N	ファイル N を編集
 |:next|      :n[ext]		  :sn[ext]		次のファイルを編集
 |:next_f|    :n[ext] {arglist}	  :sn[ext] {arglist}	新たな引数リストを作り
 							最初のファイルを編集
@@ -1237,7 +1239,7 @@
 |:q|	  :q[uit]!		変更を破棄して、現在のバッファを終了。他に
 				ヘルプ以外のバッファがなければvimを終了。
 |:qa|	  :qa[ll]		変更がない限りvimを終了
-|:qa|	  :qa[ll]!		変更があってもvimを強制終了 
+|:qa|	  :qa[ll]!		変更があってもvimを強制終了
 |:cq|	  :cq			保存せずに終了し、エラーコードを返す。
 
 |:wq|	  :wq[!]		現ファイルを保存して終了
@@ -1274,7 +1276,7 @@
 |:autocmd|	:au			自動コマンドの一覧表示
 |:autocmd|	:au {event}		{event}用の自動コマンドの一覧表示
 |:autocmd|	:au {event} {pat}	{event}用の自動コマンドのうち、{pat}
-					に合致するコマンドの一覧表示 
+					に合致するコマンドの一覧表示
 					{pat}
 |:autocmd|	:au {event} {pat} {cmd}	{event}と{pat}用の新たな自動コマンドを
 					{cmd}として登録
@@ -1338,14 +1340,14 @@
 |:bdelete|	:bdelete[!] [N]		[N]番バッファを開放してバッファ一覧
 					から削除
 
-	      in current window   in new window	~
-|:buffer|     :[N]buffer [N]	  :[N]sbuffer [N]     N 番バッファ/argへ
-|:bnext|      :[N]bnext [N]	  :[N]sbnext [N]      N番分、次のバッファ/argへ
-|:bNext|      :[N]bNext [N]	  :[N]sbNext [N]      N番分、次のバッファ/argへ
-|:bprevious|  :[N]bprevious [N]   :[N]sbprevious [N]  同上
-|:bfirst|     :bfirst		  :sbfirst	      最初のバッファ/argへ
-|:blast|      :blast		  :sblast	      最後のバッファ/argへ
-|:bmodified|  :[N]bmod [N]	  :[N]sbmod [N]	      N番分、更新したバッファへ
+		カレントウィンドウで 新しいウィンドウで  ~
+|:buffer|	:[N]buffer [N]	     :[N]sbuffer [N]     N 番バッファ/argへ
+|:bnext|	:[N]bnext [N] 	     :[N]sbnext [N]      N番分、次のバッファ/argへ
+|:bNext|	:[N]bNext [N] 	     :[N]sbNext [N]      N番分、次のバッファ/argへ
+|:bprevious|	:[N]bprevious [N]    :[N]sbprevious [N]  同上
+|:bfirst|	:bfirst	      	     :sbfirst            最初のバッファ/argへ
+|:blast|	:blast	      	     :sblast             最後のバッファ/argへ
+|:bmodified|	:[N]bmod [N]  	     :[N]sbmod [N]       N番分、更新したバッファへ
 ------------------------------------------------------------------------------
 *Q_sy*		シンタックスハイライト
 

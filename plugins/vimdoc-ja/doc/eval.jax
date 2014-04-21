@@ -117,7 +117,8 @@ empty()を使用して次のようにする。 >
 	:echo Fn()
 <							*E704* *E705* *E707*
 関数参照の変数名は、大文字、"s:"、"w:"、"t:"、"b:" のいずれかで始めなければな
-らない。関数参照と参照先の関数の名前を同じにすることはできない。
+らない。"g:" も使えるが、次に述べる名前は大文字で始めなければならない。関数参
+照と参照先の関数の名前を同じにすることはできない。
 
 関数を定義して、それへの参照を直接辞書に入れるための特別な形式がある。例: >
 	:function dict.init() dict
@@ -1409,6 +1410,14 @@ v:foldend	'foldtext' 用。閉じた折り畳みの最後の行。
 v:foldstart	'foldtext' 用。閉じた折り畳みの最初の行。
 		サンドボックス|sandbox|の中では読出し専用。|fold-foldtext|
 
+					*v:hlsearch* *hlsearch-variable*
+v:hlsearch	検索による強調表示がオンになっているかどうかを決定する変数。
+		|+extra_search| 機能が必要な 'hlsearch' が有効になっている
+		時のみ意味をなす。この変数を0に設定することは、 |:nohlsearch|
+		コマンドを実行することと同様に働き、1に設定することは以下と
+		同様に働く >
+			let &hlsearch = &hlsearch
+<
 					*v:insertmode* *insertmode-variable*
 v:insertmode	オートコマンドイベント|InsertEnter|と|InsertChange|用。
 		値は次のどれか:
@@ -1462,6 +1471,7 @@ v:mouse_col	|getchar()|でマウスクリックイベントを取得したとき
 v:oldfiles	起動時に |viminfo| から読み込まれたファイルの名前のリスト。
 		これらはマークを記憶しているファイルである。リストの長さの上限
 		はオプション 'viminfo' の引数 ' によって決まる(既定では 100)。
+		|viminfo| ファイルが使われていない時、リストは空となる。
 		|:oldfiles| と |c_#<| を参照。
 		このリストは変更可能であるが、後で |viminfo| ファイルに書き込ま
 		れるものには影響しない。文字列以外の値を使うと問題を引き起こす
@@ -1686,7 +1696,7 @@ cscope_connection( [{num} , {dbpath} [, {prepend}]])
 cursor( {lnum}, {col} [, {coladd}])
 				数値	カーソルを{lnum}, {col}, {coladd}へ移動
 cursor( {list})			数値	カーソルを{list}の位置へ移動
-deepcopy( {expr})		任意	{expr}の完全なコピーを作る
+deepcopy( {expr} [, {noref}])	任意	{expr}の完全なコピーを作る
 delete( {fname})		数値	ファイル{fname}を消す
 did_filetype()			数値	FileTypeのautocommandが実行されたか?
 diff_filler( {lnum})		数値	差分モードで{lnum}に挿入された行
@@ -3979,6 +3989,7 @@ maparg({name}[, {mode} [, {abbr} [, {dict}]]])			*maparg()*
 			     "!"     挿入、コマンドラインモード (|mapmode-ic|)
 		  "sid"	     <sid> マッピングで使用されるスクリプトローカルID
 			     (|<SID>|)。
+		  "nowait"   他の長いマッピングを待たない。(|:map-<nowait>|)。
 
 		まずカレントバッファにローカルなマッピングを探し、次のグローバ
 		ルマッピングを探す。
@@ -5170,6 +5181,7 @@ shellescape({string} [, {special}])			*shellescape()*
 <		これはカーソル下のファイルを dir コマンドで表示する。
 		|system()| を使う場合の例: >
 		    :call system("chmod +w -- " . shellescape(expand("%")))
+<		|::S| も参照のこと。
 
 
 shiftwidth()						*shiftwidth()*
@@ -5377,8 +5389,8 @@ strchars({expr})					*strchars()*
 		|strlen()|, |strdisplaywidth()|, |strwidth()| も参照。
 
 strdisplaywidth({expr}[, {col}])			*strdisplaywidth()*
-		結果は数値で、文字列 {expr} のスクリーン上での表示セル幅を返
-		す。
+		結果は数値で、文字列 {expr} が {col} で始まる時のスクリーン上
+		での表示セル幅を返す。
 		{col} が省略されたときはゼロが使われる。{col} には計算を開始す
 		るスクリーン上の列の位置を指定する。これはタブ文字の幅の計算に
 		影響する。
@@ -6934,8 +6946,8 @@ Vimはこれを見つけると、まず波括弧の中の式を評価し、そ�
 
 			エラーや割り込みが検出された場合、後に|:finally|コマン
 			ドがあるならば、":finally" の後から実行が継続される。
-			そうでければ、または ":endtry" に達した後は次の動的に
-			囲んでいる ":try" に対応する ":finally" などが探され
+			そうでなければ、または ":endtry" に達した後は次の動的
+			に囲んでいる ":try" に対応する ":finally" などが探され
 			る。その後スクリプトは実行を停止する。(関数定義に引数
 			"abort" がついているかどうかは関係ない)
 			例: >

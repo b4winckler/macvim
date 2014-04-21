@@ -89,7 +89,7 @@ VIM は Vi IMproved の略です。VIM の大部分は Bram Moolenaar によっ�
 リファレンスマニュアルでは Vim の詳細を説明します。		*reference_toc*
 
 一般事項 ~
-|intro.txt|	Vimについての前書き。と、ヘルプの表記について
+|intro.txt|	Vimについての前書き、ヘルプの表記について
 |help.txt|	全体説明とクイックリファレンス (今見ているファイル)
 |helphelp.txt|	ヘルプの使い方
 |index.txt|	全コマンド一覧。アルファベット順
@@ -104,7 +104,7 @@ VIM は Vi IMproved の略です。VIM の大部分は Bram Moolenaar によっ�
 |uganda.txt|	Vimの配布条件と、あなたが支払ったお金の使い道について
 
 基本的な編集 ~
-|starting.txt|	Vimの起動。起動引数や初期化に関して
+|starting.txt|	Vimの起動、起動引数や初期化に関して
 |editing.txt|	ファイルの編集と保存
 |motion.txt|	移動コマンド
 |scroll.txt|	ウィンドウのスクロール
@@ -128,10 +128,10 @@ VIM は Vi IMproved の略です。VIM の大部分は Bram Moolenaar によっ�
 |tabpage.txt|	タブページを操作するコマンド
 |syntax.txt|	構文強調
 |spell.txt|	スペルチェック
-|diff.txt|	バージョン違いのファイルの編集。差分モード
+|diff.txt|	バージョン違いのファイルの編集 (差分モード)
 |autocmd.txt|	イベントに応じて自動的にコマンドを実行する
 |filetype.txt|	ファイルタイプ別の設定
-|eval.txt|	式の評価。条件式。 (Vim スクリプトリファレンス)
+|eval.txt|	式の評価、条件式 (Vim スクリプトリファレンス)
 |fold.txt|	ある範囲を隠す (折り畳む)
 
 特定機能 ~

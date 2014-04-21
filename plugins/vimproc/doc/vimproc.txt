@@ -78,9 +78,18 @@ Build Steps:
 
 Note: You must use GNU make to build vimproc.
 
-Linux and Mac OS X
+Linux
 
 	$ make
+
+Mac OS X
+
+	$ make
+
+Note: If you want to build for multiple architectures, you can use ARCHS and CC variables.
+
+Build for i386 and x86-64:
+	$ make ARCHS='i386 x86_64'
 
 Windows
 

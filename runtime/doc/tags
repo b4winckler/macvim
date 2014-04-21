@@ -2681,7 +2681,6 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 :rviminfo	starting.txt	/*:rviminfo*
 :s	change.txt	/*:s*
 :s%	change.txt	/*:s%*
-:s/\=	change.txt	/*:s\/\\=*
 :sN	windows.txt	/*:sN*
 :sNext	windows.txt	/*:sNext*
 :s\=	change.txt	/*:s\\=*
@@ -4315,7 +4314,6 @@ E88	windows.txt	/*E88*
 E880	if_pyth.txt	/*E880*
 E881	autocmd.txt	/*E881*
 E882	eval.txt	/*E882*
-E883	eval.txt	/*E883*
 E89	message.txt	/*E89*
 E90	message.txt	/*E90*
 E91	options.txt	/*E91*
@@ -5373,7 +5371,6 @@ diW	motion.txt	/*diW*
 dialog	gui_w32.txt	/*dialog*
 dialogs-added	version5.txt	/*dialogs-added*
 dib	motion.txt	/*dib*
-dict	eval.txt	/*dict*
 dict-functions	usr_41.txt	/*dict-functions*
 dict-identity	eval.txt	/*dict-identity*
 dict-modification	eval.txt	/*dict-modification*
@@ -5518,7 +5515,6 @@ exclusive	motion.txt	/*exclusive*
 exclusive-linewise	motion.txt	/*exclusive-linewise*
 executable()	eval.txt	/*executable()*
 execute-menus	gui.txt	/*execute-menus*
-exepath()	eval.txt	/*exepath()*
 exim	starting.txt	/*exim*
 exists()	eval.txt	/*exists()*
 exp()	eval.txt	/*exp()*
@@ -6702,7 +6698,6 @@ linewise-register	change.txt	/*linewise-register*
 linewise-visual	visual.txt	/*linewise-visual*
 lisp.vim	syntax.txt	/*lisp.vim*
 lispindent()	eval.txt	/*lispindent()*
-list	eval.txt	/*list*
 list-functions	usr_41.txt	/*list-functions*
 list-identity	eval.txt	/*list-identity*
 list-index	eval.txt	/*list-index*
@@ -7420,7 +7415,6 @@ profile	repeat.txt	/*profile*
 profiling	repeat.txt	/*profiling*
 profiling-variable	eval.txt	/*profiling-variable*
 progname-variable	eval.txt	/*progname-variable*
-progpath-variable	eval.txt	/*progpath-variable*
 progress.vim	syntax.txt	/*progress.vim*
 pronounce	intro.txt	/*pronounce*
 psql	ft_sql.txt	/*psql*
@@ -7624,6 +7618,7 @@ s/\2	change.txt	/*s\/\\2*
 s/\3	change.txt	/*s\/\\3*
 s/\9	change.txt	/*s\/\\9*
 s/\<CR>	change.txt	/*s\/\\<CR>*
+s/\=	change.txt	/*s\/\\=*
 s/\E	change.txt	/*s\/\\E*
 s/\L	change.txt	/*s\/\\L*
 s/\U	change.txt	/*s\/\\U*
@@ -7920,7 +7915,6 @@ strcspn()	eval.txt	/*strcspn()*
 strdisplaywidth()	eval.txt	/*strdisplaywidth()*
 strftime()	eval.txt	/*strftime()*
 stridx()	eval.txt	/*stridx()*
-string	eval.txt	/*string*
 string()	eval.txt	/*string()*
 string-functions	usr_41.txt	/*string-functions*
 string-match	eval.txt	/*string-match*
@@ -7985,7 +7979,6 @@ sysmouse	term.txt	/*sysmouse*
 system()	eval.txt	/*system()*
 system-functions	usr_41.txt	/*system-functions*
 system-vimrc	starting.txt	/*system-vimrc*
-systemlist()	eval.txt	/*systemlist()*
 s~	change.txt	/*s~*
 t	motion.txt	/*t*
 t:	eval.txt	/*t:*
@@ -8429,7 +8422,6 @@ v:operator	eval.txt	/*v:operator*
 v:prevcount	eval.txt	/*v:prevcount*
 v:profiling	eval.txt	/*v:profiling*
 v:progname	eval.txt	/*v:progname*
-v:progpath	eval.txt	/*v:progpath*
 v:register	eval.txt	/*v:register*
 v:scrollstart	eval.txt	/*v:scrollstart*
 v:searchforward	eval.txt	/*v:searchforward*

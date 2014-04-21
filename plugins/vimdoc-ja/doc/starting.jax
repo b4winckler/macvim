@@ -4,7 +4,7 @@
 		VIMリファレンスマニュアル    by Bram Moolenaar
 
 
-Vimる							*starting*
+Vimの起動						*starting*
 
 1. Vimの起動引数		|vim-arguments|
 2. Amiga版のVim			|starting-amiga|
@@ -746,6 +746,9 @@ Evimでは以下のオプションが標準設定から変更される:
 				か $VIM/_vimrc
 		Amiga		s:.vimrc, home:.vimrc, home:vimfiles:vimrc
 				か $VIM/.vimrc
+
+	初期化ファイルは上記の順に検索され、最初に見つかったものだけが読み込ま
+	れる。
 
 	Vimが "-u filename" で起動された場合、デフォルトのvimrcの代わりに
 	"filename" が使われる。続く初期化処理の4.までがスキップされる。
