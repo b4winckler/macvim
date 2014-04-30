@@ -1489,7 +1489,7 @@ Optional Features:
   --enable-python3interp=OPTS   Include Python3 interpreter. default=no OPTS=no/yes/dynamic
   --enable-tclinterp      Include Tcl interpreter.
   --enable-rubyinterp=OPTS     Include Ruby interpreter.  default=no OPTS=no/yes/dynamic
-  --enable-ruby19interp=OPTS     Include Ruby1.9 interpreter.  default=no OPTS=no/dynamic
+  --enable-ruby19interp=OPTS     Include Ruby interpreter.  default=no OPTS=no/dynamic
   --enable-cscope         Include cscope interface.
   --enable-workshop       Include Sun Visual Workshop support.
   --disable-netbeans      Disable NetBeans integration support.
@@ -1538,7 +1538,7 @@ Optional Packages:
   --with-python3-config-dir=PATH  Python's config directory
   --with-tclsh=PATH       which tclsh to use (default: tclsh8.0)
   --with-ruby-command=RUBY  name of the Ruby command (default: ruby)
-  --with-ruby19-command=RUBY19  name of the Ruby command (default: ruby1.9)
+  --with-ruby19-command=RUBY  name of the Ruby command (default: ruby)
   --with-x                use the X Window System
   --with-gnome-includes=DIR Specify location of GNOME headers
   --with-gnome-libs=DIR   Specify location of GNOME libs
@@ -7316,20 +7316,20 @@ fi
 $as_echo "$enable_ruby19interp" >&6; }
 if test "$enable_ruby19interp" = "dynamic"; then
   if test "$enable_rubyinterp" != "dynamic"; then
-    as_fn_error $? "--enable-ruby19interp=dynamic requires --enable-rubyinterp=dynamic" "$LINENO" 5
+	as_fn_error $? "--enable-ruby19interp=dynamic requires --enable-rubyinterp=dynamic" "$LINENO" 5
   fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking --with-ruby19-command argument" >&5
 $as_echo_n "checking --with-ruby19-command argument... " >&6; }
 
+
 # Check whether --with-ruby19-command was given.
 if test "${with_ruby19_command+set}" = set; then :
-  withval=$with_ruby19_command; RUBY19_CMD="$withval"; { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RUBY19_CMD" >&5
+  withval=$with_ruby19_command; RUBY19_CMD="$withval"; vi_cv_path_ruby19="$withval"; { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RUBY19_CMD" >&5
 $as_echo "$RUBY19_CMD" >&6; }
 else
-  RUBY19_CMD="ruby1.9"; { $as_echo "$as_me:${as_lineno-$LINENO}: result: defaulting to $RUBY19_CMD" >&5
+  RUBY19_CMD="ruby"; { $as_echo "$as_me:${as_lineno-$LINENO}: result: defaulting to $RUBY19_CMD" >&5
 $as_echo "defaulting to $RUBY19_CMD" >&6; }
 fi
-
 
   # Extract the first word of "$RUBY19_CMD", so it can be a program name with args.
 set dummy $RUBY19_CMD; ac_word=$2
@@ -7377,49 +7377,56 @@ $as_echo_n "checking Ruby19 version... " >&6; }
     if $vi_cv_path_ruby19 -e '(VERSION rescue RUBY_VERSION) >= "1.9.0" or exit 1' >/dev/null 2>/dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: OK" >&5
 $as_echo "OK" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking Ruby19 header files" >&5
-$as_echo_n "checking Ruby19 header files... " >&6; }
-      ruby19hdrdir=`$vi_cv_path_ruby19 -r mkmf -e 'print Config::CONFIG["rubyhdrdir"] || Config::CONFIG["archdir"] || $hdrdir' 2>/dev/null`
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking Ruby rbconfig" >&5
+$as_echo_n "checking Ruby rbconfig... " >&6; }
+      ruby19_rbconfig="RbConfig"
+      if ! $vi_cv_path_ruby19 -r rbconfig -e 'RbConfig' >/dev/null 2>/dev/null; then
+	ruby19_rbconfig="Config"
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ruby19_rbconfig" >&5
+$as_echo "$ruby19_rbconfig" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking Ruby header files" >&5
+$as_echo_n "checking Ruby header files... " >&6; }
+      ruby19hdrdir=`$vi_cv_path_ruby19 -r mkmf -e "print $ruby19_rbconfig::CONFIG['rubyhdrdir'] || $ruby19_rbconfig::CONFIG['archdir'] || \\$hdrdir" 2>/dev/null`
       if test "X$ruby19hdrdir" != "X"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ruby19hdrdir" >&5
 $as_echo "$ruby19hdrdir" >&6; }
 	RUBY19_CFLAGS="-I$ruby19hdrdir"
-        ruby19arch=`$vi_cv_path_ruby19 -r rbconfig -e 'print Config::CONFIG["arch"]'`
-        if test -d "$ruby19hdrdir/$ruby19arch"; then
-          RUBY19_CFLAGS="$RUBY19_CFLAGS -I$ruby19hdrdir/$ruby19arch"
+        ruby19archdir=`$vi_cv_path_ruby19 -r rbconfig -e "print ($ruby19_rbconfig::CONFIG.has_key? 'rubyarchhdrdir') ? $ruby19_rbconfig::CONFIG['rubyarchhdrdir'] : '$ruby19hdrdir/'+$ruby19_rbconfig::CONFIG['arch']"`
+        if test -d "$ruby19archdir"; then
+          RUBY19_CFLAGS="$RUBY19_CFLAGS -I$ruby19archdir"
         fi
-        ruby19version=`$vi_cv_path_ruby19 -r rbconfig -e 'print Config::CONFIG["ruby_version"].gsub(/\./, "")[0,2]'`
+        ruby19version=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig::CONFIG['ruby19_version'].gsub(/\./, '')[0,2]"`
+	if test "X$ruby19version" = "X"; then
+	  ruby19version=`$vi_cv_path_ruby19 -e "print ((VERSION rescue RUBY_VERSION)).gsub(/\./, '')[0,2]"`
+	fi
         RUBY19_CFLAGS="$RUBY19_CFLAGS -DRUBY19_VERSION=$ruby19version"
-	ruby19libs=`$vi_cv_path_ruby19 -r rbconfig -e 'print Config::CONFIG["LIBS"]'`
+	ruby19libs=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig::CONFIG['LIBS']"`
 	if test "X$ruby19libs" != "X"; then
 	  RUBY19_LIBS="$ruby19libs"
 	fi
-	libruby19arg=`$vi_cv_path_ruby19 -r rbconfig -e 'print Config.expand(Config::CONFIG["LIBRUBYARG"])'`
-	if test -f "$ruby19hdrdir/$libruby19arg"; then
-	  libruby19arg="$ruby19hdrdir/$libruby19arg"
-	else
-	  ruby19libdir=`$vi_cv_path_ruby19 -r rbconfig -e 'print Config.expand(Config::CONFIG["libdir"])'`
-          if test -d "/System/Library/Frameworks/Ruby19.framework"; then
-                        RUBY19_LIBS="-framework Ruby19"
-                        RUBY19_CFLAGS=
+	libruby19arg=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig.expand($ruby19_rbconfig::CONFIG['LIBRUBYARG'])"`
+	libruby19a=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig.expand($ruby19_rbconfig::CONFIG['LIBRUBY_A'])"`
+	ruby19libdir=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig.expand($ruby19_rbconfig::CONFIG['libdir'])"`
+	if test -f "$ruby19libdir/$libruby19a"; then
+	  libruby19arg="$libruby19arg"
+	  RUBY19_LIBS="$RUBY19_LIBS -L$ruby19libdir"
+        elif test -d "/System/Library/Frameworks/Ruby.framework"; then
+                        RUBY19_LIBS="-framework Ruby"
+                        RUBY19_CFLAGS="-DRUBY19_VERSION=$ruby19version -DRUBY19_FRAMEWORK"
             libruby19arg=
-          elif test -f "$ruby19libdir/$libruby19arg"; then
-	    libruby19arg="$ruby19libdir/$libruby19arg"
-	  elif test "$libruby19arg" = "libruby1.9.a"; then
-	    	    libruby19arg="-lruby1.9"
-	  else
-	    libruby19arg=`$vi_cv_path_ruby19 -r rbconfig -e "print '$libruby19arg'.gsub(/-L\./, %'-L#{Config.expand(Config::CONFIG[\"libdir\"])}')"`
-	  fi
 	fi
 
 	if test "X$libruby19arg" != "X"; then
 	  RUBY19_LIBS="$libruby19arg $RUBY19_LIBS"
 	fi
-	ruby19ldflags=`$vi_cv_path_ruby19 -r rbconfig -e 'print Config::CONFIG["LDFLAGS"]'`
+	ruby19ldflags=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig::CONFIG['LDFLAGS']"`
 	if test "X$ruby19ldflags" != "X"; then
 	  	  	  	  ruby19ldflags=`echo "$ruby19ldflags" | sed -e 's/-arch\ ppc//' -e 's/-arch\ i386//' -e 's/-arch\ x86_64//'`
 	  if test "X$ruby19ldflags" != "X"; then
-	    LDFLAGS="$ruby19ldflags $LDFLAGS"
+	    if test "X`echo \"$LDFLAGS\" | $FGREP -e \"$ruby19ldflags\"`" = "X"; then
+	      LDFLAGS="$ruby19ldflags $LDFLAGS"
+	    fi
 	  fi
 	fi
         if test "X$ruby19ldflags" != "X"; then
@@ -7431,19 +7438,25 @@ $as_echo "$ruby19hdrdir" >&6; }
 
 	$as_echo "#define FEAT_RUBY19 1" >>confdefs.h
 
-	libruby19=`$vi_cv_path_ruby19 -r rbconfig -e 'puts Config::CONFIG["LIBRUBY_SO"]'`
-	$as_echo "#define DYNAMIC_RUBY19 1" >>confdefs.h
+	if test "$enable_ruby19interp" = "dynamic"; then
+	  libruby19=`$vi_cv_path_ruby19 -r rbconfig -e "puts $ruby19_rbconfig::CONFIG['LIBRUBY_SO']"`
+	  $as_echo "#define DYNAMIC_RUBY19 1" >>confdefs.h
 
-	RUBY19_CFLAGS="-DDYNAMIC_RUBY19_DLL=\\\"$libruby19\\\" -DDYNAMIC_RUBY19_VER=$ruby19version $RUBY19_CFLAGS"
-	RUBY19_LIBS=
+	  RUBY19_CFLAGS="-DDYNAMIC_RUBY19_DLL=\\\"$libruby19\\\" -DDYNAMIC_RUBY19_VER=$ruby19version $RUBY19_CFLAGS"
+	  RUBY19_LIBS=
+	fi
       else
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: not found; disabling Ruby19" >&5
-$as_echo "not found; disabling Ruby19" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: not found; disabling Ruby" >&5
+$as_echo "not found; disabling Ruby" >&6; }
       fi
     else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: too old; need Ruby19 version 1.9.0 or later" >&5
-$as_echo "too old; need Ruby19 version 1.9.0 or later" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: too old; need Ruby version 1.9.0 or later" >&5
+$as_echo "too old; need Ruby version 1.9.0 or later" >&6; }
     fi
+  fi
+
+  if test "$fail_if_missing" = "yes" -a -z "$RUBY19_OBJ"; then
+    as_fn_error $? "could not configure Ruby" "$LINENO" 5
   fi
 fi
 

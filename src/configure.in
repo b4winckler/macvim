@@ -1945,70 +1945,74 @@ AC_SUBST(RUBY_LIBS)
 
 AC_MSG_CHECKING(--enable-ruby19interp argument)
 AC_ARG_ENABLE(ruby19interp,
-	[  --enable-ruby19interp[=OPTS]     Include Ruby1.9 interpreter.  [default=no] [OPTS=no/dynamic]], ,
+	[  --enable-ruby19interp[=OPTS]     Include Ruby interpreter.  [default=no] [OPTS=no/dynamic]], ,
 	[enable_ruby19interp="no"])
 AC_MSG_RESULT($enable_ruby19interp)
 if test "$enable_ruby19interp" = "dynamic"; then
   if test "$enable_rubyinterp" != "dynamic"; then
-    AC_MSG_ERROR(--enable-ruby19interp=dynamic requires --enable-rubyinterp=dynamic)
+	AC_MSG_ERROR(--enable-ruby19interp=dynamic requires --enable-rubyinterp=dynamic)
   fi
   AC_MSG_CHECKING(--with-ruby19-command argument)
-  AC_ARG_WITH(ruby19-command, [  --with-ruby19-command=RUBY19  name of the Ruby command (default: ruby1.9)],
-	RUBY19_CMD="$withval"; AC_MSG_RESULT($RUBY19_CMD),
-	RUBY19_CMD="ruby1.9"; AC_MSG_RESULT(defaulting to $RUBY19_CMD))
   AC_SUBST(vi_cv_path_ruby19)
+  AC_ARG_WITH(ruby19-command, [  --with-ruby19-command=RUBY  name of the Ruby command (default: ruby)],
+	RUBY19_CMD="$withval"; vi_cv_path_ruby19="$withval"; AC_MSG_RESULT($RUBY19_CMD),
+	RUBY19_CMD="ruby"; AC_MSG_RESULT(defaulting to $RUBY19_CMD))
   AC_PATH_PROG(vi_cv_path_ruby19, $RUBY19_CMD)
   if test "X$vi_cv_path_ruby19" != "X"; then
     AC_MSG_CHECKING(Ruby19 version)
     if $vi_cv_path_ruby19 -e '(VERSION rescue RUBY_VERSION) >= "1.9.0" or exit 1' >/dev/null 2>/dev/null; then
       AC_MSG_RESULT(OK)
-      AC_MSG_CHECKING(Ruby19 header files)
-      ruby19hdrdir=`$vi_cv_path_ruby19 -r mkmf -e 'print Config::CONFIG[["rubyhdrdir"]] || Config::CONFIG[["archdir"]] || $hdrdir' 2>/dev/null`
+      AC_MSG_CHECKING(Ruby rbconfig)
+      ruby19_rbconfig="RbConfig"
+      if ! $vi_cv_path_ruby19 -r rbconfig -e 'RbConfig' >/dev/null 2>/dev/null; then
+	ruby19_rbconfig="Config"
+      fi
+      AC_MSG_RESULT($ruby19_rbconfig)
+      AC_MSG_CHECKING(Ruby header files)
+      ruby19hdrdir=`$vi_cv_path_ruby19 -r mkmf -e "print $ruby19_rbconfig::CONFIG[['rubyhdrdir']] || $ruby19_rbconfig::CONFIG[['archdir']] || \\$hdrdir" 2>/dev/null`
       if test "X$ruby19hdrdir" != "X"; then
 	AC_MSG_RESULT($ruby19hdrdir)
 	RUBY19_CFLAGS="-I$ruby19hdrdir"
-        ruby19arch=`$vi_cv_path_ruby19 -r rbconfig -e 'print Config::CONFIG[["arch"]]'`
-        if test -d "$ruby19hdrdir/$ruby19arch"; then
-          RUBY19_CFLAGS="$RUBY19_CFLAGS -I$ruby19hdrdir/$ruby19arch"
+        ruby19archdir=`$vi_cv_path_ruby19 -r rbconfig -e "print ($ruby19_rbconfig::CONFIG.has_key? 'rubyarchhdrdir') ? $ruby19_rbconfig::CONFIG[['rubyarchhdrdir']] : '$ruby19hdrdir/'+$ruby19_rbconfig::CONFIG[['arch']]"`
+        if test -d "$ruby19archdir"; then
+          RUBY19_CFLAGS="$RUBY19_CFLAGS -I$ruby19archdir"
         fi
-        ruby19version=`$vi_cv_path_ruby19 -r rbconfig -e 'print Config::CONFIG[["ruby_version"]].gsub(/\./, "")[[0,2]]'`
+        ruby19version=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig::CONFIG[['ruby19_version']].gsub(/\./, '')[[0,2]]"`
+	if test "X$ruby19version" = "X"; then
+	  ruby19version=`$vi_cv_path_ruby19 -e "print ((VERSION rescue RUBY_VERSION)).gsub(/\./, '')[[0,2]]"`
+	fi
         RUBY19_CFLAGS="$RUBY19_CFLAGS -DRUBY19_VERSION=$ruby19version"
-	ruby19libs=`$vi_cv_path_ruby19 -r rbconfig -e 'print Config::CONFIG[["LIBS"]]'`
+	ruby19libs=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig::CONFIG[['LIBS']]"`
 	if test "X$ruby19libs" != "X"; then
 	  RUBY19_LIBS="$ruby19libs"
 	fi
-	libruby19arg=`$vi_cv_path_ruby19 -r rbconfig -e 'print Config.expand(Config::CONFIG[["LIBRUBYARG"]])'`
-	if test -f "$ruby19hdrdir/$libruby19arg"; then
-	  libruby19arg="$ruby19hdrdir/$libruby19arg"
-	else
-	  ruby19libdir=`$vi_cv_path_ruby19 -r rbconfig -e 'print Config.expand(Config::CONFIG[["libdir"]])'`
-          if test -d "/System/Library/Frameworks/Ruby19.framework"; then
+	libruby19arg=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig.expand($ruby19_rbconfig::CONFIG[['LIBRUBYARG']])"`
+	libruby19a=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig.expand($ruby19_rbconfig::CONFIG[['LIBRUBY_A']])"`
+	ruby19libdir=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig.expand($ruby19_rbconfig::CONFIG[['libdir']])"`
+	if test -f "$ruby19libdir/$libruby19a"; then
+	  libruby19arg="$libruby19arg"
+	  RUBY19_LIBS="$RUBY19_LIBS -L$ruby19libdir"
+        elif test -d "/System/Library/Frameworks/Ruby.framework"; then
             dnl On Mac OS X it is safer to just use the -framework flag
-            RUBY19_LIBS="-framework Ruby19"
+            RUBY19_LIBS="-framework Ruby"
             dnl Don't include the -I flag when -framework is set
-            RUBY19_CFLAGS=
+            RUBY19_CFLAGS="-DRUBY19_VERSION=$ruby19version -DRUBY19_FRAMEWORK"
             libruby19arg=
-          elif test -f "$ruby19libdir/$libruby19arg"; then
-	    libruby19arg="$ruby19libdir/$libruby19arg"
-	  elif test "$libruby19arg" = "libruby1.9.a"; then
-	    dnl required on Mac OS 10.3 where libruby.a doesn't exist
-	    libruby19arg="-lruby1.9"
-	  else
-	    libruby19arg=`$vi_cv_path_ruby19 -r rbconfig -e "print '$libruby19arg'.gsub(/-L\./, %'-L#{Config.expand(Config::CONFIG[\"libdir\"])}')"`
-	  fi
 	fi
 
 	if test "X$libruby19arg" != "X"; then
 	  RUBY19_LIBS="$libruby19arg $RUBY19_LIBS"
 	fi
-	ruby19ldflags=`$vi_cv_path_ruby19 -r rbconfig -e 'print Config::CONFIG[["LDFLAGS"]]'`
+	ruby19ldflags=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig::CONFIG[['LDFLAGS']]"`
 	if test "X$ruby19ldflags" != "X"; then
 	  dnl Ruby on Mac OS X 10.5 adds "-arch" flags but these should only
 	  dnl be included if requested by passing --with-mac-arch to
 	  dnl configure, so strip these flags first (if present)
 	  ruby19ldflags=`echo "$ruby19ldflags" | sed -e 's/-arch\ ppc//' -e 's/-arch\ i386//' -e 's/-arch\ x86_64//'`
 	  if test "X$ruby19ldflags" != "X"; then
-	    LDFLAGS="$ruby19ldflags $LDFLAGS"
+	    if test "X`echo \"$LDFLAGS\" | $FGREP -e \"$ruby19ldflags\"`" = "X"; then
+	      LDFLAGS="$ruby19ldflags $LDFLAGS"
+	    fi
 	  fi
 	fi
         if test "X$ruby19ldflags" != "X"; then
@@ -2019,16 +2023,22 @@ if test "$enable_ruby19interp" = "dynamic"; then
 	RUBY19_PRO="if_ruby19.pro"
 
 	AC_DEFINE(FEAT_RUBY19)
-	libruby19=`$vi_cv_path_ruby19 -r rbconfig -e 'puts Config::CONFIG[["LIBRUBY_SO"]]'`
-	AC_DEFINE(DYNAMIC_RUBY19)
-	RUBY19_CFLAGS="-DDYNAMIC_RUBY19_DLL=\\\"$libruby19\\\" -DDYNAMIC_RUBY19_VER=$ruby19version $RUBY19_CFLAGS"
-	RUBY19_LIBS=
+	if test "$enable_ruby19interp" = "dynamic"; then
+	  libruby19=`$vi_cv_path_ruby19 -r rbconfig -e "puts $ruby19_rbconfig::CONFIG[['LIBRUBY_SO']]"`
+	  AC_DEFINE(DYNAMIC_RUBY19)
+	  RUBY19_CFLAGS="-DDYNAMIC_RUBY19_DLL=\\\"$libruby19\\\" -DDYNAMIC_RUBY19_VER=$ruby19version $RUBY19_CFLAGS"
+	  RUBY19_LIBS=
+	fi
       else
-	AC_MSG_RESULT(not found; disabling Ruby19)
+	AC_MSG_RESULT(not found; disabling Ruby)
       fi
     else
-      AC_MSG_RESULT(too old; need Ruby19 version 1.9.0 or later)
+      AC_MSG_RESULT(too old; need Ruby version 1.9.0 or later)
     fi
+  fi
+
+  if test "$fail_if_missing" = "yes" -a -z "$RUBY19_OBJ"; then
+    AC_MSG_ERROR([could not configure Ruby])
   fi
 fi
 AC_SUBST(RUBY19_SRC)
