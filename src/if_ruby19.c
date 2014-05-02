@@ -9,6 +9,12 @@
 #define dll_rb_cNilClass dll_rb19_cNilClass
 #define dll_rb_cSymbol dll_rb19_cSymbol
 #define dll_rb_cTrueClass dll_rb19_cTrueClass
+#define rb_num2long_stub rb19_num2long_stub
+#define rb_int2big_stub rb19_int2big_stub
+#define rb_fix2int_stub rb19_fix2int_stub
+#define rb_num2int_stub rb19_num2int_stub
+#define rb_float_new_in_heap rb19_float_new_in_heap
+#define rb_num2ulong rb19_num2ulong
 #define ex_ruby ex_ruby19
 #define ex_rubydo ex_ruby19do
 #define ex_rubyfile ex_ruby19file
