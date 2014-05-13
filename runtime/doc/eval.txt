@@ -1,4 +1,4 @@
-*eval.txt*	For Vim version 7.4.  Last change: 2014 Apr 06
+*eval.txt*	For Vim version 7.4.  Last change: 2014 Apr 29
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -1832,7 +1832,7 @@ getwinvar( {nr}, {varname} [, {def}])
 				any	variable {varname} in window {nr}
 glob( {expr} [, {nosuf} [, {list}]])
 				any	expand file wildcards in {expr}
-globpath( {path}, {expr} [, {flag}])
+globpath( {path}, {expr} [, {nosuf} [, {list}]])
 				String	do glob({expr}) for all dirs in {path}
 has( {feature})			Number	TRUE if feature {feature} supported
 has_key( {dict}, {key})		Number	TRUE if {dict} has entry {key}
@@ -2735,7 +2735,8 @@ exists({expr})	The result is a Number, which is non-zero if {expr} is
 					string)
 			*funcname	built-in function (see |functions|)
 					or user defined function (see
-					|user-functions|).
+					|user-functions|). Also works for a
+					variable that is a Funcref.
 			varname		internal variable (see
 					|internal-variables|).	Also works
 					for |curly-braces-names|, |Dictionary|
@@ -3570,11 +3571,12 @@ glob({expr} [, {nosuf} [, {list}]])				*glob()*
 		See |expand()| for expanding special Vim variables.  See
 		|system()| for getting the raw output of an external command.
 
-globpath({path}, {expr} [, {flag}])			*globpath()*
+globpath({path}, {expr} [, {nosuf} [, {list}]])			*globpath()*
 		Perform glob() on all directories in {path} and concatenate
 		the results.  Example: >
 			:echo globpath(&rtp, "syntax/c.vim")
-<		{path} is a comma-separated list of directory names.  Each
+<
+		{path} is a comma-separated list of directory names.  Each
 		directory name is prepended to {expr} and expanded like with
 		|glob()|.  A path separator is inserted when needed.
 		To add a comma inside a directory name escape it with a
@@ -3582,11 +3584,19 @@ globpath({path}, {expr} [, {flag}])			*globpath()*
 		trailing backslash, remove it if you put a comma after it.
 		If the expansion fails for one of the directories, there is no
 		error message.
-		Unless the optional {flag} argument is given and is non-zero,
+
+		Unless the optional {nosuf} argument is given and is non-zero,
 		the 'suffixes' and 'wildignore' options apply: Names matching
 		one of the patterns in 'wildignore' will be skipped and
 		'suffixes' affect the ordering of matches.
 
+		When {list} is present and it is non-zero the result is a List
+		with all matching files. The advantage of using a List is, you
+		also get filenames containing newlines correctly. Otherwise
+		the result is a String and when there are several matches,
+		they are separated by <NL> characters.  Example: >
+			:echo globpath(&rtp, "syntax/c.vim", 0, 1)
+<
 		The "**" item can be used to search in a directory tree.
 		For example, to find all "README.txt" files in the directories
 		in 'runtimepath' and below: >
@@ -6464,10 +6474,11 @@ There are three types of features:
     included.
 
 4.  Beyond a certain version or at a certain version and including a specific
-    patch.  The "patch-7.4.123" feature means that the Vim version is 7.5 or
-    later, or it is version 7.4 and patch 123 was included.
-    The example above can be simplified to: >
-	:if has("patch-6.2.148")
+    patch.  The "patch-7.4.237" feature means that the Vim version is 7.5 or
+    later, or it is version 7.4 and patch 237 was included.
+    Note that this only works for patch 7.4.237 and later, before that you
+    need to use the example above that checks v:version.  Example: >
+	:if has("patch-7.4.248")
 <    Note that it's possible for patch 147 to be omitted even though 148 is
     included.
 
@@ -6694,6 +6705,8 @@ can only be called from within the script and from functions, user commands
 and autocommands defined in the script.  It is also possible to call the
 function from a mapping defined in the script, but then |<SID>| must be used
 instead of "s:" when the mapping is expanded outside of the script.
+There are only script-local functions, no buffer-local or window-local
+functions.
 
 					*:fu* *:function* *E128* *E129* *E123*
 :fu[nction]		List all functions and their arguments.
@@ -6717,12 +6730,15 @@ last defined. Example: >
 <
 See |:verbose-cmd| for more information.
 
-							*E124* *E125* *E853*
+						*E124* *E125* *E853* *E884*
 :fu[nction][!] {name}([arguments]) [range] [abort] [dict]
 			Define a new function by the name {name}.  The name
 			must be made of alphanumeric characters and '_', and
-			must start with a capital or "s:" (see above).  When
-			using a capital "g:" be prepended.
+			must start with a capital or "s:" (see above).  Note
+			that using "b:" or "g:" is not allowed. (since patch
+			7.4.260 E884 is given if the function name has a colon
+			in the name, e.g. for "foo:bar()".  Before that patch
+			no error was given).
 
 			{name} can also be a |Dictionary| entry that is a
 			|Funcref|: >

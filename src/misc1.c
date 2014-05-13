@@ -1405,7 +1405,7 @@ open_line(dir, flags, second_line_indent)
 #ifdef FEAT_SMARTINDENT
 	if (did_si)
 	{
-	    int        sw = (int)get_sw_value(curbuf);
+	    int sw = (int)get_sw_value(curbuf);
 
 	    if (p_sr)
 		newindent -= newindent % sw;
@@ -3125,6 +3125,9 @@ changed_common(lnum, col, lnume, xtra)
 	    if (hasAnyFolding(wp))
 		set_topline(wp, wp->w_topline);
 #endif
+	    /* relative numbering may require updating more */
+	    if (wp->w_p_rnu)
+		redraw_win_later(wp, SOME_VALID);
 	}
     }
 
@@ -10342,9 +10345,6 @@ expand_in_path(gap, pattern, flags)
 {
     char_u	*curdir;
     garray_T	path_ga;
-    char_u	*files = NULL;
-    char_u	*s;	/* start */
-    char_u	*e;	/* end */
     char_u	*paths = NULL;
 
     if ((curdir = alloc((unsigned)MAXPATHL)) == NULL)
@@ -10357,37 +10357,13 @@ expand_in_path(gap, pattern, flags)
     if (path_ga.ga_len == 0)
 	return 0;
 
-    paths = ga_concat_strings(&path_ga);
+    paths = ga_concat_strings(&path_ga, ",");
     ga_clear_strings(&path_ga);
     if (paths == NULL)
 	return 0;
 
-    files = globpath(paths, pattern, (flags & EW_ICASE) ? WILD_ICASE : 0);
+    globpath(paths, pattern, gap, (flags & EW_ICASE) ? WILD_ICASE : 0);
     vim_free(paths);
-    if (files == NULL)
-	return 0;
-
-    /* Copy each path in files into gap */
-    s = e = files;
-    while (*s != NUL)
-    {
-	while (*e != '\n' && *e != NUL)
-	    e++;
-	if (*e == NUL)
-	{
-	    addfile(gap, s, flags);
-	    break;
-	}
-	else
-	{
-	    /* *e is '\n' */
-	    *e = NUL;
-	    addfile(gap, s, flags);
-	    e++;
-	    s = e;
-	}
-    }
-    vim_free(files);
 
     return gap->ga_len;
 }
@@ -10901,4 +10877,42 @@ FreeWild(count, files)
 goto_im()
 {
     return (p_im && stuff_empty() && typebuf_typed());
+}
+
+/*
+ * Returns the isolated name of the shell:
+ * - Skip beyond any path.  E.g., "/usr/bin/csh -f" -> "csh -f".
+ * - Remove any argument.  E.g., "csh -f" -> "csh".
+ * But don't allow a space in the path, so that this works:
+ *   "/usr/bin/csh --rcfile ~/.cshrc"
+ * But don't do that for Windows, it's common to have a space in the path.
+ */
+    char_u *
+get_isolated_shell_name()
+{
+    char_u *p;
+
+#ifdef WIN3264
+    p = gettail(p_sh);
+    p = vim_strnsave(p, (int)(skiptowhite(p) - p));
+#else
+    p = skiptowhite(p_sh);
+    if (*p == NUL)
+    {
+	/* No white space, use the tail. */
+	p = vim_strsave(gettail(p_sh));
+    }
+    else
+    {
+	char_u  *p1, *p2;
+
+	/* Find the last path separator before the space. */
+	p1 = p_sh;
+	for (p2 = p_sh; p2 < p; mb_ptr_adv(p2))
+	    if (vim_ispathsep(*p2))
+		p1 = p2 + 1;
+	p = vim_strnsave(p1, (int)(p - p1));
+    }
+#endif
+    return p;
 }

@@ -808,7 +808,7 @@ static int eval_fname_sid __ARGS((char_u *p));
 static void list_func_head __ARGS((ufunc_T *fp, int indent));
 static ufunc_T *find_func __ARGS((char_u *name));
 static int function_exists __ARGS((char_u *name));
-static int builtin_function __ARGS((char_u *name));
+static int builtin_function __ARGS((char_u *name, int len));
 #ifdef FEAT_PROFILE
 static void func_do_profile __ARGS((ufunc_T *fp));
 static void prof_sort_list __ARGS((FILE *fd, ufunc_T **sorttab, int st_len, char *title, int prefer_self));
@@ -4431,7 +4431,7 @@ eval4(arg, rettv, evaluate)
 		    if (rettv->v_type != var2.v_type)
 			EMSG(_("E691: Can only compare List with List"));
 		    else
-			EMSG(_("E692: Invalid operation for Lists"));
+			EMSG(_("E692: Invalid operation for List"));
 		    clear_tv(rettv);
 		    clear_tv(&var2);
 		    return FAIL;
@@ -5998,7 +5998,7 @@ listitem_remove(l, item)
     list_T  *l;
     listitem_T *item;
 {
-    list_remove(l, item, item);
+    vimlist_remove(l, item, item);
     listitem_free(item);
 }
 
@@ -6578,9 +6578,11 @@ list_copy(orig, deep, copyID)
 /*
  * Remove items "item" to "item2" from list "l".
  * Does not free the listitem or the value!
+ * This used to be called list_remove, but that conflicts with a Sun header
+ * file.
  */
     void
-list_remove(l, item, item2)
+vimlist_remove(l, item, item2)
     list_T	*l;
     listitem_T	*item;
     listitem_T	*item2;
@@ -7799,7 +7801,7 @@ string2float(text, value)
  * Get the value of an environment variable.
  * "arg" is pointing to the '$'.  It is advanced to after the name.
  * If the environment variable was not set, silently assume it is empty.
- * Always return OK.
+ * Return FAIL if the name is invalid.
  */
     static int
 get_env_tv(arg, rettv, evaluate)
@@ -7818,32 +7820,33 @@ get_env_tv(arg, rettv, evaluate)
     len = get_env_len(arg);
     if (evaluate)
     {
-	if (len != 0)
-	{
-	    cc = name[len];
-	    name[len] = NUL;
-	    /* first try vim_getenv(), fast for normal environment vars */
-	    string = vim_getenv(name, &mustfree);
-	    if (string != NULL && *string != NUL)
-	    {
-		if (!mustfree)
-		    string = vim_strsave(string);
-	    }
-	    else
-	    {
-		if (mustfree)
-		    vim_free(string);
+	if (len == 0)
+           return FAIL; /* can't be an environment variable */
 
-		/* next try expanding things like $VIM and ${HOME} */
-		string = expand_env_save(name - 1);
-		if (string != NULL && *string == '$')
-		{
-		    vim_free(string);
-		    string = NULL;
-		}
-	    }
-	    name[len] = cc;
+	cc = name[len];
+	name[len] = NUL;
+	/* first try vim_getenv(), fast for normal environment vars */
+	string = vim_getenv(name, &mustfree);
+	if (string != NULL && *string != NUL)
+	{
+	    if (!mustfree)
+		string = vim_strsave(string);
 	}
+	else
+	{
+	    if (mustfree)
+		vim_free(string);
+
+	    /* next try expanding things like $VIM and ${HOME} */
+	    string = expand_env_save(name - 1);
+	    if (string != NULL && *string == '$')
+	    {
+		vim_free(string);
+		string = NULL;
+	    }
+	}
+	name[len] = cc;
+
 	rettv->v_type = VAR_STRING;
 	rettv->vval.v_string = string;
     }
@@ -7983,7 +7986,7 @@ static struct fst
     {"getwinposy",	0, 0, f_getwinposy},
     {"getwinvar",	2, 3, f_getwinvar},
     {"glob",		1, 3, f_glob},
-    {"globpath",	2, 3, f_globpath},
+    {"globpath",	2, 4, f_globpath},
     {"has",		1, 1, f_has},
     {"has_key",		2, 2, f_has_key},
     {"haslocaldir",	0, 0, f_haslocaldir},
@@ -8486,33 +8489,39 @@ call_func(funcname, len, rettv, argcount, argvars, firstline, lastline,
     /* execute the function if no errors detected and executing */
     if (evaluate && error == ERROR_NONE)
     {
+	char_u *rfname = fname;
+
+	/* Ignore "g:" before a function name. */
+	if (fname[0] == 'g' && fname[1] == ':')
+	    rfname = fname + 2;
+
 	rettv->v_type = VAR_NUMBER;	/* default rettv is number zero */
 	rettv->vval.v_number = 0;
 	error = ERROR_UNKNOWN;
 
-	if (!builtin_function(fname))
+	if (!builtin_function(rfname, -1))
 	{
 	    /*
 	     * User defined function.
 	     */
-	    fp = find_func(fname);
+	    fp = find_func(rfname);
 
 #ifdef FEAT_AUTOCMD
 	    /* Trigger FuncUndefined event, may load the function. */
 	    if (fp == NULL
 		    && apply_autocmds(EVENT_FUNCUNDEFINED,
-						     fname, fname, TRUE, NULL)
+						     rfname, rfname, TRUE, NULL)
 		    && !aborting())
 	    {
 		/* executed an autocommand, search for the function again */
-		fp = find_func(fname);
+		fp = find_func(rfname);
 	    }
 #endif
 	    /* Try loading a package. */
-	    if (fp == NULL && script_autoload(fname, TRUE) && !aborting())
+	    if (fp == NULL && script_autoload(rfname, TRUE) && !aborting())
 	    {
 		/* loaded a package, search for the function again */
-		fp = find_func(fname);
+		fp = find_func(rfname);
 	    }
 
 	    if (fp != NULL)
@@ -12150,18 +12159,37 @@ f_globpath(argvars, rettv)
     char_u	buf1[NUMBUFLEN];
     char_u	*file = get_tv_string_buf_chk(&argvars[1], buf1);
     int		error = FALSE;
+    garray_T	ga;
+    int		i;
 
     /* When the optional second argument is non-zero, don't remove matches
     * for 'wildignore' and don't put matches for 'suffixes' at the end. */
-    if (argvars[2].v_type != VAR_UNKNOWN
-				&& get_tv_number_chk(&argvars[2], &error))
-	flags |= WILD_KEEP_ALL;
     rettv->v_type = VAR_STRING;
-    if (file == NULL || error)
-	rettv->vval.v_string = NULL;
+    if (argvars[2].v_type != VAR_UNKNOWN)
+    {
+	if (get_tv_number_chk(&argvars[2], &error))
+	    flags |= WILD_KEEP_ALL;
+	if (argvars[3].v_type != VAR_UNKNOWN
+				    && get_tv_number_chk(&argvars[3], &error))
+	{
+	    rettv->v_type = VAR_LIST;
+	    rettv->vval.v_list = NULL;
+	}
+    }
+    if (file != NULL && !error)
+    {
+	ga_init2(&ga, (int)sizeof(char_u *), 10);
+	globpath(get_tv_string(&argvars[0]), file, &ga, flags);
+	if (rettv->v_type == VAR_STRING)
+	    rettv->vval.v_string = ga_concat_strings(&ga, "\n");
+	else if (rettv_list_alloc(rettv) != FAIL)
+	    for (i = 0; i < ga.ga_len; ++i)
+		list_append_string(rettv->vval.v_list,
+					    ((char_u **)(ga.ga_data))[i], -1);
+	ga_clear_strings(&ga);
+    }
     else
-	rettv->vval.v_string = globpath(get_tv_string(&argvars[0]), file,
-								       flags);
+	rettv->vval.v_string = NULL;
 }
 
 /*
@@ -15456,7 +15484,7 @@ f_remove(argvars, rettv)
 	    if (argvars[2].v_type == VAR_UNKNOWN)
 	    {
 		/* Remove one item, return its value. */
-		list_remove(l, item, item);
+		vimlist_remove(l, item, item);
 		*rettv = item->li_tv;
 		vim_free(item);
 	    }
@@ -15482,7 +15510,7 @@ f_remove(argvars, rettv)
 			EMSG(_(e_invrange));
 		    else
 		    {
-			list_remove(l, item, item2);
+			vimlist_remove(l, item, item2);
 			if (rettv_list_alloc(rettv) == OK)
 			{
 			    l = rettv->vval.v_list;
@@ -18347,7 +18375,6 @@ get_cmd_output_as_rettv(argvars, rettv, retlist)
 	char_u		*s = NULL;
 	char_u		*start;
 	char_u		*end;
-	char_u		*p;
 	int		i;
 
 	res = get_cmd_output(get_tv_string(&argvars[0]), infile,
@@ -21621,6 +21648,8 @@ ex_function(eap)
      * dict.func    existing dict entry that's not a Funcref
      *		    "name" == NULL, "fudi.fd_dict" set,
      *		    "fudi.fd_di" set, "fudi.fd_newkey" == NULL
+     * s:func	    script-local function name
+     * g:func	    global function name, same as "func"
      */
     p = eap->arg;
     name = trans_function_name(&p, eap->skip, 0, &fudi);
@@ -22296,6 +22325,14 @@ trans_function_name(pp, skip, flags, fdp)
     {
 	name = vim_strsave(name);
 	*pp = end;
+	if (STRNCMP(name, "<SNR>", 5) == 0)
+	{
+	    /* Change "<SNR>" to the byte sequence. */
+	    name[0] = K_SPECIAL;
+	    name[1] = KS_EXTRA;
+	    name[2] = (int)KE_SNR;
+	    mch_memmove(name + 3, name + 5, STRLEN(name + 5) + 1);
+	}
 	goto theend;
     }
 
@@ -22314,7 +22351,8 @@ trans_function_name(pp, skip, flags, fdp)
     }
     else
     {
-	if (lead == 2)	/* skip over "s:" */
+	/* skip over "s:" and "g:" */
+	if (lead == 2 || (lv.ll_name[0] == 'g' && lv.ll_name[1] == ':'))
 	    lv.ll_name += 2;
 	len = (int)(end - lv.ll_name);
     }
@@ -22342,11 +22380,23 @@ trans_function_name(pp, skip, flags, fdp)
 	    lead += (int)STRLEN(sid_buf);
 	}
     }
-    else if (!(flags & TFN_INT) && builtin_function(lv.ll_name))
+    else if (!(flags & TFN_INT) && builtin_function(lv.ll_name, len))
     {
-	EMSG2(_("E128: Function name must start with a capital or contain a colon: %s"), lv.ll_name);
+	EMSG2(_("E128: Function name must start with a capital or \"s:\": %s"),
+								       start);
 	goto theend;
     }
+    if (!skip && !(flags & TFN_QUIET))
+    {
+	char_u *cp = vim_strchr(lv.ll_name, ':');
+
+	if (cp != NULL && cp < end)
+	{
+	    EMSG2(_("E884: Function name cannot contain a colon: %s"), start);
+	    goto theend;
+	}
+    }
+
     name = alloc((unsigned)(len + lead + 1));
     if (name != NULL)
     {
@@ -22359,7 +22409,7 @@ trans_function_name(pp, skip, flags, fdp)
 		STRCPY(name + 3, sid_buf);
 	}
 	mch_memmove(name + lead, lv.ll_name, (size_t)len);
-	name[len + lead] = NUL;
+	name[lead + len] = NUL;
     }
     *pp = end;
 
@@ -22480,7 +22530,7 @@ free_all_functions()
 translated_function_exists(name)
     char_u	*name;
 {
-    if (builtin_function(name))
+    if (builtin_function(name, -1))
 	return find_internal_func(name) >= 0;
     return find_func(name) != NULL;
 }
@@ -22528,14 +22578,20 @@ get_expanded_name(name, check)
 
 /*
  * Return TRUE if "name" looks like a builtin function name: starts with a
- * lower case letter and doesn't contain a ':' or AUTOLOAD_CHAR.
+ * lower case letter and doesn't contain AUTOLOAD_CHAR.
+ * "len" is the length of "name", or -1 for NUL terminated.
  */
     static int
-builtin_function(name)
+builtin_function(name, len)
     char_u *name;
+    int len;
 {
-    return ASCII_ISLOWER(name[0]) && vim_strchr(name, ':') == NULL
-				   && vim_strchr(name, AUTOLOAD_CHAR) == NULL;
+    char_u *p;
+
+    if (!ASCII_ISLOWER(name[0]))
+	return FALSE;
+    p = vim_strchr(name, AUTOLOAD_CHAR);
+    return p == NULL || (len > 0 && p > name + len);
 }
 
 #if defined(FEAT_PROFILE) || defined(PROTO)

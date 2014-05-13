@@ -244,6 +244,7 @@
 
 #define RE_MARK		207	/* mark cmp  Match mark position */
 #define RE_VISUAL	208	/*	Match Visual area */
+#define RE_COMPOSING	209	/* any composing characters */
 
 /*
  * Magic characters have a special meaning, they don't match literally.
@@ -2208,6 +2209,10 @@ regatom(flagp)
 		    ret = regnode(RE_VISUAL);
 		    break;
 
+		case 'C':
+		    ret = regnode(RE_COMPOSING);
+		    break;
+
 		/* \%[abc]: Emit as a list of branches, all ending at the last
 		 * branch which matches nothing. */
 		case '[':
@@ -3709,25 +3714,28 @@ static lpos_T	reg_endzpos[NSUBEXP];	/* idem, end pos */
 /* TRUE if using multi-line regexp. */
 #define REG_MULTI	(reg_match == NULL)
 
-static int  bt_regexec __ARGS((regmatch_T *rmp, char_u *line, colnr_T col));
+static int  bt_regexec_nl __ARGS((regmatch_T *rmp, char_u *line, colnr_T col, int line_lbr));
+
 
 /*
  * Match a regexp against a string.
  * "rmp->regprog" is a compiled regexp as returned by vim_regcomp().
  * Uses curbuf for line count and 'iskeyword'.
+ * if "line_lbr" is TRUE  consider a "\n" in "line" to be a line break.
  *
  * Return TRUE if there is a match, FALSE if not.
  */
     static int
-bt_regexec(rmp, line, col)
+bt_regexec_nl(rmp, line, col, line_lbr)
     regmatch_T	*rmp;
     char_u	*line;	/* string to match against */
     colnr_T	col;	/* column to start looking for match */
+    int		line_lbr;
 {
     reg_match = rmp;
     reg_mmatch = NULL;
     reg_maxline = 0;
-    reg_line_lbr = FALSE;
+    reg_line_lbr = line_lbr;
     reg_buf = curbuf;
     reg_win = NULL;
     ireg_ic = rmp->rm_ic;
@@ -3737,35 +3745,6 @@ bt_regexec(rmp, line, col)
     ireg_maxcol = 0;
     return (bt_regexec_both(line, col, NULL) != 0);
 }
-
-#if defined(FEAT_MODIFY_FNAME) || defined(FEAT_EVAL) \
-	|| defined(FIND_REPLACE_DIALOG) || defined(PROTO)
-
-static int  bt_regexec_nl __ARGS((regmatch_T *rmp, char_u *line, colnr_T col));
-
-/*
- * Like vim_regexec(), but consider a "\n" in "line" to be a line break.
- */
-    static int
-bt_regexec_nl(rmp, line, col)
-    regmatch_T	*rmp;
-    char_u	*line;	/* string to match against */
-    colnr_T	col;	/* column to start looking for match */
-{
-    reg_match = rmp;
-    reg_mmatch = NULL;
-    reg_maxline = 0;
-    reg_line_lbr = TRUE;
-    reg_buf = curbuf;
-    reg_win = NULL;
-    ireg_ic = rmp->rm_ic;
-#ifdef FEAT_MBYTE
-    ireg_icombine = FALSE;
-#endif
-    ireg_maxcol = 0;
-    return (bt_regexec_both(line, col, NULL) != 0);
-}
-#endif
 
 static long bt_regexec_multi __ARGS((regmmatch_T *rmp, win_T *win, buf_T *buf, linenr_T lnum, colnr_T col, proftime_T *tm));
 
@@ -4718,31 +4697,39 @@ regmatch(scan)
 		    /* match empty string always works; happens when "~" is
 		     * empty. */
 		}
-		else if (opnd[1] == NUL
+		else
+		{
+		    if (opnd[1] == NUL
 #ifdef FEAT_MBYTE
 			    && !(enc_utf8 && ireg_ic)
 #endif
 			)
-		    ++reginput;		/* matched a single char */
-		else
-		{
-		    len = (int)STRLEN(opnd);
-		    /* Need to match first byte again for multi-byte. */
-		    if (cstrncmp(opnd, reginput, &len) != 0)
-			status = RA_NOMATCH;
+		    {
+			len = 1;	/* matched a single byte above */
+		    }
+		    else
+		    {
+			/* Need to match first byte again for multi-byte. */
+			len = (int)STRLEN(opnd);
+			if (cstrncmp(opnd, reginput, &len) != 0)
+			    status = RA_NOMATCH;
+		    }
 #ifdef FEAT_MBYTE
-		    /* Check for following composing character. */
-		    else if (enc_utf8
-			       && UTF_COMPOSINGLIKE(reginput, reginput + len))
+		    /* Check for following composing character, unless %C
+		     * follows (skips over all composing chars). */
+		    if (status != RA_NOMATCH
+			    && enc_utf8
+			    && UTF_COMPOSINGLIKE(reginput, reginput + len)
+			    && !ireg_icombine
+			    && OP(next) != RE_COMPOSING)
 		    {
 			/* raaron: This code makes a composing character get
 			 * ignored, which is the correct behavior (sometimes)
 			 * for voweled Hebrew texts. */
-			if (!ireg_icombine)
-			    status = RA_NOMATCH;
+			status = RA_NOMATCH;
 		    }
 #endif
-		    else
+		    if (status != RA_NOMATCH)
 			reginput += len;
 		}
 	    }
@@ -4811,6 +4798,16 @@ regmatch(scan)
 		status = RA_NOMATCH;
 	    break;
 #endif
+	  case RE_COMPOSING:
+#ifdef FEAT_MBYTE
+	    if (enc_utf8)
+	    {
+		/* Skip composing characters. */
+		while (utf_iscomposing(utf_ptr2char(reginput)))
+		    mb_cptr_adv(reginput);
+	    }
+#endif
+	    break;
 
 	  case NOTHING:
 	    break;
@@ -7381,6 +7378,7 @@ vim_regsub(rmp, source, dest, copy, magic, backslash)
     reg_mmatch = NULL;
     reg_maxline = 0;
     reg_buf = curbuf;
+    reg_line_lbr = TRUE;
     return vim_regsub_both(source, dest, copy, magic, backslash);
 }
 #endif
@@ -7400,6 +7398,7 @@ vim_regsub_multi(rmp, lnum, source, dest, copy, magic, backslash)
     reg_buf = curbuf;		/* always works on the current buffer! */
     reg_firstlnum = lnum;
     reg_maxline = curbuf->b_ml.ml_line_count - lnum;
+    reg_line_lbr = FALSE;
     return vim_regsub_both(source, dest, copy, magic, backslash);
 }
 
@@ -7983,11 +7982,7 @@ static regengine_T bt_regengine =
 {
     bt_regcomp,
     bt_regfree,
-    bt_regexec,
-#if defined(FEAT_MODIFY_FNAME) || defined(FEAT_EVAL) \
-	|| defined(FIND_REPLACE_DIALOG) || defined(PROTO)
     bt_regexec_nl,
-#endif
     bt_regexec_multi
 #ifdef DEBUG
     ,(char_u *)""
@@ -8001,11 +7996,7 @@ static regengine_T nfa_regengine =
 {
     nfa_regcomp,
     nfa_regfree,
-    nfa_regexec,
-#if defined(FEAT_MODIFY_FNAME) || defined(FEAT_EVAL) \
-	|| defined(FIND_REPLACE_DIALOG) || defined(PROTO)
     nfa_regexec_nl,
-#endif
     nfa_regexec_multi
 #ifdef DEBUG
     ,(char_u *)""
@@ -8054,8 +8045,8 @@ vim_regcomp(expr_arg, re_flags)
 	    regexp_engine = expr[4] - '0';
 	    expr += 5;
 #ifdef DEBUG
-	    EMSG3("New regexp mode selected (%d): %s", regexp_engine,
-						    regname[newengine]);
+	    smsg((char_u *)"New regexp mode selected (%d): %s",
+					   regexp_engine, regname[newengine]);
 #endif
 	}
 	else
@@ -8129,7 +8120,7 @@ vim_regexec(rmp, line, col)
     char_u      *line;  /* string to match against */
     colnr_T     col;    /* column to start looking for match */
 {
-    return rmp->regprog->engine->regexec(rmp, line, col);
+    return rmp->regprog->engine->regexec_nl(rmp, line, col, FALSE);
 }
 
 #if defined(FEAT_MODIFY_FNAME) || defined(FEAT_EVAL) \
@@ -8143,7 +8134,7 @@ vim_regexec_nl(rmp, line, col)
     char_u *line;
     colnr_T col;
 {
-    return rmp->regprog->engine->regexec_nl(rmp, line, col);
+    return rmp->regprog->engine->regexec_nl(rmp, line, col, TRUE);
 }
 #endif
 

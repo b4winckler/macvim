@@ -1686,7 +1686,10 @@ config auto/config.mk: auto/configure config.mk.in config.h.in
 	    ! grep -x -F 'ac_cv_env_CFLAGS_value=$(CFLAGS)' auto/config.cache > /dev/null; then \
 		rm auto/config.cache; \
 	fi
-	if test "X$(MAKECMDGOALS)" != "Xclean" -a "X$(MAKECMDGOALS)" != "Xdistclean"; then \
+	if test "X$(MAKECMDGOALS)" != "Xclean" \
+		-a "X$(MAKECMDGOALS)" != "Xdistclean" \
+		-a "X$(MAKECMDGOALS)" != "Xautoconf" \
+		-a "X$(MAKECMDGOALS)" != "Xreconfig"; then \
 	    GUI_INC_LOC="$(GUI_INC_LOC)" GUI_LIB_LOC="$(GUI_LIB_LOC)" \
 		CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" \
 		LDFLAGS="$(LDFLAGS)" $(CONF_SHELL) srcdir="$(srcdir)" \
@@ -1896,6 +1899,7 @@ unittest unittests: $(UNITTEST_TARGETS)
 
 # Run individual test, assuming that Vim was already compiled.
 test1 test2 test3 test4 test5 test6 test7 test8 test9 \
+	test_autoformat_join \
 	test_eval \
 	test_options \
 	test10 test11 test12 test13 test14 test15 test16 test17 test18 test19 \
