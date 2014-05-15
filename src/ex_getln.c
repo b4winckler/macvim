@@ -94,7 +94,7 @@ static void	draw_cmdline __ARGS((int start, int len));
 static void	save_cmdline __ARGS((struct cmdline_info *ccp));
 static void	restore_cmdline __ARGS((struct cmdline_info *ccp));
 static int	cmdline_paste __ARGS((int regname, int literally, int remcr));
-#if defined(FEAT_XIM) && (defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
+#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
 static void	redrawcmd_preedit __ARGS((void));
 #endif
 #ifdef FEAT_WILDMENU
@@ -2504,7 +2504,7 @@ cmdline_getvcol_cursor()
 }
 #endif
 
-#if defined(FEAT_XIM) && (defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
+#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
 /*
  * If part of the command line is an IM preedit string, redraw it with
  * IM feedback attributes.  The cursor position is restored after drawing.
@@ -2513,9 +2513,7 @@ cmdline_getvcol_cursor()
 redrawcmd_preedit()
 {
     if ((State & CMDLINE)
-# ifndef FEAT_GUI_MACVIM
 	    && xic != NULL
-# endif
 	    /* && im_get_status()  doesn't work when using SCIM */
 	    && !p_imdisable
 	    && im_is_preediting())
@@ -2576,7 +2574,7 @@ redrawcmd_preedit()
 	msg_col = old_col;
     }
 }
-#endif /* FEAT_XIM && (FEAT_GUI_GTK || FEAT_GUI_MACVIM) */
+#endif /* FEAT_XIM && FEAT_GUI_GTK */
 
 /*
  * Allocate a new command line buffer.
@@ -3312,7 +3310,7 @@ cursorcmd()
     }
 
     windgoto(msg_row, msg_col);
-#if defined(FEAT_XIM) && (defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
+#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
     redrawcmd_preedit();
 #endif
 #ifdef MCH_CURSOR_SHAPE
