@@ -10880,7 +10880,7 @@ goto_im()
 }
 
 /*
- * Returns the isolated name of the shell:
+ * Returns the isolated name of the shell in allocated memory:
  * - Skip beyond any path.  E.g., "/usr/bin/csh -f" -> "csh -f".
  * - Remove any argument.  E.g., "csh -f" -> "csh".
  * But don't allow a space in the path, so that this works:
