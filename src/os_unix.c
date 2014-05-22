@@ -3749,7 +3749,10 @@ check_mouse_termcode()
     /* Conflicts with xterm mouse: "\033[" and "\033[M".
      * Also conflicts with the xterm termresponse, skip this if it was
      * requested already. */
-    if (!use_xterm_mouse() && !did_request_esc_sequence()
+    if (!use_xterm_mouse()
+#  ifdef FEAT_TERMRESPONSE
+	    && !did_request_esc_sequence()
+#  endif
 #  ifdef FEAT_GUI
 	    && !gui.in_use
 #  endif
@@ -3764,7 +3767,10 @@ check_mouse_termcode()
 # endif
 # ifdef FEAT_MOUSE_PTERM
     /* same as the dec mouse */
-    if (!use_xterm_mouse() && !did_request_esc_sequence()
+    if (!use_xterm_mouse()
+#  ifdef FEAT_TERMRESPONSE
+	    && !did_request_esc_sequence()
+#  endif
 #  ifdef FEAT_GUI
 	    && !gui.in_use
 #  endif
@@ -3779,7 +3785,10 @@ check_mouse_termcode()
 # endif
 # ifdef FEAT_MOUSE_URXVT
     /* same as the dec mouse */
-    if (use_xterm_mouse() == 3 && !did_request_esc_sequence()
+    if (use_xterm_mouse() == 3
+#  ifdef FEAT_TERMRESPONSE
+	    && !did_request_esc_sequence()
+#  endif
 #  ifdef FEAT_GUI
 	    && !gui.in_use
 #  endif
