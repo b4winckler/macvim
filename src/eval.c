@@ -463,6 +463,7 @@ static void f_and __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_append __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_argc __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_argidx __ARGS((typval_T *argvars, typval_T *rettv));
+static void f_arglistid __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_argv __ARGS((typval_T *argvars, typval_T *rettv));
 #ifdef FEAT_FLOAT
 static void f_asin __ARGS((typval_T *argvars, typval_T *rettv));
@@ -7876,6 +7877,7 @@ static struct fst
     {"append",		2, 2, f_append},
     {"argc",		0, 0, f_argc},
     {"argidx",		0, 0, f_argidx},
+    {"arglistid",	0, 2, f_arglistid},
     {"argv",		0, 1, f_argv},
 #ifdef FEAT_FLOAT
     {"asin",		1, 1, f_asin},	/* WJMc */
@@ -8857,6 +8859,41 @@ f_argidx(argvars, rettv)
     typval_T	*rettv;
 {
     rettv->vval.v_number = curwin->w_arg_idx;
+}
+
+/*
+ * "arglistid()" function
+ */
+    static void
+f_arglistid(argvars, rettv)
+    typval_T	*argvars UNUSED;
+    typval_T	*rettv;
+{
+    win_T	*wp;
+    tabpage_T	*tp = NULL;
+    long	n;
+
+    rettv->vval.v_number = -1;
+    if (argvars[0].v_type != VAR_UNKNOWN)
+    {
+	if (argvars[1].v_type != VAR_UNKNOWN)
+	{
+	    n = get_tv_number(&argvars[1]);
+	    if (n >= 0)
+		tp = find_tabpage(n);
+	}
+	else
+	    tp = curtab;
+
+	if (tp != NULL)
+	{
+	    wp = find_win_by_nr(&argvars[0], tp);
+	    if (wp != NULL)
+		rettv->vval.v_number = wp->w_alist->id;
+	}
+    }
+    else
+	rettv->vval.v_number = curwin->w_alist->id;
 }
 
 /*
@@ -19259,20 +19296,30 @@ f_winrestview(argvars, rettv)
 	EMSG(_(e_invarg));
     else
     {
-	curwin->w_cursor.lnum = get_dict_number(dict, (char_u *)"lnum");
-	curwin->w_cursor.col = get_dict_number(dict, (char_u *)"col");
+	if (dict_find(dict, (char_u *)"lnum", -1) != NULL)
+	    curwin->w_cursor.lnum = get_dict_number(dict, (char_u *)"lnum");
+	if (dict_find(dict, (char_u *)"col", -1) != NULL)
+	    curwin->w_cursor.col = get_dict_number(dict, (char_u *)"col");
 #ifdef FEAT_VIRTUALEDIT
-	curwin->w_cursor.coladd = get_dict_number(dict, (char_u *)"coladd");
+	if (dict_find(dict, (char_u *)"coladd", -1) != NULL)
+	    curwin->w_cursor.coladd = get_dict_number(dict, (char_u *)"coladd");
 #endif
-	curwin->w_curswant = get_dict_number(dict, (char_u *)"curswant");
-	curwin->w_set_curswant = FALSE;
+	if (dict_find(dict, (char_u *)"curswant", -1) != NULL)
+	{
+	    curwin->w_curswant = get_dict_number(dict, (char_u *)"curswant");
+	    curwin->w_set_curswant = FALSE;
+	}
 
-	set_topline(curwin, get_dict_number(dict, (char_u *)"topline"));
+	if (dict_find(dict, (char_u *)"topline", -1) != NULL)
+	    set_topline(curwin, get_dict_number(dict, (char_u *)"topline"));
 #ifdef FEAT_DIFF
-	curwin->w_topfill = get_dict_number(dict, (char_u *)"topfill");
+	if (dict_find(dict, (char_u *)"topfill", -1) != NULL)
+	    curwin->w_topfill = get_dict_number(dict, (char_u *)"topfill");
 #endif
-	curwin->w_leftcol = get_dict_number(dict, (char_u *)"leftcol");
-	curwin->w_skipcol = get_dict_number(dict, (char_u *)"skipcol");
+	if (dict_find(dict, (char_u *)"leftcol", -1) != NULL)
+	    curwin->w_leftcol = get_dict_number(dict, (char_u *)"leftcol");
+	if (dict_find(dict, (char_u *)"skipcol", -1) != NULL)
+	    curwin->w_skipcol = get_dict_number(dict, (char_u *)"skipcol");
 
 	check_cursor();
 	win_new_height(curwin, curwin->w_height);
