@@ -1014,7 +1014,7 @@ au BufNewFile,BufRead *.kix			setf kix
 au BufNewFile,BufRead *.k			setf kwt
 
 " Kivy
-au BufNewFile,BufRead *.ky			setf kivy
+au BufNewFile,BufRead *.kv			setf kivy
 
 " KDE script
 au BufNewFile,BufRead *.ks			setf kscript
