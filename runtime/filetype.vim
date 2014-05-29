@@ -1013,6 +1013,9 @@ au BufNewFile,BufRead *.kix			setf kix
 " Kimwitu[++]
 au BufNewFile,BufRead *.k			setf kwt
 
+" Kivy
+au BufNewFile,BufRead *.ky			setf kivy
+
 " KDE script
 au BufNewFile,BufRead *.ks			setf kscript
 
