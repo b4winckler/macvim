@@ -5,12 +5,8 @@
 " Version:     1
 " URL:         http://kivy.org/
 
-" For version 5.x: Clear all syntax items.
-" For version 6.x: Quit when a syntax file was already loaded.
-if version < 600
-  syntax clear
-elseif exists("b:current_syntax")
-  finish
+if exists("b:current_syntax")
+    finish
 endif
 
 " Load Python syntax first (Python can be used within Kivy)
@@ -31,25 +27,11 @@ syn region kivyAttribute matchgroup=kivyIdent
             \ start=/[\a_][\a\d_]*:/ end=/$/
             \ contains=@pyth skipwhite
 
-" Define the default highlighting.
-" For version 5.7 and earlier: only when not done already
-" For version 5.8 and later: only when an item doesn't have highlighting yet
-if version >= 508 || !exists("did_python_syn_inits")
-    if version <= 508
-        let did_python_syn_inits = 1
-        command -nargs=+ HiLink hi link <args>
-    else
-        command -nargs=+ HiLink hi def link <args>
-    endif
-
-    HiLink kivyPreproc      PreProc
-    HiLink kivyComment      Comment
-    HiLink kivyRule         Function
-    HiLink kivyIdent        Statement
-    HiLink kivyAttribute    Label
-
-    delcommand HiLink
-endif
+hi def link kivyPreproc   PreProc
+hi def link kivyComment   Comment
+hi def link kivyRule      Function
+hi def link kivyIdent     Statement
+hi def link kivyAttribute Label
 
 let b:current_syntax = "kivy"
 
