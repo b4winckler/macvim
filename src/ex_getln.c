@@ -2196,6 +2196,7 @@ getexmodeline(promptc, cookie, indent)
     int		vcol = 0;
     char_u	*p;
     int		prev_char;
+    int		len;
 
     /* Switch cursor on now.  This avoids that it happens after the "\n", which
      * confuses the system function that computes tabstops. */
@@ -2272,7 +2273,17 @@ getexmodeline(promptc, cookie, indent)
 	    {
 		if (line_ga.ga_len > 0)
 		{
-		    --line_ga.ga_len;
+#ifdef FEAT_MBYTE
+		    if (has_mbyte)
+		    {
+			p = (char_u *)line_ga.ga_data;
+			p[line_ga.ga_len] = NUL;
+			len = (*mb_head_off)(p, p + line_ga.ga_len - 1) + 1;
+			line_ga.ga_len -= len;
+		    }
+		    else
+#endif
+			--line_ga.ga_len;
 		    goto redraw;
 		}
 		continue;
@@ -2288,7 +2299,7 @@ getexmodeline(promptc, cookie, indent)
 
 	    if (c1 == Ctrl_T)
 	    {
-		long        sw = get_sw_value(curbuf);
+		long	    sw = get_sw_value(curbuf);
 
 		p = (char_u *)line_ga.ga_data;
 		p[line_ga.ga_len] = NUL;
@@ -2308,8 +2319,9 @@ redraw:
 		/* redraw the line */
 		msg_col = startcol;
 		vcol = 0;
-		for (p = (char_u *)line_ga.ga_data;
-			  p < (char_u *)line_ga.ga_data + line_ga.ga_len; ++p)
+		p = (char_u *)line_ga.ga_data;
+		p[line_ga.ga_len] = NUL;
+		while (p < (char_u *)line_ga.ga_data + line_ga.ga_len)
 		{
 		    if (*p == TAB)
 		    {
@@ -2317,11 +2329,14 @@ redraw:
 			{
 			    msg_putchar(' ');
 			} while (++vcol % 8);
+			++p;
 		    }
 		    else
 		    {
-			msg_outtrans_len(p, 1);
-			vcol += char2cells(*p);
+			len = MB_PTR2LEN(p);
+			msg_outtrans_len(p, len);
+			vcol += ptr2cells(p);
+			p += len;
 		    }
 		}
 		msg_clr_eos();
@@ -2370,7 +2385,16 @@ redraw:
 
 	if (IS_SPECIAL(c1))
 	    c1 = '?';
-	((char_u *)line_ga.ga_data)[line_ga.ga_len] = c1;
+#ifdef FEAT_MBYTE
+	if (has_mbyte)
+	    len = (*mb_char2bytes)(c1,
+				  (char_u *)line_ga.ga_data + line_ga.ga_len);
+	else
+#endif
+	{
+	    len = 1;
+	    ((char_u *)line_ga.ga_data)[line_ga.ga_len] = c1;
+	}
 	if (c1 == '\n')
 	    msg_putchar('\n');
 	else if (c1 == TAB)
@@ -2384,10 +2408,10 @@ redraw:
 	else
 	{
 	    msg_outtrans_len(
-		     ((char_u *)line_ga.ga_data) + line_ga.ga_len, 1);
+		     ((char_u *)line_ga.ga_data) + line_ga.ga_len, len);
 	    vcol += char2cells(c1);
 	}
-	++line_ga.ga_len;
+	line_ga.ga_len += len;
 	escaped = FALSE;
 
 	windgoto(msg_row, msg_col);
