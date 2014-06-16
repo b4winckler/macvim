@@ -4602,12 +4602,14 @@ win_free(wp, tp)
     if (wp != aucmd_win)
 #endif
 	win_remove(wp, tp);
+#ifdef FEAT_AUTOCMD
     if (autocmd_busy)
     {
 	wp->w_next = au_pending_free_win;
 	au_pending_free_win = wp;
     }
     else
+#endif
 	vim_free(wp);
 
 #ifdef FEAT_AUTOCMD
@@ -5665,7 +5667,12 @@ win_new_height(wp, height)
     if (wp->w_height > 0)
     {
 	if (wp == curwin)
-	    validate_cursor();		/* w_wrow needs to be valid */
+	    /* w_wrow needs to be valid. When setting 'laststatus' this may
+	     * call win_new_height() recursively. */
+	    validate_cursor();
+	if (wp->w_height != prev_height)
+	    return;  /* Recursive call already changed the size, bail out here
+			to avoid the following to mess things up. */
 	if (wp->w_wrow != wp->w_prev_fraction_row)
 	    set_fraction(wp);
     }
