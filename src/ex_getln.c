@@ -342,6 +342,13 @@ getcmdline(firstc, count, indent)
     do_digraph(-1);		/* init digraph typeahead */
 #endif
 
+    /* If something above caused an error, reset the flags, we do want to type
+     * and execute commands. Display may be messed up a bit. */
+    if (did_emsg)
+	redrawcmd();
+    did_emsg = FALSE;
+    got_int = FALSE;
+
     /*
      * Collect the command string, handling editing keys.
      */
@@ -2303,10 +2310,10 @@ getexmodeline(promptc, cookie, indent)
 
 		p = (char_u *)line_ga.ga_data;
 		p[line_ga.ga_len] = NUL;
-		indent = get_indent_str(p, 8);
+		indent = get_indent_str(p, 8, FALSE);
 		indent += sw - indent % sw;
 add_indent:
-		while (get_indent_str(p, 8) < indent)
+		while (get_indent_str(p, 8, FALSE) < indent)
 		{
 		    char_u *s = skipwhite(p);
 
@@ -2358,11 +2365,11 @@ redraw:
 		else
 		{
 		    p[line_ga.ga_len] = NUL;
-		    indent = get_indent_str(p, 8);
+		    indent = get_indent_str(p, 8, FALSE);
 		    --indent;
 		    indent -= indent % get_sw_value(curbuf);
 		}
-		while (get_indent_str(p, 8) > indent)
+		while (get_indent_str(p, 8, FALSE) > indent)
 		{
 		    char_u *s = skipwhite(p);
 

@@ -1070,6 +1070,10 @@ enum
 #ifdef FEAT_CURSORBIND
     , WV_CRBIND
 #endif
+#ifdef FEAT_LINEBREAK
+    , WV_BRI
+    , WV_BRIOPT
+#endif
 #ifdef FEAT_DIFF
     , WV_DIFF
 #endif
