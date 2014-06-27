@@ -818,7 +818,7 @@ au BufNewFile,BufRead *.gs			setf grads
 au BufNewFile,BufRead *.gretl			setf gretl
 
 " Groovy
-au BufNewFile,BufRead *.groovy			setf groovy
+au BufNewFile,BufRead *.groovy,*.gradle			setf groovy
 
 " GNU Server Pages
 au BufNewFile,BufRead *.gsp			setf gsp
