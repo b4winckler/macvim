@@ -17362,6 +17362,7 @@ static int	item_compare_numeric;
 static char_u	*item_compare_func;
 static dict_T	*item_compare_selfdict;
 static int	item_compare_func_err;
+static int	item_compare_keep_zero;
 static void	do_sort_uniq __ARGS((typval_T *argvars, typval_T *rettv, int sort));
 #define ITEM_COMPARE_FAIL 999
 
@@ -17402,6 +17403,12 @@ item_compare(s1, s2)
 	n2 = strtod((char *)p2, (char **)&p2);
 	res = n1 == n2 ? 0 : n1 > n2 ? 1 : -1;
     }
+
+    /* When the result would be zero, compare the pointers themselves.  Makes
+     * the sort stable. */
+    if (res == 0 && !item_compare_keep_zero)
+	res = s1 > s2 ? 1 : -1;
+
     vim_free(tofree1);
     vim_free(tofree2);
     return res;
@@ -17424,7 +17431,7 @@ item_compare2(s1, s2)
     if (item_compare_func_err)
 	return 0;
 
-    /* copy the values.  This is needed to be able to set v_lock to VAR_FIXED
+    /* Copy the values.  This is needed to be able to set v_lock to VAR_FIXED
      * in the copy without changing the original list items. */
     copy_tv(&(*(listitem_T **)s1)->li_tv, &argv[0]);
     copy_tv(&(*(listitem_T **)s2)->li_tv, &argv[1]);
@@ -17443,6 +17450,12 @@ item_compare2(s1, s2)
     if (item_compare_func_err)
 	res = ITEM_COMPARE_FAIL;  /* return value has wrong type */
     clear_tv(&rettv);
+
+    /* When the result would be zero, compare the pointers themselves.  Makes
+     * the sort stable. */
+    if (res == 0 && !item_compare_keep_zero)
+	res = s1 > s2 ? 1 : -1;
+
     return res;
 }
 
@@ -17537,6 +17550,7 @@ do_sort_uniq(argvars, rettv, sort)
 		ptrs[i++] = li;
 
 	    item_compare_func_err = FALSE;
+	    item_compare_keep_zero = FALSE;
 	    /* test the compare function */
 	    if (item_compare_func != NULL
 		    && item_compare2((void *)&ptrs[0], (void *)&ptrs[1])
@@ -17564,6 +17578,7 @@ do_sort_uniq(argvars, rettv, sort)
 
 	    /* f_uniq(): ptrs will be a stack of items to remove */
 	    item_compare_func_err = FALSE;
+	    item_compare_keep_zero = TRUE;
 	    item_compare_func_ptr = item_compare_func
 					       ? item_compare2 : item_compare;
 
