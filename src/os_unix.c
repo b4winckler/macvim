@@ -3786,9 +3786,6 @@ check_mouse_termcode()
 # ifdef FEAT_MOUSE_URXVT
     /* same as the dec mouse */
     if (use_xterm_mouse() == 3
-#  ifdef FEAT_TERMRESPONSE
-	    && !did_request_esc_sequence()
-#  endif
 #  ifdef FEAT_GUI
 	    && !gui.in_use
 #  endif
@@ -3803,7 +3800,8 @@ check_mouse_termcode()
 	    mch_setmouse(FALSE);
 	    setmouse();
 	}
-	xterm_conflict_mouse = TRUE;
+	/* It's OK to request the xterm version for uxterm. */
+	resume_get_esc_sequence();
     }
     else
 	del_mouse_termcode(KS_URXVT_MOUSE);
