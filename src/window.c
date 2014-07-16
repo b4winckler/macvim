@@ -686,6 +686,8 @@ win_split_ins(size, flags, new_wp, dir)
     int		layout;
     frame_T	*frp, *curfrp;
     int		before;
+    int		minwidth;
+    int		minheight;
 
     if (flags & WSP_TOP)
 	oldwin = firstwin;
@@ -725,11 +727,15 @@ win_split_ins(size, flags, new_wp, dir)
 	    needed += p_wiw - p_wmw;
 	if (p_ea || (flags & (WSP_BOT | WSP_TOP)))
 	{
+	    minwidth = frame_minwidth(topframe, NULL);
 	    available = topframe->fr_width;
-	    needed += frame_minwidth(topframe, NULL);
+	    needed += minwidth;
 	}
 	else
+	{
+	    minwidth = frame_minwidth(oldwin->w_frame, NULL);
 	    available = oldwin->w_width;
+	}
 	if (available < needed && new_wp == NULL)
 	{
 	    EMSG(_(e_noroom));
@@ -739,6 +745,8 @@ win_split_ins(size, flags, new_wp, dir)
 	    new_size = oldwin->w_width / 2;
 	if (new_size > oldwin->w_width - p_wmw - 1)
 	    new_size = oldwin->w_width - p_wmw - 1;
+	if (new_size > available - minwidth - 1)
+	    new_size = available - minwidth - 1;
 	if (new_size < p_wmw)
 	    new_size = p_wmw;
 
@@ -786,11 +794,13 @@ win_split_ins(size, flags, new_wp, dir)
 	    needed += p_wh - p_wmh;
 	if (p_ea || (flags & (WSP_BOT | WSP_TOP)))
 	{
+	    minheight = frame_minheight(topframe, NULL);
 	    available = topframe->fr_height;
-	    needed += frame_minheight(topframe, NULL);
+	    needed += minheight;
 	}
 	else
 	{
+	    minheight = frame_minheight(oldwin->w_frame, NULL);
 	    available = oldwin->w_height;
 	    needed += p_wmh;
 	}
@@ -810,6 +820,8 @@ win_split_ins(size, flags, new_wp, dir)
 
 	if (new_size > oldwin_height - p_wmh - STATUS_HEIGHT)
 	    new_size = oldwin_height - p_wmh - STATUS_HEIGHT;
+	if (new_size > available - minheight - STATUS_HEIGHT)
+	    new_size = available - minheight - STATUS_HEIGHT;
 	if (new_size < p_wmh)
 	    new_size = p_wmh;
 
@@ -4841,15 +4853,20 @@ win_size_restore(gap)
     garray_T	*gap;
 {
     win_T	*wp;
-    int		i;
+    int		i, j;
 
     if (win_count() * 2 == gap->ga_len)
     {
-	i = 0;
-	for (wp = firstwin; wp != NULL; wp = wp->w_next)
+	/* The order matters, because frames contain other frames, but it's
+	 * difficult to get right. The easy way out is to do it twice. */
+	for (j = 0; j < 2; ++j)
 	{
-	    frame_setwidth(wp->w_frame, ((int *)gap->ga_data)[i++]);
-	    win_setheight_win(((int *)gap->ga_data)[i++], wp);
+	    i = 0;
+	    for (wp = firstwin; wp != NULL; wp = wp->w_next)
+	    {
+		frame_setwidth(wp->w_frame, ((int *)gap->ga_data)[i++]);
+		win_setheight_win(((int *)gap->ga_data)[i++], wp);
+	    }
 	}
 	/* recompute the window positions */
 	(void)win_comp_pos();
@@ -5737,7 +5754,7 @@ win_new_height(wp, height)
 		    --wp->w_wrow;
 		}
 	    }
-            set_topline(wp, lnum);
+	    set_topline(wp, lnum);
 	}
 	else if (sline > 0)
 	{
@@ -5783,7 +5800,7 @@ win_new_height(wp, height)
 		wp->w_wrow -= sline;
 	    }
 
-            set_topline(wp, lnum);
+	    set_topline(wp, lnum);
 	}
     }
 
