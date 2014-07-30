@@ -1183,6 +1183,11 @@ win_split_ins(size, flags, new_wp, dir)
 	    p_wh = size;
     }
 
+#ifdef FEAT_JUMPLIST
+    /* Keep same changelist position in new window. */
+    wp->w_changelistidx = oldwin->w_changelistidx;
+#endif
+
     /*
      * make the new window the current window
      */

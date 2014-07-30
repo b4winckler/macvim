@@ -4,7 +4,7 @@
 # Authors:	Zoltan Arpadffy, <arpadffy@polarhome.com>
 #		Sandor Kopanyi,  <sandor.kopanyi@mailbox.hu>
 #
-# Last change:  2014 Jul 23
+# Last change:  2014 Jul 30
 #
 # This has been tested on VMS 6.2 to 8.3 on DEC Alpha, VAX and IA64.
 # Edit the lines in the Configuration section below to select.
@@ -101,7 +101,9 @@ SCRIPT = test1.out  test2.out  test3.out  test4.out  test5.out  \
 	 test_listlbr.out \
 	 test_listlbr_utf8.out \
 	 test_qf_title.out \
+	 test_changelist.out \
 	 test_eval.out \
+	 test_insertcount.out \
 	 test_options.out
 
 # Known problems:
