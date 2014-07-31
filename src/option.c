@@ -12199,52 +12199,6 @@ find_mps_values(initc, findc, backwards, switchit)
     }
 }
 
-#if defined(FEAT_LINEBREAK) || defined(PROTO)
-/*
- * This is called when 'breakindentopt' is changed and when a window is
- * initialized.
- */
-    int
-briopt_check()
-{
-    char_u	*p;
-    int		bri_shift = 0;
-    long	bri_min = 20;
-    int		bri_sbr = FALSE;
-
-    p = curwin->w_p_briopt;
-    while (*p != NUL)
-    {
-	if (STRNCMP(p, "shift:", 6) == 0
-		 && ((p[6] == '-' && VIM_ISDIGIT(p[7])) || VIM_ISDIGIT(p[6])))
-	{
-	    p += 6;
-	    bri_shift = getdigits(&p);
-	}
-	else if (STRNCMP(p, "min:", 4) == 0 && VIM_ISDIGIT(p[4]))
-	{
-	    p += 4;
-	    bri_min = getdigits(&p);
-	}
-	else if (STRNCMP(p, "sbr", 3) == 0)
-	{
-	    p += 3;
-	    bri_sbr = TRUE;
-	}
-	if (*p != ',' && *p != NUL)
-	    return FAIL;
-	if (*p == ',')
-	    ++p;
-    }
-
-    curwin->w_p_brishift = bri_shift;
-    curwin->w_p_brimin   = bri_min;
-    curwin->w_p_brisbr   = bri_sbr;
-
-    return OK;
-}
-#endif
-
 #ifdef FEAT_FULLSCREEN
 /*
  * Read the 'fuoptions' option, set fuoptions_flags and 
@@ -12332,6 +12286,52 @@ check_fuoptions(p_fuoptions, flags, bgcolor)
 
     /* Let the GUI know, in case the background color has changed. */
     gui_mch_fuopt_update();
+
+    return OK;
+}
+#endif
+
+#if defined(FEAT_LINEBREAK) || defined(PROTO)
+/*
+ * This is called when 'breakindentopt' is changed and when a window is
+ * initialized.
+ */
+    int
+briopt_check()
+{
+    char_u	*p;
+    int		bri_shift = 0;
+    long	bri_min = 20;
+    int		bri_sbr = FALSE;
+
+    p = curwin->w_p_briopt;
+    while (*p != NUL)
+    {
+	if (STRNCMP(p, "shift:", 6) == 0
+		 && ((p[6] == '-' && VIM_ISDIGIT(p[7])) || VIM_ISDIGIT(p[6])))
+	{
+	    p += 6;
+	    bri_shift = getdigits(&p);
+	}
+	else if (STRNCMP(p, "min:", 4) == 0 && VIM_ISDIGIT(p[4]))
+	{
+	    p += 4;
+	    bri_min = getdigits(&p);
+	}
+	else if (STRNCMP(p, "sbr", 3) == 0)
+	{
+	    p += 3;
+	    bri_sbr = TRUE;
+	}
+	if (*p != ',' && *p != NUL)
+	    return FAIL;
+	if (*p == ',')
+	    ++p;
+    }
+
+    curwin->w_p_brishift = bri_shift;
+    curwin->w_p_brimin   = bri_min;
+    curwin->w_p_brisbr   = bri_sbr;
 
     return OK;
 }

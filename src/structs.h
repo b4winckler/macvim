@@ -1648,11 +1648,11 @@ struct file_buffer
 #ifdef FEAT_PERSISTENT_UNDO
     int		b_p_udf;	/* 'undofile' */
 #endif
-#ifdef FEAT_LISP
-    char_u	*b_p_lw;	/* 'lispwords' local value */
-#endif
 #ifdef FEAT_GUI_MACVIM
     int		b_p_mmta;	/* 'macmeta' local value */
+#endif
+#ifdef FEAT_LISP
+    char_u	*b_p_lw;	/* 'lispwords' local value */
 #endif
 
     /* end of buffer options */
