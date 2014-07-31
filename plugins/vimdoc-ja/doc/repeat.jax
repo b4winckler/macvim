@@ -1,4 +1,4 @@
-*repeat.txt*    For Vim バージョン 7.4.  Last change: 2014 Feb 11
+*repeat.txt*    For Vim バージョン 7.4.  Last change: 2014 Mar 25
 
 
 		VIMリファレンスマニュアル    by Bram Moolenaar
@@ -207,8 +207,8 @@ Vimスクリプトの書き方はユーザーマニュアルの41章|usr_41.txt|
 				scriptencoding iso-8859-5
 				scriptencoding cp932
 <
-			[encoding]が空のときは変換はされない。これは文字コード
-			の変換を限定するために使う: >
+			[encoding]が空のときは変換はされない。これはそれ以降の
+			行の文字コードの変換を限定するために使える: >
 				scriptencoding euc-jp
 				... 変換される ...
 				scriptencoding
@@ -348,7 +348,7 @@ UNIXで作られたファイル)、'fileformats' が空でかつ先頭行が<CR>
    :set cpo-=C
 
 Note 関数の中でその手のコマンドを実行するには、関数定義の際に 'C' フラグを追加
-する必要があり、それが実行される際にではない。
+する必要があり、それが実行される際にではない。 >
    :set cpo+=C
    :function Foo()
    :1append
@@ -569,6 +569,12 @@ Note 関数はまず読み込まれ、後で実行される。読み込まれた
 
 シンタックスハイライトのプロファイリングについては |:syntime| を参照せよ。
 
+例えば、one_script.vim スクリプトファイルをプロファイリングするには: >
+	:profile start /tmp/one_script_profile
+	:profile file one_script.vim
+	:source one_script.vim
+	:exit
+
 
 :prof[ile] start {fname}			*:prof* *:profile* *E750*
 		プロファイリングを開始し、終了時に出力を {fname} に出力する。
@@ -590,8 +596,11 @@ Note 関数はまず読み込まれ、後で実行される。読み込まれた
 		このコマンドはスクリプトそのものをプロファイリングするだけで、
 		その中で定義されている関数のプロファイリングは行わない。
 		[!] がつけられたときは、そのスクリプト中で定義されている全ての
-		関数のプロファイリングも行う。しかしスクリプトがこのコマンドの
-		後で読み込まれたときだけである。
+		関数のプロファイリングも行う。
+		Note スクリプトがこのコマンドの後で読み込まれたときだけ、その
+		プロファイリングは始まる。スクリプト自身にある :profile コマン
+		ドは働かない。
+
 
 :profd[el] ...						*:profd* *:profdel*
 		指定された引数に対するプロファイリングを停止する。引数について

@@ -196,6 +196,9 @@ typedef int perl_key;
 # define Perl_pop_scope dll_Perl_pop_scope
 # define Perl_push_scope dll_Perl_push_scope
 # define Perl_save_int dll_Perl_save_int
+# if (PERL_REVISION == 5) && (PERL_VERSION >= 20)
+#  define Perl_save_strlen dll_Perl_save_strlen
+# endif
 # define Perl_stack_grow dll_Perl_stack_grow
 # define Perl_set_context dll_Perl_set_context
 # if (PERL_REVISION == 5) && (PERL_VERSION >= 14)
@@ -316,6 +319,9 @@ static SV* (*Perl_call_method)(pTHX_ const char*, I32);
 static void (*Perl_pop_scope)(pTHX);
 static void (*Perl_push_scope)(pTHX);
 static void (*Perl_save_int)(pTHX_ int*);
+#if (PERL_REVISION == 5) && (PERL_VERSION >= 20)
+static void (*Perl_save_strlen)(pTHX_ STRLEN* ptr);
+#endif
 static SV** (*Perl_stack_grow)(pTHX_ SV**, SV**p, int);
 static SV** (*Perl_set_context)(void*);
 #if (PERL_REVISION == 5) && (PERL_VERSION >= 14)
@@ -446,6 +452,9 @@ static struct {
     {"Perl_pop_scope", (PERL_PROC*)&Perl_pop_scope, FALSE},
     {"Perl_push_scope", (PERL_PROC*)&Perl_push_scope, FALSE},
     {"Perl_save_int", (PERL_PROC*)&Perl_save_int, FALSE},
+#if (PERL_REVISION == 5) && (PERL_VERSION >= 20)
+    {"Perl_save_strlen", (PERL_PROC*)&Perl_save_strlen, FALSE},
+#endif
     {"Perl_stack_grow", (PERL_PROC*)&Perl_stack_grow, FALSE},
     {"Perl_set_context", (PERL_PROC*)&Perl_set_context, FALSE},
 #if (PERL_REVISION == 5) && (PERL_VERSION >= 14)

@@ -1236,7 +1236,7 @@ b:browsefilter はファイルタイププラグインで設定することが�
 きる道を残すことだ。
 
 Vim が browsefilter をサポートしていないときにそれを設定しないようにするには、
-has("browsefilter") が使えます: >
+has("browsefilter") が使える: >
 
 	if has("browsefilter")
 	   let g:browsefilter = "whatever"

@@ -92,13 +92,11 @@ GUIウィンドウを開いた直後にいくつかのコマンドを実行し�
 初期化をするために、gvimrcファイルを使用することができる。
 
 ユーザーの個人的なGUI初期化ファイルを置くのに推奨される場所:
-	Unix		    $HOME/.gvimrc あるいは $HOME/.vim/gvimrc
-	OS/2		    $HOME/.gvimrc、$HOME/vimfiles/gvimrc あるいは
+	Unix		    $HOME/.gvimrc、$HOME/.vim/gvimrc
+	OS/2		    $HOME/.gvimrc、$HOME/vimfiles/gvimrc、$VIM/.gvimrc
+	MS-DOSとWin32       $HOME/_gvimrc、$HOME/vimfiles/gvimrc、$VIM/_gvimrc
+	Amiga		    s:.gvimrc、home:.gvimrc、home:vimfiles:gvimrc、
 			    $VIM/.gvimrc
-	MS-DOSとWin32	    $HOME/_gvimrc、$HOME/vimfiles/gvimrc あるいは
-			    $VIM/_gvimrc
-	Amiga		    s:.gvimrc、home:.gvimrc、home:vimfiles:gvimrc
-			    あるいは $VIM/.gvimrc
 
 個人的な初期化ファイルは上記の順に検索され、最初に見つかったものだけが読み込ま
 れる。

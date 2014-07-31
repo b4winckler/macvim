@@ -1,4 +1,4 @@
-*map.txt*       For Vim バージョン 7.4.  Last change: 2013 Aug 22
+*map.txt*       For Vim バージョン 7.4.  Last change: 2014 Jun 02
 
 
 		  VIMリファレンスマニュアル	  by Bram Moolenaar
@@ -58,17 +58,17 @@
 			プが使用されたときに {rhs} が調べられ、再マップされま
 			す。マップを入れ子にしたり再帰的にすることができます。
 
-
-:no[remap]  {lhs} {rhs}		|mapmode-nvo|		*:no*  *:noremap*
-:nn[oremap] {lhs} {rhs}		|mapmode-n|		*:nn*  *:nnoremap*
-:vn[oremap] {lhs} {rhs}		|mapmode-v|		*:vn*  *:vnoremap*
-:xn[oremap] {lhs} {rhs}		|mapmode-x|		*:xn*  *:xnoremap*
-:snor[emap] {lhs} {rhs}		|mapmode-s|		*:snor* *:snoremap*
-:ono[remap] {lhs} {rhs}		|mapmode-o|		*:ono* *:onoremap*
-:no[remap]! {lhs} {rhs}		|mapmode-ic|		*:no!* *:noremap!*
-:ino[remap] {lhs} {rhs}		|mapmode-i|		*:ino* *:inoremap*
-:ln[oremap] {lhs} {rhs}		|mapmode-l|		*:ln*  *:lnoremap*
-:cno[remap] {lhs} {rhs}		|mapmode-c|		*:cno* *:cnoremap*
+						*:nore* *:norem*
+:no[remap]  {lhs} {rhs}		|mapmode-nvo|	*:no*  *:noremap* *:nor*
+:nn[oremap] {lhs} {rhs}		|mapmode-n|	*:nn*  *:nnoremap*
+:vn[oremap] {lhs} {rhs}		|mapmode-v|	*:vn*  *:vnoremap*
+:xn[oremap] {lhs} {rhs}		|mapmode-x|	*:xn*  *:xnoremap*
+:snor[emap] {lhs} {rhs}		|mapmode-s|	*:snor* *:snoremap*
+:ono[remap] {lhs} {rhs}		|mapmode-o|	*:ono* *:onoremap*
+:no[remap]! {lhs} {rhs}		|mapmode-ic|	*:no!* *:noremap!*
+:ino[remap] {lhs} {rhs}		|mapmode-i|	*:ino* *:inoremap*
+:ln[oremap] {lhs} {rhs}		|mapmode-l|	*:ln*  *:lnoremap*
+:cno[remap] {lhs} {rhs}		|mapmode-c|	*:cno* *:cnoremap*
 			キー入力 {lhs} を {rhs} に割り当てます。作成したマッ
 			プ、はマップコマンドに対応したモードで使用できます。
 			{rhs} は再マップされないので、マップが入れ子になったり
@@ -108,7 +108,6 @@
 			ます。{Vi にはありません}
 			バッファローカルなマップを削除するには <buffer> 引数を
 			付けてください |:map-<buffer>|。
-			mappings |:map-<buffer>|
 			警告: 標準設定のマップも削除されます。
 
 :map				|mapmode-nvo|
@@ -168,13 +167,23 @@
 	:map <buffer>  ,w  /[.,;]<CR>
 この場合、他のバッファで、",w" に対して別の操作を割り当てることができます: >
 	:map <buffer>  ,w  /[#&!]<CR>
-バッファローカルなマップは通常のマップよりも優先して使用されます。
+バッファローカルなマップは通常のマップよりも優先して使用されます。長いグローバ
+ルなマップが存在する場合に短いローカルなマップが影響を受けないようにするには下
+記の <nowait> を参照して下さい。
 "<buffer>" はマップを削除するときにも指定できます: >
 	:unmap <buffer> ,w
 	:mapclear <buffer>
-バッファローカルのマップはそのバッファが削除されるときにいっしょに消去されま
+バッファローカルなマップはそのバッファが削除されるときにいっしょに消去されま
 す。アンロード(|:bunload|)では消去されません。ローカルオプションと同じです。
 また、|map-precedence| を参照して下さい。
+
+						*:map-<nowait>* *:map-nowait*
+"," にバッファローカルなマップを定義する場合に "," から始まるグローバルなマッ
+プがあるかもしれません。その場合はVimが "," のマップか、あるいはより長いマップ
+を使用するかどうか知るために別の文字を入力する必要があります。これを避けるには
+引数に <nowait> を追加します。そしてそのマップは一致する場合に使用され、Vimは
+それ以上入力される文字を待ちません。しかし、既に文字が入力されていた場合はそれ
+が使われます。
 
 						*:map-<silent>* *:map-silent*
 実行するコマンドがコマンドラインに表示されないようにするには、マップコマンドの
@@ -292,9 +301,22 @@ Note: 特殊キーが機能するようにしたり、テキスト中の CSI バ
 ウントの指定でゼロを入力できるようにするためです。
 
 						*map-overview* *map-modes*
-マップコマンドとモードの対応表:
+マップコマンドとモードの対応表。詳細は以後に。
+     コマンド                    モード ~
+:map   :noremap  :unmap     ノーマル、ビジュアル、選択、演算待ち状態
+:nmap  :nnoremap :nunmap    ノーマル
+:vmap  :vnoremap :vunmap    ビジュアル、選択
+:smap  :snoremap :sunmap    選択
+:xmap  :xnoremap :xunmap    ビジュアル
+:omap  :onoremap :ounmap    演算待ち状態
+:map!  :noremap! :unmap!    挿入、コマンドライン
+:imap  :inoremap :iunmap    挿入
+:lmap  :lnoremap :lunmap    挿入、コマンドライン、Lang-Arg
+:cmap  :cnoremap :cunmap    コマンドライン
 
-    コマンド:				      モード: ~
+{訳注: Lang-Argについては |language-mapping| を参照}
+
+    コマンド				      モード ~
 				    ノーマル  ビジュアル+選択  演算待ち状態~
 :map   :noremap   :unmap   :mapclear	 yes	    yes		   yes
 :nmap  :nnoremap  :nunmap  :nmapclear	 yes	     -		    -
@@ -311,7 +333,7 @@ NOTE: 選択モードで印字可能文字にマップを定義するとユー�
 しれません。印字可能文字に対しては明示的に :xmap と :smap を使い分けるのがいい
 でしょう。マップを定義したあとで :sunmap を使う方法もあります。
 
-    コマンド:				      モード: ~
+    コマンド				      モード ~
 					  ビジュアル  選択 ~
 :vmap  :vnoremap  :vunmap  :vmapclear	    yes        yes
 :xmap  :xnoremap  :xunmap  :xmapclear	    yes         -
@@ -321,7 +343,7 @@ NOTE: 選択モードで印字可能文字にマップを定義するとユー�
 一部のコマンドは、挿入モードとコマンドラインモードの両方で使えますが、一部はそ
 うではありません:
 
-    コマンド:				      モード: ~
+    コマンド				      モード ~
 					    挿入  コマンドライン Lang-Arg ~
 :map!  :noremap!  :unmap!  :mapclear!	    yes	       yes	   -
 :imap  :inoremap  :iunmap  :imapclear	    yes		-	   -
@@ -371,10 +393,11 @@ CTRL-U (<C-U>) を使って (Vimによって挿入される) 範囲指定を削�
    ある言語用の言語マップをロードするには、オプション 'keymap' を設定するのが
 簡単です。|45.5|を参照してください。
    挿入モードとコマンドラインモードでは CTRL-^ で言語マップの使用の有無を切り替
-えることができます|i_CTRL-^| |c_CTRL-^|。(検索パターンの入力ではなく)コマンド
-ラインに入力するときには CTRL-^ で切り替えるまで言語マップは無効になっています。
-挿入モードと検索パターンでの使用状態は別々に記録されます。挿入モードの使用状態
-は "f" や "t" などのコマンドで文字を入力するときにも使用されます。
+えることができます|i_CTRL-^| |c_CTRL-^|。これらのコマンドは 'iminsert' オプショ
+ンの値を変更します。(検索パターンの入力ではなく)コマンドラインに入力するときに
+は CTRL-^ で切り替えるまで言語マップは無効になっています。挿入モードと検索パ
+ターンでの使用状態は別々に記録されます。挿入モードの使用状態は "f" や "t" など
+のコマンドで文字を入力するときにも使用されます。
    言語マップは、既にマップが適用された文字には適用されません。言語マップは入
 力された文字に対してのみ使用されます。これは、言語マップは文字が入力されたとき
 に適用されたはずという想定によるものです。
@@ -383,17 +406,19 @@ CTRL-U (<C-U>) を使って (Vimによって挿入される) 範囲指定を削�
 1.4 マップの一覧表示					*map-listing*
 マップを一覧表示したときの行頭の2文字は使用できるモードを表しています:
 
-      CHAR		MODE	~
-     <Space>		ノーマル、ビジュアル、選択、演算待ち状態モード
-	n		ノーマルモード
-	v		ビジュアルモード、選択モード
-	s		選択モード
-	x		ビジュアルモード
-	o		演算待ち状態モード
-	!		挿入モード、コマンドラインモード
-	i		挿入モード
-	l		Lang-Argモード。|language-mapping|
-	c		コマンドラインモード
+      文字		モード	~
+     <Space>		ノーマル、ビジュアル、選択、演算待ち状態
+	n		ノーマル
+	v		ビジュアル、選択
+	s		選択
+	x		ビジュアル
+	o		演算待ち状態
+	!		挿入、コマンドライン
+	i		挿入
+	l		挿入、コマンドライン、Lang-Argでの ":lmap" マップ
+	c		コマンドライン
+
+{訳注: Lang-Argについては |language-mapping| を参照}
 
 {rhs} の直前に特殊な文字が表示されているものは次のことを意味します:
 	*	再マップされません
@@ -580,7 +605,7 @@ Note: 変数 "mapleader" はマップを定義するときに使用されます�
 マップに Ex コマンドを含める場合、そのコマンドラインを実行するために改行文字を
 挿入する必要があります。これには <CR> を使うことが推奨されています(参照|<>|)。
 例: >
-   :map  _ls  :!ls -l %<CR>:echo "the end"<CR>
+   :map  _ls  :!ls -l %:S<CR>:echo "the end"<CR>
 
 挿入モードやコマンドラインモードで、入力する文字がマップされないようにするに
 は、その文字を入力する前に CTRL-V を (1回) 押してください。'paste' がオンの場
@@ -646,6 +671,17 @@ Vim は、入力されたキーで始まるマップがあるかどうか調べ�
 間) だけ待機します。待機した後に、'q' という文字が入力されたのだと判断します。
 ゆっくり入力したい場合や、遅いシステムを使用している場合は、'timeout' をオフに
 してください。'ttimeout' を設定するのもいいでしょう。
+
+                            				*map-precedence*
+バッファローカルなマップ(|:map-<buffer>|を使用して定義された)はどのグローバル
+なマップよりも優先されます。バッファローカルなマップがグローバルなマップと同じ
+場合、Vimはバッファローカルなマップを使用します。加えて、<nowait> で定義された
+場合はより長いマップが同じ接頭辞を持っているとしても、直ちに完了したマップを使
+用します。例えば、次の2つのマップがあるとします: >
+    :map <buffer> <nowait> \a   :echo "Local \a"<CR>
+    :map                   \abc :echo "Global \abc"<CR>
+\a を入力するとバッファローカルなマップが直ちに使用されます。Vimはユーザーが
+\abc を入力するかどうかを知るためにそれ以上の文字を待つことはしません。
 
 							*map-keys-fails*
 次のような状況では、キーコードが認識されないことがあります:
@@ -781,12 +817,10 @@ g@{motion}		'operatorfunc' に設定された関数を実行します。
 	  let &selection = "inclusive"
 	  let reg_save = @@
 
-	  if a:0  " Invoked from Visual mode, use '< and '> marks.
-	    silent exe "normal! `<" . a:type . "`>y"
+	  if a:0  " ビジュアルモードから呼び出すのに、gv コマンドを使用します。
+	    silent exe "normal! gvy"
 	  elseif a:type == 'line'
 	    silent exe "normal! '[V']y"
-	  elseif a:type == 'block'
-	    silent exe "normal! `[\<C-V>`]y"
 	  else
 	    silent exe "normal! `[v`]y"
 	  endif
@@ -1314,6 +1348,8 @@ Note: -range=Nと-count=Nは相互に排他的であるということに注意�
 ユーザー定義コマンドの定義に-countや-registerが指定された場合に、その省略可能
 な引数が与えられた場合、それは引数リストから削除され、それぞれの引数に対応する
 特別な文字列が利用できるようになります。
+Note これらの引数は省略できますが、これは廃止される機能です。新しいスクリプト
+では完全な名前を使用して下さい。
 
 置き換えテキスト
 

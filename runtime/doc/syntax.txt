@@ -1,4 +1,4 @@
-*syntax.txt*	For Vim version 7.4.  Last change: 2014 Feb 25
+*syntax.txt*	For Vim version 7.4.  Last change: 2014 Jun 27
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -1688,7 +1688,7 @@ vimrc file: >
 HTML comments are rather special (see an HTML reference document for the
 details), and the syntax coloring scheme will highlight all errors.
 However, if you prefer to use the wrong style (starts with <!-- and
-ends with --!>) you can define >
+ends with -->) you can define >
 	:let html_wrong_comments=1
 
 JavaScript and Visual Basic embedded inside HTML documents are highlighted as
@@ -1959,7 +1959,7 @@ If you don't want to set the variable, use the modeline in EVERY LPC file.
 There are several implementations for LPC, we intend to support most widely
 used ones.  Here the default LPC syntax is for MudOS series, for MudOS v22
 and before, you should turn off the sensible modifiers, and this will also
-asserts the new efuns after v22 to be invalid, don't set this variable when
+assert the new efuns after v22 to be invalid, don't set this variable when
 you are using the latest version of MudOS: >
 
 	:let lpc_pre_v22 = 1
@@ -2279,7 +2279,7 @@ files, you may set the 'perl_include_pod' option to 0: >
 
 	:let perl_include_pod = 0
 
-The reduce the complexity of parsing (and increase performance) you can switch
+To reduce the complexity of parsing (and increase performance) you can switch
 off two elements in the parsing of variable names and contents. >
 
 To handle package references in variable and function names not differently

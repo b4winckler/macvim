@@ -874,7 +874,6 @@ c_no_curly_error	{ と } が第1桁にあるときを除き、[] と () の内�
 			をエラーとして表示しない。
 c_curly_error		対応する { がない } をハイライトする。これを有効に
 			すると、ファイルの先頭から同期が始まるため、遅くなる。
-			start of the file, can be slow
 c_no_ansi		ANSI標準の型と定数をハイライトしない
 c_ansi_typedefs		 ... 但し標準ANSI型はハイライトする
 c_ansi_constants	 ... 但し標準ANSI定数はハイライトする

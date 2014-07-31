@@ -1,4 +1,4 @@
-*starting.txt*  For Vim version 7.4.  Last change: 2013 Jul 20
+*starting.txt*  For Vim version 7.4.  Last change: 2014 Jul 09
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -167,7 +167,10 @@ a slash.  Thus "-R" means recovery and "-/R" readonly.
 							*-+/*
 +/{pat}		The cursor will be positioned on the first line containing
 		"pat" in the first file being edited (see |pattern| for the
-		available search patterns).
+		available search patterns).  The search starts at the cursor
+		position, which can be the first line or the cursor position
+		last used from |viminfo|. To force a search from the first
+		line use "+1 +/pat".
 
 +{command}						*-+c* *-c*
 -c {command}	{command} will be executed after the first file has been
@@ -1277,8 +1280,10 @@ triggered.
 			When [!] is included an existing file is overwritten.
 			When [file] is omitted or is a number from 1 to 9, a
 			name is generated and 'viewdir' prepended.  When the
-			last directory name in 'viewdir' does not exist, this
-			directory is created.
+			last path part of 'viewdir' does not exist, this
+			directory is created.  E.g., when 'viewdir' is
+			"$VIM/vimfiles/view" then "view" is created in
+			"$VIM/vimfiles".
 			An existing file is always overwritten then.  Use
 			|:loadview| to load this view again.
 			When [file] is the name of a file ('viewdir' is not
@@ -1502,7 +1507,7 @@ most of the information will be restored).
 			already set (registers, marks, |v:oldfiles|, etc.)
 			will be overwritten   {not in Vi}
 
-					*:wv* *:wviminfo* *E137* *E138* *E574*
+				*:wv* *:wviminfo* *E137* *E138* *E574* *E886*
 :wv[iminfo][!] [file]	Write to viminfo file [file] (default: see above).
 			The information in the file is first read in to make
 			a merge between old and new info.  When [!] is used,

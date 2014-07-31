@@ -1,4 +1,4 @@
-*usr_41.txt*	For Vim version 7.4.  Last change: 2014 Jan 10
+*usr_41.txt*	For Vim version 7.4.  Last change: 2014 May 28
 
 		     VIM USER MANUAL - by Bram Moolenaar
 
@@ -708,6 +708,7 @@ Cursor and mark position:		*cursor-functions* *mark-functions*
 	cursor()		position the cursor at a line/column
 	screencol()		get screen column of the cursor
 	screenrow()		get screen row of the cursor
+	getcurpos()		get position of the cursor
 	getpos()		get position of cursor, mark, etc.
 	setpos()		set position of cursor, mark, etc.
 	byte2line()		get line number at a specific byte count
@@ -742,6 +743,7 @@ System functions and manipulation of files:
 	pathshorten()		shorten directory names in a path
 	simplify()		simplify a path without changing its meaning
 	executable()		check if an executable program exists
+	exepath()		full path of an executable program
 	filereadable()		check if a file can be read
 	filewritable()		check if a file can be written to
 	getfperm()		get the permissions of a file
@@ -754,7 +756,8 @@ System functions and manipulation of files:
 	mkdir()			create a new directory
 	delete()		delete a file
 	rename()		rename a file
-	system()		get the result of a shell command
+	system()		get the result of a shell command as a string
+	systemlist()		get the result of a shell command as a list
 	hostname()		name of the system
 	readfile()		read a file into a List of lines
 	writefile()		write a List of lines into a file
@@ -770,6 +773,7 @@ Date and Time:				*date-functions* *time-functions*
 Buffers, windows and the argument list:
 	argc()			number of entries in the argument list
 	argidx()		current position in the argument list
+	arglistid()		get id of the argument list
 	argv()			get one entry from the argument list
 	bufexists()		check if a buffer exists
 	buflisted()		check if a buffer exists and is listed
@@ -823,6 +827,7 @@ Syntax and highlighting:	  *syntax-functions* *highlighting-functions*
 	synconcealed()		get info about concealing
 	diff_hlID()		get highlight ID for diff mode at a position
 	matchadd()		define a pattern to highlight (a "match")
+	matchaddpos()		define a list of positions to highlight
 	matcharg()		get info about |:match| arguments
 	matchdelete()		delete a match defined by |matchadd()| or a
 				|:match| command

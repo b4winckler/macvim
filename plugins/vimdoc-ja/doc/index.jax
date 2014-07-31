@@ -1146,8 +1146,8 @@ You found it, Arthur!				*holy-grail*
 				コマンド
 |:cabclear|	:cabc[lear]	コマンドラインモードにおけるすべての
 				短縮入力を削除
-|:caddbuffer|	:caddb[uffer]	バッファからエラーを追加する
-|:caddexpr|	:cad[dexpr]	式からエラーを追加する
+|:caddbuffer|	:cad[dbuffer]	バッファからエラーを追加する
+|:caddexpr|	:cadde[xpr]	式からエラーを追加する
 |:caddfile|	:caddf[ile]	現在のQuickFixリストにエラーメッセージを追加
 |:call|		:cal[l]		関数を実行する
 |:catch|	:cat[ch]	:tryコマンドの一部
@@ -1407,6 +1407,7 @@ You found it, Arthur!				*holy-grail*
 |:noreabbrev|	:norea[bbrev]	再マップされない短縮入力を定義する
 |:noremenu|	:noreme[nu]	再マップされないメニューを定義する
 |:normal|	:norm[al]	ノーマルモードのコマンドを実行する
+|:noswapfile|	:nos[wapfile]	スワップファイルを作らずにコマンドを実行する
 |:number|	:nu[mber]	行番号を表示
 |:nunmap|	:nun[map]	ノーマルモードを対象とする ":unmap" コマンド
 |:nunmenu|	:nunme[nu]	ノーマルモードのメニューを削除

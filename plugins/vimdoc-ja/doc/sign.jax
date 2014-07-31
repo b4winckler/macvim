@@ -1,4 +1,4 @@
-*sign.txt*      For Vim バージョン 7.4.  Last change: 2013 Nov 17
+*sign.txt*      For Vim バージョン 7.4.  Last change: 2014 May 07
 
 
 		VIMリファレンスマニュアル    by Gordon Prieur
@@ -143,6 +143,7 @@ SignColumnの色を使う|hl-SignColumn|。色を設定するには次のよう�
 		これは既に設置された目印を動かすことなく変更するのに使われる。
 		(例: デバッガがブレークポイントで停止した時)
 
+							*E885*
 :sign place {id} name={name} buffer={nr}
 		上に同じ。バッファ番号を使用していることが異なる。
 

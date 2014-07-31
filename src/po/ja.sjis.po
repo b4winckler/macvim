@@ -3,7 +3,7 @@
 # Do ":help uganda"  in Vim to read copying and usage conditions.
 # Do ":help credits" in Vim to see a list of people who contributed.
 #
-# Last Change: 2013 Jul 06
+# Last Change: 2014 May 13
 #
 # Copyright (C) 2001-13 MURAOKA Taro <koron.kaoriya@gmail.com>
 # THIS FILE IS DISTRIBUTED UNDER THE VIM LICENSE.
@@ -479,7 +479,7 @@ msgstr "E109: '?' ‚ÌŒã‚É ':' ‚ª‚ ‚è‚Ü‚¹‚ñ"
 msgid "E691: Can only compare List with List"
 msgstr "E691: ƒŠƒXƒgŒ^‚ÍƒŠƒXƒgŒ^‚Æ‚µ‚©”äŠr‚Å‚«‚Ü‚¹‚ñ"
 
-msgid "E692: Invalid operation for Lists"
+msgid "E692: Invalid operation for List"
 msgstr "E692: ƒŠƒXƒgŒ^‚É‚Í–³Œø‚È‘€ì‚Å‚·"
 
 msgid "E735: Can only compare Dictionary with Dictionary"
@@ -5541,7 +5541,7 @@ msgstr "E415: —\\Šú‚¹‚Ê“™†‚Å‚·: %s"
 
 #, c-format
 msgid "E416: missing equal sign: %s"
-msgstr "E416: “™†‚ª‚ª‚ ‚è‚Ü‚¹‚ñ: %s"
+msgstr "E416: “™†‚ª‚ ‚è‚Ü‚¹‚ñ: %s"
 
 #, c-format
 msgid "E417: missing argument: %s"
