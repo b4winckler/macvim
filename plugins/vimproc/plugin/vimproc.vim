@@ -79,7 +79,7 @@ function! s:bang(cmdline) "{{{
   call subproc.stdout.close()
   call subproc.stderr.close()
 
-  let [cond, last_status] = subproc.waitpid()
+  call subproc.waitpid()
 endfunction"}}}
 function! s:read(cmdline) "{{{
   " Expand % and #.

@@ -1,4 +1,4 @@
-*usr_41.txt*	For Vim バージョン 7.4.  Last change: 2014 Jan 10
+*usr_41.txt*	For Vim バージョン 7.4.  Last change: 2014 May 28
 
 		     VIM USER MANUAL - by Bram Moolenaar
 
@@ -600,6 +600,7 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	map()			リストの各要素を変換する
 	sort()			リストをソートする
 	reverse()		リストの並び順を反転させる
+	uniq()			隣接して繰り返される要素のコピーを削除する
 	split()			文字列を分割し、リストにする
 	join()			リストの要素を連結し、文字列にする
 	range()			数列リストを返す
@@ -677,21 +678,22 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	garbagecollect()	開放可能なメモリを解放する
 
 カーソルとマークの位置:			*cursor-functions* *mark-functions*
-	col()			カーソルやマークの列番号を得る
+	col()			カーソルやマークの列番号を取得する
 	virtcol()		カーソルやマークの画面上の列番号を得る
-	line()			カーソルやマークの行番号を得る
+	line()			カーソルやマークの行番号を取得する
 	wincol()		カーソルのウィンドウでの列番号
 	winline()		カーソルのウィンドウでの行番号
 	cursor()		カーソルを指定した位置に移動させる
-	screencol()		カーソルのスクリーン列を得る
-	screenrow()		カーソルのスクリーン行を得る
+	screencol()		カーソルのスクリーン列を取得する
+	screenrow()		カーソルのスクリーン行を取得する
+	getcurpos()		カーソルの位置を取得する
 	getpos()		カーソルやマークなどの位置を取得する
 	setpos()		カーソルやマークなどの位置を設定する
-	byte2line()		指定のバイト位置の行番号を得る
-	line2byte()		指定の行のバイト位置を得る
+	byte2line()		指定のバイト位置の行番号を取得する
+	line2byte()		指定の行のバイト位置を取得する
 	diff_filler()		ある行より上の詰め行の数を取得する
-	screenattr()		スクリーン列/行の属性を得る
-	screenchar()		スクリーン列/行の文字コードを得る
+	screenattr()		スクリーン列/行の属性を取得する
+	screenchar()		スクリーン列/行の文字コードを取得する
 
 カレントバッファで動作するもの:				*text-functions*
 	getline()		バッファから行を得る
@@ -719,6 +721,7 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	pathshorten()		パス中のディレクトリ名を短くする
 	simplify()		パスの意味を変えずに簡略化する
 	executable()		実行形式ファイルかどうかをチェックする
+	exepath()		実行ファイルのフルパスを得る
 	filereadable()		ファイルが読み込み可能かどうかをチェックする
 	filewritable()		ファイルが書き込み可能かどうかをチェックする
 	getfperm()		ファイルのパーミッションを得る
@@ -726,11 +729,14 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 	isdirectory()		ディレクトリの存在をチェックする
 	getfsize()		ファイルのサイズを得る
 	getcwd()		カレントディレクトリを得る
+	haslocaldir()		カレントウィンドウが |:lcd| を使用するかどうか
+				をチェックする
 	tempname()		一時ファイルの名前を得る
 	mkdir()			ディレクトリを作成する
 	delete()		ファイルを削除する
 	rename()		ファイルの名前を変更する
-	system()		シェルコマンドを実行し、その結果を得る
+	system()		シェルコマンドを実行し、その結果を文字列で得る
+	systemlist()		シェルコマンドを実行し、その結果をリストで得る
 	hostname()		システムの名称を得る
 	readfile()		ファイルを読み込み、行のリストを得る
 	writefile()		行のリストをファイルに書き込む
@@ -746,6 +752,7 @@ substitute() コマンドの前後にいろいろな処理を入れたりする�
 バッファ、ウィンドウ、引数リスト:
 	argc()			引数リストの大きさ
 	argidx()		引数リスト中の現在の位置
+	arglistid()		引数リストのIDを得る
 	argv()			引数リストの中身を得る
 	bufexists()		バッファの存在をチェックする
 	buflisted()		バッファが存在し、リストされているかどうか
@@ -799,6 +806,7 @@ Quickfixとロケーションリスト:			*quickfix-functions*
 	synconcealed()		conceal の情報を得る
 	diff_hlID()		差分モードの指定位置のシンタックスIDを得る
 	matchadd()		強調表示するパターンを定義する
+	matchaddpos()		強調表示する位置のリストを定義する
 	matcharg()		|:match|の引数の情報を得る
 	matchdelete()		|matchadd()|と|:match|コマンドで定義されたマッ
 				チを削除する

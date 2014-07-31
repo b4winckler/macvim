@@ -178,10 +178,9 @@ z=			カーソルの下や後の単語に対して正しい綴りの単語を提
 			count を用いた場合、プロンプトは出ずにその提案が使われ
 			る。例えば、"1z=" は常に最初の提案を利用する。
 
-			If 'verbose' is non-zero a score will be displayed
-			with the suggestions to indicate the likeliness to the
-			badly spelled word (the higher the score the more
-			different).
+			'verbose' が 0 以外の場合、間違った単語との類似度を示
+			すスコアが提案と共に表示される。（高いスコアは、違いが
+			大きいことを示す。）
 			単語が置換された後は、リドゥコマンド "." はその単語の
 			置換を繰り返す。これは、"ciw" の後に正しい単語を入力し
 			<Esc> を入力したように動作する。これは、単語の間にス
@@ -285,7 +284,7 @@ In a table:
 スペルファイル						*spell-load*
 
 Vim は 'runtimepath' のディレクトリの中の "spell" という名前のサブディレクトリ
-にあるスペルファイルを探す。The name is: LL.EEE.spl, where:
+にあるスペルファイルを探す。ファイル名を LL.EEE.spl とすると、
 	LL	言語名
 	EEE	'encoding' の値
 
@@ -296,13 +295,13 @@ Vim は 'runtimepath' のディレクトリの中の "spell" という名前の�
 	en-rare		en-rare
 	medical_ca	medical
 
-Only the first file is loaded, the one that is first in 'runtimepath'.  If
-this succeeds then additionally files with the name LL.EEE.add.spl are loaded.
-All the ones that are found are used.
+'runtimepath' の中の最初のファイルだけがロードされる。これが成功した場合、
+LL.EEE.add.spl という名前のファイルが追加でロードされる。追加ファイルは、見つ
+かったものが全てロードされる。
 
-If no spell file is found the |SpellFileMissing| autocommand event is
-triggered.  This may trigger the |spellfile.vim| plugin to offer you
-downloading the spell file.
+スペルファイルが見つからなければ、自動コマンドイベント |SpellFileMissing| が発
+生する。これによってスペルファイルをダウンロードする |spellfile.vim| プラグイ
+ンを呼び出せる。
 
 Additionally, the files related to the names in 'spellfile' are loaded.  These
 are the files that |zg| and |zw| add good and wrong words to.

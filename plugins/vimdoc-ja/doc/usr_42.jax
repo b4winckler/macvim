@@ -321,7 +321,7 @@ Vim には 28 個のアイコンが組み込まれています。その一覧は
 次のコマンドで新しい項目を追加できます: >
 
 	:tmenu ToolBar.Compile  Compile the current file
-	:amenu ToolBar.Compile  :!cc % -o %:r<CR>
+	:amenu ToolBar.Compile  :!cc %:S -o %:r:S<CR>
 
 アイコンは別途作成する必要があります。MS-Windows では "Compile.bmp" という名前
 の bitmap 形式の画像を使います。Unix では "Compile.xpm" という名前の XPM 形式

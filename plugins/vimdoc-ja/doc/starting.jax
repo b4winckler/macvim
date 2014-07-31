@@ -628,7 +628,7 @@ Workbench上でアイコンを2度クリックすればVimを起動すること�
 Workbenchからではファイル名以外の引数は、Vimへ与えることができない。
 
 Vimウィンドウ						*amiga-window*
-----------
+-------------
 
 Vimは起動されたCLIウィンドウの中で動作する。Vimが "run" や "runback" コマンド、
 あるいやWorkbenchから起動された場合には、自分自身でウィンドウを開く。
@@ -739,13 +739,13 @@ Evimでは以下のオプションが標準設定から変更される:
 	して、"vimrc" はVim特有のものである。|vimrc-intro|も参照。
 
 	個人の初期化ファイルの配置場所:
-		Unix		$HOME/.vimrc か $HOME/.vim/vimrc
-		OS/2		$HOME/.vimrc, $HOME/vimfiles/vimrc
-				か $VIM/.vimrc (または _vimrc)
-		MS-Windows	$HOME/_vimrc, $HOME/vimfiles/vimrc
-				か $VIM/_vimrc
-		Amiga		s:.vimrc, home:.vimrc, home:vimfiles:vimrc
-				か $VIM/.vimrc
+		Unix		$HOME/.vimrc、$HOME/.vim/vimrc
+		OS/2		$HOME/.vimrc、$HOME/vimfiles/vimrc、
+				$VIM/.vimrc (または _vimrc)
+		MS-Windows	$HOME/_vimrc、$HOME/vimfiles/vimrc、
+				$VIM/_vimrc
+		Amiga		s:.vimrc、home:.vimrc、home:vimfiles:vimrc、
+				$VIM/.vimrc
 
 	初期化ファイルは上記の順に検索され、最初に見つかったものだけが読み込ま
 	れる。

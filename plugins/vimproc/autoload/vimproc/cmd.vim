@@ -30,6 +30,10 @@ set cpo&vim
 " }}}
 
 if !vimproc#util#is_windows()
+  function! vimproc#cmd#system(expr)
+    return vimproc#system(a:expr)
+  endfunction
+  let &cpo = s:save_cpo
   finish
 endif
 

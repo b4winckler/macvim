@@ -93,7 +93,7 @@ Vimが各ファイルについてウィンドウを開く時に起こること�
 :difft[his]	現在のウィンドウを差分ウィンドウの1つにする。これにより
 		"vimdiff" と同じオプションが設定される。
 
-:diffp[atch] {patchfile}				 *E816* *:diffp* *:diffpatch*
+:diffp[atch] {patchfile}			 *E816* *:diffp* *:diffpatch*
 		{patchfile}内の差分情報を現在のバッファへ適用し、結果を新しく
 		作成したバッファへ出力する。オプションは "vimdiff" と同様に設
 		定される。

@@ -591,7 +591,6 @@ searchpairpos() による検索の最大範囲を設定する。大きな値を�
 	" 初期設定
 	let g:clojure_maxlines = 100
 <
-
 						*g:clojure_fuzzy_indent*
 					*g:clojure_fuzzy_indent_patterns*
 					*g:clojure_fuzzy_indent_blacklist*
@@ -642,7 +641,6 @@ Clojure のいくつかのフォームは、'lispwords' に依らず、すべて
 	let g:clojure_special_indent_words =
 	   \ 'deftype,defrecord,reify,proxy,extend-type,extend-protocol,letfn'
 <
-
 					*g:clojure_align_multiline_strings*
 
 複数行文字列を、クォート文字と同じ列で揃えるのではなく、クォート文字の一つ後ろ
@@ -735,7 +733,7 @@ PHP ファイルを読み込んだとき、|BufRead| のタイミングで自動
 
 下記のグローバル変数をセットすることで、PHP のインデントをカスタマイズできる。
 
-								*php-comment*
+					*php-comment* *PHP_autoformatcomment*
 デフォルトでは有効になっているコメントの自動整形を無効化するには
 ('formatoptions' に従うようにするには)次のようにする: >
     :let g:PHP_autoformatcomment = 0
@@ -744,6 +742,7 @@ PHP ファイルを読み込んだとき、|BufRead| のタイミングで自動
 詳しくは |fo-table| を参照。
 -------------
 
+							*PHP_outdentSLComments*
 一行コメントに追加のインデントを加える: >
     :let g:PHP_outdentSLComments = N
 
@@ -755,6 +754,7 @@ N は 'shiftwidth' に追加される値。
     /* Comment */
 -------------
 
+							*PHP_default_indenting*
 すべての PHP の行に対しインデントを増やすには、次のようにする: >
     :let g:PHP_default_indenting = N
 
@@ -778,11 +778,13 @@ PHP タグを囲まれているコードとしてインデントする: >
     :let g:PHP_outdentphpescape = 0
 -------------
 
+							*PHP_removeCRwhenUnix*
 'fileformat' を "unix" にしているとき、自動的に '\r' を削除するには次のよう
 にする: >
     :let g:PHP_removeCRwhenUnix = 1
 -------------
 
+							*PHP_BracesAtCodeLevel*
 波カッコ {} をその内側と同じインデントレベルにするには: >
     :let g:PHP_BracesAtCodeLevel = 1
     
@@ -801,6 +803,7 @@ NOTE:	このオプションをオンにすると、最適化の一部が効か�
 	ントが少し遅くなる。
 -------------
 
+							*PHP_vintage_case_default_indent*
 switch() ブロック内の 'case:' と 'default:' をインデントさせるには: >
     :let g:PHP_vintage_case_default_indent = 1
 

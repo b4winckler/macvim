@@ -55,6 +55,10 @@ endfunction
 
 " Get the full path of command.
 function! s:which(command, ...)
+  let maxcount = (a:0 >= 2 && type(a:2) == type(0)) ? a:2 : 1
+  if maxcount == 1 && exists('*exepath')
+    return exepath(a:command)
+  endif
   let pathlist = a:command =~# s:path_sep_pattern ? [''] :
   \              !a:0                  ? split($PATH, s:path_separator) :
   \              type(a:1) == type([]) ? copy(a:1) :
@@ -67,6 +71,7 @@ function! s:which(command, ...)
   endif
 
   let dirsep = s:separator()
+  let cmdlist = []
   for dir in pathlist
     let head = dir ==# '' ? '' : dir . dirsep
     for ext in pathext
@@ -82,13 +87,16 @@ function! s:which(command, ...)
           \ toupper(full)), '\u:\@!', '[\0\L\0]', 'g'), 1)
         endif
         if full != ''
-          return full
+          let cmdlist += [full]
+          if maxcount > 0 && len(cmdlist) >= maxcount
+            return join(cmdlist, "\n")
+          endif
         endif
       endif
     endfor
   endfor
 
-  return ''
+  return join(cmdlist, "\n")
 endfunction
 
 " Split the path with directory separator.
@@ -155,8 +163,8 @@ function! s:is_case_tolerant()
   return s:is_case_tolerant
 endfunction
 
-function! vimproc#filepath#which(command, path)
-  return s:which(a:command, a:path)
+function! vimproc#filepath#which(command, path, maxcount)
+  return s:which(a:command, a:path, a:maxcount)
 endfunction
 
 let &cpo = s:save_cpo

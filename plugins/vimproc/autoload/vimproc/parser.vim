@@ -671,44 +671,52 @@ function! s:parse_redirection(script) "{{{
   while i < max
     if a:script[i] == '<'
       " Input redirection.
-      let fd.stdin = matchstr(a:script, '<\s*\zs\f*', i)
-      let i = matchend(a:script, '<\s*\zs\f*', i)
+      let i += 1
+      let fd.stdin = get(vimproc#parser#split_args(
+            \ matchstr(a:script, '^\s*\S\+', i)), 0, '')
+      let i = matchend(a:script, '^\s*\S\+', i)
     elseif a:script[i] =~ '^[12]' && a:script[i :] =~ '^[12]>'
       " Output redirection.
       let i += 2
       if a:script[i-2] == 1
-        let fd.stdout = matchstr(a:script, '^\s*\zs\f*', i)
+        let fd.stdout = get(vimproc#parser#split_args(
+            \ matchstr(a:script, '^\s*\S\+', i)), 0, '')
       else
-        let fd.stderr = matchstr(a:script, '^\s*\zs\(\f\+\|&\d\+\)', i)
+        let fd.stderr = get(vimproc#parser#split_args(
+              \ matchstr(a:script, '^\s*\zs\(\S\+\|&\d\+\)', i)), 0, '')
         if fd.stderr ==# '&1'
           " Redirection to stdout.
           let fd.stderr = '/dev/stdout'
         endif
       endif
 
-      let i = matchend(a:script, '^\s*\zs\(\f\+\|&\d\+\)', i)
+      let i = matchend(a:script, '^\s*\zs\(\S\+\|&\d\+\)', i)
     elseif a:script[i] == '&' && a:script[i :] =~ '^&>'
       " Output stderr.
       let i += 2
-      let fd.stderr = matchstr(a:script, '^\s*\zs\f*', i)
-      let i = matchend(a:script, '^\s*\zs\f*', i)
+      let fd.stderr = get(vimproc#parser#split_args(
+            \ matchstr(a:script, '^\s*\S\+', i)), 0, '')
+      let i = matchend(a:script, '^\s*\S\+', i)
     elseif a:script[i] == '>'
       " Output redirection.
       if a:script[i :] =~ '^>&'
         " Output stderr.
         let i += 2
-        let fd.stderr = matchstr(a:script, '^\s*\zs\f*', i)
+        let fd.stderr = get(vimproc#parser#split_args(
+            \ matchstr(a:script, '^\s*\S\+', i)), 0, '')
       elseif a:script[i :] =~ '^>>'
         " Append stdout.
         let i += 2
-        let fd.stdout = '>' . matchstr(a:script, '^\s*\zs\f*', i)
+        let fd.stdout = '>' . get(vimproc#parser#split_args(
+            \ matchstr(a:script, '^\s*\S\+', i)), 0, '')
       else
         " Output stdout.
         let i += 1
-        let fd.stdout = matchstr(a:script, '^\s*\zs\f*', i)
+        let fd.stdout = get(vimproc#parser#split_args(
+            \ matchstr(a:script, '^\s*\S\+', i)), 0, '')
       endif
 
-      let i = matchend(a:script, '^\s*\zs\f*', i)
+      let i = matchend(a:script, '^\s*\zs\S*', i)
     else
       let [script, i] = s:skip_else(script, a:script, i)
     endif
@@ -866,20 +874,22 @@ function! s:skip_single_quote(script, i) "{{{
   let string .= a:script[i]
   let i += 1
 
+  let ss = []
   while i < max
     if a:script[i] == ''''
       if i+1 < max && a:script[i+1] == ''''
         " Escape quote.
-        let string .= a:script[i]
+        let ss += [a:script[i]]
         let i += 1
       else
         break
       endif
     endif
 
-    let string .= a:script[i]
+    let ss += [a:script[i]]
     let i += 1
   endwhile
+  let string .= join(ss, '')
 
   if i < max
     " must end with "'"
@@ -904,20 +914,22 @@ function! s:skip_double_quote(script, i) "{{{
   let string .= a:script[i]
   let i += 1
 
+  let ss = []
   while i < max
     if a:script[i] == '\'
           \ && i+1 < max && a:script[i+1] == '"'
       " Escape quote.
-      let string .= a:script[i]
+      let ss += [a:script[i]]
       let i += 1
 
     elseif a:script[i] == '"'
       break
     endif
 
-    let string .= a:script[i]
+    let ss += [a:script[i]]
     let i += 1
   endwhile
+  let string .= join(ss, '')
 
   if i < max
     " must end with '"'
