@@ -24,6 +24,9 @@
 #
 #	GUI interface: GUI=yes (default is no)
 #
+#	GUI with DirectWrite(DirectX): DIRECTX=yes
+#	  (default is no, requires GUI=yes)
+#
 #	OLE interface: OLE=yes (usually with GUI=yes)
 #
 #	Multibyte support: MBYTE=yes (default is no)
@@ -168,6 +171,9 @@ OBJDIR = .\ObjG
 !else
 OBJDIR = .\ObjC
 !endif
+!if "$(DIRECTX)" == "yes"
+OBJDIR = $(OBJDIR)X
+!endif
 !if "$(OLE)" == "yes"
 OBJDIR = $(OBJDIR)O
 !endif
@@ -290,6 +296,13 @@ NBDEBUG_INCL	= nbdebug.h
 NBDEBUG_SRC	= nbdebug.c
 !endif
 NETBEANS_LIB	= WSock32.lib
+!endif
+
+# DirectWrite(DirectX)
+!if "$(DIRECTX)" == "yes"
+DIRECTX_DEFS	= -DFEAT_DIRECTX -DDYNAMIC_DIRECTX
+DIRECTX_INCL	= gui_dwrite.h
+DIRECTX_OBJ	= $(OUTDIR)\gui_dwrite.obj
 !endif
 
 !ifndef XPM
@@ -642,6 +655,12 @@ GUI_LIB = \
 SUBSYSTEM = console
 !endif
 
+!if "$(GUI)" == "yes" && "$(DIRECTX)" == "yes"
+CFLAGS = $(CFLAGS) $(DIRECTX_DEFS)
+GUI_INCL = $(GUI_INCL) $(DIRECTX_INCL)
+GUI_OBJ = $(GUI_OBJ) $(DIRECTX_OBJ)
+!endif
+
 # iconv.dll library (dynamically loaded)
 !ifndef ICONV
 ICONV = yes
@@ -656,6 +675,14 @@ GETTEXT = yes
 !endif
 !if "$(GETTEXT)" == "yes"
 CFLAGS = $(CFLAGS) -DDYNAMIC_GETTEXT
+!endif
+
+#
+# Support Migemo
+#
+!ifdef MIGEMO
+!message Migemo supported - will be dynamic linked.
+CFLAGS = $(CFLAGS) -DDYNAMIC_MIGEMO
 !endif
 
 # TCL interface
@@ -988,14 +1015,17 @@ install.exe: dosinst.c
 
 uninstal.exe: uninstal.c
 	$(CC) /nologo -DNDEBUG -DWIN32 uninstal.c shell32.lib advapi32.lib
+	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
 
 vimrun.exe: vimrun.c
 	$(CC) /nologo -DNDEBUG vimrun.c
+	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
 
 xxd/xxd.exe: xxd/xxd.c
 	cd xxd
 	$(MAKE) /NOLOGO -f Make_mvc.mak
 	cd ..
+	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
 
 GvimExt/gvimext.dll: GvimExt/gvimext.cpp GvimExt/gvimext.rc GvimExt/gvimext.h
 	cd GvimExt
@@ -1013,6 +1043,7 @@ clean:
 	- if exist $(OUTDIR)/nul $(DEL_TREE) $(OUTDIR)
 	- if exist *.obj del *.obj
 	- if exist $(VIM).exe del $(VIM).exe
+	- if exist $(VIM).exe.manifest del $(VIM).exe.manifest
 	- if exist $(VIM).ilk del $(VIM).ilk
 	- if exist $(VIM).pdb del $(VIM).pdb
 	- if exist $(VIM).map del $(VIM).map
@@ -1106,6 +1137,8 @@ $(OUTDIR)/gui.obj:	$(OUTDIR) gui.c  $(INCL) $(GUI_INCL)
 $(OUTDIR)/gui_beval.obj:	$(OUTDIR) gui_beval.c $(INCL) $(GUI_INCL)
 
 $(OUTDIR)/gui_w32.obj:	$(OUTDIR) gui_w32.c gui_w48.c $(INCL) $(GUI_INCL)
+
+$(OUTDIR)/gui_dwrite.obj:	$(OUTDIR) gui_dwrite.cpp $(INCL) $(GUI_INCL)
 
 $(OUTDIR)/if_cscope.obj: $(OUTDIR) if_cscope.c  $(INCL)
 
@@ -1214,7 +1247,7 @@ $(OUTDIR)/xpm_w32.obj: $(OUTDIR) xpm_w32.c
 	$(CC) $(CFLAGS) $(XPM_INC) xpm_w32.c
 
 $(OUTDIR)/vim.res:	$(OUTDIR) vim.rc gvim.exe.mnf version.h tools.bmp \
-				tearoff.bmp vim.ico vim_error.ico \
+				tearoff.bmp vim2.ico vim_error.ico \
 				vim_alert.ico vim_info.ico vim_quest.ico
 	$(RC) /l 0x409 /Fo$(OUTDIR)/vim.res $(RCFLAGS) vim.rc
 

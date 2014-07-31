@@ -5541,7 +5541,7 @@ msgstr "E415: 予期せぬ等号です: %s"
 
 #, c-format
 msgid "E416: missing equal sign: %s"
-msgstr "E416: 等号ががありません: %s"
+msgstr "E416: 等号がありません: %s"
 
 #, c-format
 msgid "E417: missing argument: %s"
