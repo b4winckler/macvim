@@ -5509,7 +5509,7 @@ cin_has_js_key(text)
     char_u *text;
 {
     char_u *s = skipwhite(text);
-    int	    quote = 0;
+    int	    quote = -1;
 
     if (*s == '\'' || *s == '"')
     {
@@ -7001,6 +7001,7 @@ get_c_indent()
     char_u	*linecopy;
     pos_T	*trypos;
     pos_T	*tryposBrace = NULL;
+    pos_T	tryposBraceCopy;
     pos_T	our_paren_pos;
     char_u	*start;
     int		start_brace;
@@ -7538,7 +7539,11 @@ get_c_indent()
 	/*
 	 * We are inside braces, there is a { before this line at the position
 	 * stored in tryposBrace.
+	 * Make a copy of tryposBrace, it may point to pos_copy inside
+	 * find_start_brace(), which may be changed somewhere.
 	 */
+	tryposBraceCopy = *tryposBrace;
+	tryposBrace = &tryposBraceCopy;
 	trypos = tryposBrace;
 	ourscope = trypos->lnum;
 	start = ml_get(ourscope);
