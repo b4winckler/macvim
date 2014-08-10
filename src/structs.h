@@ -1251,6 +1251,24 @@ typedef struct {
 } syn_time_T;
 #endif
 
+#ifdef FEAT_CRYPT
+/*
+ * Structure to hold the type of encryption and the state of encryption or
+ * decryption.
+ */
+typedef struct {
+    int	    method_nr;
+    void    *method_state;  /* method-specific state information */
+} cryptstate_T;
+
+/* values for method_nr */
+# define CRYPT_M_ZIP	0
+# define CRYPT_M_BF	1
+# define CRYPT_M_BF2	2
+# define CRYPT_M_COUNT	3 /* number of crypt methods */
+#endif
+
+
 /*
  * These are items normally related to a buffer.  But when using ":ownsyntax"
  * a window may have its own instance.
@@ -1781,12 +1799,18 @@ struct file_buffer
     int		b_was_netbeans_file;/* TRUE if b_netbeans_file was once set */
 #endif
 
+#ifdef FEAT_CRYPT
+    cryptstate_T *b_cryptstate;	/* Encryption state while reading or writing
+				 * the file. NULL when not using encryption. */
+#endif
+
 #ifdef FEAT_ODB_EDITOR
     uint32_t    b_odb_server_id;    /* FourCC of the ODB server (0 if none) */
     void        *b_odb_token;       /* NSAppleEventDescriptor (optional) */
     char_u      *b_odb_fname;       /* Custom file name (optional) */
 #endif
-};
+
+}; /* file_buffer */
 
 
 #ifdef FEAT_DIFF
