@@ -5646,6 +5646,12 @@ $as_echo "OK" >&6; }
       vi_cv_perllib=`$vi_cv_path_perl -MConfig -e 'print $Config{privlibexp}'`
       vi_cv_perlsitelib=`$vi_cv_path_perl -MConfig -e 'print $Config{sitelibexp}'`
 
+      for extutils_rel_path in ExtUtils vendor_perl/ExtUtils; do
+	xsubpp_path="$vi_cv_perllib/$extutils_rel_path/xsubpp"
+	if test -f "$xsubpp_path"; then
+	  vi_cv_perl_xsubpp="$xsubpp_path"
+	fi
+      done
 
             perlcppflags=`$vi_cv_path_perl -Mlib=$srcdir -MExtUtils::Embed \
 	      -e 'ccflags;perl_inc;print"\n"' | sed -e 's/-fno[^ ]*//'`
