@@ -3500,6 +3500,7 @@ Cmd-Right	gui_mac.txt	/*Cmd-Right*
 Cmd-Up	gui_mac.txt	/*Cmd-Up*
 Cmd-`	gui_mac.txt	/*Cmd-`*
 Cmd-event	autocmd.txt	/*Cmd-event*
+CmdUndefined	autocmd.txt	/*CmdUndefined*
 Cmdline	cmdline.txt	/*Cmdline*
 Cmdline-mode	cmdline.txt	/*Cmdline-mode*
 CmdwinEnter	autocmd.txt	/*CmdwinEnter*
