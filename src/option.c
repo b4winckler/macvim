@@ -3144,6 +3144,9 @@ static void fill_breakat_flags __ARGS((void));
 static int opt_strings_flags __ARGS((char_u *val, char **values, unsigned *flagp, int list));
 static int check_opt_strings __ARGS((char_u *val, char **values, int));
 static int check_opt_wim __ARGS((void));
+#ifdef FEAT_LINEBREAK
+static int briopt_check __ARGS((win_T *wp));
+#endif
 #ifdef FEAT_FULLSCREEN
 static int check_fuoptions __ARGS((char_u *, unsigned *, int *));
 #endif
@@ -5361,7 +5364,7 @@ didset_options()
     (void)check_cedit();
 #endif
 #ifdef FEAT_LINEBREAK
-    briopt_check();
+    briopt_check(curwin);
 #endif
 }
 
@@ -5820,7 +5823,7 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf,
     /* 'breakindentopt' */
     else if (varp == &curwin->w_p_briopt)
     {
-	if (briopt_check() == FAIL)
+	if (briopt_check(curwin) == FAIL)
 	    errmsg = e_invarg;
     }
 #endif
@@ -10373,6 +10376,9 @@ win_copy_options(wp_from, wp_to)
     wp_to->w_farsi = wp_from->w_farsi;
 #  endif
 # endif
+#if defined(FEAT_LINEBREAK)
+    briopt_check(wp_to);
+#endif
 }
 #endif
 
@@ -12238,15 +12244,16 @@ check_fuoptions(p_fuoptions, flags, bgcolor)
  * This is called when 'breakindentopt' is changed and when a window is
  * initialized.
  */
-    int
-briopt_check()
+    static int
+briopt_check(wp)
+    win_T *wp;
 {
     char_u	*p;
     int		bri_shift = 0;
     long	bri_min = 20;
     int		bri_sbr = FALSE;
 
-    p = curwin->w_p_briopt;
+    p = wp->w_p_briopt;
     while (*p != NUL)
     {
 	if (STRNCMP(p, "shift:", 6) == 0
@@ -12271,9 +12278,9 @@ briopt_check()
 	    ++p;
     }
 
-    curwin->w_p_brishift = bri_shift;
-    curwin->w_p_brimin   = bri_min;
-    curwin->w_p_brisbr   = bri_sbr;
+    wp->w_p_brishift = bri_shift;
+    wp->w_p_brimin   = bri_min;
+    wp->w_p_brisbr   = bri_sbr;
 
     return OK;
 }
