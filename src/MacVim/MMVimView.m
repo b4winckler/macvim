@@ -85,7 +85,7 @@ enum {
 {
     if (!(self = [super initWithFrame:frame]))
         return nil;
-    
+
     vimController = controller;
     scrollbars = [[NSMutableArray alloc] init];
 
@@ -122,7 +122,7 @@ enum {
 
     [textView setAutoresizingMask:NSViewNotSizable];
     [self addSubview:textView];
-    
+
     // Create the tab view (which is never visible, but the tab bar control
     // needs it to function).
     tabView = [[NSTabView alloc] initWithFrame:NSZeroRect];
@@ -133,6 +133,10 @@ enum {
                         { frame.size.width, 22 } };
     tabBarControl = [[PSMTabBarControl alloc] initWithFrame:tabFrame];
 
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+    [tabBarControl setStyleNamed:@"Yosemite"];
+#endif
     [tabView setDelegate:tabBarControl];
 
     [tabBarControl setTabView:tabView];
@@ -152,9 +156,9 @@ enum {
                             [NSArray arrayWithObject:NSFilenamesPboardType]];
 
     [tabBarControl setAutoresizingMask:NSViewWidthSizable|NSViewMinYMargin];
-    
+
     //[tabBarControl setPartnerView:textView];
-    
+
     // tab bar resizing only works if awakeFromNib is called (that's where
     // the NSViewFrameDidChangeNotification callback is installed). Sounds like
     // a PSMTabBarControl bug, let's live with it for now.
@@ -247,7 +251,7 @@ enum {
 - (void)cleanup
 {
     vimController = nil;
-    
+
     // NOTE! There is a bug in PSMTabBarControl in that it retains the delegate
     // so reset the delegate here, otherwise the delegate may never get
     // released.
