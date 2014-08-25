@@ -11,6 +11,12 @@
 #define kPSMMetalObjectCounterRadius 7.0
 #define kPSMMetalCounterMinWidth 20
 
+void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
+{
+    [color set];
+    NSRectFill( rect );
+}
+
 @implementation PSMYosemiteTabStyle
 
 - (NSString *)name
@@ -21,7 +27,7 @@
 #pragma mark -
 #pragma mark Creation/Destruction
 
-- (id) init
+- (id)init
 {
     //NSLog(@"PSMMetalTabStyle init");
 
@@ -61,7 +67,7 @@
 
 - (float)leftMarginForTabBarControl
 {
-    return 10.0f;
+    return -1.0f;
 }
 
 - (float)rightMarginForTabBarControl
@@ -87,6 +93,27 @@
     return _addTabButtonRolloverImage;
 }
 
+- (NSColor *)backgroundColor
+{
+    NSColor *backgroundColor;
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+        NSWindow *window = [[NSApplication sharedApplication] mainWindow];
+        if (window) {
+            backgroundColor = [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.820 alpha:1];
+        } else {
+            backgroundColor = [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.957 alpha:1];
+        }
+#else
+        backgroundColor = [NSColor windowBackgroundColor;
+#endif
+    return backgroundColor;
+}
+
+- (NSColor *)borderColor
+{
+    return [NSColor colorWithCalibratedRed:0.6 green:0.6 blue:0.6 alpha:1];
+}
+
 #pragma mark -
 #pragma mark Cell Specific
 
@@ -102,10 +129,6 @@
     result.size = [metalCloseButton size];
     result.origin.x = cellFrame.origin.x + MARGIN_X;
     result.origin.y = cellFrame.origin.y + MARGIN_Y + 2.0;
-
-    if([cell state] == NSOnState){
-        result.origin.y -= 1;
-    }
 
     return result;
 }
@@ -272,7 +295,7 @@
     NSRange range = NSMakeRange(0, [contents length]);
 
     // Add font attribute
-    [attrStr addAttribute:NSFontAttributeName value:[NSFont boldSystemFontOfSize:11.0] range:range];
+    [attrStr addAttribute:NSFontAttributeName value:[NSFont systemFontOfSize:11.0] range:range];
     [attrStr addAttribute:NSForegroundColorAttributeName value:[[NSColor textColor] colorWithAlphaComponent:0.75] range:range];
 
     // Add shadow attribute
@@ -308,39 +331,27 @@
     NSRect cellFrame = [cell frame];
     NSColor * lineColor = nil;
     NSBezierPath* bezier = [NSBezierPath bezierPath];
-    lineColor = [NSColor darkGrayColor];
+    lineColor = [self borderColor];
 
     if ([cell state] == NSOnState) {
         // selected tab
-        NSRect aRect = NSMakeRect(cellFrame.origin.x, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height-2.5);
-        aRect.size.height -= 0.5;
+        NSRect aRect = NSMakeRect(cellFrame.origin.x, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
 
         // background
-        MyNSDrawWindowBackground(aRect);
+        YosemiteNSDrawWindowBackground(aRect, self.backgroundColor);
 
-        aRect.size.height+=0.5;
-
+        aRect.size.height -= 0.5;
         // frame
-        aRect.origin.x += 0.5;
         [lineColor set];
         [bezier moveToPoint:NSMakePoint(aRect.origin.x, aRect.origin.y)];
-        [bezier lineToPoint:NSMakePoint(aRect.origin.x, aRect.origin.y+aRect.size.height-1.5)];
-        [bezier lineToPoint:NSMakePoint(aRect.origin.x+1.5, aRect.origin.y+aRect.size.height)];
-        [bezier lineToPoint:NSMakePoint(aRect.origin.x+aRect.size.width-1.5, aRect.origin.y+aRect.size.height)];
-        [bezier lineToPoint:NSMakePoint(aRect.origin.x+aRect.size.width, aRect.origin.y+aRect.size.height-1.5)];
+        [bezier lineToPoint:NSMakePoint(aRect.origin.x, aRect.origin.y+aRect.size.height)];
+        [bezier lineToPoint:NSMakePoint(aRect.origin.x+aRect.size.width, aRect.origin.y+aRect.size.height)];
         [bezier lineToPoint:NSMakePoint(aRect.origin.x+aRect.size.width, aRect.origin.y)];
-        if([[cell controlView] frame].size.height < 2){
-            // special case of hidden control; need line across top of cell
-            [bezier moveToPoint:NSMakePoint(aRect.origin.x, aRect.origin.y+0.5)];
-            [bezier lineToPoint:NSMakePoint(aRect.origin.x+aRect.size.width, aRect.origin.y+0.5)];
-        }
         [bezier stroke];
     } else {
 
         // unselected tab
         NSRect aRect = NSMakeRect(cellFrame.origin.x, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
-        aRect.origin.y += 0.5;
-        aRect.origin.x += 1.5;
         aRect.size.width -= 1;
 
         // rollover
@@ -349,7 +360,6 @@
             NSRectFillUsingOperation(aRect, NSCompositeSourceAtop);
         }
 
-        aRect.origin.x -= 1;
         aRect.size.width += 1;
 
         // frame
@@ -378,7 +388,7 @@
         NSRect closeButtonRect = [cell closeButtonRectForFrame:cellFrame];
         NSImage * closeButton = nil;
 
-        closeButton = metalCloseButton;
+        closeButton = nil;
         if ([cell closeButtonOver]) closeButton = metalCloseButtonOver;
         if ([cell closeButtonPressed]) closeButton = metalCloseButtonDown;
 
@@ -386,32 +396,13 @@
         [closeButton setFlipped:YES];
         [closeButton drawAtPoint:closeButtonRect.origin fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0];
 
-        // scoot label over
-        labelPosition += closeButtonSize.width + kPSMTabBarCellPadding;
     }
-
-#if 0   // MacVim: disable this code.  It is unused and calling 'content' on the represented object's identifier seems dangerous at best.
-    // icon
-    if([cell hasIcon]){
-        NSRect iconRect = [self iconRectForTabCell:cell];
-        NSImage *icon = [[[[cell representedObject] identifier] content] icon];
-        if ([controlView isFlipped]) {
-            iconRect.origin.y = cellFrame.size.height - iconRect.origin.y;
-        }
-        [icon compositeToPoint:iconRect.origin operation:NSCompositeSourceOver fraction:1.0];
-
-        // scoot label over
-        labelPosition += iconRect.size.width + kPSMTabBarCellPadding;
-    }
-#endif
 
     // object counter
     if([cell count] > 0){
         [[NSColor colorWithCalibratedWhite:0.3 alpha:0.6] set];
         NSBezierPath *path = [NSBezierPath bezierPath];
         NSRect myRect = [self objectCounterRectForTabCell:cell];
-        if([cell state] == NSOnState)
-            myRect.origin.y -= 1.0;
         [path moveToPoint:NSMakePoint(myRect.origin.x + kPSMMetalObjectCounterRadius, myRect.origin.y)];
         [path lineToPoint:NSMakePoint(myRect.origin.x + myRect.size.width - kPSMMetalObjectCounterRadius, myRect.origin.y)];
         [path appendBezierPathWithArcWithCenter:NSMakePoint(myRect.origin.x + myRect.size.width - kPSMMetalObjectCounterRadius, myRect.origin.y + kPSMMetalObjectCounterRadius) radius:kPSMMetalObjectCounterRadius startAngle:270.0 endAngle:90.0];
@@ -435,10 +426,6 @@
     labelRect.size.height = cellFrame.size.height;
     labelRect.origin.y = cellFrame.origin.y + MARGIN_Y + 1.0;
 
-    if([cell state] == NSOnState){
-        labelRect.origin.y -= 1;
-    }
-
     if(![[cell indicator] isHidden])
         labelRect.size.width -= (kPSMTabBarIndicatorWidth + kPSMTabBarCellPadding);
 
@@ -451,10 +438,10 @@
 
 - (void)drawTabBar:(PSMTabBarControl *)bar inRect:(NSRect)rect
 {
-    MyNSDrawWindowBackground(rect);
-    [[NSColor colorWithCalibratedWhite:0.0 alpha:0.2] set];
+    YosemiteNSDrawWindowBackground(rect, self.backgroundColor);
+    [[NSColor colorWithCalibratedWhite:0.0 alpha:0.0] set];
     NSRectFillUsingOperation(rect, NSCompositeSourceAtop);
-    [[NSColor darkGrayColor] set];
+    [[self borderColor] set];
     [NSBezierPath strokeLineFromPoint:NSMakePoint(rect.origin.x,rect.origin.y+0.5) toPoint:NSMakePoint(rect.origin.x+rect.size.width,rect.origin.y+0.5)];
     [NSBezierPath strokeLineFromPoint:NSMakePoint(rect.origin.x,rect.origin.y+rect.size.height-0.5) toPoint:NSMakePoint(rect.origin.x+rect.size.width,rect.origin.y+rect.size.height-0.5)];
 

@@ -76,6 +76,8 @@
 		A2D98B130A2B43FA0064C6F8 /* NSBezierPath_AMShading.m in Sources */ = {isa = PBXBuildFile; fileRef = A2D98B100A2B43FA0064C6F8 /* NSBezierPath_AMShading.m */; };
 		BD13A64219AB98E900C641C3 /* PSMYosemiteTabStyle.h in Headers */ = {isa = PBXBuildFile; fileRef = BD13A64019AB98E900C641C3 /* PSMYosemiteTabStyle.h */; };
 		BD13A64319AB98E900C641C3 /* PSMYosemiteTabStyle.m in Sources */ = {isa = PBXBuildFile; fileRef = BD13A64119AB98E900C641C3 /* PSMYosemiteTabStyle.m */; };
+		BD4C36AB19ABC9E600B38C9D /* TabNewYosemite.png in Resources */ = {isa = PBXBuildFile; fileRef = BD4C36A919ABC9E600B38C9D /* TabNewYosemite.png */; };
+		BD4C36AC19ABC9E600B38C9D /* TabNewYosemite@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = BD4C36AA19ABC9E600B38C9D /* TabNewYosemite@2x.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -176,6 +178,8 @@
 		A2D98B100A2B43FA0064C6F8 /* NSBezierPath_AMShading.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; name = NSBezierPath_AMShading.m; path = source/NSBezierPath_AMShading.m; sourceTree = "<group>"; };
 		BD13A64019AB98E900C641C3 /* PSMYosemiteTabStyle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PSMYosemiteTabStyle.h; path = source/PSMYosemiteTabStyle.h; sourceTree = "<group>"; };
 		BD13A64119AB98E900C641C3 /* PSMYosemiteTabStyle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = PSMYosemiteTabStyle.m; path = source/PSMYosemiteTabStyle.m; sourceTree = "<group>"; };
+		BD4C36A919ABC9E600B38C9D /* TabNewYosemite.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = TabNewYosemite.png; path = images/TabNewYosemite.png; sourceTree = "<group>"; };
+		BD4C36AA19ABC9E600B38C9D /* TabNewYosemite@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "TabNewYosemite@2x.png"; path = "images/TabNewYosemite@2x.png"; sourceTree = "<group>"; };
 		DD92D38A0106425D02CA0E72 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
@@ -360,6 +364,8 @@
 		A251BE8E0959A21A0058BC7F /* Images */ = {
 			isa = PBXGroup;
 			children = (
+				BD4C36A919ABC9E600B38C9D /* TabNewYosemite.png */,
+				BD4C36AA19ABC9E600B38C9D /* TabNewYosemite@2x.png */,
 				A2C0D99309AF870000ED379C /* pi.png */,
 				A2072B5C09AC1FA500304BCB /* Warning.png */,
 				A2072A2409ABD88600304BCB /* Folder.tif */,
@@ -491,8 +497,10 @@
 				52A57C0F15BBA230003EC59C /* TabClose_Front.png in Resources */,
 				52A57C1015BBA230003EC59C /* TabClose_Front_Pressed.png in Resources */,
 				52A57C1115BBA230003EC59C /* TabClose_Front_Rollover.png in Resources */,
+				BD4C36AB19ABC9E600B38C9D /* TabNewYosemite.png in Resources */,
 				523897F415BDA9AC00498A53 /* TabClose_Front_Pressed@2x.png in Resources */,
 				523897F515BDA9AC00498A53 /* TabClose_Front_Rollover@2x.png in Resources */,
+				BD4C36AC19ABC9E600B38C9D /* TabNewYosemite@2x.png in Resources */,
 				523897F615BDA9AC00498A53 /* TabClose_Front@2x.png in Resources */,
 				523897F715BDA9AC00498A53 /* TabNewMetal@2x.png in Resources */,
 				523897F815BDA9AC00498A53 /* TabNewMetalPressed@2x.png in Resources */,
