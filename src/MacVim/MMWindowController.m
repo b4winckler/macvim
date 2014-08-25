@@ -1186,7 +1186,6 @@
 #else
     tabStyle = @"Metal";
 #endif
-    NSLog(@"tabStyle: %@", tabStyle);
 
     [[vimView tabBarControl] setStyleNamed:tabStyle];
     [self updateTablineSeparator];
