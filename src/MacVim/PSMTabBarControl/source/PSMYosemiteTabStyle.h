@@ -9,6 +9,20 @@
 #import <Cocoa/Cocoa.h>
 #import "PSMTabStyle.h"
 
-@interface PSMYosemiteTabStyle : NSObject <PSMTabStyle>
+@interface PSMYosemiteTabStyle : NSObject <PSMTabStyle> {
+    NSImage *metalCloseButton;
+    NSImage *metalCloseButtonDown;
+    NSImage *metalCloseButtonOver;
+    NSImage *_addTabButtonImage;
+    NSImage *_addTabButtonPressedImage;
+    NSImage *_addTabButtonRolloverImage;
+    NSMutableParagraphStyle *truncatingTailParagraphStyle;
+    NSMutableParagraphStyle *centeredParagraphStyle;
+}
+
+- (void)drawInteriorWithTabCell:(PSMTabBarCell *)cell inView:(NSView*)controlView;
+
+- (void)encodeWithCoder:(NSCoder *)aCoder;
+- (id)initWithCoder:(NSCoder *)aDecoder;
 
 @end
