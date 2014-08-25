@@ -143,10 +143,16 @@ enum {
     [tabBarControl setDelegate:self];
     [tabBarControl setHidden:YES];
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+    [tabBarControl setCellMinWidth:64];
+    [tabBarControl setCellMaxWidth:1024*4];
+    [tabBarControl setCellOptimumWidth:1024];
+#else
     [tabBarControl setCellMinWidth:[ud integerForKey:MMTabMinWidthKey]];
     [tabBarControl setCellMaxWidth:[ud integerForKey:MMTabMaxWidthKey]];
     [tabBarControl setCellOptimumWidth:
                                      [ud integerForKey:MMTabOptimumWidthKey]];
+#endif
 
     [tabBarControl setShowAddTabButton:[ud boolForKey:MMShowAddTabButtonKey]];
     [[tabBarControl addTabButton] setTarget:self];
