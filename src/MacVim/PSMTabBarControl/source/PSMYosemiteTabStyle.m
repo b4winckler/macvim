@@ -352,10 +352,12 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 
         // unselected tab
         NSRect aRect = NSMakeRect(cellFrame.origin.x, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
-        aRect.size.width -= 1;
 
         // rollover
         if ([cell isHighlighted]) {
+            [[NSColor colorWithCalibratedWhite:0.0 alpha:0.2] set];
+            NSRectFillUsingOperation(aRect, NSCompositeSourceAtop);
+        } else {
             [[NSColor colorWithCalibratedWhite:0.0 alpha:0.1] set];
             NSRectFillUsingOperation(aRect, NSCompositeSourceAtop);
         }
