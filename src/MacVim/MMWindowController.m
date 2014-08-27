@@ -1135,7 +1135,14 @@
         [[window animator] setAlphaValue:0];
     } completionHandler:^{
         [window setStyleMask:([window styleMask] | NSFullScreenWindowMask)];
-        [[vimView tabBarControl] setStyleNamed:@"Unified"];
+        NSString *style;
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+        style = @"Yosemite";
+#else
+        style = @"Unified";
+#endif
+
+        [[vimView tabBarControl] setStyleNamed:style];
         [self updateTablineSeparator];
         [self maximizeWindow:fullScreenOptions];
 
@@ -1260,7 +1267,13 @@
     fullScreenEnabled = YES;
     [window setAlphaValue:1];
     [window setStyleMask:([window styleMask] | NSFullScreenWindowMask)];
-    [[vimView tabBarControl] setStyleNamed:@"Unified"];
+    NSString *style;
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+        style = @"Yosemite";
+#else
+        style = @"Unified";
+#endif
+    [[vimView tabBarControl] setStyleNamed:style];
     [self updateTablineSeparator];
     [self maximizeWindow:fullScreenOptions];
 }
