@@ -93,18 +93,17 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
     return _addTabButtonRolloverImage;
 }
 
-- (NSColor *)backgroundColor
+- (NSColor *)backgroundColor:(BOOL)isKeyWindow
 {
     NSColor *backgroundColor;
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
-        NSWindow *window = [[NSApplication sharedApplication] mainWindow];
-        if (window) {
-            backgroundColor = [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.820 alpha:1];
-        } else {
-            backgroundColor = [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.957 alpha:1];
-        }
+    if (isKeyWindow) {
+        backgroundColor = [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.820 alpha:1];
+    } else {
+        backgroundColor = [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.957 alpha:1];
+    }
 #else
-        backgroundColor = [NSColor windowBackgroundColor;
+    backgroundColor = [NSColor windowBackgroundColor;
 #endif
     return backgroundColor;
 }
@@ -337,8 +336,11 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
         // selected tab
         NSRect aRect = NSMakeRect(cellFrame.origin.x, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
 
+        PSMTabBarControl *bar = (PSMTabBarCell *)cell.controlView;
+        BOOL isKeyWindow = ([bar.window isKeyWindow]) ? YES : NO ;
+
         // background
-        YosemiteNSDrawWindowBackground(aRect, self.backgroundColor);
+        YosemiteNSDrawWindowBackground(aRect, [self backgroundColor:isKeyWindow]);
 
         aRect.size.height -= 0.5;
         // frame
@@ -440,7 +442,9 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 
 - (void)drawTabBar:(PSMTabBarControl *)bar inRect:(NSRect)rect
 {
-    YosemiteNSDrawWindowBackground(rect, self.backgroundColor);
+    BOOL isKeyWindow = ([bar.window isKeyWindow]) ? YES : NO ;
+    YosemiteNSDrawWindowBackground(rect, [self backgroundColor:isKeyWindow]);
+
     [[NSColor colorWithCalibratedWhite:0.0 alpha:0.0] set];
     NSRectFillUsingOperation(rect, NSCompositeSourceAtop);
     [[self borderColor] set];
