@@ -314,7 +314,7 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
     // Paragraph Style for Truncating Long Text
     if (!truncatingTailParagraphStyle) {
         truncatingTailParagraphStyle = [[[NSParagraphStyle defaultParagraphStyle] mutableCopy] retain];
-        [truncatingTailParagraphStyle setLineBreakMode:NSLineBreakByTruncatingTail];
+        [truncatingTailParagraphStyle setLineBreakMode:NSLineBreakByTruncatingHead];
         [truncatingTailParagraphStyle setAlignment:NSCenterTextAlignment];
     }
     [attrStr addAttribute:NSParagraphStyleAttributeName value:truncatingTailParagraphStyle range:range];
