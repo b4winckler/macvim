@@ -103,7 +103,7 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
         backgroundColor = [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.957 alpha:1];
     }
 #else
-    backgroundColor = [NSColor windowBackgroundColor;
+    backgroundColor = [NSColor windowBackgroundColor];
 #endif
     return backgroundColor;
 }
