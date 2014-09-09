@@ -6146,6 +6146,12 @@ internal_format(textwidth, second_indent, flags, format_only, c)
     int		no_leader = FALSE;
     int		do_comments = (flags & INSCHAR_DO_COM);
 #endif
+#ifdef FEAT_LINEBREAK
+    int		has_lbr = curwin->w_p_lbr;
+
+    /* make sure win_lbr_chartabsize() counts correctly */
+    curwin->w_p_lbr = FALSE;
+#endif
 
     /*
      * When 'ai' is off we don't want a space under the cursor to be
@@ -6498,6 +6504,9 @@ internal_format(textwidth, second_indent, flags, format_only, c)
     if (save_char != NUL)		/* put back space after cursor */
 	pchar_cursor(save_char);
 
+#ifdef FEAT_LINEBREAK
+    curwin->w_p_lbr = has_lbr;
+#endif
     if (!format_only && haveto_redraw)
     {
 	update_topline();
