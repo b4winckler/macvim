@@ -297,20 +297,6 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
     [attrStr addAttribute:NSFontAttributeName value:[NSFont systemFontOfSize:11.0] range:range];
     [attrStr addAttribute:NSForegroundColorAttributeName value:[[NSColor textColor] colorWithAlphaComponent:0.75] range:range];
 
-    // Add shadow attribute
-    NSShadow* shadow;
-    shadow = [[[NSShadow alloc] init] autorelease];
-    float shadowAlpha;
-    if(([cell state] == NSOnState) || [cell isHighlighted]){
-        shadowAlpha = 0.8;
-    } else {
-        shadowAlpha = 0.5;
-    }
-    [shadow setShadowColor:[NSColor colorWithCalibratedWhite:1.0 alpha:shadowAlpha]];
-    [shadow setShadowOffset:NSMakeSize(0, -1)];
-    [shadow setShadowBlurRadius:1.0];
-    [attrStr addAttribute:NSShadowAttributeName value:shadow range:range];
-
     // Paragraph Style for Truncating Long Text
     if (!truncatingTailParagraphStyle) {
         truncatingTailParagraphStyle = [[[NSParagraphStyle defaultParagraphStyle] mutableCopy] retain];
