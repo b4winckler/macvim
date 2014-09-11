@@ -98,7 +98,7 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
     NSColor *backgroundColor;
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
     if (isKeyWindow) {
-        backgroundColor = [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.820 alpha:1];
+        backgroundColor = [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.816 alpha:1];
     } else {
         backgroundColor = [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.957 alpha:1];
     }
