@@ -328,13 +328,15 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
         // background
         YosemiteNSDrawWindowBackground(aRect, [self backgroundColor:isKeyWindow]);
 
-        aRect.size.height -= 0.5;
+        aRect.size.height -= 1.0f;
+        aRect.origin.y += 0.5f;
         // frame
         [lineColor set];
         [bezier moveToPoint:NSMakePoint(aRect.origin.x, aRect.origin.y)];
         [bezier lineToPoint:NSMakePoint(aRect.origin.x, aRect.origin.y+aRect.size.height)];
         [bezier lineToPoint:NSMakePoint(aRect.origin.x+aRect.size.width, aRect.origin.y+aRect.size.height)];
         [bezier lineToPoint:NSMakePoint(aRect.origin.x+aRect.size.width, aRect.origin.y)];
+        [bezier lineToPoint:NSMakePoint(aRect.origin.x, aRect.origin.y)];
         [bezier stroke];
     } else {
 
