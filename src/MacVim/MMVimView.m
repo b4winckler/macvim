@@ -144,9 +144,9 @@ enum {
     [tabBarControl setHidden:YES];
 
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
-    [tabBarControl setCellMinWidth:64];
-    [tabBarControl setCellMaxWidth:1024*4];
-    [tabBarControl setCellOptimumWidth:1024];
+    [tabBarControl setCellMinWidth:120];
+    [tabBarControl setCellMaxWidth:[[NSScreen mainScreen] frame].size.width];
+    [tabBarControl setCellOptimumWidth:[[NSScreen mainScreen] frame].size.width];
 #else
     [tabBarControl setCellMinWidth:[ud integerForKey:MMTabMinWidthKey]];
     [tabBarControl setCellMaxWidth:[ud integerForKey:MMTabMaxWidthKey]];
