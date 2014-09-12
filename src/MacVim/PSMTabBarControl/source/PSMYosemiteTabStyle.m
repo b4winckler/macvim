@@ -322,7 +322,7 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
         // selected tab
         NSRect aRect = NSMakeRect(cellFrame.origin.x, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
 
-        PSMTabBarControl *bar = (PSMTabBarCell *)cell.controlView;
+        PSMTabBarControl *bar = (PSMTabBarControl *)cell.controlView;
         BOOL isKeyWindow = [bar.window isKeyWindow];
 
         // background
