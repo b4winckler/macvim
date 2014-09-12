@@ -295,7 +295,19 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 
     // Add font attribute
     [attrStr addAttribute:NSFontAttributeName value:[NSFont systemFontOfSize:11.0] range:range];
-    [attrStr addAttribute:NSForegroundColorAttributeName value:[[NSColor textColor] colorWithAlphaComponent:0.75] range:range];
+
+    PSMTabBarControl *bar = (PSMTabBarControl *)cell.controlView;
+    BOOL isKeyWindow = [bar.window isKeyWindow];
+
+    CGFloat textAlpha;
+    if ([cell state] == NSOnState) {
+        textAlpha = (isKeyWindow) ? 1.0f : 0.5f;
+    } else {
+        textAlpha = (isKeyWindow) ? 0.5f : 0.25f;
+    }
+    NSColor *textColor = [[NSColor textColor] colorWithAlphaComponent:textAlpha];
+
+    [attrStr addAttribute:NSForegroundColorAttributeName value:textColor range:range];
 
     // Paragraph Style for Truncating Long Text
     if (!truncatingTailParagraphStyle) {
