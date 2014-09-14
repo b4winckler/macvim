@@ -110,7 +110,7 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 
 - (NSColor *)borderColor
 {
-    return [NSColor colorWithCalibratedRed:0.6 green:0.6 blue:0.6 alpha:1];
+    return [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.678 alpha:1];
 }
 
 #pragma mark -
