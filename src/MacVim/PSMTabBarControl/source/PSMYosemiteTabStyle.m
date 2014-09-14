@@ -19,34 +19,6 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 
 @implementation PSMYosemiteTabStyle
 
-- (NSString *)name
-{
-    return @"Yosemite";
-}
-
-#pragma mark -
-#pragma mark Creation/Destruction
-
-- (id)init
-{
-    //NSLog(@"PSMMetalTabStyle init");
-
-    if((self = [super init]))
-    {
-
-        closeButton = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front"]];
-        //NSLog(@"closeButton=%@ path=%@", metalCloseButton,
-        //        [[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front"]);
-        closeButtonDown = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front_Pressed"]];
-        closeButtonOver = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front_Rollover"]];
-
-        _addTabButtonImage = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabNewMetal"]];
-        _addTabButtonPressedImage = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabNewMetalPressed"]];
-        _addTabButtonRolloverImage = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabNewMetalRollover"]];
-    }
-    return self;
-}
-
 - (void)dealloc
 {
     [closeButton release];
@@ -60,6 +32,32 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
     [centeredParagraphStyle release];
 
     [super dealloc];
+}
+
+#pragma mark -
+#pragma mark Initializers
+
+- (id)init
+{
+    self = [super init];
+    if (!self) return nil;
+
+    closeButton = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front"]];
+    //NSLog(@"closeButton=%@ path=%@", metalCloseButton,
+    //        [[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front"]);
+    closeButtonDown = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front_Pressed"]];
+    closeButtonOver = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front_Rollover"]];
+
+    _addTabButtonImage = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabNewMetal"]];
+    _addTabButtonPressedImage = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabNewMetalPressed"]];
+    _addTabButtonRolloverImage = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabNewMetalRollover"]];
+
+    return self;
+}
+
+- (NSString *)name
+{
+    return @"Yosemite";
 }
 
 #pragma mark -
@@ -96,15 +94,12 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 - (NSColor *)backgroundColor:(BOOL)isKeyWindow
 {
     NSColor *backgroundColor;
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
     if (isKeyWindow) {
         backgroundColor = [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.875 alpha:1];
     } else {
         backgroundColor = [NSColor colorWithCalibratedHue:0.000 saturation:0.000 brightness:0.957 alpha:1];
     }
-#else
-    backgroundColor = [NSColor windowBackgroundColor];
-#endif
+
     return backgroundColor;
 }
 
@@ -479,7 +474,6 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 
 - (void)encodeWithCoder:(NSCoder *)aCoder
 {
-    //[super encodeWithCoder:aCoder];
     if ([aCoder allowsKeyedCoding]) {
         [aCoder encodeObject:closeButton forKey:@"metalCloseButton"];
         [aCoder encodeObject:closeButtonDown forKey:@"metalCloseButtonDown"];
@@ -492,17 +486,15 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 
 - (id)initWithCoder:(NSCoder *)aDecoder
 {
-   // self = [super initWithCoder:aDecoder];
-    //if (self) {
-        if ([aDecoder allowsKeyedCoding]) {
-            closeButton = [[aDecoder decodeObjectForKey:@"metalCloseButton"] retain];
-            closeButtonDown = [[aDecoder decodeObjectForKey:@"metalCloseButtonDown"] retain];
-            closeButtonOver = [[aDecoder decodeObjectForKey:@"metalCloseButtonOver"] retain];
-            _addTabButtonImage = [[aDecoder decodeObjectForKey:@"addTabButtonImage"] retain];
-            _addTabButtonPressedImage = [[aDecoder decodeObjectForKey:@"addTabButtonPressedImage"] retain];
-            _addTabButtonRolloverImage = [[aDecoder decodeObjectForKey:@"addTabButtonRolloverImage"] retain];
-        }
-    //}
+    if ([aDecoder allowsKeyedCoding]) {
+        closeButton = [[aDecoder decodeObjectForKey:@"metalCloseButton"] retain];
+        closeButtonDown = [[aDecoder decodeObjectForKey:@"metalCloseButtonDown"] retain];
+        closeButtonOver = [[aDecoder decodeObjectForKey:@"metalCloseButtonOver"] retain];
+        _addTabButtonImage = [[aDecoder decodeObjectForKey:@"addTabButtonImage"] retain];
+        _addTabButtonPressedImage = [[aDecoder decodeObjectForKey:@"addTabButtonPressedImage"] retain];
+        _addTabButtonRolloverImage = [[aDecoder decodeObjectForKey:@"addTabButtonRolloverImage"] retain];
+    }
+
     return self;
 }
 
