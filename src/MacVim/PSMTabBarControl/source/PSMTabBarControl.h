@@ -24,10 +24,16 @@ typedef unsigned int NSUInteger;
 # define NSINTEGER_DEFINED 1
 #endif
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+#define kPSMTabBarControlHeight 25
+#define MARGIN_Y        5
+#else
 #define kPSMTabBarControlHeight 22
+#define MARGIN_Y        3
+#endif
 // internal cell border
 #define MARGIN_X        6
-#define MARGIN_Y        3
+
 // padding between objects
 #define kPSMTabBarCellPadding 4
 // fixed size objects
