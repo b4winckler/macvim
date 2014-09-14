@@ -357,14 +357,8 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 
         aRect.origin.x += 0.5;
 
-        // rollover
-        if ([cell isHighlighted]) {
-            [[NSColor colorWithCalibratedWhite:0.0 alpha:0.2] set];
-            NSRectFillUsingOperation(aRect, NSCompositeSourceAtop);
-        } else {
-            [[NSColor colorWithCalibratedWhite:0.0 alpha:0.1] set];
-            NSRectFillUsingOperation(aRect, NSCompositeSourceAtop);
-        }
+        [[NSColor colorWithCalibratedWhite:0.0 alpha:0.1] set];
+        NSRectFillUsingOperation(aRect, NSCompositeSourceAtop);
 
         // frame
         [lineColor set];
