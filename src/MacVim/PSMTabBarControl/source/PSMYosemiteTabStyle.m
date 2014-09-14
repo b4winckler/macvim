@@ -34,11 +34,11 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
     if((self = [super init]))
     {
 
-        metalCloseButton = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front"]];
-        //NSLog(@"metalCloseButton=%@ path=%@", metalCloseButton,
+        closeButton = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front"]];
+        //NSLog(@"closeButton=%@ path=%@", metalCloseButton,
         //        [[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front"]);
-        metalCloseButtonDown = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front_Pressed"]];
-        metalCloseButtonOver = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front_Rollover"]];
+        closeButtonDown = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front_Pressed"]];
+        closeButtonOver = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabClose_Front_Rollover"]];
 
         _addTabButtonImage = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabNewMetal"]];
         _addTabButtonPressedImage = [[NSImage alloc] initByReferencingFile:[[PSMTabBarControl bundle] pathForImageResource:@"TabNewMetalPressed"]];
@@ -49,9 +49,9 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 
 - (void)dealloc
 {
-    [metalCloseButton release];
-    [metalCloseButtonDown release];
-    [metalCloseButtonOver release];
+    [closeButton release];
+    [closeButtonDown release];
+    [closeButtonOver release];
     [_addTabButtonImage release];
     [_addTabButtonPressedImage release];
     [_addTabButtonRolloverImage release];
@@ -125,7 +125,7 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
     }
 
     NSRect result;
-    result.size = [metalCloseButton size];
+    result.size = [closeButton size];
     result.origin.x = cellFrame.origin.x + MARGIN_X;
     result.origin.y = cellFrame.origin.y + MARGIN_Y + 2.0;
 
@@ -146,7 +146,7 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
     result.origin.y = cellFrame.origin.y + MARGIN_Y;
 
     if([cell hasCloseButton] && ![cell isCloseButtonSuppressed])
-        result.origin.x += [metalCloseButton size].width + kPSMTabBarCellPadding;
+        result.origin.x += [closeButton size].width + kPSMTabBarCellPadding;
 
     if([cell state] == NSOnState){
         result.origin.y += 1;
@@ -209,7 +209,7 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 
     // close button?
     if([cell hasCloseButton] && ![cell isCloseButtonSuppressed])
-        resultWidth += [metalCloseButton size].width + kPSMTabBarCellPadding;
+        resultWidth += [closeButton size].width + kPSMTabBarCellPadding;
 
     // icon?
     if([cell hasIcon])
@@ -241,7 +241,7 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 
     // close button?
     if ([cell hasCloseButton] && ![cell isCloseButtonSuppressed])
-        resultWidth += [metalCloseButton size].width + kPSMTabBarCellPadding;
+        resultWidth += [closeButton size].width + kPSMTabBarCellPadding;
 
     // icon?
     if([cell hasIcon])
@@ -387,8 +387,8 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
         NSImage * closeButton = nil;
 
         closeButton = nil;
-        if ([cell closeButtonOver]) closeButton = metalCloseButtonOver;
-        if ([cell closeButtonPressed]) closeButton = metalCloseButtonDown;
+        if ([cell closeButtonOver]) closeButton = closeButtonOver;
+        if ([cell closeButtonPressed]) closeButton = closeButtonDown;
 
         closeButtonSize = [closeButton size];
         [closeButton setFlipped:YES];
@@ -481,9 +481,9 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
 {
     //[super encodeWithCoder:aCoder];
     if ([aCoder allowsKeyedCoding]) {
-        [aCoder encodeObject:metalCloseButton forKey:@"metalCloseButton"];
-        [aCoder encodeObject:metalCloseButtonDown forKey:@"metalCloseButtonDown"];
-        [aCoder encodeObject:metalCloseButtonOver forKey:@"metalCloseButtonOver"];
+        [aCoder encodeObject:closeButton forKey:@"metalCloseButton"];
+        [aCoder encodeObject:closeButtonDown forKey:@"metalCloseButtonDown"];
+        [aCoder encodeObject:closeButtonOver forKey:@"metalCloseButtonOver"];
         [aCoder encodeObject:_addTabButtonImage forKey:@"addTabButtonImage"];
         [aCoder encodeObject:_addTabButtonPressedImage forKey:@"addTabButtonPressedImage"];
         [aCoder encodeObject:_addTabButtonRolloverImage forKey:@"addTabButtonRolloverImage"];
@@ -495,9 +495,9 @@ void YosemiteNSDrawWindowBackground(NSRect rect, NSColor *color)
    // self = [super initWithCoder:aDecoder];
     //if (self) {
         if ([aDecoder allowsKeyedCoding]) {
-            metalCloseButton = [[aDecoder decodeObjectForKey:@"metalCloseButton"] retain];
-            metalCloseButtonDown = [[aDecoder decodeObjectForKey:@"metalCloseButtonDown"] retain];
-            metalCloseButtonOver = [[aDecoder decodeObjectForKey:@"metalCloseButtonOver"] retain];
+            closeButton = [[aDecoder decodeObjectForKey:@"metalCloseButton"] retain];
+            closeButtonDown = [[aDecoder decodeObjectForKey:@"metalCloseButtonDown"] retain];
+            closeButtonOver = [[aDecoder decodeObjectForKey:@"metalCloseButtonOver"] retain];
             _addTabButtonImage = [[aDecoder decodeObjectForKey:@"addTabButtonImage"] retain];
             _addTabButtonPressedImage = [[aDecoder decodeObjectForKey:@"addTabButtonPressedImage"] retain];
             _addTabButtonRolloverImage = [[aDecoder decodeObjectForKey:@"addTabButtonRolloverImage"] retain];

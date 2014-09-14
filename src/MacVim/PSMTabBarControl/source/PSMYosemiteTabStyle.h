@@ -10,9 +10,9 @@
 #import "PSMTabStyle.h"
 
 @interface PSMYosemiteTabStyle : NSObject <PSMTabStyle> {
-    NSImage *metalCloseButton;
-    NSImage *metalCloseButtonDown;
-    NSImage *metalCloseButtonOver;
+    NSImage *closeButton;
+    NSImage *closeButtonDown;
+    NSImage *closeButtonOver;
     NSImage *_addTabButtonImage;
     NSImage *_addTabButtonPressedImage;
     NSImage *_addTabButtonRolloverImage;
