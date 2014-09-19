@@ -587,7 +587,7 @@ start_global_changes()
 {
     clip_unnamed_saved = clip_unnamed;
 
-    if (clip_did_set_selection)
+    if (clip_did_set_selection > 0)
     {
 	clip_unnamed = FALSE;
 	clip_did_set_selection = FALSE;
@@ -600,7 +600,7 @@ start_global_changes()
     void
 end_global_changes()
 {
-    if (!clip_did_set_selection)
+    if (clip_did_set_selection == FALSE)  /* not when -1 */
     {
 	clip_did_set_selection = TRUE;
 	clip_unnamed = clip_unnamed_saved;
