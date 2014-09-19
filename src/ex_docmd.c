@@ -5152,6 +5152,8 @@ ex_buffer(eap)
 	    goto_buffer(eap, DOBUF_CURRENT, FORWARD, 0);
 	else
 	    goto_buffer(eap, DOBUF_FIRST, FORWARD, (int)eap->line2);
+	if (eap->do_ecmd_cmd != NULL)
+	    do_cmdline_cmd(eap->do_ecmd_cmd);
     }
 }
 
@@ -5164,6 +5166,8 @@ ex_bmodified(eap)
     exarg_T	*eap;
 {
     goto_buffer(eap, DOBUF_MOD, FORWARD, (int)eap->line2);
+    if (eap->do_ecmd_cmd != NULL)
+	do_cmdline_cmd(eap->do_ecmd_cmd);
 }
 
 /*
@@ -5175,6 +5179,8 @@ ex_bnext(eap)
     exarg_T	*eap;
 {
     goto_buffer(eap, DOBUF_CURRENT, FORWARD, (int)eap->line2);
+    if (eap->do_ecmd_cmd != NULL)
+	do_cmdline_cmd(eap->do_ecmd_cmd);
 }
 
 /*
@@ -5188,6 +5194,8 @@ ex_bprevious(eap)
     exarg_T	*eap;
 {
     goto_buffer(eap, DOBUF_CURRENT, BACKWARD, (int)eap->line2);
+    if (eap->do_ecmd_cmd != NULL)
+	do_cmdline_cmd(eap->do_ecmd_cmd);
 }
 
 /*
@@ -5201,6 +5209,8 @@ ex_brewind(eap)
     exarg_T	*eap;
 {
     goto_buffer(eap, DOBUF_FIRST, FORWARD, 0);
+    if (eap->do_ecmd_cmd != NULL)
+	do_cmdline_cmd(eap->do_ecmd_cmd);
 }
 
 /*
@@ -5212,6 +5222,8 @@ ex_blast(eap)
     exarg_T	*eap;
 {
     goto_buffer(eap, DOBUF_LAST, BACKWARD, 0);
+    if (eap->do_ecmd_cmd != NULL)
+	do_cmdline_cmd(eap->do_ecmd_cmd);
 }
 #endif
 
