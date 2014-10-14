@@ -484,7 +484,10 @@ newwindow:
 		    postponed_split = Prenum;
 		else
 		    postponed_split = -1;
-		g_do_tagpreview = 0;
+#ifdef FEAT_QUICKFIX
+		if (nchar != '}')
+		    g_do_tagpreview = 0;
+#endif
 
 		/* Execute the command right here, required when "wincmd ]"
 		 * was used in a function. */

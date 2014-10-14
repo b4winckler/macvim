@@ -1380,6 +1380,9 @@ do_pending_operator(cap, old_col, gui_yank)
     pos_T	old_cursor;
     int		empty_region_error;
     int		restart_edit_save;
+#ifdef FEAT_LINEBREAK
+    int		lbr_saved = curwin->w_p_lbr;
+#endif
 
     /* The visual area is remembered for redo */
     static int	    redo_VIsual_mode = NUL; /* 'v', 'V', or Ctrl-V */
@@ -1390,6 +1393,10 @@ do_pending_operator(cap, old_col, gui_yank)
     int		    include_line_break = FALSE;
 #endif
 
+#ifdef FEAT_LINEBREAK
+    curwin->w_p_lbr = FALSE;	/* Avoid a problem with unwanted linebreaks in
+				 * block mode. */
+#endif
 #if defined(FEAT_CLIPBOARD)
     /*
      * Yank the visual area into the GUI selection register before we operate
@@ -2136,6 +2143,9 @@ do_pending_operator(cap, old_col, gui_yank)
 	oap->block_mode = FALSE;
 	clearop(oap);
     }
+#ifdef FEAT_LINEBREAK
+    curwin->w_p_lbr = lbr_saved;
+#endif
 }
 
 /*

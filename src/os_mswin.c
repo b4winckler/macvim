@@ -1635,11 +1635,33 @@ mch_print_init(prt_settings_T *psettings, char_u *jobname, int forceit)
 	char_u	*printer_name = (char_u *)devname + devname->wDeviceOffset;
 	char_u	*port_name = (char_u *)devname +devname->wOutputOffset;
 	char_u	*text = _("to %s on %s");
+#ifdef FEAT_MBYTE
+	char_u  *printer_name_orig = printer_name;
+	char_u	*port_name_orig = port_name;
 
+	if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
+	{
+	    char_u  *to_free = NULL;
+	    int     maxlen;
+
+	    acp_to_enc(printer_name, STRLEN(printer_name), &to_free, &maxlen);
+	    if (to_free != NULL)
+		printer_name = to_free;
+	    acp_to_enc(port_name, STRLEN(port_name), &to_free, &maxlen);
+	    if (to_free != NULL)
+		port_name = to_free;
+	}
+#endif
 	prt_name = alloc((unsigned)(STRLEN(printer_name) + STRLEN(port_name)
 							     + STRLEN(text)));
 	if (prt_name != NULL)
 	    wsprintf(prt_name, text, printer_name, port_name);
+#ifdef FEAT_MBYTE
+	if (printer_name != printer_name_orig)
+	    vim_free(printer_name);
+	if (port_name != port_name_orig)
+	    vim_free(port_name);
+#endif
     }
     GlobalUnlock(prt_dlg.hDevNames);
 
@@ -1673,16 +1695,22 @@ mch_print_init(prt_settings_T *psettings, char_u *jobname, int forceit)
      */
     psettings->chars_per_line = prt_get_cpl();
     psettings->lines_per_page = prt_get_lpp();
-    psettings->n_collated_copies = (prt_dlg.Flags & PD_COLLATE)
-							? prt_dlg.nCopies : 1;
-    psettings->n_uncollated_copies = (prt_dlg.Flags & PD_COLLATE)
-							? 1 : prt_dlg.nCopies;
+    if (prt_dlg.Flags & PD_USEDEVMODECOPIESANDCOLLATE)
+    {
+	psettings->n_collated_copies = (prt_dlg.Flags & PD_COLLATE)
+						    ? prt_dlg.nCopies : 1;
+	psettings->n_uncollated_copies = (prt_dlg.Flags & PD_COLLATE)
+						    ? 1 : prt_dlg.nCopies;
 
-    if (psettings->n_collated_copies == 0)
+	if (psettings->n_collated_copies == 0)
+	    psettings->n_collated_copies = 1;
+
+	if (psettings->n_uncollated_copies == 0)
+	    psettings->n_uncollated_copies = 1;
+    } else {
 	psettings->n_collated_copies = 1;
-
-    if (psettings->n_uncollated_copies == 0)
 	psettings->n_uncollated_copies = 1;
+    }
 
     psettings->jobname = jobname;
 
