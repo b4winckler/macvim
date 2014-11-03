@@ -73,13 +73,13 @@ if has("gui_macvim")
   an <silent> 9998.301 Window.Minimize\ All	    <Nop>
   an <silent> 9998.310 Window.Zoom		    <Nop>
   an <silent> 9998.311 Window.Zoom\ All		    <Nop>
-  an <silent> 9998.320 Window.Toggle\ Full\ Screen\ Mode :set invfullscreen<CR>
+  an <silent> 9998.320 Window.Toggle\ Full\ Screen :set invfullscreen<CR>
   an 9998.330 Window.-SEP1-			    <Nop>
   " TODO! Grey out if no tabs are visible.
   an <silent> 9998.340 Window.Select\ Next\ Tab	    :tabnext<CR>
   an <silent> 9998.350 Window.Select\ Previous\ Tab :tabprevious<CR>
   an 9998.360 Window.-SEP2-			    <Nop>
-  an <silent> 9998.370 Window.Bring\ All\ To\ Front <Nop>
+  an <silent> 9998.370 Window.Bring\ All\ to\ Front <Nop>
 endif
 
 " Help menu
@@ -90,7 +90,7 @@ if has("gui_macvim")
 endif
 an 9999.10 &Help.&Overview<Tab><F1>	:help<CR>
 an 9999.20 &Help.&User\ Manual		:help usr_toc<CR>
-an 9999.30 &Help.&How-to\ links		:help how-to<CR>
+an 9999.30 &Help.&How-to\ Links		:help how-to<CR>
 an <silent> 9999.40 &Help.&Find\.\.\.	:call <SID>Helpfind()<CR>
 an 9999.45 &Help.-sep1-			<Nop>
 an 9999.50 &Help.&Credits		:help credits<CR>
@@ -881,10 +881,10 @@ an 70.335 &Window.-SEP1-				<Nop>
 an 70.340 &Window.&Close<Tab>^Wc			:confirm close<CR>
 an 70.345 &Window.Close\ &Other(s)<Tab>^Wo		:confirm only<CR>
 an 70.350 &Window.-SEP2-				<Nop>
-an 70.355 &Window.Move\ &To.&Top<Tab>^WK		<C-W>K
-an 70.355 &Window.Move\ &To.&Bottom<Tab>^WJ		<C-W>J
-an 70.355 &Window.Move\ &To.&Left\ side<Tab>^WH		<C-W>H
-an 70.355 &Window.Move\ &To.&Right\ side<Tab>^WL	<C-W>L
+an 70.355 &Window.Move\ &to.&Top<Tab>^WK		<C-W>K
+an 70.355 &Window.Move\ &to.&Bottom<Tab>^WJ		<C-W>J
+an 70.355 &Window.Move\ &to.&Left\ Side<Tab>^WH		<C-W>H
+an 70.355 &Window.Move\ &to.&Right\ Side<Tab>^WL	<C-W>L
 an 70.360 &Window.Rotate\ &Up<Tab>^WR			<C-W>R
 an 70.362 &Window.Rotate\ &Down<Tab>^Wr			<C-W>r
 an 70.365 &Window.-SEP3-				<Nop>
@@ -1193,7 +1193,7 @@ if has("gui_macvim")
   macm File.Save<Tab>:w				key=<D-s>
   macm File.Save\ All				key=<D-M-s> alt=YES
   macm File.Save\ As\.\.\.<Tab>:sav		key=<D-S>
-  macm File.Print				key=<D-p>
+  macm File.Print\.\.\.				key=<D-p>
 
   macm Edit.Undo<Tab>u				key=<D-z> action=undo:
   macm Edit.Redo<Tab>^R				key=<D-Z> action=redo:
@@ -1210,7 +1210,7 @@ if has("gui_macvim")
   macm Edit.Font.Smaller			key=<D--> action=fontSizeDown:
   macm Edit.Special\ Characters\.\.\.		key=<D-M-t> action=orderFrontCharacterPalette:
 
-  macm Tools.Spelling.To\ Next\ error<Tab>]s	key=<D-;>
+  macm Tools.Spelling.To\ Next\ Error<Tab>]s	key=<D-;>
   macm Tools.Spelling.Suggest\ Corrections<Tab>z=   key=<D-:>
   macm Tools.Make<Tab>:make			key=<D-b>
   macm Tools.List\ Errors<Tab>:cl		key=<D-l>
@@ -1223,10 +1223,10 @@ if has("gui_macvim")
   macm Window.Minimize\ All	key=<D-M-m>	action=miniaturizeAll:	alt=YES
   macm Window.Zoom		key=<D-C-z>	action=performZoom:
   macm Window.Zoom\ All		key=<D-M-C-z>	action=zoomAll:		alt=YES
-  macm Window.Toggle\ Full\ Screen\ Mode	key=<D-C-f>
+  macm Window.Toggle\ Full\ Screen		key=<D-C-f>
   macm Window.Select\ Next\ Tab			key=<D-}>
   macm Window.Select\ Previous\ Tab		key=<D-{>
-  macm Window.Bring\ All\ To\ Front		action=arrangeInFront:
+  macm Window.Bring\ All\ to\ Front		action=arrangeInFront:
 
   macm Help.MacVim\ Help			key=<D-?>
   macm Help.MacVim\ Website			action=openWebsite:
