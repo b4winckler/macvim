@@ -25104,6 +25104,7 @@ do_string_sub(str, pat, sub, flags)
     int		i;
     int		do_all;
     char_u	*tail;
+    char_u	*end;
     garray_T	ga;
     char_u	*ret;
     char_u	*save_cpo;
@@ -25122,6 +25123,7 @@ do_string_sub(str, pat, sub, flags)
     if (regmatch.regprog != NULL)
     {
 	tail = str;
+	end = str + STRLEN(str);
 	while (vim_regexec_nl(&regmatch, str, (colnr_T)(tail - str)))
 	{
 	    /* Skip empty match except for first match. */
@@ -25148,7 +25150,7 @@ do_string_sub(str, pat, sub, flags)
 	     * - The text after the match.
 	     */
 	    sublen = vim_regsub(&regmatch, sub, tail, FALSE, TRUE, FALSE);
-	    if (ga_grow(&ga, (int)(STRLEN(tail) + sublen -
+	    if (ga_grow(&ga, (int)((end - tail) + sublen -
 			    (regmatch.endp[0] - regmatch.startp[0]))) == FAIL)
 	    {
 		ga_clear(&ga);
