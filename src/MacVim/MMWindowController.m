@@ -58,7 +58,7 @@
  *
  * The window is always kept centered and resizing works more or less the same
  * way as in windowed mode.
- *  
+ *
  */
 
 #import "MMAppController.h"
@@ -170,7 +170,7 @@
 
     [win setDelegate:self];
     [win setInitialFirstResponder:[vimView textView]];
-    
+
     if ([win styleMask] & NSTexturedBackgroundWindowMask) {
         // On Leopard, we want to have a textured window to have nice
         // looking tabs. But the textured window look implies rounded
@@ -479,7 +479,7 @@
 
 - (BOOL)destroyScrollbarWithIdentifier:(int32_t)ident
 {
-    BOOL scrollbarHidden = [vimView destroyScrollbarWithIdentifier:ident];   
+    BOOL scrollbarHidden = [vimView destroyScrollbarWithIdentifier:ident];
     shouldResizeVimView = shouldResizeVimView || scrollbarHidden;
     shouldMaximizeWindow = shouldMaximizeWindow || scrollbarHidden;
 
@@ -1130,12 +1130,13 @@
     // Fade out window, remove title bar and maximize, then fade back in.
     // (There is a small delay before window is maximized but usually this is
     // not noticeable on a relatively modern Mac.)
+    [window setStyleMask:([window styleMask] | NSFullScreenWindowMask)];
+    [[vimView tabBarControl] setStyleNamed:@"Unified"];
+
     [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
         [context setDuration:0.5*duration];
         [[window animator] setAlphaValue:0];
     } completionHandler:^{
-        [window setStyleMask:([window styleMask] | NSFullScreenWindowMask)];
-        [[vimView tabBarControl] setStyleNamed:@"Unified"];
         [self updateTablineSeparator];
         [self maximizeWindow:fullScreenOptions];
 
@@ -1143,9 +1144,10 @@
             [context setDuration:0.5*duration];
             [[window animator] setAlphaValue:1];
         } completionHandler:^{
-            // Do nothing
+            [self resizeWindowToFitContentSize:[vimView desiredSize] keepOnScreen:YES];
         }];
     }];
+
 }
 
 - (void)windowWillEnterFullScreen:(NSNotification *)notification
@@ -1397,7 +1399,7 @@
 }
 
 - (BOOL)askBackendForStarRegister:(NSPasteboard *)pb
-{ 
+{
     // TODO: Can this be done with evaluateExpression: instead?
     BOOL reply = NO;
     id backendProxy = [vimController backendProxy];
@@ -1479,7 +1481,7 @@
         input = [NSString stringWithFormat:@"<C-\\><C-N>:let @/='%@'<CR>%c",
                 query, next ? 'n' : 'N'];
     } else {
-        input = next ? @"<C-\\><C-N>n" : @"<C-\\><C-N>N"; 
+        input = next ? @"<C-\\><C-N>n" : @"<C-\\><C-N>N";
     }
 
     [vimController addVimInput:input];
