@@ -135,6 +135,8 @@ typedef int BY_HANDLE_FILE_INFORMATION;
 typedef int SE_OBJECT_TYPE;
 typedef int PSNSECINFO;
 typedef int PSNSECINFOW;
+typedef int STARTUPINFO;
+typedef int PROCESS_INFORMATION;
 #endif
 
 #ifndef FEAT_GUI_W32
@@ -4646,9 +4648,10 @@ mch_call_shell(
     int		x = 0;
     int		tmode = cur_tmode;
 #ifdef FEAT_TITLE
-    char szShellTitle[512];
-
+    char	szShellTitle[512];
 # ifdef FEAT_MBYTE
+    int		did_set_title = FALSE;
+
     /* Change the title to reflect that we are in a subshell. */
     if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
     {
@@ -4671,25 +4674,26 @@ mch_call_shell(
 			wcscat(szShellTitle, wn);
 		    SetConsoleTitleW(szShellTitle);
 		    vim_free(wn);
-		    goto didset;
+		    did_set_title = TRUE;
 		}
 	    }
 	}
     }
-#endif
-    /* Change the title to reflect that we are in a subshell. */
-    if (GetConsoleTitle(szShellTitle, sizeof(szShellTitle) - 4) > 0)
-    {
-	if (cmd == NULL)
-	    strcat(szShellTitle, " :sh");
-	else
+    if (!did_set_title)
+# endif
+	/* Change the title to reflect that we are in a subshell. */
+	if (GetConsoleTitle(szShellTitle, sizeof(szShellTitle) - 4) > 0)
 	{
-	    strcat(szShellTitle, " - !");
-	    if ((strlen(szShellTitle) + strlen(cmd) < sizeof(szShellTitle)))
-		strcat(szShellTitle, cmd);
+	    if (cmd == NULL)
+		strcat(szShellTitle, " :sh");
+	    else
+	    {
+		strcat(szShellTitle, " - !");
+		if ((strlen(szShellTitle) + strlen(cmd) < sizeof(szShellTitle)))
+		    strcat(szShellTitle, cmd);
+	    }
+	    SetConsoleTitle(szShellTitle);
 	}
-	SetConsoleTitle(szShellTitle);
-    }
 #endif
 
     out_flush();
@@ -6137,6 +6141,13 @@ mch_open(char *name, int flags, int mode)
     }
 # endif
 
+    /* open() can open a file which name is longer than _MAX_PATH bytes
+     * and shorter than _MAX_PATH characters successfully, but sometimes it
+     * causes unexpected error in another part. We make it an error explicitly
+     * here. */
+    if (strlen(name) >= _MAX_PATH)
+	return -1;
+
     return open(name, flags, mode);
 }
 
@@ -6185,6 +6196,13 @@ mch_fopen(char *name, char *mode)
 	 * GetLastError() here and it's unclear what errno gets set to if
 	 * the _wfopen() fails for missing wide functions. */
     }
+
+    /* fopen() can open a file which name is longer than _MAX_PATH bytes
+     * and shorter than _MAX_PATH characters successfully, but sometimes it
+     * causes unexpected error in another part. We make it an error explicitly
+     * here. */
+    if (strlen(name) >= _MAX_PATH)
+	return NULL;
 
     return fopen(name, mode);
 }

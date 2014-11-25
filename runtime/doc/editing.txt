@@ -1,4 +1,4 @@
-*editing.txt*   For Vim version 7.4.  Last change: 2014 Sep 19
+*editing.txt*   For Vim version 7.4.  Last change: 2014 Nov 19
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -1080,9 +1080,12 @@ The names can be in upper- or lowercase.
 			the last file in the argument list has not been
 			edited.  See |:confirm| and 'confirm'.  {not in Vi}
 
-:q[uit]!		Quit without writing, also when visible buffers have
-			changes.  Does not exit when there are changed hidden
-			buffers.  Use ":qall!" to exit always.
+:q[uit]!		Quit without writing, also when currently visible
+			buffers have changes.  Does not exit when this is the
+			last window and there are is a changed hidden buffer.
+			In this case, the first changed hidden buffer becomes
+			the current buffer.
+			Use ":qall!" to exit always.
 
 :cq[uit]		Quit always, without writing, and return an error
 			code.  See |:cq|.  Used for Manx's QuickFix mode (see
@@ -1415,13 +1418,11 @@ Do this before writing the file.  When reading an encrypted file it will be
 set automatically to the method used when that file was written.  You can
 change 'cryptmethod' before writing that file to change the method.
 
-To set the default method, used for new files, use one of these in your
-|vimrc| file: >
-	set cm=zip
+To set the default method, used for new files, use this in your |vimrc| 
+file: >
 	set cm=blowfish2
-Use the first one if you need to be compatible with Vim 7.2 and older.  Using
-"blowfish2" is highly recommended if you can use a Vim version that supports
-it.
+Using "blowfish2" is highly recommended.  Only use another method if you
+must use an older Vim version that does not support it.
 
 The message given for reading and writing a file will show "[crypted]" when
 using zip, "[blowfish]" when using blowfish, etc.

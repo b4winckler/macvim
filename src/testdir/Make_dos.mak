@@ -42,8 +42,10 @@ SCRIPTS =	test3.out test4.out test5.out test6.out test7.out \
 		test_insertcount.out \
 		test_listlbr.out \
 		test_listlbr_utf8.out \
+		test_mapping.out \
 		test_options.out \
 		test_qf_title.out \
+		test_signs.out \
 		test_utf8.out
 
 SCRIPTS32 =	test50.out test70.out
@@ -85,6 +87,7 @@ clean:
 	-if exist Xfind rd /s /q Xfind
 	-if exist viminfo del viminfo
 	-del test.log
+	-if exist benchmark.out del benchmark.out
 
 .in.out:
 	-if exist $*.failed del $*.failed
@@ -101,3 +104,11 @@ clean:
 
 nolog:
 	-del test.log
+
+benchmark:
+	bench_re_freeze.out
+
+bench_re_freeze.out: bench_re_freeze.vim
+	-if exist benchmark.out del benchmark.out
+	$(VIMPROG) -u dos.vim -U NONE --noplugin $*.in
+	@IF EXIST benchmark.out ( type benchmark.out )

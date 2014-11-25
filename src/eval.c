@@ -3368,11 +3368,11 @@ set_context_for_expression(xp, arg, cmdidx)
 	    got_eq = TRUE;
 	    xp->xp_context = EXPAND_EXPRESSION;
 	}
-	else if (c == '<'
+	else if ((c == '<' || c == '#')
 		&& xp->xp_context == EXPAND_FUNCTIONS
 		&& vim_strchr(xp->xp_pattern, '(') == NULL)
 	{
-	    /* Function name can start with "<SNR>" */
+	    /* Function name can start with "<SNR>" and contain '#'. */
 	    break;
 	}
 	else if (cmdidx != CMD_let || got_eq)
@@ -10721,18 +10721,20 @@ filter_map(argvars, rettv, map)
 	    {
 		if (!HASHITEM_EMPTY(hi))
 		{
+		    int r;
+
 		    --todo;
 		    di = HI2DI(hi);
 		    if (tv_check_lock(di->di_tv.v_lock,
 						     (char_u *)_(arg_errmsg)))
 			break;
 		    vimvars[VV_KEY].vv_str = vim_strsave(di->di_key);
-		    if (filter_map_one(&di->di_tv, expr, map, &rem) == FAIL
-								  || did_emsg)
+		    r = filter_map_one(&di->di_tv, expr, map, &rem);
+		    clear_tv(&vimvars[VV_KEY].vv_tv);
+		    if (r == FAIL || did_emsg)
 			break;
 		    if (!map && rem)
 			dictitem_remove(d, di);
-		    clear_tv(&vimvars[VV_KEY].vv_tv);
 		}
 	    }
 	    hash_unlock(ht);
@@ -10783,6 +10785,7 @@ filter_map_one(tv, expr, map, remp)
     if (*s != NUL)  /* check for trailing chars after expr */
     {
 	EMSG2(_(e_invexpr2), s);
+	clear_tv(&rettv);
 	goto theend;
     }
     if (map)
@@ -12016,6 +12019,8 @@ f_getreg(argvars, rettv)
 	rettv->v_type = VAR_LIST;
 	rettv->vval.v_list = (list_T *)get_reg_contents(regname,
 				      (arg2 ? GREG_EXPR_SRC : 0) | GREG_LIST);
+	if (rettv->vval.v_list != NULL)
+	    ++rettv->vval.v_list->lv_refcount;
     }
     else
     {
@@ -19604,7 +19609,7 @@ f_winrestview(argvars, rettv)
 # endif
 	changed_window_setting();
 
-	if (curwin->w_topline == 0)
+	if (curwin->w_topline <= 0)
 	    curwin->w_topline = 1;
 	if (curwin->w_topline > curbuf->b_ml.ml_line_count)
 	    curwin->w_topline = curbuf->b_ml.ml_line_count;
@@ -19717,6 +19722,7 @@ f_writefile(argvars, rettv)
     typval_T	*rettv;
 {
     int		binary = FALSE;
+    int		append = FALSE;
     char_u	*fname;
     FILE	*fd;
     int		ret = 0;
@@ -19732,14 +19738,19 @@ f_writefile(argvars, rettv)
     if (argvars[0].vval.v_list == NULL)
 	return;
 
-    if (argvars[2].v_type != VAR_UNKNOWN
-			      && STRCMP(get_tv_string(&argvars[2]), "b") == 0)
-	binary = TRUE;
+    if (argvars[2].v_type != VAR_UNKNOWN)
+    {
+	if (vim_strchr(get_tv_string(&argvars[2]), 'b') != NULL)
+	    binary = TRUE;
+	if (vim_strchr(get_tv_string(&argvars[2]), 'a') != NULL)
+	    append = TRUE;
+    }
 
     /* Always open the file in binary mode, library functions have a mind of
      * their own about CR-LF conversion. */
     fname = get_tv_string(&argvars[1]);
-    if (*fname == NUL || (fd = mch_fopen((char *)fname, WRITEBIN)) == NULL)
+    if (*fname == NUL || (fd = mch_fopen((char *)fname,
+				      append ? APPENDBIN : WRITEBIN)) == NULL)
     {
 	EMSG2(_(e_notcreate), *fname == NUL ? (char_u *)_("<empty>") : fname);
 	ret = -1;
@@ -24782,7 +24793,7 @@ repeat:
 	    p = alloc(_MAX_PATH + 1);
 	    if (p != NULL)
 	    {
-		if (GetLongPathName(*fnamep, p, MAXPATHL))
+		if (GetLongPathName(*fnamep, p, _MAX_PATH))
 		{
 		    vim_free(*bufp);
 		    *bufp = *fnamep = p;
@@ -25104,6 +25115,7 @@ do_string_sub(str, pat, sub, flags)
     int		i;
     int		do_all;
     char_u	*tail;
+    char_u	*end;
     garray_T	ga;
     char_u	*ret;
     char_u	*save_cpo;
@@ -25122,6 +25134,7 @@ do_string_sub(str, pat, sub, flags)
     if (regmatch.regprog != NULL)
     {
 	tail = str;
+	end = str + STRLEN(str);
 	while (vim_regexec_nl(&regmatch, str, (colnr_T)(tail - str)))
 	{
 	    /* Skip empty match except for first match. */
@@ -25148,7 +25161,7 @@ do_string_sub(str, pat, sub, flags)
 	     * - The text after the match.
 	     */
 	    sublen = vim_regsub(&regmatch, sub, tail, FALSE, TRUE, FALSE);
-	    if (ga_grow(&ga, (int)(STRLEN(tail) + sublen -
+	    if (ga_grow(&ga, (int)((end - tail) + sublen -
 			    (regmatch.endp[0] - regmatch.startp[0]))) == FAIL)
 	    {
 		ga_clear(&ga);

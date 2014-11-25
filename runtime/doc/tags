@@ -396,6 +396,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 'kp'	options.txt	/*'kp'*
 'langmap'	options.txt	/*'langmap'*
 'langmenu'	options.txt	/*'langmenu'*
+'langnoremap'	options.txt	/*'langnoremap'*
 'laststatus'	options.txt	/*'laststatus'*
 'lazyredraw'	options.txt	/*'lazyredraw'*
 'lbr'	options.txt	/*'lbr'*
@@ -409,6 +410,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 'listchars'	options.txt	/*'listchars'*
 'lm'	options.txt	/*'lm'*
 'lmap'	options.txt	/*'lmap'*
+'lnr'	options.txt	/*'lnr'*
 'loadplugins'	options.txt	/*'loadplugins'*
 'lpl'	options.txt	/*'lpl'*
 'ls'	options.txt	/*'ls'*
@@ -5526,6 +5528,7 @@ edit-dialogs	editing.txt	/*edit-dialogs*
 edit-files	editing.txt	/*edit-files*
 edit-intro	editing.txt	/*edit-intro*
 edit-no-break	usr_25.txt	/*edit-no-break*
+edit-paragraph-join	usr_25.txt	/*edit-paragraph-join*
 editing.txt	editing.txt	/*editing.txt*
 efm-%>	quickfix.txt	/*efm-%>*
 efm-entries	quickfix.txt	/*efm-entries*
