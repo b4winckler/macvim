@@ -1,0 +1,216 @@
+
+UAX #11: East Asian Width
+http://unicode.org/reports/tr11/
+
+UAX #14: Line Breaking Properties
+http://unicode.org/reports/tr14/
+
+Word wrap - Wikipedia
+http://en.wikipedia.org/wiki/Word_wrap
+
+JISC 日本工業標準調査会
+http://www.jisc.go.jp/
+JIS X 4051 - Wikipedia
+http://ja.wikipedia.org/wiki/JIS_X_4051
+
+JIS X 4051 日本語文書の組版方法 (Formatting rules for Japanese documents)
+
+4.3 行頭禁則処理
+  終わり括弧類、行頭禁止和字、ハイフン類、区切り約物、中点類及び句点類
+  が、行頭又は割注行頭にきてはならない。
+4.4 行末禁則処理
+  始め括弧類が行末又は割注行末にきてはならない。
+4.5 分離禁止処理
+  4.5.1 分割禁止
+    分離禁止文字の組を構成する文字間では、分割してはならない。ただし、
+    連数字と欧文間隔以外の欧文用文字との間を分割可とするか否かは、処理
+    系定義とする。
+  4.5.2 分離禁止
+    延ばし処理によって行を調整する場合も、分離禁止文字の組を構成するも
+    時間には延ばし処理による空き量を入れてはならない。ただし、連数字と
+    欧文間隔以外の欧文用文字との間を延ばし可とするか否かは、処理系定義
+    とする。
+
+(付属書1より) 文字クラス
+    名前 (JIS X 0213 面区点番号)
+(1) 始め括弧類
+    LEFT PARENTHESIS (1-1-42)
+    LEFT SQUARE BRACKET (1-1-46)
+    LEFT CURLY BRACKET (1-1-48)
+    LEFT TORTOISE SHELL BRACKET (1-1-44)
+    LEFT ANGLE BRACKET (1-1-50)
+    LEFT DOUBLE ANGLE BRACKET (1-1-52)
+    LEFT CORNER BRACKET (1-1-54)
+    LEFT WHITE CORNER BRACKET (1-1-56)
+    LEFT BLACK LENTICULAR BRACKET (1-1-58)
+    LEFT WHITE TORTOISE SHELL BRACKET (1-2-56)
+    LEFT WHITE LENTICULAR BRACKET (1-2-58)
+    REVERSED DOUBLE PRIME QUOTATION (1-13-64)
+    LEFT SINGLE QUOTATION MARK (1-1-38)
+    LEFT DOUBLE QUOTATION MARK (1-1-40)
+    LEFT WHITE PARENTHESIS (1-2-54)
+    LEFT-POINTING DOUBLE ANGLE QUOTATION MARK (1-9-8)
+(2) 終わり括弧類
+    COMMA (1-1-4)
+    RIGHT PARENTHESIS (1-1-43)
+    RIGHT SQUARE BRACKET (1-1-47)
+    RIGHT CURLY BRACKET (1-1-49)
+    IDEOGRAPHIC COMMA (1-1-2)
+    RIGHT TORTOISE SHELL BRACKET (1-1-45)
+    RIGHT ANGLE BRACKET (1-1-51)
+    RIGHT DOUBLE ANGLE BRACKET (1-1-53)
+    RIGHT CORNER BRACKET (1-1-55)
+    RIGHT WHITE CORNER BRACKET (1-1-57)
+    RIGHT BLACK LENTICULAR BRACKET (1-1-59)
+    RIGHT WHITE TORTOISE SHELL BRACKET (1-2-57)
+    RIGHT WHITE LENTICULAR BRACKET (1-2-59)
+    LOW DOUBLE PRIME QUOTATION MARK (1-13-65)
+    RIGHT SINGLE QUOTATION MARK (1-1-39)
+    RIGHT DOUBLE QUOTATION MARK (1-1-41)
+    RIGHT WHITE PARENTHESIS (1-2-55)
+    RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK (1-9-18)
+(3) 行頭禁則和字
+    KATAKANA ITERATION MARK (1-1-19)
+    KATAKANA VOICED ITERATION MARK (1-1-20)
+    KATAKANA-HIRAGANA PROLONGED SOUND MARK (1-1-28)
+    KATAKANA LETTER SMALL A (1-5-1)
+    KATAKANA LETTER SMALL I (1-5-3)
+    KATAKANA LETTER SMALL U (1-5-5)
+    KATAKANA LETTER SMALL O (1-5-7)
+    KATAKANA LETTER SMALL TU (1-5-35)
+    KATAKANA LETTER SMALL YA (1-5-67)
+    KATAKANA LETTER SMALL YU (1-5-69)
+    KATAKANA LETTER SMALL YO (1-5-71)
+    KATAKANA LETTER SMALL WA (1-5-78)
+    KATAKANA LETTER SMALL WA (1-5-85)
+    KATAKANA LETTER SMALL KE (1-5-86)
+    HIRAGANA ITERATION MARK (1-1-21)
+    HIRAGANA VOICED ITERATION MARK (1-1-22)
+    HIRAGANA LETTER SMALL A (1-4-1)
+    HIRAGANA LETTER SMALL I (1-4-3)
+    HIRAGANA LETTER SMALL U (1-4-5)
+    HIRAGANA LETTER SMALL E (1-4-7)
+    HIRAGANA LETTER SMALL O (1-4-9)
+    HIRAGANA LETTER SMALL TU (1-4-35)
+    HIRAGANA LETTER SMALL YA (1-4-67)
+    HIRAGANA LETTER SMALL YU (1-4-69)
+    HIRAGANA LETTER SMALL YO (1-4-71)
+    HIRAGANA LETTER SMALL WA (1-4-78)
+    HIRAGANA LETTER SMALL KA (1-4-85)
+    HIRAGANA LETTER SMALL KE (1-4-86)
+    KATAKANA LETTER AINU K (1-6-78) [コード不明]
+    KATAKANA LETTER AINU SI(S) (1-6-79) [コード不明]
+    KATAKANA LETTER AINU SU(S) (1-6-80) [コード不明]
+    KATAKANA LETTER AINU T (1-6-81) [コード不明]
+    KATAKANA LETTER AINU N (1-6-82) [コード不明]
+    KATAKANA LETTER AINU AX (1-6-83) [コード不明]
+    KATAKANA LETTER AINU IX (1-6-84) [コード不明]
+    KATAKANA LETTER AINU UX (1-6-85) [コード不明]
+    KATAKANA LETTER AINU EX (1-6-86) [コード不明]
+    KATAKANA LETTER AINU OX (1-6-87) [コード不明]
+    KATAKANA LETTER AINU M (1-6-89) [コード不明]
+    KATAKANA LETTER AINU AR (1-6-90) [コード不明]
+    KATAKANA LETTER AINU IR (1-6-91) [コード不明]
+    KATAKANA LETTER AINU UR (1-6-92) [コード不明]
+    KATAKANA LETTER AINU ER (1-6-93) [コード不明]
+    KATAKANA LETTER AINU OR (1-6-94) [コード不明]
+    IDEOGRAPHIC ITERATION MARK (1-1-25)
+    ITERATION MARK (1-2-22) [コード不明]
+(4) ハイフン類
+    HYPHEN (1-1-30)
+    DOUBLE HYPHEN (1-3-91)
+    EN DASH (1-3-92)
+    WAVE DASH (1-1-33)
+(5) 区切り約物
+    QUESTION MARK (1-1-9)
+    EXCLAMATION MARK (1-1-10)
+    DOUBLE EXCLAMATION MARK (1-8-75)
+    DOUBLE QUESTION MARK (1-8-76)
+    QUESTION EXCLAMATION MARK (1-8-77)
+    EXCLAMATION QUESTION MARK (1-8-78)
+(6) 中点類
+    KATAKANA MIDDLE DOT (1-1-6)
+    COLON (1-1-7)
+    SEMICOLON (1-1-8)
+(7) 句点類
+    IDEOGRAPHIC FULL STOP (1-1-3)
+    FULL STOP (1-1-5)
+(8) 分離禁止文字
+    EM DASH (1-1-29)
+    HORIZONTAL ELLIPSIS (1-1-36)
+    TWO DOT LEADER (1-1-37)
+    VERTICAL KANA REPEAT MARK UPPER HALF (1-2-19)
+    VERTICAL KANA REPEAT WITH VOICED SOUND MARK UPPER HALF (1-2-20)
+    VERTICAL KANA REPEAT MARK LOWER HALF (1-2-21)
+(9) 前置省略記号
+    YEN SIGN (1-1-79)
+    POUND SIGN (1-1-82)
+    DOLLAR SIGN (1-1-80)
+    NUMBER SIGN (1-1-84)
+    EURO SIGN (1-9-1)
+    NUMERO SIGN (1-13-66)
+(10) 後置省略記号
+    DEGREE SIGN (1-1-75)
+    CENT SIGN (1-1-81)
+    PRIME (1-1-76)
+    DOUBLE PRIME (1-1-77)
+    PER MILLE SIGN (1-2-83)
+    DEGREE CELSIUS (1-1-78)
+    SCRIPT SMALL L (1-3-63)
+    PERCENT SIGN (1-1-83)
+    SQUARE HP (1-3-62)
+(11) 和字間隔
+    IDEOGRAPHIC SPACE (1-1-1)
+(12) 平仮名
+    1-4-2~1-4-91 (ただし、行頭禁則和字に含まれる文字を除く。)
+(13) (1)~(12) 以外の和字
+    1-1-23, 1-1-24, 1-1-26, 1-1-27, 1-1-31, 1-1-32, 1-1-34,
+    1-1-35, 1-1-60~1-1-74, 1-1-85~1-2-14, 1-2-23~1-2-53,
+    1-2-60~1-2-62, 1-2-65~1-2-81, 1-2-84~1-3-15, 1-3-26~1-3-32,
+    1-3-59, 1-3-93, 1-3-94, 1-5-1~1-5-94 (ただし、行頭禁則和字に含まれる文字を除く。),
+    1-6-25~1-6-32, 1-6-58~1-6-77, 1-6-88, 1-7-82~1-7-94,
+    1-8-33~1-8-62, 1-8-71~1-8-74, 1-9-6, 1-9-10, 1-9-19~1-9-21,
+    1-12-1~1-12-83, 1-12-93~1-13-55, 1-13-63, 1-13-67~1-13-79,
+    1-13-83, 1-13-88, 1-13-89, 1-13-93, 1-13-94, 1-14-2~1-15-93,
+    1-16-1~1-94-89, 2-1-1~2-1-94, 2-3-1~2-5-94, 2-8-1~2-8-94,
+    2-12-1~2-15-94, 2-78-1~2-94-86
+(14) 合印中の文字
+(15) 添え字付き親文字群中の文字
+(16) 熟語ルビ以外のルビ付き親文字群中の文字
+(17) 熟語ルビ付き親文字郡中の文字
+(18) 連数字中の文字
+    2/0 (位取りの空白) (JIS X 0201 の 2 列 0 行の空白 (SPACE))
+    1-1-4 (位取りのコンマ)
+    1-1-5 (小数点)
+    1-3-16~1-3-25 (数字)
+(19) 単位記号中の文字
+    2/0 (空白)
+    1-1-6 (中点)
+    1-1-31 (斜線) (単位記号中に使用する 1-1-31 (斜線の字幅は、半角とする。)
+    1-1-42 (始め小括弧)
+    1-1-43 (終わり小括弧)
+    1-1-61 (負符号)
+    1-2-82
+    1-3-17~1-3-20 (数字)
+    1-3-33~1-3-58, 1-3-64~1-3-90, 1-6-24, 1-6-44
+(20) 欧文間隔
+    2/0 (SPACE)
+(21) 欧文間隔以外の欧文用文字
+    1-1-4, 1-1-5, 1-1-7~1-1-10, 1-1-13~1-1-18, 1-1-29, 1-1-31,
+    1-1-32, 1-1-34~1-1-43, 1-1-46~1-1-49, 1-1-60~1-1-77,
+    1-1-79~1-2-7, 1-2-10~1-2-13, 1-2-15~1-2-18, 1-2-26~1-2-53,
+    1-1-79~1-2-7, 1-2-10~1-2-13, 1-2-15~1-2-18, 1-2-26~1-2-53,
+    1-2-60~1-3-25, 1-3-31~1-3-61, 1-3-64~1-3-90, 1-3-92, 1-6-1~1-6-67,
+    1-6-71~1-6-75, 1-6-77, 1-7-1~1-7-33, 1-7-49~1-7-81,
+    1-7-86~1-7-94, 1-8-33~1-8-62, 1-8-71~1-8-74, 1-8-79~1-8-92,
+    1-9-1~1-12-20, 1-12-33~1-12-58, 1-12-93~1-13-20,
+    1-13-83, 1-13-88, 1-13-89, 1-13-93, 1-13-94
+(22) 割注始め括弧類
+    LEFT PARENTHESIS (1-1-42)
+    LEFT SQUARE BRACKET (1-1-46)
+    LEFT TORTOISE SHELL BRACKET (1-1-44)
+(23) 割注終わり括弧類
+    RIGHT PARENTHESIS (1-1-43)
+    RIGHT SQUARE BRACKET (1-1-47)
+    RIGHT TORTOISE SHELL BRACKET (1-1-45)
+

@@ -1,0 +1,737 @@
+Results of test1:
+
+
+1254595097
+{
+aaaaa
+
+aaaaa
+}
+{
+aaaaa
+
+aaaaa
+}
+
+
+1254595115
+{
+aaaaa bbbb
+
+aaaaa bbbb
+}
+{
+aaaaa bbbb
+
+aaaaa bbbb
+}
+
+
+1254595131
+{
+aaaaa
+bbbbb
+
+aaaaa
+bbbbb
+}
+{
+aaaaa
+bbbbb
+
+aaaaa
+bbbbb
+}
+
+
+1254595132
+{
+aaaaa
+bbbbb     
+
+aaaaa
+bbbbb     
+}
+{
+aaaaa
+bbbbb     
+
+aaaaa
+bbbbb     
+}
+
+
+1254595140
+{
+aaaaa
+bbbbb
+ccccc
+
+aaaaa
+bbbbb
+ccccc
+}
+{
+aaaaa
+bbbbb
+ccccc
+
+aaaaa
+bbbbb
+ccccc
+}
+
+
+1254595141
+{
+aaaaaaaaaabbbbbbbbbb
+
+aaaaaaaaaabbbbbbbbbb
+}
+{
+aaaaaaaaaabbbbbbbbbb
+
+aaaaaaaaaabbbbbbbbbb
+}
+
+
+1254595143
+{
+  aaaaaaaaaabbbbbbbbbb
+
+  aaaaaaaaaabbbbbbbbbb
+}
+{
+  aaaaaaaaaabbbbbbbbbb
+
+  aaaaaaaaaabbbbbbbbbb
+}
+
+
+1254595144
+{
+aaaa bbbb
+cccccccccccc
+dddd
+}
+{
+aaaa bbbb
+cccccccccccc
+dddd
+}
+
+
+1254595145
+{
+aaaaa
+bbb
+
+aaaaa
+bbb
+}
+{
+aaaaa
+bbb
+
+aaaaa
+bbb
+}
+
+
+1254595146
+{
+  aaaaa
+  bbbbb
+
+  aaaaa
+  bbbbb
+}
+{
+  aaaaa
+  bbbbb
+
+  aaaaa
+  bbbbb
+}
+
+
+1254595147
+{
+  aaaaa
+bbbbb
+
+  aaaaa
+bbbbb
+}
+{
+  aaaaa
+bbbbb
+
+  aaaaa
+bbbbb
+}
+
+
+1254595148
+{
+  aaaaa
+bbbbb
+ccccc
+ddddd
+}
+{
+  aaaaa
+bbbbb
+ccccc
+ddddd
+}
+
+
+1254595150
+{
+aaaa bbbb
+cccc dddd
+eeee ffff
+
+aaaa bbbb cccc dddd eeee ffff
+}
+{
+aaaa bbbb
+cccc dddd
+eeee ffff
+
+aaaa bbbb cccc dddd eeee ffff
+}
+
+
+1254595151
+{
+# aaaaa
+bbbbb
+
+# aaaaa bbbbb
+}
+{
+# aaaaa
+bbbbb
+
+# aaaaa bbbbb
+}
+
+
+1254595155
+{
+# aaaaa
+# bbbbb
+
+# aaaaa bbbbb
+}
+{
+# aaaaa
+# bbbbb
+
+# aaaaa bbbbb
+}
+
+
+1254595156
+{
+# aaaaa
+bbbbb
+
+# aaaaa
+# bbbbb
+}
+{
+# aaaaa
+bbbbb
+
+# aaaaa
+# bbbbb
+}
+
+
+1254595157
+{
+/* aaaaa
+ * bbbbb
+ * ccccc
+
+/* aaaaa
+ * bbbbb
+ * ccccc
+}
+{
+/* aaaaa
+ * bbbbb
+ * ccccc
+
+/* aaaaa
+ * bbbbb
+ * ccccc
+}
+
+
+1254595158
+{
+/* aaa bbb
+ * ccc ddd
+ */
+}
+{
+/* aaa bbb
+ * ccc ddd
+ */
+}
+
+
+1254595159
+{
+
+
+aaa aaa
+
+/*
+ * bbb bbb
+ *
+ * ccc
+ */
+
+}
+{
+
+
+aaa aaa
+
+/*
+ * bbb bbb
+ *
+ * ccc
+ */
+
+}
+
+
+1254595160
+{
+/*    aaaaa
+ *    bbbbb
+}
+{
+/*    aaaaa
+ *    bbbbb
+}
+
+
+1254595162
+{
+	/*    aaaaa
+	 *    bbbbb
+
+	/*    aaaaa
+	 *    bbbbb
+}
+{
+	/*    aaaaa
+	 *    bbbbb
+
+	/*    aaaaa
+	 *    bbbbb
+}
+
+
+1254595163
+{
+	/*    aaaaa
+ *    bbbbb
+
+	/*    aaaaa
+ *    bbbbb
+}
+{
+	/*    aaaaa
+ *    bbbbb
+
+	/*    aaaaa
+ *    bbbbb
+}
+
+
+1254595164
+{
+/*	aaaaa
+ *	bbbbb
+/*  	aaaaa
+ *   	bbbbb
+/*	  aaaaa
+ *	  bbbbb
+
+/*	aaaaa
+ *	bbbbb
+/*  	aaaaa
+ *   	bbbbb
+/*	  aaaaa
+ *	  bbbbb
+}
+{
+/*	aaaaa
+ *	bbbbb
+/*  	aaaaa
+ *   	bbbbb
+/*	  aaaaa
+ *	  bbbbb
+
+/*	aaaaa
+ *	bbbbb
+/*  	aaaaa
+ *   	bbbbb
+/*	  aaaaa
+ *	  bbbbb
+}
+
+
+1254596280
+{
+/** aaaaa
+ * bbbbb
+
+/** aaaaa
+ * bbbbb
+}
+{
+/** aaaaa
+ * bbbbb
+
+/** aaaaa
+ * bbbbb
+}
+
+
+1254595165
+{
+1. aaaaa
+   bbbbb
+
+1. aaaaa
+   bbbbb
+}
+{
+1. aaaaa
+   bbbbb
+
+1. aaaaa
+   bbbbb
+}
+
+
+1254595166
+{
+  1. aaa
+     bbb
+     ccc
+
+  1. aaa
+     bbb
+     ccc
+}
+{
+  1. aaa
+     bbb
+     ccc
+
+  1. aaa
+     bbb
+     ccc
+}
+
+
+1254595168
+{
+  1. aaa
+     bbb
+ccc
+
+  1. aaa
+     bbb
+ccc
+}
+{
+  1. aaa
+     bbb
+ccc
+
+  1. aaa
+     bbb
+ccc
+}
+
+
+1254595169
+{
+ＡＢＣ
+
+ＡＢＣ
+}
+{
+ＡＢＣ
+
+ＡＢＣ
+}
+
+
+1254595170
+{
+ＡＢＣＤＥ
+
+ＡＢＣＤＥ
+}
+{
+ＡＢＣＤＥ
+
+ＡＢＣＤＥ
+}
+
+
+1254595171
+{
+ＡＢＣＤＥ
+Ｆ
+
+ＡＢＣＤＥ
+Ｆ
+}
+{
+ＡＢＣＤＥ
+Ｆ
+
+ＡＢＣＤＥ
+Ｆ
+}
+
+
+1254595172
+{
+aaaaa bbbb
+Ａ
+
+aaaaa bbbb
+Ａ
+}
+{
+aaaaa bbbb
+Ａ
+
+aaaaa bbbb
+Ａ
+}
+
+
+1254595173
+{
+ＡＢＣＤＥ
+a
+ＡＢＣＤ
+abc
+
+ＡＢＣＤＥ
+a
+ＡＢＣＤ
+abc
+}
+{
+ＡＢＣＤＥ
+a
+ＡＢＣＤ
+abc
+
+ＡＢＣＤＥ
+a
+ＡＢＣＤ
+abc
+}
+
+
+1254595175
+{
+ＡＢＣＤＸ
+ＸＸＥＦＧＨＩＪＫＬＭＮＯ
+}
+{
+ＡＢＣＤＸ
+ＸＸＥＦＧＨＩＪＫＬＭＮＯ
+}
+
+
+1254595176
+{
+	aaa
+	bbb
+	ccc
+
+        aaa
+	bbb
+	ccc
+}
+{
+	aaa
+	bbb
+	ccc
+
+        aaa
+	bbb
+	ccc
+}
+
+
+1254595177
+{
+        aaa
+        bbb
+        ccc
+
+	aaa
+        bbb
+        ccc
+}
+{
+        aaa
+        bbb
+        ccc
+
+	aaa
+        bbb
+        ccc
+}
+
+
+1254595178
+{
+	    aaa
+	    bbb
+	aaa
+	bbb
+	    aaa
+	    bbb
+
+	    aaa
+	    bbb
+    	aaa
+    	bbb
+    	    aaa
+    	    bbb
+}
+{
+	    aaa
+	    bbb
+	aaa
+	bbb
+	    aaa
+	    bbb
+
+	    aaa
+	    bbb
+    	aaa
+    	bbb
+    	    aaa
+    	    bbb
+}
+
+
+1254595179
+{
+    	        -       aaa
+    	        	bbb
+}
+{
+    	        -       aaa
+    	        	bbb
+}
+
+
+1257457620
+{
+- aaaaa
+     bbbbb
+}
+{
+- aaaaa
+     bbbbb
+}
+
+
+1257468164
+{
+- aaaaa
+ bbbbb
+}
+{
+- aaaaa
+ bbbbb
+}
+
+
+1257500340
+{
+/*** aaa
+  ** bbb
+  ******/
+}
+{
+/***
+  ** aaa
+  ** bbb
+  ******/
+}
+{
+/*** aaa
+  ** bbb
+  ******/
+}
+{
+/*** aaa
+  ** bbb
+  ******/
+}
+{
+/***
+  ** aaa
+  ** bbb
+  ******/
+}
+{
+/*** aaa
+  ** bbb
+  ******/
+}
+
+
+1257516766
+{
+# aaa
+#bbb
+}
+{
+#aaa bbb
+}
+{
+# aaa
+## bbb
+}
+{
+## aaa bbb
+}
+{
+# aaa
+#bbb
+}
+{
+#aaa bbb
+}
+{
+# aaa
+## bbb
+}
+{
+## aaa bbb
+}
+

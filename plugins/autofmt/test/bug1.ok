@@ -1,0 +1,32 @@
+Results of bug1:
+
+
+case1
+{
+      aaaaa
+      bbbbb
+      ccccc
+}
+{
+      aaaaa
+      bbbbb
+      ccccc
+}
+
+
+case2
+{
+/*
+ *     aaaaa
+ *     bbbbb
+ *     ccccc
+ */
+}
+{
+/*
+ *     aaaaa
+ *     bbbbb
+ *     ccccc
+ */
+}
+

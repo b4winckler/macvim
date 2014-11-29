@@ -207,6 +207,7 @@ void gui_mch_fuopt_update(void);
 void gui_macvim_update_modified_flag();
 void gui_macvim_add_to_find_pboard(char_u *pat);
 void gui_macvim_set_antialias(int antialias);
+void gui_macvim_set_proportional_font(int proportional_font);
 
 int16_t odb_buffer_close(buf_T *buf);
 int16_t odb_post_buffer_write(buf_T *buf);
@@ -217,6 +218,16 @@ int is_valid_macaction(char_u *action);
 
 void gui_macvim_wait_for_startup();
 void gui_macvim_get_window_layout(int *count, int *layout);
+
+void im_set_position(int row, int col);
+void im_set_control(int enable);
+#if defined(FEAT_UIMFEP)
+void gui_im_set_active(int active);
+int gui_im_get_status(void);
+#else
+void im_set_active(int active);
+int im_get_status(void);
+#endif
 
     void
 gui_mch_find_dialog(exarg_T *eap);

@@ -137,6 +137,9 @@
 # define PV_LW		OPT_BOTH(OPT_BUF(BV_LW))
 #endif
 #define PV_MA		OPT_BUF(BV_MA)
+#ifdef USE_MIGEMO
+# define PV_MIG		OPT_BUF(BV_MIG)
+#endif
 #define PV_ML		OPT_BUF(BV_ML)
 #define PV_MOD		OPT_BUF(BV_MOD)
 #define PV_MPS		OPT_BUF(BV_MPS)
@@ -342,6 +345,7 @@ static int	p_ml;
 static int	p_ma;
 #ifdef FEAT_GUI_MACVIM
 static int	p_mmta;
+static int	p_mpfont;
 #endif
 static int	p_mod;
 static char_u	*p_mps;
@@ -745,6 +749,14 @@ static struct vimoption
 			    (char_u *)NULL, PV_NONE,
 			    {(char_u *)0L, (char_u *)0L}
 #endif
+			    SCRIPTID_INIT},
+    {"charspace",   "csp",  P_NUM|P_NODEFAULT|P_VIM|P_RCLR,
+#ifdef FEAT_GUI
+			    (char_u *)&p_charspace, PV_NONE,
+#else
+			    (char_u *)NULL, PV_NONE,
+#endif
+			    {(char_u *)0L, (char_u *)0L}
 			    SCRIPTID_INIT},
     {"cindent",	    "cin",  P_BOOL|P_VI_DEF|P_VIM,
 #ifdef FEAT_CINDENT
@@ -1517,6 +1529,14 @@ static struct vimoption
 			    {(char_u *)FALSE, (char_u *)0L}
 #endif
 			    SCRIPTID_INIT},
+    {"imdisableactivate", "imda",  P_BOOL|P_VI_DEF,
+#ifdef USE_IM_CONTROL
+			    (char_u *)&p_imdisableactivate, PV_NONE,
+#else
+			    (char_u *)NULL, PV_NONE,
+#endif
+			    {(char_u *)FALSE, (char_u *)0L}
+			    SCRIPTID_INIT},
     {"iminsert",    "imi",  P_NUM|P_VI_DEF,
 			    (char_u *)&p_iminsert, PV_IMI,
 #ifdef B_IMODE_IM
@@ -1798,6 +1818,13 @@ static struct vimoption
 			    (char_u *)NULL, PV_NONE,
 #endif
 			    {(char_u *)FALSE, (char_u *)0L}},
+    {"macproportionalfont", "mpf", P_BOOL|P_VI_DEF|P_VIM|P_RCLR,
+#ifdef FEAT_GUI_MACVIM
+			    (char_u *)&p_mpfont, PV_NONE,
+#else
+			    (char_u *)NULL, PV_NONE,
+#endif
+			    {(char_u *)FALSE, (char_u *)0L}},
     {"magic",	    NULL,   P_BOOL|P_VI_DEF,
 			    (char_u *)&p_magic, PV_NONE,
 			    {(char_u *)TRUE, (char_u *)0L} SCRIPTID_INIT},
@@ -1868,6 +1895,14 @@ static struct vimoption
     {"mesg",	    NULL,   P_BOOL|P_VI_DEF,
 			    (char_u *)NULL, PV_NONE,
 			    {(char_u *)FALSE, (char_u *)0L} SCRIPTID_INIT},
+#ifdef USE_MIGEMO
+    {"migemo",	    "mgm",  P_BOOL|P_VI_DEF|P_VIM,
+			    (char_u *)&p_migemo, PV_MIG,
+			    {(char_u *)FALSE, (char_u *)0L} SCRIPTID_INIT},
+    {"migemodict",  "mgd",  P_STRING|P_EXPAND|P_VI_DEF|P_VIM,
+			    (char_u *)&p_migdict, PV_NONE,
+			    {(char_u *)"", (char_u *)0L} SCRIPTID_INIT},
+#endif /* USE_MIGEMO */
     {"mkspellmem",  "msm",  P_STRING|P_VI_DEF|P_EXPAND|P_SECURE,
 #ifdef FEAT_SPELL
 			    (char_u *)&p_msm, PV_NONE,
@@ -2164,6 +2199,11 @@ static struct vimoption
     {"remap",	    NULL,   P_BOOL|P_VI_DEF,
 			    (char_u *)&p_remap, PV_NONE,
 			    {(char_u *)TRUE, (char_u *)0L} SCRIPTID_INIT},
+#ifdef FEAT_RENDER_OPTIONS
+    {"renderoptions", "rop", P_STRING|P_COMMA|P_RCLR|P_VI_DEF,
+			    (char_u *)&p_rop, PV_NONE,
+			    {(char_u *)"", (char_u *)0L} SCRIPTID_INIT},
+#endif
     {"report",	    NULL,   P_NUM|P_VI_DEF,
 			    (char_u *)&p_report, PV_NONE,
 			    {(char_u *)2L, (char_u *)0L} SCRIPTID_INIT},
@@ -3021,7 +3061,11 @@ static struct vimoption
 #define PARAM_COUNT (sizeof(options) / sizeof(struct vimoption))
 
 #ifdef FEAT_MBYTE
-static char *(p_ambw_values[]) = {"single", "double", NULL};
+static char *(p_ambw_values[]) = {"single", "double",
+# ifdef USE_AMBIWIDTH_AUTO
+    "auto",
+# endif
+    NULL};
 #endif
 static char *(p_bg_values[]) = {"light", "dark", NULL};
 static char *(p_nf_values[]) = {"octal", "hex", "alpha", NULL};
@@ -5682,6 +5726,11 @@ set_string_option_global(opt_idx, varp)
 	free_string_option(*p);
 	*p = s;
     }
+
+#ifdef USE_MIGEMO
+    if (varp == &p_migdict)
+	reset_migemo(FALSE);
+#endif
 }
 
 /*
@@ -7086,6 +7135,16 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf,
     }
 #endif
 
+#if defined(FEAT_GUI) && defined(FEAT_RENDER_OPTIONS)
+    else if (varp == &p_rop && gui.in_use)
+    {
+	int gui_mch_set_rendering_options(char_u *);
+
+	if (!gui_mch_set_rendering_options(p_rop))
+	    errmsg = e_invarg;
+    }
+#endif
+
     /* Options that are a list of flags. */
     else
     {
@@ -7966,6 +8025,13 @@ set_bool_option(opt_idx, varp, value, opt_flags)
     }
 #endif
 
+#if defined(FEAT_GUI_MACVIM)
+    else if ((int *)varp == &p_mpfont)
+    {
+	gui_macvim_set_proportional_font(p_mpfont);
+    }
+#endif
+
     /* when 'textauto' is set or reset also change 'fileformats' */
     else if ((int *)varp == &p_ta)
 	set_string_option_direct((char_u *)"ffs", -1,
@@ -8430,7 +8496,7 @@ set_num_option(opt_idx, varp, value, errbuf, errbuflen, opt_flags)
 #endif
 
 #ifdef FEAT_GUI
-    else if (pp == &p_linespace)
+    else if (pp == &p_linespace || pp == &p_charspace)
     {
 	/* Recompute gui.char_height and resize the Vim window to keep the
 	 * same number of lines. */
@@ -8503,6 +8569,15 @@ set_num_option(opt_idx, varp, value, errbuf, errbuflen, opt_flags)
 	else if (p_mco < 0)
 	    p_mco = 0;
 	screenclear();	    /* will re-allocate the screen */
+    }
+#endif
+
+#ifdef USE_TRANSPARENCY
+    else if ((long *)varp == &p_transparency)
+    {
+	if (p_transparency < 1 || p_transparency > 255)
+	    p_transparency = 255;
+	gui_mch_set_transparency(p_transparency);
     }
 #endif
 
@@ -10275,6 +10350,9 @@ get_varp(p)
 	case PV_MMTA:	return (char_u *)&(curbuf->b_p_mmta);
 #endif
 	case PV_MA:	return (char_u *)&(curbuf->b_p_ma);
+#ifdef USE_MIGEMO
+	case PV_MIG:	return (char_u *)&(curbuf->b_p_migemo);
+#endif
 	case PV_MOD:	return (char_u *)&(curbuf->b_changed);
 	case PV_NF:	return (char_u *)&(curbuf->b_p_nf);
 	case PV_PI:	return (char_u *)&(curbuf->b_p_pi);
@@ -10690,6 +10768,11 @@ buf_copy_options(buf, flags)
 	     * state from the current buffer is better than resetting it. */
 	    buf->b_p_iminsert = p_iminsert;
 	    buf->b_p_imsearch = p_imsearch;
+
+#ifdef USE_MIGEMO
+	    /* This is migemo extension */
+	    buf->b_p_migemo = p_migemo;
+#endif
 
 	    /* options that are normally global but also have a local value
 	     * are not copied, start using the global value */

@@ -1,0 +1,58 @@
+Test for join line.
+
+Results of test6:
+
+STARTTEST
+:set fo= tw=0
+/^{/+1
+gq}
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gq}
+ENDTEST
+
+case1
+{
+
+aa bb cc
+  dd ee ff
+    gg hh ii
+
+}
+{
+
+aa bb cc
+  dd ee ff
+    gg hh ii
+
+}
+
+STARTTEST
+:set fo=q tw=0
+/^{/+1
+gq}
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+gq}
+ENDTEST
+
+case2
+{
+
+aa bb cc
+  dd ee ff
+    gg hh ii
+
+}
+{
+
+aa bb cc
+  dd ee ff
+    gg hh ii
+
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST

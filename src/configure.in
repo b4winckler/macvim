@@ -175,12 +175,12 @@ if test "`(uname) 2>/dev/null`" = Darwin; then
     if test "x$MACSDK" = "x10.4"; then
       sdkflags="$sdkflags""u"
     fi
-    sdkflags="$sdkflags.sdk -mmacosx-version-min=$MACSDK"
+    sdkflags="$sdkflags.sdk"
     CFLAGS="$CFLAGS -isysroot $sdkflags"
     LDFLAGS="$LDFLAGS -Wl,-syslibroot,$sdkflags"
     AC_TRY_LINK([ ], [ ],
       [ AC_MSG_RESULT([yes])
-        XCODEFLAGS="$XCODEFLAGS -sdk macosx$MACSDK MACOSX_DEPLOYMENT_TARGET=$MACSDK" ],
+        XCODEFLAGS="$XCODEFLAGS -sdk macosx$MACSDK" ],
       [ AC_MSG_RESULT([no])
         dnl Important to clear MACSDK so later on in the script we can assume
         dnl that no SDK was chosen if it is empty.
@@ -673,7 +673,7 @@ if test "$enable_luainterp" = "yes" -o "$enable_luainterp" = "dynamic"; then
       LUA_CFLAGS="-DDYNAMIC_LUA_DLL=\\\"${vi_cv_dll_name_lua}\\\" $LUA_CFLAGS"
     fi
     if test "X$LUA_CFLAGS$LUA_LIBS" != "X" && \
-       test "x$MACOSX" = "xyes" && test "x$vi_cv_with_luajit" != "xno" && \
+       test "x$MACOSX" = "xyes" && \
        test "`(uname -m) 2>/dev/null`" = "x86_64"; then
       dnl OSX/x64 requires these flags. See http://luajit.org/install.html
       LUA_LIBS="-pagezero_size 10000 -image_base 100000000 $LUA_LIBS"
@@ -687,6 +687,118 @@ if test "$enable_luainterp" = "yes" -o "$enable_luainterp" = "dynamic"; then
   AC_SUBST(LUA_PRO)
   AC_SUBST(LUA_LIBS)
   AC_SUBST(LUA_CFLAGS)
+fi
+
+dnl Check for Lua52 feature.
+AC_MSG_CHECKING(--enable-lua52interp argument)
+AC_ARG_ENABLE(lua52interp,
+	[  --enable-lua52interp[=OPTS]     Include Lua52 interpreter.  [default=no] [OPTS=no/yes/dynamic]], ,
+	[enable_lua52interp="no"])
+AC_MSG_RESULT($enable_lua52interp)
+
+if test "$enable_lua52interp" = "yes" -o "$enable_lua52interp" = "dynamic"; then
+  dnl -- find the lua52 executable
+  AC_SUBST(vi_cv_path_lua52)
+
+  AC_MSG_CHECKING(--with-lua52-prefix argument)
+  AC_ARG_WITH(lua52_prefix,
+	[  --with-lua52-prefix=PFX   Prefix where Lua52 is installed.],
+	with_lua52_prefix="$withval"; AC_MSG_RESULT($with_lua52_prefix),
+	with_lua52_prefix="";AC_MSG_RESULT(no))
+
+  if test "X$with_lua52_prefix" != "X"; then
+       vi_cv_path_lua52_pfx="$with_lua52_prefix"
+  else
+    AC_MSG_CHECKING(LUA52_PREFIX environment var)
+    if test "X$LUA52_PREFIX" != "X"; then
+	AC_MSG_RESULT("$LUA52_PREFIX")
+	vi_cv_path_lua52_pfx="$LUA52_PREFIX"
+    else
+	AC_MSG_RESULT([not set, default to /usr])
+	vi_cv_path_lua52_pfx="/usr"
+    fi
+  fi
+
+  LUA52_INC=
+  if test "X$vi_cv_path_lua52_pfx" != "X"; then
+    dnl -- try to find Lua52 executable
+    AC_PATH_PROG(vi_cv_path_lua52, lua)
+    if test "X$vi_cv_path_lua52" != "X"; then
+      dnl -- find Lua52 version
+      AC_CACHE_CHECK(Lua52 version, vi_cv_version_lua52,
+      [ vi_cv_version_lua52=`${vi_cv_path_lua52} -e "print(_VERSION)" | sed 's/.* //'` ])
+    fi
+    AC_MSG_CHECKING(if lua.h can be found in $vi_cv_path_lua52_pfx/include)
+    if test -f $vi_cv_path_lua52_pfx/include/lua.h; then
+      AC_MSG_RESULT(yes)
+    else
+      AC_MSG_RESULT(no)
+      AC_MSG_CHECKING(if lua.h can be found in $vi_cv_path_lua52_pfx/include/lua52$vi_cv_version_lua52)
+      if test -f $vi_cv_path_lua52_pfx/include/lua52$vi_cv_version_lua52/lua.h; then
+        AC_MSG_RESULT(yes)
+        LUA52_INC=/lua52$vi_cv_version_lua52
+      else
+        AC_MSG_RESULT(no)
+        vi_cv_path_lua52_pfx=
+      fi
+    fi
+  fi
+
+  if test "X$vi_cv_path_lua52_pfx" != "X"; then
+    if test "X$LUA52_INC" != "X"; then
+      dnl Test alternate location using version
+      LUA52_LIBS="-L${vi_cv_path_lua52_pfx}/lib -llua$vi_cv_version_lua52"
+    else
+      LUA52_LIBS="-L${vi_cv_path_lua52_pfx}/lib -llua"
+    fi
+    LUA52_CFLAGS="-I${vi_cv_path_lua52_pfx}/include${LUA52_INC}"
+    LUA52_SRC="if_lua52.c"
+    LUA52_OBJ="objects/if_lua52.o"
+    LUA52_PRO="if_lua52.pro"
+    AC_DEFINE(FEAT_LUA52)
+    if test "$enable_lua52interp" = "dynamic"; then
+      if test -f "${vi_cv_path_lua52_pfx}/bin/cyglua52-${vi_cv_version_lua52}.dll"; then
+	vi_cv_dll_name_lua52="cyglua52-${vi_cv_version_lua52}.dll"
+      else
+	multiarch=`dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null`
+	if test "X$multiarch" != "X"; then
+	  lib_multiarch="lib/${multiarch}"
+	fi
+	dnl Determine the sover for the current version, but fallback to
+	dnl liblua${vi_cv_version_lua52}.so if no sover-versioned file is found.
+	for subdir in "${lib_multiarch}" lib64 lib; do
+	  if test -z "$subdir"; then
+	    continue
+	  fi
+	  for sover in "${vi_cv_version_lua52}.${ext}" "-${vi_cv_version_lua52}.${ext}" \
+	    ".${vi_cv_version_lua52}.${ext}" ".${ext}.${vi_cv_version_lua52}"; do
+	    for i in $indexes ""; do
+	      if test -f "${vi_cv_path_lua52_pfx}/${subdir}/liblua${luajit}${sover}$i"; then
+		sover2="$i"
+		break 3
+	      fi
+	    done
+	  done
+	done
+	vi_cv_dll_name_lua52="liblua${sover}$sover2"
+      fi
+      AC_DEFINE(DYNAMIC_LUA52)
+      LUA52_LIBS=""
+      LUA52_CFLAGS="-DDYNAMIC_LUA52_DLL=\\\"${vi_cv_dll_name_lua52}\\\" $LUA52_CFLAGS"
+    fi
+    if test "x$MACOSX" = "xyes" && \
+      test "`(uname -m) 2>/dev/null`" = "x86_64"; then
+        LUA52_LIBS="-pagezero_size 10000 -image_base 100000000 $LUA52_LIBS"
+    fi
+  fi
+  if test "$fail_if_missing" = "yes" -a -z "$LUA52_SRC"; then
+    AC_MSG_ERROR([could not configure lua52])
+  fi
+  AC_SUBST(LUA52_SRC)
+  AC_SUBST(LUA52_OBJ)
+  AC_SUBST(LUA52_PRO)
+  AC_SUBST(LUA52_LIBS)
+  AC_SUBST(LUA52_CFLAGS)
 fi
 
 
@@ -1790,7 +1902,7 @@ if test "$enable_rubyinterp" = "yes" -o "$enable_rubyinterp" = "dynamic"; then
             dnl On Mac OS X it is safer to just use the -framework flag
             RUBY_LIBS="-framework Ruby"
             dnl Don't include the -I flag when -framework is set
-            RUBY_CFLAGS="-DRUBY_VERSION=$rubyversion"
+            RUBY_CFLAGS="-DRUBY_VERSION=$rubyversion -DRUBY_FRAMEWORK"
             librubyarg=
 	fi
 
@@ -1840,6 +1952,110 @@ AC_SUBST(RUBY_OBJ)
 AC_SUBST(RUBY_PRO)
 AC_SUBST(RUBY_CFLAGS)
 AC_SUBST(RUBY_LIBS)
+
+AC_MSG_CHECKING(--enable-ruby19interp argument)
+AC_ARG_ENABLE(ruby19interp,
+	[  --enable-ruby19interp[=OPTS]     Include Ruby interpreter.  [default=no] [OPTS=no/dynamic]], ,
+	[enable_ruby19interp="no"])
+AC_MSG_RESULT($enable_ruby19interp)
+if test "$enable_ruby19interp" = "dynamic"; then
+  if test "$enable_rubyinterp" != "dynamic"; then
+	AC_MSG_ERROR(--enable-ruby19interp=dynamic requires --enable-rubyinterp=dynamic)
+  fi
+  AC_MSG_CHECKING(--with-ruby19-command argument)
+  AC_SUBST(vi_cv_path_ruby19)
+  AC_ARG_WITH(ruby19-command, [  --with-ruby19-command=RUBY  name of the Ruby command (default: ruby)],
+	RUBY19_CMD="$withval"; vi_cv_path_ruby19="$withval"; AC_MSG_RESULT($RUBY19_CMD),
+	RUBY19_CMD="ruby"; AC_MSG_RESULT(defaulting to $RUBY19_CMD))
+  AC_PATH_PROG(vi_cv_path_ruby19, $RUBY19_CMD)
+  if test "X$vi_cv_path_ruby19" != "X"; then
+    AC_MSG_CHECKING(Ruby19 version)
+    if $vi_cv_path_ruby19 -e '(VERSION rescue RUBY_VERSION) >= "1.9.0" or exit 1' >/dev/null 2>/dev/null; then
+      AC_MSG_RESULT(OK)
+      AC_MSG_CHECKING(Ruby rbconfig)
+      ruby19_rbconfig="RbConfig"
+      if ! $vi_cv_path_ruby19 -r rbconfig -e 'RbConfig' >/dev/null 2>/dev/null; then
+	ruby19_rbconfig="Config"
+      fi
+      AC_MSG_RESULT($ruby19_rbconfig)
+      AC_MSG_CHECKING(Ruby header files)
+      ruby19hdrdir=`$vi_cv_path_ruby19 -r mkmf -e "print $ruby19_rbconfig::CONFIG[['rubyhdrdir']] || $ruby19_rbconfig::CONFIG[['archdir']] || \\$hdrdir" 2>/dev/null`
+      if test "X$ruby19hdrdir" != "X"; then
+	AC_MSG_RESULT($ruby19hdrdir)
+	RUBY19_CFLAGS="-I$ruby19hdrdir"
+        ruby19archdir=`$vi_cv_path_ruby19 -r rbconfig -e "print ($ruby19_rbconfig::CONFIG.has_key? 'rubyarchhdrdir') ? $ruby19_rbconfig::CONFIG[['rubyarchhdrdir']] : '$ruby19hdrdir/'+$ruby19_rbconfig::CONFIG[['arch']]"`
+        if test -d "$ruby19archdir"; then
+          RUBY19_CFLAGS="$RUBY19_CFLAGS -I$ruby19archdir"
+        fi
+        ruby19version=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig::CONFIG[['ruby19_version']].gsub(/\./, '')[[0,2]]"`
+	if test "X$ruby19version" = "X"; then
+	  ruby19version=`$vi_cv_path_ruby19 -e "print ((VERSION rescue RUBY_VERSION)).gsub(/\./, '')[[0,2]]"`
+	fi
+        RUBY19_CFLAGS="$RUBY19_CFLAGS -DRUBY19_VERSION=$ruby19version"
+	ruby19libs=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig::CONFIG[['LIBS']]"`
+	if test "X$ruby19libs" != "X"; then
+	  RUBY19_LIBS="$ruby19libs"
+	fi
+	libruby19arg=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig.expand($ruby19_rbconfig::CONFIG[['LIBRUBYARG']])"`
+	libruby19a=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig.expand($ruby19_rbconfig::CONFIG[['LIBRUBY_A']])"`
+	ruby19libdir=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig.expand($ruby19_rbconfig::CONFIG[['libdir']])"`
+	if test -f "$ruby19libdir/$libruby19a"; then
+	  libruby19arg="$libruby19arg"
+	  RUBY19_LIBS="$RUBY19_LIBS -L$ruby19libdir"
+        elif test -d "/System/Library/Frameworks/Ruby.framework"; then
+            dnl On Mac OS X it is safer to just use the -framework flag
+            RUBY19_LIBS="-framework Ruby"
+            dnl Don't include the -I flag when -framework is set
+            RUBY19_CFLAGS="-DRUBY19_VERSION=$ruby19version -DRUBY19_FRAMEWORK"
+            libruby19arg=
+	fi
+
+	if test "X$libruby19arg" != "X"; then
+	  RUBY19_LIBS="$libruby19arg $RUBY19_LIBS"
+	fi
+	ruby19ldflags=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig::CONFIG[['LDFLAGS']]"`
+	if test "X$ruby19ldflags" != "X"; then
+	  dnl Ruby on Mac OS X 10.5 adds "-arch" flags but these should only
+	  dnl be included if requested by passing --with-mac-arch to
+	  dnl configure, so strip these flags first (if present)
+	  ruby19ldflags=`echo "$ruby19ldflags" | sed -e 's/-arch\ ppc//' -e 's/-arch\ i386//' -e 's/-arch\ x86_64//'`
+	  if test "X$ruby19ldflags" != "X"; then
+	    if test "X`echo \"$LDFLAGS\" | $FGREP -e \"$ruby19ldflags\"`" = "X"; then
+	      LDFLAGS="$ruby19ldflags $LDFLAGS"
+	    fi
+	  fi
+	fi
+        if test "X$ruby19ldflags" != "X"; then
+          LDFLAGS="$ruby19ldflags $LDFLAGS"
+        fi
+	RUBY19_SRC="if_ruby19.c"
+	RUBY19_OBJ="objects/if_ruby19.o"
+	RUBY19_PRO="if_ruby19.pro"
+
+	AC_DEFINE(FEAT_RUBY19)
+	if test "$enable_ruby19interp" = "dynamic"; then
+	  libruby19=`$vi_cv_path_ruby19 -r rbconfig -e "puts $ruby19_rbconfig::CONFIG[['LIBRUBY_SO']]"`
+	  AC_DEFINE(DYNAMIC_RUBY19)
+	  RUBY19_CFLAGS="-DDYNAMIC_RUBY19_DLL=\\\"$libruby19\\\" -DDYNAMIC_RUBY19_VER=$ruby19version $RUBY19_CFLAGS"
+	  RUBY19_LIBS=
+	fi
+      else
+	AC_MSG_RESULT(not found; disabling Ruby)
+      fi
+    else
+      AC_MSG_RESULT(too old; need Ruby version 1.9.0 or later)
+    fi
+  fi
+
+  if test "$fail_if_missing" = "yes" -a -z "$RUBY19_OBJ"; then
+    AC_MSG_ERROR([could not configure Ruby])
+  fi
+fi
+AC_SUBST(RUBY19_SRC)
+AC_SUBST(RUBY19_OBJ)
+AC_SUBST(RUBY19_PRO)
+AC_SUBST(RUBY19_CFLAGS)
+AC_SUBST(RUBY19_LIBS)
 
 AC_MSG_CHECKING(--enable-cscope argument)
 AC_ARG_ENABLE(cscope,
@@ -2834,6 +3050,19 @@ if test "$enable_hangulinput" = "yes"; then
   fi
 fi
 
+dnl Check --disable-uimfep option.
+AC_MSG_CHECKING(--disable-uimfep argument)
+AC_ARG_ENABLE(uimfep,
+	[  --disable-uimfep        Don't support UIMFEP.],,
+	[enable_uimfep="yes"])
+if test "$enable_uimfep" = "yes"; then
+  AC_MSG_RESULT(no)
+  AC_DEFINE(FEAT_UIMFEP)
+else
+  AC_MSG_RESULT(yes)
+fi
+
+
 dnl Checks for libraries and include files.
 
 AC_CACHE_CHECK([whether toupper is broken], [vim_cv_toupper_broken],
@@ -2892,7 +3121,7 @@ fi
 AC_CHECK_HEADERS(stdarg.h stdint.h stdlib.h string.h \
 	sys/select.h sys/utsname.h termcap.h fcntl.h \
 	sgtty.h sys/ioctl.h sys/time.h sys/types.h \
-	termio.h iconv.h inttypes.h langinfo.h math.h \
+	termio.h iconv.h inttypes.h langinfo.h math.h migemo.h \
 	unistd.h stropts.h errno.h sys/resource.h \
 	sys/systeminfo.h locale.h sys/stream.h termios.h \
 	libc.h sys/statfs.h poll.h sys/poll.h pwd.h \
@@ -3896,6 +4125,19 @@ if test "$enable_nls" = "yes"; then
   else
     AC_MSG_RESULT([no "po/Makefile" - disabled]);
   fi
+else
+  AC_MSG_RESULT(yes)
+fi
+
+dnl Check for C/Migemo (regexp pattern expansion).
+AC_MSG_CHECKING(--disable-migemo argument)
+AC_ARG_ENABLE(migemo,
+	[  --disable-migemo        Don't support C/Migemo.], ,
+	[enable_migemo="yes"])
+if test "$enable_migemo" = "yes"; then
+  AC_MSG_RESULT(no)
+  AC_CHECK_LIB(migemo, migemo_open,
+	[LIBS="$LIBS -lmigemo"; AC_DEFINE(HAVE_MIGEMO)],,)
 else
   AC_MSG_RESULT(yes)
 fi

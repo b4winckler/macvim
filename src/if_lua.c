@@ -9,6 +9,22 @@
  * See README.txt for an overview of the Vim source code.
  */
 
+#ifdef HAVE_CONFIG_H
+# include "auto/config.h"
+#endif
+
+#if defined(FEAT_LUA52) && !defined(FEAT_LUA52_COMPILING)
+#define lua_enabled lua51_enabled
+#define lua_end lua51_end
+#define ex_lua ex_lua51
+#define ex_luado ex_lua51do
+#define ex_luafile ex_lua51file
+#define lua_buffer_free lua51_buffer_free
+#define lua_window_free lua51_window_free
+#define do_luaeval do_lua51eval
+#define set_ref_in_lua set_ref_in_lua51
+#endif
+
 #include "vim.h"
 
 #include <lua.h>
@@ -384,7 +400,16 @@ lua_link_init(char *libname, int verbose)
     int
 lua_enabled(int verbose)
 {
-    return lua_link_init(DYNAMIC_LUA_DLL, verbose) == OK;
+    int ret = FAIL;
+    int mustfree = FALSE;
+    char *s = (char *)vim_getenv((char_u *)"LUA_DLL", &mustfree);
+    if (s != NULL)
+	ret = lua_link_init(s, verbose);
+    if (mustfree)
+	vim_free(s);
+    if (ret == FAIL)
+	ret = lua_link_init(DYNAMIC_LUA_DLL, verbose);
+    return (ret == OK);
 }
 
 #endif /* DYNAMIC_LUA */
@@ -1778,5 +1803,114 @@ set_ref_in_lua (int copyID)
     lua_pushinteger(L, copyID);
     lua_call(L, 1, 0);
 }
+
+#if defined(FEAT_LUA52) && !defined(FEAT_LUA52_COMPILING)
+
+#undef lua_enabled
+#undef lua_end
+#undef ex_lua
+#undef ex_luado
+#undef ex_luafile
+#undef lua_buffer_free
+#undef lua_window_free
+#undef do_luaeval
+#undef set_ref_in_lua
+
+enum {
+    DYNAMIC_LUA_NOT_INITIALIZED,
+    DYNAMIC_LUA_NOT_AVAILABLE,
+    DYNAMIC_LUA_VER51,
+    DYNAMIC_LUA_VER52,
+};
+
+static int dynamic_lua_version = DYNAMIC_LUA_NOT_INITIALIZED;
+
+static int ensure_lua_initialized(void)
+{
+    if (dynamic_lua_version == DYNAMIC_LUA_NOT_INITIALIZED) {
+	if (lua52_enabled(FALSE) == TRUE)
+	    dynamic_lua_version = DYNAMIC_LUA_VER52;
+	else if (lua51_enabled(FALSE) == TRUE)
+	    dynamic_lua_version = DYNAMIC_LUA_VER51;
+	else
+	    dynamic_lua_version = DYNAMIC_LUA_NOT_AVAILABLE;
+    }
+    return dynamic_lua_version;
+}
+
+void ex_lua(exarg_T *eap)
+{
+    switch (ensure_lua_initialized()) {
+    case DYNAMIC_LUA_VER51: ex_lua51(eap); return;
+    case DYNAMIC_LUA_VER52: ex_lua52(eap); return;
+    }
+}
+
+void ex_luado(exarg_T *eap)
+{
+    switch (ensure_lua_initialized()) {
+    case DYNAMIC_LUA_VER51: ex_lua51do(eap); return;
+    case DYNAMIC_LUA_VER52: ex_lua52do(eap); return;
+    }
+}
+
+void ex_luafile(exarg_T *eap)
+{
+    switch (ensure_lua_initialized()) {
+    case DYNAMIC_LUA_VER51: ex_lua51file(eap); return;
+    case DYNAMIC_LUA_VER52: ex_lua52file(eap); return;
+    }
+}
+
+void lua_buffer_free(buf_T *buf)
+{
+    switch (dynamic_lua_version) {
+    case DYNAMIC_LUA_VER51: lua51_buffer_free(buf); return;
+    case DYNAMIC_LUA_VER52: lua52_buffer_free(buf); return;
+    }
+}
+
+int lua_enabled(int verbose)
+{
+    switch (ensure_lua_initialized()) {
+    case DYNAMIC_LUA_VER51: return TRUE;
+    case DYNAMIC_LUA_VER52: return TRUE;
+    default: return FALSE;
+    }
+}
+
+void lua_end()
+{
+    switch (dynamic_lua_version) {
+    case DYNAMIC_LUA_VER51: lua51_end(); return;
+    case DYNAMIC_LUA_VER52: lua52_end(); return;
+    }
+}
+
+void lua_window_free(win_T *win)
+{
+    switch (dynamic_lua_version) {
+    case DYNAMIC_LUA_VER51: lua51_window_free(win); return;
+    case DYNAMIC_LUA_VER52: lua52_window_free(win); return;
+    }
+}
+
+void do_luaeval(char_u *str, typval_T *arg, typval_T *rettv)
+{
+    switch (dynamic_lua_version) {
+    case DYNAMIC_LUA_VER51: do_lua51eval(str, arg, rettv); return;
+    case DYNAMIC_LUA_VER52: do_lua52eval(str, arg, rettv); return;
+    }
+}
+
+void set_ref_in_lua(int copyID)
+{
+    switch (dynamic_lua_version) {
+    case DYNAMIC_LUA_VER51: set_ref_in_lua51(copyID); return;
+    case DYNAMIC_LUA_VER52: set_ref_in_lua52(copyID); return;
+    }
+}
+
+#endif
 
 #endif

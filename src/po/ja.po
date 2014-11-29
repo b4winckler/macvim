@@ -5541,7 +5541,7 @@ msgstr "E415: 予期せぬ等号です: %s"
 
 #, c-format
 msgid "E416: missing equal sign: %s"
-msgstr "E416: 等号ががありません: %s"
+msgstr "E416: 等号がありません: %s"
 
 #, c-format
 msgid "E417: missing argument: %s"
@@ -6806,3 +6806,31 @@ msgid ""
 msgstr ""
 "パスの設定に失敗しました: sys.path がリストではありません\n"
 "すぐに vim.VIM_SPECIAL_PATH を sys.path に追加してください"
+
+msgid "Do you want to save the changes you made in the "
+"document \"%s\"?"
+msgstr "\"%s\"を保存しますか?"
+""
+
+msgid "Your changes will be lost if you don't save "
+"them."
+msgstr "保存しない場合、変更は失われます。"
+""
+
+msgid "&Save\n&Cancel\n&Don't Save"
+msgstr "保存(&S)\nキャンセル(&C)\n保存しない(&D)"
+
+msgid "&Save...\n&Cancel\n&Don't Save"
+msgstr "保存...(&S)\nキャンセル(&C)\n保存しない(&D)"
+
+msgid "There are several documents with unsaved changes. "
+"Do you want to save the changes you made in the "
+"document \"%s\"?"
+msgstr "保存されていないドキュメントがあります。"
+"\"%s\"を保存しますか?"
+""
+
+msgid "&Save\n&Don't Save\nS&ave All\nD&iscard All\n"
+"&Cancel"
+msgstr "保存(&S)\n保存しない(&D)\n全て保存(&a)\n全て破棄(&i)\n"
+"キャンセル(&C)"

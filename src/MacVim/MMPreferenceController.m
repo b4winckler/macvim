@@ -47,20 +47,28 @@ static void loadSymbols()
 {
     loadSymbols();
 
+    NSString *generalLabel = NSLocalizedString(@"General", nil);
+    NSString *integrationLabel = NSLocalizedString(@"Integration", nil);
+    NSString *advancedLabel = NSLocalizedString(@"Advanced", nil);
+
     if (nsImageNamePreferencesGeneral != NULL) {
         [self addView:generalPreferences
-                label:@"General"
+                label:generalLabel
                 image:[NSImage imageNamed:nsImageNamePreferencesGeneral]];
     } else {
-        [self addView:generalPreferences label:@"General"];
+        [self addView:generalPreferences
+		label:generalLabel
+		image:[NSImage imageNamed:@"General"]];
     }
 
     if (nsImageNamePreferencesAdvanced != NULL) {
         [self addView:advancedPreferences
-                label:@"Advanced"
+                label:advancedLabel
                 image:[NSImage imageNamed:nsImageNamePreferencesAdvanced]];
     } else {
-        [self addView:advancedPreferences label:@"Advanced"];
+        [self addView:advancedPreferences
+		label:advancedLabel
+		image:[NSImage imageNamed:@"Advanced"]];
     }
 
 }

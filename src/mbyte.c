@@ -121,6 +121,12 @@
 # include <wchar.h>
 #endif
 
+#if defined(FEAT_UIMFEP) || defined(PROTO)
+static int uimfep_lastmode = 1;
+static void uimfep_set_active __ARGS((int active));
+static int uimfep_get_status __ARGS((void));
+#endif
+
 #if 0
 /* This has been disabled, because several people reported problems with the
  * wcwidth() and iswprint() library functions, esp. for Hebrew. */
@@ -1275,9 +1281,7 @@ utf_char2cells(c)
 	{0xfe68, 0xfe6b},
 	{0xff01, 0xff60},
 	{0xffe0, 0xffe6},
-	{0x1f200, 0x1f200},
-	{0x1f210, 0x1f231},
-	{0x1f240, 0x1f248},
+	{0x10000, 0x1fffd},
 	{0x20000, 0x2fffd},
 	{0x30000, 0x3fffd}
     };
@@ -1467,6 +1471,19 @@ utf_char2cells(c)
 	{0xf0000, 0xffffd},
 	{0x100000, 0x10fffd}
     };
+
+#ifdef USE_AMBIWIDTH_AUTO
+    if (gui.in_use && *p_ambw == 'a')
+    {
+	int cell;
+
+	/* This is required by screen.c implicitly. */
+	if (c == 0)
+	    return 1;
+	if ((cell = gui_mch_get_charwidth(c)) > 0)
+	    return cell;
+    }
+#endif
 
     if (c >= 0x100)
     {
@@ -4454,6 +4471,7 @@ init_preedit_start_col(void)
 
 static int im_is_active	       = FALSE;	/* IM is enabled for current mode    */
 static int preedit_is_active   = FALSE;
+static int im_preedit_start    = 0;	/* start offset in characters        */
 static int im_preedit_cursor   = 0;	/* cursor offset in characters       */
 static int im_preedit_trailing = 0;	/* number of characters after cursor */
 
@@ -4469,11 +4487,43 @@ im_set_active(int active)
 {
     int was_active;
 
+#ifdef FEAT_UIMFEP
+    if (!gui.in_use)
+    {
+	uimfep_set_active(active);
+	return;
+    }
+#endif
+
     was_active = !!im_get_status();
     im_is_active = (active && !p_imdisable);
 
     if (im_is_active != was_active)
+    {
+#  ifdef FEAT_EVAL
+	if (p_imaf[0] != NUL)
+	{
+	    char_u *argv[1];
+
+	    if (active)
+		argv[0] = (char_u *)"1";
+	    else
+		argv[0] = (char_u *)"0";
+	    (void)call_func_retnr(p_imaf, 1, argv, FALSE);
+	    return;
+	}
+#  endif
 	xim_reset();
+    }
+}
+# else /* FEAT_GUI_MACVIM */
+    void
+im_set_active(int active)
+{
+    if (gui.in_use)
+	gui_im_set_active(active);
+    else
+	uimfep_set_active(active);
 }
 # endif
 
@@ -4796,7 +4846,7 @@ im_preedit_abandon_macvim()
 im_preedit_changed_cb(GtkIMContext *context, gpointer data UNUSED)
 # else
     void
-im_preedit_changed_macvim(char *preedit_string, int cursor_index)
+im_preedit_changed_macvim(char *preedit_string, int start_index, int cursor_index)
 # endif
 {
 # ifndef FEAT_GUI_MACVIM
@@ -4812,6 +4862,8 @@ im_preedit_changed_macvim(char *preedit_string, int cursor_index)
     gtk_im_context_get_preedit_string(context,
 				      &preedit_string, NULL,
 				      &cursor_index);
+# else
+    im_preedit_start = start_index;
 # endif
 
 #ifdef XIM_DEBUG
@@ -4984,7 +5036,10 @@ im_get_feedback_attr(int col)
 
     return char_attr;
 # else
-    return HL_UNDERLINE;
+    if (col >= im_preedit_start && col < im_preedit_cursor)
+	return HL_THICKUNDERLINE;
+    else
+	return HL_UNDERLINE;
 # endif
 }
 
@@ -5335,6 +5390,10 @@ xim_queue_key_press_event(GdkEventKey *event, int down)
     int
 im_get_status(void)
 {
+#ifdef FEAT_UIMFEP
+    if (!gui.in_use)
+	return uimfep_get_status();
+#endif
 #  ifdef FEAT_EVAL
     if (p_imsf[0] != NUL)
     {
@@ -5356,6 +5415,15 @@ im_get_status(void)
     }
 #  endif
     return im_is_active;
+}
+# else /* FEAT_GUI_MACVIM */
+    int
+im_get_status(void)
+{
+    if (gui.in_use)
+	return gui_im_get_status();
+    else
+	return uimfep_get_status();
 }
 # endif
 
@@ -5389,7 +5457,13 @@ im_set_active(active)
     int		active;
 {
     if (xic == NULL)
+    {
+#ifdef FEAT_UIMFEP
+	if (!gui.in_use)
+	    uimfep_set_active(active);
+#endif
 	return;
+    }
 
     /* If 'imdisable' is set, XIM is never active. */
     if (p_imdisable)
@@ -5824,6 +5898,11 @@ xim_real_init(x11_window, x11_display)
     int
 im_get_status()
 {
+#ifdef FEAT_UIMFEP
+    if (!gui.in_use)
+	return uimfep_get_status();
+#endif
+
     return xim_has_focus;
 }
 
@@ -6396,3 +6475,80 @@ string_convert_ext(vcp, ptr, lenp, unconvlenp)
     return retval;
 }
 #endif
+
+#if defined(FEAT_UIMFEP)
+    static void
+uimfep_set_active(int active)
+{
+    int mustfree = 0;
+    char_u *setmode;
+    setmode = vim_getenv((char_u *)"UIM_FEP_SETMODE", &mustfree);
+    if (setmode != NULL)
+    {
+	FILE *fp = fopen((char *)setmode, "w");
+	if (fp)
+	{
+	    fprintf(fp, "%d\n", active ? uimfep_lastmode : 0);
+	    fflush(fp);
+	    fclose(fp);
+	}
+    }
+    if (mustfree)
+	vim_free(setmode);
+}
+
+    static int
+uimfep_get_status(void)
+{
+    int mustfree = 0;
+    int mode = 0;
+    char_u *getmode;
+    getmode = vim_getenv((char_u *)"UIM_FEP_GETMODE", &mustfree);
+    if (getmode != NULL)
+    {
+	FILE *fp = fopen((char *)getmode, "r");
+	if (fp)
+	{
+	    char buf[99];
+	    if (fgets(buf, sizeof(buf), fp))
+		mode = atoi(buf);
+	    fclose(fp);
+	}
+    }
+    if (mustfree)
+	vim_free(getmode);
+    if (mode != 0)
+	uimfep_lastmode = mode;
+    return mode != 0;
+}
+
+# if defined(USE_IM_CONTROL) && (!defined(FEAT_XIM) \
+	&& !defined(FEAT_MBYTE_IME) && !defined(GLOBAL_IME))
+    void
+im_set_active(int active)
+{
+#  if defined(FEAT_GUI_MAC) || defined(FEAT_GUI_MACVIM)
+    if (gui.in_use)
+	gui_im_set_active(active);
+    else
+	uimfep_set_active(active);
+#  else // FEAT_GUI_MAC || FEAT_GUI_MACVIM
+    uimfep_set_active(active);
+#  endif // FEAT_GUI_MAC || FEAT_GUI_MACVIM
+}
+
+    int
+im_get_status(void)
+{
+#  if defined(FEAT_GUI_MAC) || defined(FEAT_GUI_MACVIM)
+    if (gui.in_use)
+	return gui_im_get_status();
+    else
+	return uimfep_get_status();
+#  else // FEAT_GUI_MAC || FEAT_GUI_MACVIM
+    return uimfep_get_status();
+#  endif // FEAT_GUI_MAC || FEAT_GUI_MACVIM
+}
+# endif
+
+#endif /* defined(FEAT_UIMFEP) */

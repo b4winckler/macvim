@@ -686,7 +686,16 @@ py3_runtime_link_init(char *libname, int verbose)
     int
 python3_enabled(int verbose)
 {
-    return py3_runtime_link_init(DYNAMIC_PYTHON3_DLL, verbose) == OK;
+    int ret = FAIL;
+    int mustfree = FALSE;
+    char *s = (char *)vim_getenv((char_u *)"PYTHON3_DLL", &mustfree);
+    if (s != NULL)
+	ret = py3_runtime_link_init(s, verbose);
+    if (mustfree)
+	vim_free(s);
+    if (ret == FAIL)
+	ret = py3_runtime_link_init(DYNAMIC_PYTHON3_DLL, verbose);
+    return (ret == OK);
 }
 
 /* Load the standard Python exceptions - don't import the symbols from the

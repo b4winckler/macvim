@@ -1364,7 +1364,7 @@ ALL_CFLAGS = $(PRE_DEFS) $(CFLAGS) $(PROFILE_CFLAGS) $(LEAK_CFLAGS) $(POST_DEFS)
 # with "-E".
 OSDEF_CFLAGS = $(PRE_DEFS) $(POST_DEFS)
 
-LINT_CFLAGS = -DLINT -I. $(PRE_DEFS) $(POST_DEFS) $(RUBY_CFLAGS) $(LUA_CFLAGS) $(PERL_CFLAGS) $(PYTHON_CFLAGS) $(PYTHON3_CFLAGS) -Dinline= -D__extension__= -Dalloca=alloca
+LINT_CFLAGS = -DLINT -I. $(PRE_DEFS) $(POST_DEFS) $(RUBY_CFLAGS) $(RUBY19_CFLAGS) $(LUA_CFLAGS) $(LUA52_CFLAGS) $(PERL_CFLAGS) $(PYTHON_CFLAGS) $(PYTHON3_CFLAGS) -Dinline= -D__extension__= -Dalloca=alloca
 
 LINT_EXTRA = -DUSE_SNIFF -DHANGUL_INPUT -D"__attribute__(x)="
 
@@ -1384,11 +1384,13 @@ ALL_LIBS = \
 	   $(LIBS) \
 	   $(EXTRA_LIBS) \
 	   $(LUA_LIBS) \
+	   $(LUA52_LIBS) \
 	   $(PERL_LIBS) \
 	   $(PYTHON_LIBS) \
 	   $(PYTHON3_LIBS) \
 	   $(TCL_LIBS) \
 	   $(RUBY_LIBS) \
+	   $(RUBY19_LIBS) \
 	   $(PROFILE_LIBS) \
 	   $(LEAK_LIBS)
 
@@ -1459,6 +1461,7 @@ BASIC_SRC = \
 	fileio.c \
 	fold.c \
 	getchar.c \
+	guess.c \
 	hardcopy.c \
 	hashtab.c \
 	if_cscope.c \
@@ -1498,11 +1501,13 @@ SRC =	$(BASIC_SRC) \
 	$(GUI_SRC) \
 	$(HANGULIN_SRC) \
 	$(LUA_SRC) \
+	$(LUA52_SRC) \
 	$(MZSCHEME_SRC) \
 	$(PERL_SRC) \
 	$(PYTHON_SRC) $(PYTHON3_SRC) \
 	$(TCL_SRC) \
 	$(RUBY_SRC) \
+	$(RUBY19_SRC) \
 	$(SNIFF_SRC) \
 	$(WORKSHOP_SRC) \
 	$(WSDEBUG_SRC)
@@ -1510,8 +1515,9 @@ SRC =	$(BASIC_SRC) \
 TAGS_SRC = *.c *.cpp if_perl.xs
 
 EXTRA_SRC = hangulin.c if_lua.c if_mzsch.c auto/if_perl.c if_perlsfio.c \
-	    if_python.c if_python3.c if_tcl.c if_ruby.c if_sniff.c \
-	    gui_beval.c workshop.c wsdebug.c integration.c netbeans.c
+	    if_python.c if_python3.c if_tcl.c if_ruby.c if_ruby19.c if_sniff.c \
+	    gui_beval.c workshop.c wsdebug.c integration.c netbeans.c \
+	    if_lua52.c
 
 # Unittest files
 MEMFILE_TEST_SRC = memfile_test.c
@@ -1548,6 +1554,7 @@ OBJ_COMMON = \
 	objects/fileio.o \
 	objects/fold.o \
 	objects/getchar.o \
+	objects/guess.o \
 	objects/hardcopy.o \
 	objects/hashtab.o \
 	$(HANGULIN_OBJ) \
@@ -1583,12 +1590,14 @@ OBJ_COMMON = \
 	objects/window.o \
 	$(GUI_OBJ) \
 	$(LUA_OBJ) \
+	$(LUA52_OBJ) \
 	$(MZSCHEME_OBJ) \
 	$(PERL_OBJ) \
 	$(PYTHON_OBJ) \
 	$(PYTHON3_OBJ) \
 	$(TCL_OBJ) \
 	$(RUBY_OBJ) \
+	$(RUBY19_OBJ) \
 	$(OS_EXTRA_OBJ) \
 	$(WORKSHOP_OBJ) \
 	$(NETBEANS_OBJ) \
@@ -1617,6 +1626,7 @@ PRO_AUTO = \
 	fileio.pro \
 	fold.pro \
 	getchar.pro \
+	guess.pro \
 	hardcopy.pro \
 	hashtab.pro \
 	hangulin.pro \
@@ -1625,6 +1635,7 @@ PRO_AUTO = \
 	if_python.pro \
 	if_python3.pro \
 	if_ruby.pro \
+	if_ruby19.pro \
 	main.pro \
 	mark.pro \
 	memfile.pro \
@@ -1695,13 +1706,14 @@ config auto/config.mk: auto/configure config.mk.in config.h.in
 		./configure $(CONF_OPT_GUI) $(CONF_OPT_X) $(CONF_OPT_XSMP) \
 		$(CONF_OPT_DARWIN) $(CONF_OPT_FAIL) \
 		$(CONF_OPT_PERL) $(CONF_OPT_PYTHON) $(CONF_OPT_PYTHON3) \
-		$(CONF_OPT_TCL) $(CONF_OPT_RUBY) $(CONF_OPT_NLS) \
+		$(CONF_OPT_TCL) $(CONF_OPT_RUBY) $(CONF_OPT_RUBY19) $(CONF_OPT_NLS) \
 		$(CONF_OPT_CSCOPE) $(CONF_OPT_MULTIBYTE) $(CONF_OPT_INPUT) \
 		$(CONF_OPT_OUTPUT) $(CONF_OPT_GPM) $(CONF_OPT_WORKSHOP) \
 		$(CONF_OPT_SNIFF) $(CONF_OPT_FEAT) $(CONF_TERM_LIB) \
 		$(CONF_OPT_COMPBY) $(CONF_OPT_ACL)  $(CONF_OPT_NETBEANS) \
 		$(CONF_ARGS) $(CONF_OPT_MZSCHEME) $(CONF_OPT_PLTHOME) \
 		$(CONF_OPT_LUA) $(CONF_OPT_LUA_PREFIX) \
+		$(CONF_OPT_LUA52) $(CONF_OPT_LUA52_PREFIX) \
 		$(CONF_OPT_SYSMOUSE); \
 	fi
 
@@ -2569,6 +2581,9 @@ objects/fold.o: fold.c
 objects/getchar.o: getchar.c
 	$(CCC) -o $@ getchar.c
 
+objects/guess.o: guess.c guess_tab.c
+	$(CCC) -o $@ guess.c
+
 objects/hardcopy.o: hardcopy.c
 	$(CCC) -o $@ hardcopy.c
 
@@ -2632,6 +2647,9 @@ objects/if_xcmdsrv.o: if_xcmdsrv.c
 objects/if_lua.o: if_lua.c
 	$(CCC) $(LUA_CFLAGS) -o $@ if_lua.c
 
+objects/if_lua52.o: if_lua52.c
+	$(CCC) $(LUA52_CFLAGS) -o $@ if_lua52.c
+
 objects/if_mzsch.o: if_mzsch.c $(MZSCHEME_EXTRA)
 	$(CCC) -o $@ $(MZSCHEME_CFLAGS_EXTRA) if_mzsch.c
  
@@ -2657,6 +2675,9 @@ objects/if_python3.o: if_python3.c if_py_both.h
 
 objects/if_ruby.o: if_ruby.c
 	$(CCC) $(RUBY_CFLAGS) -o $@ if_ruby.c
+
+objects/if_ruby19.o: if_ruby19.c
+	$(CCC) $(RUBY19_CFLAGS) -o $@ if_ruby19.c
 
 objects/if_sniff.o: if_sniff.c
 	$(CCC) -o $@ if_sniff.c
@@ -2945,6 +2966,10 @@ objects/getchar.o: getchar.c vim.h auto/config.h feature.h os_unix.h auto/osdef.
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
  gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
  arabic.h
+objects/guess.o: guess.c vim.h auto/config.h feature.h os_unix.h auto/osdef.h \
+ ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
+ gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
+ arabic.h
 objects/hardcopy.o: hardcopy.c vim.h auto/config.h feature.h os_unix.h \
  auto/osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h gui.h gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h \
@@ -3166,6 +3191,10 @@ objects/if_lua.o: if_lua.c vim.h auto/config.h feature.h os_unix.h auto/osdef.h 
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
  gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
  arabic.h
+objects/if_lua52.o: if_lua52.c vim.h auto/config.h feature.h os_unix.h auto/osdef.h \
+ ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
+ gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
+ arabic.h
 objects/if_mzsch.o: if_mzsch.c vim.h auto/config.h feature.h os_unix.h \
  auto/osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h gui.h gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h \
@@ -3191,6 +3220,10 @@ objects/if_tcl.o: if_tcl.c vim.h auto/config.h feature.h os_unix.h auto/osdef.h 
  gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
  arabic.h
 objects/if_ruby.o: if_ruby.c auto/config.h vim.h feature.h os_unix.h auto/osdef.h \
+ ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
+ gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
+ arabic.h version.h
+objects/if_ruby19.o: if_ruby19.c vim.h auto/config.h feature.h os_unix.h auto/osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h gui.h \
  gui_beval.h proto/gui_beval.pro ex_cmds.h proto.h globals.h farsi.h \
  arabic.h version.h

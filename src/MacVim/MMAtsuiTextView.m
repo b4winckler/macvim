@@ -43,9 +43,12 @@
 #define DRAW_ITALIC               0x10    /* draw italic text */
 #define DRAW_CURSOR               0x20
 #define DRAW_WIDE                 0x40    /* draw wide text */
+#define DRAW_TUNDERL              0x100   /* draw thick underline text */
 
 #define kUnderlineOffset            (-2)
 #define kUnderlineHeight            1
+#define kThickUnderlineOffset       (-1)
+#define kThickUnderlineHeight       2
 #define kUndercurlHeight            2
 #define kUndercurlOffset            (-2)
 #define kUndercurlDotWidth          2
@@ -330,6 +333,10 @@ defaultLineHeightForFont(NSFont *font)
     cellSize.height = linespace + defaultLineHeightForFont(font);
 }
 
+- (void)setProportionalFont:(BOOL)proportionalFont
+{
+    // NOT IMPLEMENTED
+}
 
 
 - (void)setShouldDrawInsertionPoint:(BOOL)on
@@ -1167,6 +1174,15 @@ defaultLineHeightForFont(NSFont *font)
         NSRectFill(NSMakeRect(rect.origin.x,
                               (row + 1) * cellSize.height + kUnderlineOffset,
                               rect.size.width, kUnderlineHeight));
+    }
+
+    if (flags & DRAW_TUNDERL)
+    {
+        [sp set];
+        NSRectFill(NSMakeRect(rect.origin.x,
+                              (row + 1) * cellSize.height +
+                                  kThickUnderlineOffset,
+                              rect.size.width, kThickUnderlineHeight));
     }
 
     if (flags & DRAW_UNDERC)

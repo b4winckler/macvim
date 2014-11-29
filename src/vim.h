@@ -27,6 +27,12 @@
 # endif
 #endif
 
+#if !defined(FEAT_RUBY) && defined(FEAT_RUBY19)
+    Error: !FEAT_RUBY && FEAT_RUBY19 is not supported.
+#endif
+#if defined(FEAT_RUBY19) && !defined(DYNAMIC_RUBY)
+    Error: FEAT_RUBY19 && !DYNAMIC_RUBY is not supported.
+#endif
 #if defined(MSDOS) || defined(WIN16) || defined(WIN32) || defined(_WIN64) \
 	|| defined(__EMX__)
 # include "vimio.h"
@@ -132,6 +138,13 @@
 # define FEAT_GUI_ENABLED  /* also defined with NO_X11_INCLUDES */
 # if !defined(FEAT_GUI) && !defined(NO_X11_INCLUDES)
 #  define FEAT_GUI
+# endif
+#endif
+
+/* Check support for rendering options */
+#ifdef FEAT_GUI
+# if defined(FEAT_DIRECTX)
+#  define FEAT_RENDER_OPTIONS
 # endif
 #endif
 
@@ -555,10 +568,19 @@ typedef unsigned long u8char_T;	    /* long should be 32 bits or more */
  * Check input method control.
  */
 #if defined(FEAT_XIM) \
+    || defined(FEAT_UIMFEP) \
     || (defined(FEAT_GUI) && (defined(FEAT_MBYTE_IME) || defined(GLOBAL_IME))) \
     || (defined(FEAT_GUI_MAC) && defined(FEAT_MBYTE)) \
     || defined(FEAT_GUI_MACVIM)
 # define USE_IM_CONTROL
+#endif
+
+/*
+ * Whether 'ambiwidth' supports "auto".  Currently, only for Win32.
+ */
+#if defined(FEAT_MBYTE) && defined(FEAT_GUI) && \
+    (defined(FEAT_GUI_W32))
+# define USE_AMBIWIDTH_AUTO
 #endif
 
 /*
@@ -668,7 +690,12 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define HL_UNDERLINE		0x08
 #define HL_UNDERCURL		0x10
 #define HL_STANDOUT		0x20
-#define HL_ALL			0x3f
+#if defined(FEAT_GUI_MACVIM)
+# define HL_THICKUNDERLINE	0x40
+# define HL_ALL			0x7f
+#else
+# define HL_ALL			0x3f
+#endif
 
 /* special attribute addition: Put message in history */
 #define MSG_HIST		0x1000
@@ -920,6 +947,9 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define SEARCH_MARK  0x200  /* set previous context mark */
 #define SEARCH_KEEP  0x400  /* keep previous search pattern */
 #define SEARCH_PEEK  0x800  /* peek for typed char, cancel search */
+#ifdef USE_MIGEMO
+# define SEARCH_MIGEMO	0x1000	/* use migemo for search */
+#endif
 
 /* Values for find_ident_under_cursor() */
 #define FIND_IDENT	1	/* find identifier (word) */

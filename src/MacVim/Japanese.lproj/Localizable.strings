@@ -1,0 +1,63 @@
+﻿// MMPreferenceController.m
+"Advanced" = "詳細";
+"General" = "一般";
+"Integration" = "連携";
+
+// MMAppController.m
+/* Quit dialog with no changed buffers, title */
+"Are you sure you want to quit MacVim?" = "MacVimを終了しますか？";
+
+/* Dialog button */
+"Cancel" = "キャンセル";
+
+/* File not found dialog, text */
+"Could not open file with name %@, and %d other files." = "%1$@と、%2$d個のファイルを開けませんでした。";
+
+/* File not found dialog, text */
+"Could not open file with name %@." = "%@を開けませんでした。";
+
+/* File not found dialog, title */
+"File not found" = "ファイルが見つかりません";
+
+/* File not found dialog, title */
+"Multiple files not found" = "複数のファイルが見つかりません";
+
+/* Dialog button */
+"OK" = "OK";
+
+/* No comment provided by engineer. */
+"Open Recent" = "最近開いたファイル";
+
+/* Plug-In menu title */
+"Plug-In" = "プラグイン";
+
+/* Dialog button */
+"Quit" = "終了";
+
+/* Quit dialog with changed buffers, title */
+"Quit without saving?" = "保存せずに終了しますか？";
+
+/* Quit dialog with no changed buffers, text */
+"There are %d tabs open in MacVim. Do you want to quit anyway?" = "%d枚のタブを開いています。とにかく終了しますか？";
+
+/* Quit dialog with no changed buffers, text */
+"There are %d windows open in MacVim, with a total of %d tabs. Do you want to quit anyway?" = "%1$d枚のウインドウと、全部で%2$d枚のタブを開いています。とにかく終了しますか？";
+
+/* Quit dialog with no changed buffers, text */
+"There are %d windows open in MacVim. Do you want to quit anyway?" = "%1$d枚のウインドウを開いています。とにかく終了しますか？";
+
+/* Quit dialog with changed buffers, text */
+"There are modified buffers, if you quit now all changes will be lost.  Quit anyway?" = "バッファが変更されています。終了するとすべての変更が失われます。それでも終了しますか？";
+
+/* Unknown URL Scheme dialog, text */
+"This version of MacVim does not support \"%@\" in its URL scheme." = "このバージョンのMacVimは \"%@\" というURLスキームに対応していません。";
+
+/* Unknown URL Scheme dialog, title */
+"Unknown URL Scheme" = "不明なURLスキーム";
+
+// MMPreferenceController.m
+"Install" = "インストール";
+"Update" = "アップデート";
+"Latest version is %@, you have %@." = "最新版は%1$@ですが、%2$@がインストールされています。";
+"Latest version is %@. You have the latest version." = "最新版の%@がインストールされています。";
+"Latest version is %@. It is not installed." = "最新版は%@です。インストールされていません。";

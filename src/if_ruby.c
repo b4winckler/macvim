@@ -15,6 +15,17 @@
 # include "auto/config.h"
 #endif
 
+#if defined(FEAT_RUBY19) && !defined(FEAT_RUBY19_COMPILING)
+#define ex_ruby ex_ruby18
+#define ex_rubydo ex_ruby18do
+#define ex_rubyfile ex_ruby18file
+#define ruby_buffer_free ruby18_buffer_free
+#define ruby_enabled ruby18_enabled
+#define ruby_end ruby18_end
+#define ruby_window_free ruby18_window_free
+#define vim_ruby_init vim_ruby18_init
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
@@ -102,13 +113,13 @@
 #  define rb_gc_writebarrier_unprotect_promoted rb_gc_writebarrier_unprotect_promoted_stub
 # endif
 
-#ifdef FEAT_GUI_MACVIM
+#ifdef RUBY_FRAMEWORK
 # include <Ruby/ruby.h>
 #else
 # include <ruby.h>
 #endif
 #ifdef RUBY19_OR_LATER
-# ifdef FEAT_GUI_MACVIM
+# ifdef RUBY_FRAMEWORK
 #  include <Ruby/ruby/encoding.h>
 # else
 #  include <ruby/encoding.h>
@@ -285,6 +296,12 @@ static void ruby_vim_init(void);
 #  define ruby_process_options		dll_ruby_process_options
 # endif
 
+#ifdef FEAT_GUI_MACVIM
+# define rb_fix2int			dll_rb_fix2int
+# define rb_num2int			dll_rb_num2int
+# define rb_num2uint			dll_rb_num2uint
+#endif
+
 /*
  * Pointers for dynamic link
  */
@@ -328,6 +345,11 @@ static unsigned long (*dll_rb_num2uint) (VALUE);
 static VALUE (*dll_rb_lastline_get) (void);
 static void (*dll_rb_lastline_set) (VALUE);
 static void (*dll_rb_load_protect) (VALUE, int, int*);
+#if defined(__LP64__) || defined(FEAT_GUI_MACVIM)
+static long (*dll_rb_fix2int) (VALUE);
+static long (*dll_rb_num2int) (VALUE);
+static unsigned long (*dll_rb_num2uint) (VALUE);
+#endif
 static long (*dll_rb_num2long) (VALUE);
 static unsigned long (*dll_rb_num2ulong) (VALUE);
 static VALUE (*dll_rb_obj_alloc) (VALUE);
@@ -484,6 +506,11 @@ static struct
     {"rb_lastline_get", (RUBY_PROC*)&dll_rb_lastline_get},
     {"rb_lastline_set", (RUBY_PROC*)&dll_rb_lastline_set},
     {"rb_load_protect", (RUBY_PROC*)&dll_rb_load_protect},
+#if defined(__LP64__) || defined(FEAT_GUI_MACVIM)
+    {"rb_fix2int", (RUBY_PROC*)&dll_rb_fix2int},
+    {"rb_num2int", (RUBY_PROC*)&dll_rb_num2int},
+    {"rb_num2uint", (RUBY_PROC*)&dll_rb_num2uint},
+#endif
     {"rb_num2long", (RUBY_PROC*)&dll_rb_num2long},
     {"rb_num2ulong", (RUBY_PROC*)&dll_rb_num2ulong},
     {"rb_obj_alloc", (RUBY_PROC*)&dll_rb_obj_alloc},
@@ -610,7 +637,16 @@ ruby_runtime_link_init(char *libname, int verbose)
 ruby_enabled(verbose)
     int		verbose;
 {
-    return ruby_runtime_link_init(DYNAMIC_RUBY_DLL, verbose) == OK;
+    int ret = FAIL;
+    int mustfree = FALSE;
+    char *s = (char *)vim_getenv((char_u *)"RUBY_DLL", &mustfree);
+    if (s != NULL)
+        ret = ruby_runtime_link_init(s, verbose);
+    if (mustfree)
+        vim_free(s);
+    if (ret == FAIL)
+        ret = ruby_runtime_link_init(DYNAMIC_RUBY_DLL, verbose);
+    return (ret == OK);
 }
 #endif /* defined(DYNAMIC_RUBY) || defined(PROTO) */
 
@@ -1452,3 +1488,103 @@ void vim_ruby_init(void *stack_start)
     /* should get machine stack start address early in main function */
     ruby_stack_start = stack_start;
 }
+
+#if defined(FEAT_RUBY19) && !defined(FEAT_RUBY19_COMPILING)
+
+#undef ex_ruby
+#undef ex_rubydo
+#undef ex_rubyfile
+#undef ruby_buffer_free
+#undef ruby_enabled
+#undef ruby_end
+#undef ruby_window_free
+#undef vim_ruby_init
+
+enum {
+    DYNAMIC_RUBY_NOT_INITIALIZED,
+    DYNAMIC_RUBY_NOT_AVAILABLE,
+    DYNAMIC_RUBY_VER18,
+    DYNAMIC_RUBY_VER19,
+};
+
+static int dynamic_ruby_version = DYNAMIC_RUBY_NOT_INITIALIZED;
+
+static int ensure_ruby19_initialized(void)
+{
+    if (dynamic_ruby_version == DYNAMIC_RUBY_NOT_INITIALIZED) {
+	if (ruby19_enabled(FALSE) == TRUE)
+	    dynamic_ruby_version = DYNAMIC_RUBY_VER19;
+	else if (ruby18_enabled(FALSE) == TRUE)
+	    dynamic_ruby_version = DYNAMIC_RUBY_VER18;
+	else
+	    dynamic_ruby_version = DYNAMIC_RUBY_NOT_AVAILABLE;
+    }
+    return dynamic_ruby_version;
+}
+
+void ex_ruby(exarg_T *eap)
+{
+    switch (ensure_ruby19_initialized()) {
+    case DYNAMIC_RUBY_VER18: ex_ruby18(eap); return;
+    case DYNAMIC_RUBY_VER19: ex_ruby19(eap); return;
+    }
+}
+
+void ex_rubydo(exarg_T *eap)
+{
+    switch (ensure_ruby19_initialized()) {
+    case DYNAMIC_RUBY_VER18: ex_ruby18do(eap); return;
+    case DYNAMIC_RUBY_VER19: ex_ruby19do(eap); return;
+    }
+}
+
+void ex_rubyfile(exarg_T *eap)
+{
+    switch (ensure_ruby19_initialized()) {
+    case DYNAMIC_RUBY_VER18: ex_ruby18file(eap); return;
+    case DYNAMIC_RUBY_VER19: ex_ruby19file(eap); return;
+    }
+}
+
+void ruby_buffer_free(buf_T *buf)
+{
+    switch (dynamic_ruby_version) {
+    case DYNAMIC_RUBY_VER18: ruby18_buffer_free(buf); return;
+    case DYNAMIC_RUBY_VER19: ruby19_buffer_free(buf); return;
+    }
+}
+
+int ruby_enabled(int verbose)
+{
+    switch (ensure_ruby19_initialized()) {
+    case DYNAMIC_RUBY_VER18: return TRUE;
+    case DYNAMIC_RUBY_VER19: return TRUE;
+    default: return FALSE;
+    }
+}
+
+void ruby_end()
+{
+    switch (dynamic_ruby_version) {
+    case DYNAMIC_RUBY_VER18: ruby18_end(); return;
+    case DYNAMIC_RUBY_VER19: ruby19_end(); return;
+    }
+}
+
+void ruby_window_free(win_T *win)
+{
+    switch (dynamic_ruby_version) {
+    case DYNAMIC_RUBY_VER18: ruby18_window_free(win); return;
+    case DYNAMIC_RUBY_VER19: ruby19_window_free(win); return;
+    }
+}
+
+void vim_ruby_init(void *stack_start)
+{
+    switch (dynamic_ruby_version) {
+    case DYNAMIC_RUBY_VER18: vim_ruby18_init(stack_start); return;
+    case DYNAMIC_RUBY_VER19: vim_ruby19_init(stack_start); return;
+    }
+}
+
+#endif

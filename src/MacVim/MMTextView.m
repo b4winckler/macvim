@@ -507,6 +507,12 @@
     // ONLY in Core Text!
 }
 
+- (void)setProportionalFont:(BOOL)proportionalFont
+{
+    MMTextStorage *ts = (MMTextStorage *)[self textStorage];
+    [ts setProportionalFont:proportionalFont];
+}
+
 - (BOOL)isOpaque
 {
     return NO;

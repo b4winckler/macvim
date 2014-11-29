@@ -65,6 +65,8 @@
 - (NSRect)rectForRow:(int)row column:(int)col numRows:(int)nr
           numColumns:(int)nc;
 
+- (void)setProportionalFont:(BOOL)proportionalFont;
+
 // NOT IMPLEMENTED (only in Core Text renderer)
 - (void)deleteSign:(NSString *)signName;
 - (void)setToolTipAtMousePoint:(NSString *)string;

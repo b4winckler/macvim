@@ -28,7 +28,6 @@
 		1D80FBD40CBBD3B700102A1C /* MMFullScreenWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 1D80FBD00CBBD3B700102A1C /* MMFullScreenWindow.m */; };
 		1D80FBD60CBBD3B700102A1C /* MMVimView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1D80FBD20CBBD3B700102A1C /* MMVimView.m */; };
 		1D8B5A53104AF9FF002E59D5 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D8B5A52104AF9FF002E59D5 /* Carbon.framework */; };
-		1D8BEA74104992290069B072 /* FindAndReplace.nib in Resources */ = {isa = PBXBuildFile; fileRef = 1D8BEA73104992290069B072 /* FindAndReplace.nib */; };
 		1D9918490D299F9900A96335 /* MMAtsuiTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1D9918470D299F9900A96335 /* MMAtsuiTextView.m */; };
 		1D9C60520EF79C0C0034AD44 /* MacVim.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1D9C602E0EF79C0C0034AD44 /* MacVim.icns */; };
 		1DCD00BF0E50B2B700460166 /* Attention.png in Resources */ = {isa = PBXBuildFile; fileRef = 1DCD00AA0E50B2B700460166 /* Attention.png */; };
@@ -65,6 +64,17 @@
 		1DE9B9500D341AB8008FEDD4 /* MMWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 1DE9B94E0D341AB8008FEDD4 /* MMWindow.m */; };
 		1DED78600C6DE43D0079945F /* vimrc in Copy Vim Runtime Files */ = {isa = PBXBuildFile; fileRef = 1DED785F0C6DE43D0079945F /* vimrc */; };
 		1DFE25A50C527BC4003000F7 /* PSMTabBarControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D493DB90C52533B00AB718C /* PSMTabBarControl.framework */; };
+		5260A93C11BD18A600EE97ED /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5260A93B11BD18A600EE97ED /* Localizable.strings */; };
+		5260A94311BD191500EE97ED /* FindAndReplace.nib in Resources */ = {isa = PBXBuildFile; fileRef = 5260A94211BD191500EE97ED /* FindAndReplace.nib */; };
+		5260A94811BD19D100EE97ED /* FindAndReplace.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5260A94611BD19D100EE97ED /* FindAndReplace.strings */; };
+		5260A94E11BD1BBC00EE97ED /* MainMenu.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5260A94C11BD1BBC00EE97ED /* MainMenu.strings */; };
+		5260A95811BD1E3300EE97ED /* Preferences.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5260A95611BD1E3300EE97ED /* Preferences.strings */; };
+		528DA6631426CB2A003380F1 /* plugins in Copy KaoriYa Runtime Files */ = {isa = PBXBuildFile; fileRef = 528DA6571426C607003380F1 /* plugins */; };
+		528DA6641426CB2F003380F1 /* switches in Copy KaoriYa Runtime Files */ = {isa = PBXBuildFile; fileRef = 528DA6581426C607003380F1 /* switches */; };
+		528DA66A1426D4F9003380F1 /* macvim-askpass in Copy Scripts */ = {isa = PBXBuildFile; fileRef = 528DA6691426D4EB003380F1 /* macvim-askpass */; };
+		52AA566D11C5C50500D57D62 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52AA566C11C5C50500D57D62 /* Sparkle.framework */; };
+		52AA577311C5C88800D57D62 /* Sparkle.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 52AA566C11C5C50500D57D62 /* Sparkle.framework */; };
+		52AA577811C5D8E600D57D62 /* dsa_pub.pem in Resources */ = {isa = PBXBuildFile; fileRef = 52AA577711C5D8E600D57D62 /* dsa_pub.pem */; };
 		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
@@ -107,6 +117,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				1D493DBA0C52534300AB718C /* PSMTabBarControl.framework in Copy Frameworks */,
+				52AA577311C5C88800D57D62 /* Sparkle.framework in Copy Frameworks */,
 			);
 			name = "Copy Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -122,6 +133,29 @@
 				1DE608B40C587FDA0055263D /* runtime in Copy Vim Runtime Files */,
 			);
 			name = "Copy Vim Runtime Files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		528DA28A1426C479003380F1 /* Copy KaoriYa Runtime Files */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = vim;
+			dstSubfolderSpec = 7;
+			files = (
+				528DA6631426CB2A003380F1 /* plugins in Copy KaoriYa Runtime Files */,
+				528DA6641426CB2F003380F1 /* switches in Copy KaoriYa Runtime Files */,
+			);
+			name = "Copy KaoriYa Runtime Files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		528DA6671426D456003380F1 /* Copy Scripts */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				528DA66A1426D4F9003380F1 /* macvim-askpass in Copy Scripts */,
+			);
+			name = "Copy Scripts";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -209,6 +243,22 @@
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		32CA4F630368D1EE00C91783 /* MacVim_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MacVim_Prefix.pch; sourceTree = "<group>"; };
+		5260A93911BD189D00EE97ED /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/Localizable.strings; sourceTree = "<group>"; };
+		5260A93D11BD18AD00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Japanese; path = Japanese.lproj/Localizable.strings; sourceTree = "<group>"; };
+		5260A94411BD191C00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = Japanese; path = Japanese.lproj/FindAndReplace.nib; sourceTree = "<group>"; };
+		5260A94711BD19D100EE97ED /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/FindAndReplace.strings; sourceTree = "<group>"; };
+		5260A94A11BD19DF00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Japanese; path = Japanese.lproj/FindAndReplace.strings; sourceTree = "<group>"; };
+		5260A94D11BD1BBC00EE97ED /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/MainMenu.strings; sourceTree = "<group>"; };
+		5260A94F11BD1C0600EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Japanese; path = Japanese.lproj/MainMenu.strings; sourceTree = "<group>"; };
+		5260A95011BD1C7500EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = Japanese; path = Japanese.lproj/MainMenu.nib; sourceTree = "<group>"; };
+		5260A95711BD1E3300EE97ED /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/Preferences.strings; sourceTree = "<group>"; };
+		5260A95911BD1E3B00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Japanese; path = Japanese.lproj/Preferences.strings; sourceTree = "<group>"; };
+		5260A95A11BD1E4A00EE97ED /* Japanese */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = Japanese; path = Japanese.lproj/Preferences.nib; sourceTree = "<group>"; };
+		528DA6571426C607003380F1 /* plugins */ = {isa = PBXFileReference; lastKnownFileType = folder; name = plugins; path = ../../plugins; sourceTree = "<group>"; };
+		528DA6581426C607003380F1 /* switches */ = {isa = PBXFileReference; lastKnownFileType = folder; name = switches; path = ../../switches; sourceTree = "<group>"; };
+		528DA6691426D4EB003380F1 /* macvim-askpass */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "macvim-askpass"; sourceTree = "<group>"; };
+		52AA566C11C5C50500D57D62 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
+		52AA577711C5D8E600D57D62 /* dsa_pub.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = dsa_pub.pem; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* MacVim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacVim.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -221,6 +271,7 @@
 				1DFE25A50C527BC4003000F7 /* PSMTabBarControl.framework in Frameworks */,
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
 				1D8B5A53104AF9FF002E59D5 /* Carbon.framework in Frameworks */,
+				52AA566D11C5C50500D57D62 /* Sparkle.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -277,6 +328,7 @@
 			isa = PBXGroup;
 			children = (
 				1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */,
+				52AA566C11C5C50500D57D62 /* Sparkle.framework */,
 			);
 			name = "Linked Frameworks";
 			sourceTree = "<group>";
@@ -367,6 +419,8 @@
 				29B97317FDCFA39411CA2CEA /* Resources */,
 				1DE602460C587F760055263D /* Vim Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
+				528DA28B1426C4DA003380F1 /* KaoriYa Resources */,
+				528DA6681426D477003380F1 /* Scripts */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
 			);
 			name = MacVim;
@@ -375,9 +429,14 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				52AA577711C5D8E600D57D62 /* dsa_pub.pem */,
+				5260A95611BD1E3300EE97ED /* Preferences.strings */,
+				5260A94C11BD1BBC00EE97ED /* MainMenu.strings */,
+				5260A94611BD19D100EE97ED /* FindAndReplace.strings */,
+				5260A93B11BD18A600EE97ED /* Localizable.strings */,
 				1D384A0D100D671700D3C22F /* KeyBinding.plist */,
 				1D9C602E0EF79C0C0034AD44 /* MacVim.icns */,
-				1D8BEA73104992290069B072 /* FindAndReplace.nib */,
+				5260A94211BD191500EE97ED /* FindAndReplace.nib */,
 				0395A8A90D72D88B00881434 /* General.png */,
 				1D22374A0E45DF4800E6FFFF /* Advanced.png */,
 				1DD3D51D0D82D4C9006E4320 /* ibeam.png */,
@@ -406,6 +465,23 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		528DA28B1426C4DA003380F1 /* KaoriYa Resources */ = {
+			isa = PBXGroup;
+			children = (
+				528DA6571426C607003380F1 /* plugins */,
+				528DA6581426C607003380F1 /* switches */,
+			);
+			name = "KaoriYa Resources";
+			sourceTree = "<group>";
+		};
+		528DA6681426D477003380F1 /* Scripts */ = {
+			isa = PBXGroup;
+			children = (
+				528DA6691426D4EB003380F1 /* macvim-askpass */,
+			);
+			name = Scripts;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -420,6 +496,9 @@
 				1D9EB2840C366D7B0074B739 /* Copy Frameworks */,
 				1DE608B80C58807F0055263D /* Copy Vim Runtime Files */,
 				1D1C31F00EFFBFD6003FE9A5 /* Make Document Icons */,
+				528DA6671426D456003380F1 /* Copy Scripts */,
+				528DA28A1426C479003380F1 /* Copy KaoriYa Runtime Files */,
+				52F1931D1877EC5E007C4A82 /* Copy gettext Files */,
 			);
 			buildRules = (
 			);
@@ -437,6 +516,8 @@
 /* Begin PBXProject section */
 		29B97313FDCFA39411CA2CEA /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+			};
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "MacVim" */;
 			compatibilityVersion = "Xcode 2.4";
 			developmentRegion = English;
@@ -509,9 +590,14 @@
 				1DCD00D10E50B2B700460166 /* SaveSesn.png in Resources */,
 				1DCD00D20E50B2B700460166 /* TagJump.png in Resources */,
 				1DCD00D30E50B2B700460166 /* Undo.png in Resources */,
-				1D8BEA74104992290069B072 /* FindAndReplace.nib in Resources */,
+				5260A94311BD191500EE97ED /* FindAndReplace.nib in Resources */,
 				1D9C60520EF79C0C0034AD44 /* MacVim.icns in Resources */,
 				1D384A0E100D671700D3C22F /* KeyBinding.plist in Resources */,
+				5260A93C11BD18A600EE97ED /* Localizable.strings in Resources */,
+				5260A94811BD19D100EE97ED /* FindAndReplace.strings in Resources */,
+				5260A94E11BD1BBC00EE97ED /* MainMenu.strings in Resources */,
+				5260A95811BD1E3300EE97ED /* Preferences.strings in Resources */,
+				52AA577811C5D8E600D57D62 /* dsa_pub.pem in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -532,6 +618,20 @@
 			shellPath = /bin/sh;
 			shellScript = "# Clear deployment target, else the python script always thinks we're building on Tiger\nunset MACOSX_DEPLOYMENT_TARGET\n\n# Generate the icons (redirect stderr to ignore warnings)\ncd \"$PROJECT_DIR\"/icons/\nmake OUTDIR=\"$TARGET_BUILD_DIR\"/$UNLOCALIZED_RESOURCES_FOLDER_PATH 2> /dev/null\n";
 			showEnvVarsInLog = 0;
+		};
+		52F1931D1877EC5E007C4A82 /* Copy gettext Files */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Copy gettext Files";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "DSTDIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/vim/runtime/lang/ja_JP.UTF-8/LC_MESSAGES\"\nmkdir -p \"$DSTDIR\"\ncp \"$PROJECT_DIR/../po/ja.mo\" \"$DSTDIR/vim.mo\"";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -582,18 +682,11 @@
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
-		1D8BEA73104992290069B072 /* FindAndReplace.nib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				1D6008820E96886D003763F0 /* English */,
-			);
-			name = FindAndReplace.nib;
-			sourceTree = "<group>";
-		};
 		1DE3F8E50D50F80500052B9E /* Preferences.nib */ = {
 			isa = PBXVariantGroup;
 			children = (
 				1DE3F8E60D50F80500052B9E /* English */,
+				5260A95A11BD1E4A00EE97ED /* Japanese */,
 			);
 			name = Preferences.nib;
 			sourceTree = "<group>";
@@ -602,8 +695,54 @@
 			isa = PBXVariantGroup;
 			children = (
 				29B97319FDCFA39411CA2CEA /* English */,
+				5260A95011BD1C7500EE97ED /* Japanese */,
 			);
 			name = MainMenu.nib;
+			sourceTree = "<group>";
+		};
+		5260A93B11BD18A600EE97ED /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5260A93911BD189D00EE97ED /* English */,
+				5260A93D11BD18AD00EE97ED /* Japanese */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		5260A94211BD191500EE97ED /* FindAndReplace.nib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				1D6008820E96886D003763F0 /* English */,
+				5260A94411BD191C00EE97ED /* Japanese */,
+			);
+			name = FindAndReplace.nib;
+			sourceTree = "<group>";
+		};
+		5260A94611BD19D100EE97ED /* FindAndReplace.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5260A94711BD19D100EE97ED /* English */,
+				5260A94A11BD19DF00EE97ED /* Japanese */,
+			);
+			name = FindAndReplace.strings;
+			sourceTree = "<group>";
+		};
+		5260A94C11BD1BBC00EE97ED /* MainMenu.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5260A94D11BD1BBC00EE97ED /* English */,
+				5260A94F11BD1C0600EE97ED /* Japanese */,
+			);
+			name = MainMenu.strings;
+			sourceTree = "<group>";
+		};
+		5260A95611BD1E3300EE97ED /* Preferences.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5260A95711BD1E3300EE97ED /* English */,
+				5260A95911BD1E3B00EE97ED /* Japanese */,
+			);
+			name = Preferences.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -618,8 +757,10 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1)",
+					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_2)",
 				);
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1 = "\"$(SRCROOT)\"";
+				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_2 = "\"$(SRCROOT)\"";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -649,8 +790,10 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1)",
+					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_2)",
 				);
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1 = "\"$(SRCROOT)\"";
+				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_2 = "\"$(SRCROOT)\"";
 				GCC_DYNAMIC_NO_PIC = YES;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;

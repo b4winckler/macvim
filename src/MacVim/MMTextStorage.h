@@ -45,6 +45,7 @@ typedef struct {
     MMRowCacheEntry             *rowCache;
 #endif
     BOOL                        characterEqualsColumn;
+    BOOL                        proportionalFont;
 }
 
 - (NSString *)string;
@@ -95,5 +96,6 @@ typedef struct {
 #if MM_USE_ROW_CACHE
 - (MMRowCacheEntry *)rowCache;
 #endif
+- (void)setProportionalFont:(BOOL)proportionalFont;
 
 @end

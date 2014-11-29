@@ -75,6 +75,8 @@ char *MessageStrings[] =
     "XcodeModMsgID",
     "EnableAntialiasMsgID",
     "DisableAntialiasMsgID",
+    "EnableProportionalFontMsgID",
+    "DisableProportionalFontMsgID",
     "SetVimStateMsgID",
     "SetDocumentFilenameMsgID",
     "OpenWithArgumentsMsgID",

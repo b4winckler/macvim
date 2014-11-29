@@ -82,6 +82,7 @@
 
 #ifdef FEAT_GUI_W32
 # define NO_CONSOLE		/* don't included console-only code */
+# define USE_TRANSPARENCY
 #endif
 
 /* toupper() is not really broken, but it's very slow.	Probably because of

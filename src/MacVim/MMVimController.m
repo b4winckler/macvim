@@ -798,6 +798,10 @@ static BOOL isUnsafeMessage(int msgid);
         [[[windowController vimView] textView] setAntialias:YES];
     } else if (DisableAntialiasMsgID == msgid) {
         [[[windowController vimView] textView] setAntialias:NO];
+    } else if (EnableProportionalFontMsgID == msgid) {
+        [[[windowController vimView] textView] setProportionalFont:YES];
+    } else if (DisableProportionalFontMsgID == msgid) {
+        [[[windowController vimView] textView] setProportionalFont:NO];
     } else if (SetVimStateMsgID == msgid) {
         NSDictionary *dict = [NSDictionary dictionaryWithData:data];
         if (dict) {

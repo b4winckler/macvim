@@ -1713,7 +1713,7 @@ endif
 " Add hyperlinks
 " TODO: add option to not do this? Maybe just make the color the same as the
 " text highlight group normally is?
-%s+\(https\=://\S\{-}\)\(\([.,;:}]\=\(\s\|$\)\)\|[\\"'<>]\|&gt;\|&lt;\|&quot;\)+<a href="\1">\1</a>\2+ge
+%s+\(\%(https\=\|ftp\)://\S\{-}\)\(\([.,;:}]\=\(\s\|$\)\)\|[\\"'<>]\|&gt;\|&lt;\|&quot;\)+<a href="\1">\1</a>\2+ge
 
 " The DTD
 if s:settings.use_xhtml

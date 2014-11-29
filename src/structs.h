@@ -1589,6 +1589,9 @@ struct file_buffer
     int		b_p_lisp;	/* 'lisp' */
 #endif
     char_u	*b_p_mps;	/* 'matchpairs' */
+#ifdef USE_MIGEMO
+    int		b_p_migemo;	/* 'migemo' */
+#endif
     int		b_p_ml;		/* 'modeline' */
     int		b_p_ml_nobin;	/* b_p_ml saved for binary mode */
     int		b_p_ma;		/* 'modifiable' */

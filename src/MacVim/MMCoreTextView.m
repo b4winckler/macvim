@@ -46,6 +46,7 @@
 #define DRAW_ITALIC               0x10    /* draw italic text */
 #define DRAW_CURSOR               0x20
 #define DRAW_WIDE                 0x40    /* draw wide text */
+#define DRAW_TUNDERL              0x100   /* draw double underline text */
 
 @interface MMCoreTextView (Private)
 - (MMWindowController *)windowController;
@@ -306,7 +307,18 @@ defaultAdvanceForFont(NSFont *font)
         // NOTE: No need to set point size etc. since this is taken from the
         // regular font when drawing.
         [fontWide release];
-        fontWide = [newFont retain];
+
+        // Use 'Apple Color Emoji' font for rendering emoji
+        CGFloat size = [newFont pointSize];
+        NSFontDescriptor *emojiDesc = [NSFontDescriptor
+            fontDescriptorWithName:@"Apple Color Emoji" size:size];
+        NSFontDescriptor *newFontDesc = [newFont fontDescriptor];
+        NSDictionary *attrs = [NSDictionary
+            dictionaryWithObject:[NSArray arrayWithObject:newFontDesc]
+                          forKey:NSFontCascadeListAttribute];
+        NSFontDescriptor *desc =
+            [emojiDesc fontDescriptorByAddingAttributes:attrs];
+        fontWide = [[NSFont fontWithDescriptor:desc size:size] retain];
     }
 }
 
@@ -338,6 +350,10 @@ defaultAdvanceForFont(NSFont *font)
     cellSize.height = linespace + defaultLineHeightForFont(font);
 }
 
+- (void)setProportionalFont:(BOOL)proportionalFont
+{
+    // NOT IMPLEMENTED
+}
 
 
 
@@ -1012,6 +1028,22 @@ lookupFont(NSMutableArray *fontCache, const unichar *chars,
     return newFontRef;
 }
 
+    static UniCharCount
+gatherGlyphs(CGGlyph glyphs[], UniCharCount count)
+{
+    // Gather scattered glyphs that was happended by Surrogate pair chars
+    UniCharCount glyphCount = 0;
+    NSUInteger pos = 0;
+    NSUInteger i;
+    for (i = 0; i < count; ++i) {
+        if (glyphs[i] != 0) {
+            ++glyphCount;
+            glyphs[pos++] = glyphs[i];
+        }
+    }
+    return glyphCount;
+}
+
     static void
 recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
             UniCharCount length, CGContextRef context, CTFontRef fontRef,
@@ -1020,10 +1052,8 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
 
     if (CTFontGetGlyphsForCharacters(fontRef, chars, glyphs, length)) {
         // All chars were mapped to glyphs, so draw all at once and return.
-        CGFontRef cgFontRef = CTFontCopyGraphicsFont(fontRef, NULL);
-        CGContextSetFont(context, cgFontRef);
-        CGContextShowGlyphsAtPositions(context, glyphs, positions, length);
-        CGFontRelease(cgFontRef);
+        length = gatherGlyphs(glyphs, length);
+        CTFontDrawGlyphs(fontRef, glyphs, positions, length, context);
         return;
     }
 
@@ -1035,23 +1065,34 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
             // Draw as many consecutive glyphs as possible in the current font
             // (if a glyph is 0 that means it does not exist in the current
             // font).
+            BOOL surrogatePair = NO;
             while (*g && g < glyphsEnd) {
-                ++g;
-                ++c;
+                if (CFStringIsSurrogateHighCharacter(*c)) {
+                    surrogatePair = YES;
+                    g += 2;
+                    c += 2;
+                } else {
+                    ++g;
+                    ++c;
+                }
                 ++p;
             }
 
             int count = g-glyphs;
-            CGFontRef cgFontRef = CTFontCopyGraphicsFont(fontRef, NULL);
-            CGContextSetFont(context, cgFontRef);
-            CGContextShowGlyphsAtPositions(context, glyphs, positions, count);
-            CGFontRelease(cgFontRef);
+            if (surrogatePair)
+                count = gatherGlyphs(glyphs, count);
+            CTFontDrawGlyphs(fontRef, glyphs, positions, count, context);
         } else {
             // Skip past as many consecutive chars as possible which cannot be
             // drawn in the current font.
             while (0 == *g && g < glyphsEnd) {
-                ++g;
-                ++c;
+                if (CFStringIsSurrogateHighCharacter(*c)) {
+                    g += 2;
+                    c += 2;
+                } else {
+                    ++g;
+                    ++c;
+                }
                 ++p;
             }
 
@@ -1117,7 +1158,13 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
 
     if (flags & DRAW_UNDERL) {
         // Draw underline
-        CGRect rect = { {x, y+0.4*fontDescent}, {cells*cellSize.width, 1} };
+        CGRect rect = { {x, y}, {cells*cellSize.width, 1} };
+        CGContextSetRGBFillColor(context, RED(sp), GREEN(sp), BLUE(sp),
+                                 ALPHA(sp));
+        CGContextFillRect(context, rect);
+    } else if (flags & DRAW_TUNDERL) {
+        // Draw underline
+        CGRect rect = { {x, y}, {cells*cellSize.width, 2} };
         CGContextSetRGBFillColor(context, RED(sp), GREEN(sp), BLUE(sp),
                                  ALPHA(sp));
         CGContextFillRect(context, rect);

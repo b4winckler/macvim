@@ -5890,7 +5890,11 @@ insertchar(c, flags, second_indent)
 #endif
     int		fo_ins_blank;
 
+#if defined(FEAT_GUI_MACVIM)
+    textwidth = im_is_preediting() ? 0 : comp_textwidth(flags & INSCHAR_FORMAT);
+#else
     textwidth = comp_textwidth(flags & INSCHAR_FORMAT);
+#endif
     fo_ins_blank = has_format_option(FO_INS_BLANK);
 
     /*

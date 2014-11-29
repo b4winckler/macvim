@@ -136,6 +136,7 @@ extern NSTimeInterval MMBalloonEvalInternalDelay;
 - (void)setFullScreenBackgroundColor:(int)color;
 
 - (void)setAntialias:(BOOL)antialias;
+- (void)setProportionalFont:(BOOL)proportionalFont;
 
 - (void)updateModifiedFlag;
 

@@ -1,0 +1,65 @@
+Results of test9:
+
+
+case1
+{
+nnoremap
+"hoge"
+fuga
+puyo
+
+nnoremap
+"hoge"
+"fuga
+"puyo
+}
+{
+nnoremap
+"hoge"
+fuga
+puyo
+
+nnoremap
+"hoge"
+"fuga
+"puyo
+}
+
+
+case2
+{
+int
+	xxx
+	/*
+	   a
+	   b
+	   c
+	   d
+	 */
+
+int
+xxx
+/* a
+ * b
+ * c
+ * d
+ * */
+}
+{
+int
+	xxx
+	/* a
+	   b
+	   c
+	   d
+	 */
+
+int
+xxx
+/* a
+ * b
+ * c
+ * d
+ * */
+}
+

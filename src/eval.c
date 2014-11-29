@@ -629,6 +629,7 @@ static void f_matchend __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_matchlist __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_matchstr __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_max __ARGS((typval_T *argvars, typval_T *rettv));
+static void f_migemo __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_min __ARGS((typval_T *argvars, typval_T *rettv));
 #ifdef vim_mkdir
 static void f_mkdir __ARGS((typval_T *argvars, typval_T *rettv));
@@ -8063,6 +8064,7 @@ static struct fst
     {"matchlist",	2, 4, f_matchlist},
     {"matchstr",	2, 4, f_matchstr},
     {"max",		1, 1, f_max},
+    {"migemo",		1, 1, f_migemo},
     {"min",		1, 1, f_min},
 #ifdef vim_mkdir
     {"mkdir",		1, 3, f_mkdir},
@@ -12450,6 +12452,9 @@ f_has(argvars, rettv)
 #ifdef FEAT_DIGRAPHS
 	"digraphs",
 #endif
+#ifdef FEAT_DIRECTX
+	"directx",
+#endif
 #ifdef FEAT_DND
 	"dnd",
 #endif
@@ -12493,6 +12498,7 @@ f_has(argvars, rettv)
 #ifdef FEAT_GETTEXT
 	"gettext",
 #endif
+	"guess_encode",
 #ifdef FEAT_GUI
 	"gui",
 #endif
@@ -12540,6 +12546,7 @@ f_has(argvars, rettv)
 #ifdef FEAT_JUMPLIST
 	"jumplist",
 #endif
+	"kaoriya",
 #ifdef FEAT_KEYMAP
 	"keymap",
 #endif
@@ -12568,6 +12575,11 @@ f_has(argvars, rettv)
 #endif
 #ifdef FEAT_MENU
 	"menu",
+#endif
+#ifdef USE_MIGEMO
+# ifndef DYNAMIC_MIGEMO
+	"migemo",
+# endif
 #endif
 #ifdef FEAT_SESSION
 	"mksession",
@@ -12910,6 +12922,10 @@ f_has(argvars, rettv)
 #if defined(WIN3264)
 	else if (STRICMP(name, "win95") == 0)
 	    n = mch_windows95();
+#endif
+#if defined(USE_MIGEMO)
+	else if (STRICMP(name, "migemo") == 0)
+	    n = migemo_enabled() ? TRUE : FALSE;
 #endif
 #ifdef FEAT_NETBEANS_INTG
 	else if (STRICMP(name, "netbeans_enabled") == 0)
@@ -14576,6 +14592,24 @@ f_max(argvars, rettv)
     typval_T	*rettv;
 {
     max_min(argvars, rettv, TRUE);
+}
+
+/*
+ * "migemo()" function
+ */
+    static void
+f_migemo(argvars, rettv)
+    typval_T	*argvars;
+    typval_T	*rettv;
+{
+    char_u* arg = get_tv_string(&argvars[0]);
+
+    rettv->v_type = VAR_STRING;
+#ifdef USE_MIGEMO
+    rettv->vval.v_string = query_migemo(arg);
+#else
+    rettv->vval.v_string = vim_strsave(arg);
+#endif
 }
 
 /*

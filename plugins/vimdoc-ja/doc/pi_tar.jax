@@ -1,0 +1,149 @@
+*pi_tar.txt*	For Vim バージョン 7.4.  Last change: 2013 Apr 17
+
+		       +====================+
+		       | Tar File Interface |
+		       +====================+
+
+Author:  Charles E. Campbell  <NdrOchip@ScampbellPfamily.AbizM>
+	  (remove NOSPAM from Campbell's email first)
+Copyright 2005-2012:					*tar-copyright*
+	The VIM LICENSE (see |copyright|) applies to the files in this
+	package, including tarPlugin.vim, tar.vim, and pi_tar.txt.  Like
+	anything else that's except use "tar.vim" instead of "VIM".  Like
+	anything else that's free, tar.vim and its associated files are
+	provided *as is* and comes with no warranty of any kind, either
+	expressed or implied.  No guarantees of merchantability.  No
+	guarantees of suitability for any purpose.  By using this plugin, you
+	agree that in no event will the copyright holder be liable for any
+	damages resulting from the use of this software. Use at your own risk!
+
+==============================================================================
+1. 目次						*tar* *tar-contents*
+   1. 目次......................................................|tar-contents|
+   2. 使い方....................................................|tar-usage|
+   3. オプション................................................|tar-options|
+   4. 開発履歴..................................................|tar-history|
+
+==============================================================================
+2. 使い方					*tar-usage* *tar-manual*
+
+   tar ファイルを開くと、このプラグインが動作し、ファイル一覧が表示されます。
+   カーソルを動かして、開きたいファイルを選択し、<return> キーを押してくださ
+   い。編集後に保存することもできます。tar ファイルに新しいファイルを追加する
+   ことはまだできません。
+
+						*:Vimuntar*
+   VIMUNTAR~
+
+   :Vimuntar [vimhome]
+
+	このコマンドは (必要なら) tarball を .vim または vimfiles ディレクトリ
+	にコピーします。 [vimhome] が指定されていなければ 'runtimepath' の最初
+	の書き込み可能なディレクトリにコピーされます。 [vimhome] が指定されて
+	いればそのディレクトリが使われます。
+
+	コピーには *g:tar_copycmd* に指定されたコマンドが使用されます。初期設
+	定は: >
+		cp   for cygwin, unix, macunix
+		copy for windows (32, 95, 64, 16)
+<	ファイルの展開には *g:tar_extractcmd* で指定されたコマンドが使用されま
+	す。初期設定は: >
+		"tar -xf"
+<
+						*:TarDiff*
+   差分サポート~
+
+   :TarDiff [filename]
+
+	このコマンドは tarball の中のファイルと、システム上の関連付けられた
+	ファイルの差分を表示します。システム上のファイルを探すため、そのファイ
+	ルに関連する tarball 内のファイルのパスが使われます。カレントディレク
+	トリがそのパスと整合しなかった場合は、:TarDiff コマンドは関連付けられ
+	たファイルを見つけることできずに失敗します。
+
+	[filename] が指定された場合は、関連付けられたファイルとしてそのファイ
+	ル名 (とパス) が使われます。
+
+
+   ロードの無効化~
+
+   もしなんらかの理由で tar ファイルを vim で開きたくない場合は、次の二つの変
+   数を <.vimrc> ファイルで設定すると、tar プラグインはロードされなくなります:
+>
+	let g:loaded_tarPlugin= 1
+	let g:loaded_tar      = 1
+<
+
+==============================================================================
+3. オプション						*tar-options*
+
+   これらの変数を <.vimrc> ファイルなどで設定してください。
+   変数                  初期設定 説明
+   *g:tar_browseoptions*  "Ptf"   ファイル一覧を取得するときに使われる
+   *g:tar_readoptions*    "OPxf"  tar ファイルを展開するときに使われる
+   *g:tar_cmd*            "tar"   tar プログラムの名前
+   *g:tar_nomax*            0     trueならファイルウィンドウが最大化されない
+   *g:tar_secure*         undef   変数が存在する場合:
+					"--" を使って、ファイル名がオプション
+					指定として解釈されるのを防ぎます。
+					tar コマンドが "--" に対応している必要
+					があります。Posix 互換の tar なら対応
+					しているはずです。
+				  変数が存在しない場合:
+					tar プラグインは "-" で始まる tar ファ
+					イルまたは中のファイルを受け付けませ
+					ん。
+				  すべての tar が "--" をサポートしているわけ
+				  ではないので、初期設定では無効になっていま
+				  す。
+   *g:tar_writeoptions*   "uf"    ファイルを更新/置換するときに使われる
+
+
+==============================================================================
+4. 開発履歴						*tar-history*
+
+
+   v28 Jun 23, 2011 * a few more decompression options (tbz tb2 txz)
+   v27 May 31, 2011 * moved cygwin detection before g:tar_copycmd handling
+   		    * inserted additional |:keepj| modifiers
+		    * changed silent  to  sil!  (|:silent|)
+   v26 Aug 09, 2010 * uses buffer-local instead of window variables to hold
+		      tarfile name
+		    * inserted keepj before 0d to protect jump list
+   v25 Jun 19, 2010 * (Jan Steffens) added support for xz compression
+   v24 Apr 07, 2009 * :Untarvim command implemented
+       Sep 28, 2009 * Added lzma support
+   v22 Aug 08, 2008 * security fixes
+   v16 Jun 06, 2008 * tarfile:: used instead of tarfile: when editing files
+		      inside tarballs.  Fixes a problem with tarballs called
+		      things like c:\abc.tar. (tnx to Bill McCarthy)
+   v14 May 09, 2008 * arno caught a security bug
+       May 28, 2008 * various security improvements.  Now requires patch 299
+		      which provides the fnameescape() function
+       May 30, 2008 * allows one to view *.gz and *.bz2 files that are in
+		    *.tar files.
+   v12 Sep 07, 2007 * &shq now used if not the empty string for g:tar_shq
+   v10 May 02, 2006 * now using "redraw then echo" to show messages, instead
+		      of "echo and prompt user"
+   v9 May 02, 2006 * improved detection of masquerading as tar file
+   v8 May 02, 2006 * allows editing of files that merely masquerade as tar
+		     files
+   v7 Mar 22, 2006 * work on making tar plugin work across network
+      Mar 27, 2006 * g:tar_cmd now available for users to change the name
+		     of the tar program to be used.  By default, of course,
+		     it's "tar".
+   v6 Dec 21, 2005 * writing to files not in directories caused problems -
+		     fixed (pointed out by Christian Robinson)
+   v5 Nov 22, 2005 * report option workaround installed
+   v3 Sep 16, 2005 * handles writing files in an archive back to the
+		     archive
+      Oct 18, 2005 * <amatch> used instead of <afile> in autocmds
+      Oct 18, 2005 * handles writing to compressed archives
+      Nov 03, 2005 * handles writing tarfiles across a network using
+		     netrw#NetWrite()
+   v2              * converted to use Vim7's new autoload feature by
+		     Bram Moolenaar
+   v1 (original)   * Michael Toren (see http://michael.toren.net/code/)
+
+==============================================================================
+vim:tw=78:ts=8:ft=help

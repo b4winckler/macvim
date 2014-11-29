@@ -191,6 +191,248 @@ filemess(buf, name, s, attr)
     msg_scrolled_ign = FALSE;
 }
 
+#if 0
+typedef struct encode_state encode_state;
+typedef int (*encode_check)(encode_state* state, char_u d);
+struct encode_state
+{
+    char_u  name[32];
+    int	    enable;
+    int	    score;
+    int	    mode;
+    encode_check check;
+};
+
+    static int
+guess_cp932_check(encode_state* state, char_u d)
+{
+    switch (state->mode)
+    {
+	default:
+	case 0:
+	    if ((0x81 <= d && d <= 0x9f) || (0xe0 <= d && d <= 0xf0))
+		state->mode = 1;
+	    else if (d == 0x80 || 0xf1 <= d)
+		return 1;
+	    else
+		++state->score;
+	    break;
+	case 1:
+	    if ((0x40 <= d && d <= 0x7e) || (0x80 <= d && d <= 0xfc))
+	    {
+		++state->score;
+		state->mode = 0;
+	    }
+	    else
+		return 1;
+	    break;
+    }
+    return 0;
+}
+
+    static int
+guess_eucjp_check(encode_state* state, char_u d)
+{
+    int is_euc_range = (0xa1 <= d && d <= 0xfe) ? 1 : 0;
+    switch (state->mode)
+    {
+	default:
+	case 0:
+	    if (is_euc_range)
+		state->mode = 1;
+	    else if (d < 0x80)
+		++state->score;
+            else
+                return 1;
+	    break;
+	case 1:
+	    if (is_euc_range)
+	    {
+		++state->score;
+		state->mode = 0;
+	    }
+	    else
+		return 1;
+	    break;
+    }
+    return 0;
+}
+
+    static int
+guess_iso2022jp_check(encode_state* state, char_u d)
+{
+    /* TODO: Implement me. */
+    return 1;
+}
+
+    static int
+guess_utf8_check(encode_state* state, char_u d)
+{
+    if (state->mode < 1)
+    {
+	if ((d & 0x80) != 0)
+	{
+	    if ((d & 0xe0) == 0xc0)
+		state->mode = 1;
+	    else if ((d & 0xf0) == 0xe0)
+		state->mode = 2;
+	    else if ((d & 0xf8) == 0xf0)
+		state->mode = 3;
+	    else if ((d & 0xfc) == 0xf8)
+		state->mode = 4;
+	    else if ((d & 0xfe) == 0xfc)
+		state->mode = 5;
+	    else
+		return 1;
+	}
+	else
+	    ++state->score;
+    }
+    else
+    {
+	if ((d & 0xc0) == 0x80)
+	{
+	    --state->mode;
+	    if (!state->mode == 0)
+		++state->score;
+	}
+	else
+	    return 1;
+    }
+    return 0;
+}
+
+/*
+ * return 0 if no guess was made.  otherwise return 1.
+ */
+    static int
+guess_encode(char_u** fenc, int* fenc_alloced, char_u* fname)
+{
+    char_u* newenc = NULL;
+    FILE*   fp = NULL;
+    encode_state enc_table[] = {
+	{ "cp932",	    1, 0, 0, guess_cp932_check },
+	{ "euc-jp",	    1, 0, 0, guess_eucjp_check },
+	{ "iso-2022-jp",    1, 0, 0, guess_iso2022jp_check },
+	{ "utf-8",	    1, 0, 0, guess_utf8_check },
+    };
+    int	    enc_count;
+    int	    enc_available; /* count of encodings be available. */
+    char_u  readbuf[1024];
+    int	    readlen;
+    int	    i, j;
+    char_u  d;
+    encode_state* pstate;
+
+    if (p_verbose >= 1)
+    {
+	verbose_enter_scroll();
+	smsg((char_u*)"guess_encode:");
+	smsg((char_u*)"    init: fenc=%s alloced=%d fname=%s",
+		*fenc, *fenc_alloced, fname);
+	verbose_leave_scroll();
+    }
+
+    /* open a file. */
+    if (!fname)
+	return 0; /* not support to read from stdin. */
+    fp = mch_fopen(fname, "r");
+    if (!fp)
+	return 0; /* raise an error when failed to open file. */
+
+    /* initiate states of encode. */
+    enc_count = sizeof(enc_table) / sizeof(enc_table[0]);
+    enc_available = enc_count;
+
+    /*
+     * read bytes from the file and pass it to guess engines, until the
+     * encoding is determined.
+     */
+    while (enc_available > 1 && !feof(fp))
+    {
+	readlen = fread(readbuf, 1, sizeof(readbuf), fp);
+	if (p_verbose >= 2)
+	{
+	    verbose_enter_scroll();
+	    smsg((char_u*)"    read: len=%d", readlen);
+	    verbose_leave_scroll();
+	}
+	if (readlen <= 0)
+	    break;
+	for (i = 0; enc_available > 1 && i < readlen; ++i)
+	{
+	    d = readbuf[i];
+	    /* pass 'd' to all available encodings. */
+	    for (j = 0; enc_available > 1 && j < enc_count; ++j)
+	    {
+		pstate = &enc_table[j];
+		if (!pstate->enable || !pstate->check)
+		    continue;
+		switch (pstate->check(pstate, d))
+		{
+		    case 0: /* keep "alive" state */
+			break;
+		    case 1: /* disable this encode. */
+			pstate->enable = 0;
+			--enc_available;
+			break;
+		    case 2: /* make this encode primary one. */
+			enc_available = 1;
+			newenc = pstate->name;
+			break;
+		}
+	    }
+	}
+    }
+
+    /* determine newenc which have max score. */
+    if (newenc == NULL)
+    {
+	int minscore = -1;
+
+	for (i = 0; i < enc_count; ++i)
+	{
+	    pstate = &enc_table[i];
+	    if (p_verbose >= 1)
+	    {
+		verbose_enter_scroll();
+		smsg("    check: name=%s enable=%d score=%d",
+			pstate->name, pstate->enable, pstate->score);
+		verbose_leave_scroll();
+	    }
+	    if (pstate->enable
+		    && (minscore < 0 || minscore > pstate->score ||
+                        (minscore == pstate->score
+                         && STRCMP(pstate->name, p_enc) == 0)))
+	    {
+		newenc = pstate->name;
+		minscore = pstate->score;
+	    }
+	}
+    }
+
+    /* close a file. */
+    fclose(fp);
+
+    if (newenc)
+    {
+	if (p_verbose >= 1)
+	{
+	    verbose_enter_scroll();
+	    smsg("    result: newenc=%s", newenc);
+	    verbose_leave_scroll();
+	}
+	if (*fenc_alloced)
+	    vim_free(*fenc);
+	*fenc = vim_strsave(newenc);
+	*fenc_alloced = TRUE;
+    }
+    return 1;
+}
+#else
+extern int guess_encode(char_u** fenc, int* fenc_alloced, char_u* fname);
+#endif
+
 /*
  * Read lines from file "fname" into the buffer after line "from".
  *
@@ -1043,6 +1285,15 @@ retry:
 	    vim_free(tmpname);
 	    tmpname = NULL;
 	}
+    }
+
+    /*
+     * Try to guess encoding of the file.
+     */
+    if (STRICMP(fenc, "guess") == 0)
+    {
+        if (guess_encode(&fenc, &fenc_alloced, fname) != 0)
+            set_internal_string_var("b:x_guessed_fileencoding", fenc);
     }
 
     /*

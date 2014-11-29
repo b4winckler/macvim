@@ -5541,7 +5541,7 @@ msgstr "E415: —\\Šú‚¹‚Ê“™†‚Å‚·: %s"
 
 #, c-format
 msgid "E416: missing equal sign: %s"
-msgstr "E416: “™†‚ª‚ª‚ ‚è‚Ü‚¹‚ñ: %s"
+msgstr "E416: “™†‚ª‚ ‚è‚Ü‚¹‚ñ: %s"
 
 #, c-format
 msgid "E417: missing argument: %s"

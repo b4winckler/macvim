@@ -657,6 +657,12 @@ NETBEANS_OBJ
 NETBEANS_SRC
 WORKSHOP_OBJ
 WORKSHOP_SRC
+RUBY19_LIBS
+RUBY19_CFLAGS
+RUBY19_PRO
+RUBY19_OBJ
+RUBY19_SRC
+vi_cv_path_ruby19
 RUBY_LIBS
 RUBY_CFLAGS
 RUBY_PRO
@@ -699,6 +705,12 @@ MZSCHEME_PRO
 MZSCHEME_OBJ
 MZSCHEME_SRC
 vi_cv_path_mzscheme
+LUA52_CFLAGS
+LUA52_LIBS
+LUA52_PRO
+LUA52_OBJ
+LUA52_SRC
+vi_cv_path_lua52
 LUA_CFLAGS
 LUA_LIBS
 LUA_PRO
@@ -794,6 +806,8 @@ enable_xsmp_interact
 enable_luainterp
 with_lua_prefix
 with_luajit
+enable_lua52interp
+with_lua52_prefix
 enable_mzschemeinterp
 with_plthome
 enable_perlinterp
@@ -805,6 +819,8 @@ enable_tclinterp
 with_tclsh
 enable_rubyinterp
 with_ruby_command
+enable_ruby19interp
+with_ruby19_command
 enable_cscope
 enable_workshop
 enable_netbeans
@@ -827,12 +843,14 @@ with_gnome_includes
 with_gnome_libs
 with_gnome
 with_motif_lib
+enable_uimfep
 with_tlib
 enable_largefile
 enable_acl
 enable_gpm
 enable_sysmouse
 enable_nls
+enable_migemo
 with_xcodecfg
 '
       ac_precious_vars='build_alias
@@ -1464,12 +1482,14 @@ Optional Features:
   --disable-xsmp          Disable XSMP session management
   --disable-xsmp-interact Disable XSMP interaction
   --enable-luainterp=OPTS     Include Lua interpreter.  default=no OPTS=no/yes/dynamic
+  --enable-lua52interp=OPTS     Include Lua52 interpreter.  default=no OPTS=no/yes/dynamic
   --enable-mzschemeinterp   Include MzScheme interpreter.
   --enable-perlinterp=OPTS     Include Perl interpreter.  default=no OPTS=no/yes/dynamic
   --enable-pythoninterp=OPTS   Include Python interpreter. default=no OPTS=no/yes/dynamic
   --enable-python3interp=OPTS   Include Python3 interpreter. default=no OPTS=no/yes/dynamic
   --enable-tclinterp      Include Tcl interpreter.
   --enable-rubyinterp=OPTS     Include Ruby interpreter.  default=no OPTS=no/yes/dynamic
+  --enable-ruby19interp=OPTS     Include Ruby interpreter.  default=no OPTS=no/dynamic
   --enable-cscope         Include cscope interface.
   --enable-workshop       Include Sun Visual Workshop support.
   --disable-netbeans      Disable NetBeans integration support.
@@ -1487,11 +1507,13 @@ Optional Features:
   --enable-carbon-check   If auto-select GUI, check for Carbon default=yes
   --enable-macvim-check   If auto-select GUI, check for MacVim default=yes
   --disable-gtktest       Do not try to compile and run a test GTK program
+  --disable-uimfep        Don't support UIMFEP.
   --disable-largefile     omit support for large files
   --disable-acl           Don't check for ACL support.
   --disable-gpm           Don't use gpm (Linux mouse daemon).
   --disable-sysmouse    Don't use sysmouse (mouse in *BSD console).
   --disable-nls           Don't support NLS (gettext()).
+  --disable-migemo        Don't support C/Migemo.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1510,11 +1532,13 @@ Optional Packages:
   --with-compiledby=NAME  name to show in :version message
   --with-lua-prefix=PFX   Prefix where Lua is installed.
   --with-luajit           Link with LuaJIT instead of Lua.
+  --with-lua52-prefix=PFX   Prefix where Lua52 is installed.
   --with-plthome=PLTHOME   Use PLTHOME.
   --with-python-config-dir=PATH  Python's config directory
   --with-python3-config-dir=PATH  Python's config directory
   --with-tclsh=PATH       which tclsh to use (default: tclsh8.0)
   --with-ruby-command=RUBY  name of the Ruby command (default: ruby)
+  --with-ruby19-command=RUBY  name of the Ruby command (default: ruby)
   --with-x                use the X Window System
   --with-gnome-includes=DIR Specify location of GNOME headers
   --with-gnome-libs=DIR   Specify location of GNOME libs
@@ -4271,7 +4295,7 @@ $as_echo_n "checking if SDK is supported... " >&6; }
     if test "x$MACSDK" = "x10.4"; then
       sdkflags="$sdkflags""u"
     fi
-    sdkflags="$sdkflags.sdk -mmacosx-version-min=$MACSDK"
+    sdkflags="$sdkflags.sdk"
     CFLAGS="$CFLAGS -isysroot $sdkflags"
     LDFLAGS="$LDFLAGS -Wl,-syslibroot,$sdkflags"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -4288,7 +4312,7 @@ _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        XCODEFLAGS="$XCODEFLAGS -sdk macosx$MACSDK MACOSX_DEPLOYMENT_TARGET=$MACSDK"
+        XCODEFLAGS="$XCODEFLAGS -sdk macosx$MACSDK"
 else
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5197,13 +5221,188 @@ $as_echo "yes" >&6; }
       LUA_CFLAGS="-DDYNAMIC_LUA_DLL=\\\"${vi_cv_dll_name_lua}\\\" $LUA_CFLAGS"
     fi
     if test "X$LUA_CFLAGS$LUA_LIBS" != "X" && \
-       test "x$MACOSX" = "xyes" && test "x$vi_cv_with_luajit" != "xno" && \
+       test "x$MACOSX" = "xyes" && \
        test "`(uname -m) 2>/dev/null`" = "x86_64"; then
             LUA_LIBS="-pagezero_size 10000 -image_base 100000000 $LUA_LIBS"
     fi
   fi
   if test "$fail_if_missing" = "yes" -a "$lua_ok" != "yes"; then
     as_fn_error $? "could not configure lua" "$LINENO" 5
+  fi
+
+
+
+
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking --enable-lua52interp argument" >&5
+$as_echo_n "checking --enable-lua52interp argument... " >&6; }
+# Check whether --enable-lua52interp was given.
+if test "${enable_lua52interp+set}" = set; then :
+  enableval=$enable_lua52interp;
+else
+  enable_lua52interp="no"
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_lua52interp" >&5
+$as_echo "$enable_lua52interp" >&6; }
+
+if test "$enable_lua52interp" = "yes" -o "$enable_lua52interp" = "dynamic"; then
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking --with-lua52-prefix argument" >&5
+$as_echo_n "checking --with-lua52-prefix argument... " >&6; }
+
+# Check whether --with-lua52_prefix was given.
+if test "${with_lua52_prefix+set}" = set; then :
+  withval=$with_lua52_prefix; with_lua52_prefix="$withval"; { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_lua52_prefix" >&5
+$as_echo "$with_lua52_prefix" >&6; }
+else
+  with_lua52_prefix="";{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  if test "X$with_lua52_prefix" != "X"; then
+       vi_cv_path_lua52_pfx="$with_lua52_prefix"
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking LUA52_PREFIX environment var" >&5
+$as_echo_n "checking LUA52_PREFIX environment var... " >&6; }
+    if test "X$LUA52_PREFIX" != "X"; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$LUA52_PREFIX\"" >&5
+$as_echo "\"$LUA52_PREFIX\"" >&6; }
+	vi_cv_path_lua52_pfx="$LUA52_PREFIX"
+    else
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: not set, default to /usr" >&5
+$as_echo "not set, default to /usr" >&6; }
+	vi_cv_path_lua52_pfx="/usr"
+    fi
+  fi
+
+  LUA52_INC=
+  if test "X$vi_cv_path_lua52_pfx" != "X"; then
+        # Extract the first word of "lua", so it can be a program name with args.
+set dummy lua; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_vi_cv_path_lua52+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $vi_cv_path_lua52 in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_vi_cv_path_lua52="$vi_cv_path_lua52" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_vi_cv_path_lua52="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+vi_cv_path_lua52=$ac_cv_path_vi_cv_path_lua52
+if test -n "$vi_cv_path_lua52"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_path_lua52" >&5
+$as_echo "$vi_cv_path_lua52" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    if test "X$vi_cv_path_lua52" != "X"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking Lua52 version" >&5
+$as_echo_n "checking Lua52 version... " >&6; }
+if ${vi_cv_version_lua52+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+   vi_cv_version_lua52=`${vi_cv_path_lua52} -e "print(_VERSION)" | sed 's/.* //'`
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_version_lua52" >&5
+$as_echo "$vi_cv_version_lua52" >&6; }
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if lua.h can be found in $vi_cv_path_lua52_pfx/include" >&5
+$as_echo_n "checking if lua.h can be found in $vi_cv_path_lua52_pfx/include... " >&6; }
+    if test -f $vi_cv_path_lua52_pfx/include/lua.h; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if lua.h can be found in $vi_cv_path_lua52_pfx/include/lua52$vi_cv_version_lua52" >&5
+$as_echo_n "checking if lua.h can be found in $vi_cv_path_lua52_pfx/include/lua52$vi_cv_version_lua52... " >&6; }
+      if test -f $vi_cv_path_lua52_pfx/include/lua52$vi_cv_version_lua52/lua.h; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        LUA52_INC=/lua52$vi_cv_version_lua52
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        vi_cv_path_lua52_pfx=
+      fi
+    fi
+  fi
+
+  if test "X$vi_cv_path_lua52_pfx" != "X"; then
+    if test "X$LUA52_INC" != "X"; then
+            LUA52_LIBS="-L${vi_cv_path_lua52_pfx}/lib -llua$vi_cv_version_lua52"
+    else
+      LUA52_LIBS="-L${vi_cv_path_lua52_pfx}/lib -llua"
+    fi
+    LUA52_CFLAGS="-I${vi_cv_path_lua52_pfx}/include${LUA52_INC}"
+    LUA52_SRC="if_lua52.c"
+    LUA52_OBJ="objects/if_lua52.o"
+    LUA52_PRO="if_lua52.pro"
+    $as_echo "#define FEAT_LUA52 1" >>confdefs.h
+
+    if test "$enable_lua52interp" = "dynamic"; then
+      if test -f "${vi_cv_path_lua52_pfx}/bin/cyglua52-${vi_cv_version_lua52}.dll"; then
+	vi_cv_dll_name_lua52="cyglua52-${vi_cv_version_lua52}.dll"
+      else
+	multiarch=`dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null`
+	if test "X$multiarch" != "X"; then
+	  lib_multiarch="lib/${multiarch}"
+	fi
+			for subdir in "${lib_multiarch}" lib64 lib; do
+	  if test -z "$subdir"; then
+	    continue
+	  fi
+	  for sover in "${vi_cv_version_lua52}.${ext}" "-${vi_cv_version_lua52}.${ext}" \
+	    ".${vi_cv_version_lua52}.${ext}" ".${ext}.${vi_cv_version_lua52}"; do
+	    for i in $indexes ""; do
+	      if test -f "${vi_cv_path_lua52_pfx}/${subdir}/liblua${luajit}${sover}$i"; then
+		sover2="$i"
+		break 3
+	      fi
+	    done
+	  done
+	done
+	vi_cv_dll_name_lua52="liblua${sover}$sover2"
+      fi
+      $as_echo "#define DYNAMIC_LUA52 1" >>confdefs.h
+
+      LUA52_LIBS=""
+      LUA52_CFLAGS="-DDYNAMIC_LUA52_DLL=\\\"${vi_cv_dll_name_lua52}\\\" $LUA52_CFLAGS"
+    fi
+    if test "x$MACOSX" = "xyes" && \
+      test "`(uname -m) 2>/dev/null`" = "x86_64"; then
+        LUA52_LIBS="-pagezero_size 10000 -image_base 100000000 $LUA52_LIBS"
+    fi
+  fi
+  if test "$fail_if_missing" = "yes" -a -z "$LUA52_SRC"; then
+    as_fn_error $? "could not configure lua52" "$LINENO" 5
   fi
 
 
@@ -7070,7 +7269,7 @@ $as_echo "$rubyhdrdir" >&6; }
 	  RUBY_LIBS="$RUBY_LIBS -L$rubylibdir"
         elif test -d "/System/Library/Frameworks/Ruby.framework"; then
                         RUBY_LIBS="-framework Ruby"
-                        RUBY_CFLAGS="-DRUBY_VERSION=$rubyversion"
+                        RUBY_CFLAGS="-DRUBY_VERSION=$rubyversion -DRUBY_FRAMEWORK"
             librubyarg=
 	fi
 
@@ -7113,6 +7312,168 @@ $as_echo "too old; need Ruby version 1.6.0 or later" >&6; }
   fi
 
   if test "$fail_if_missing" = "yes" -a -z "$RUBY_OBJ"; then
+    as_fn_error $? "could not configure Ruby" "$LINENO" 5
+  fi
+fi
+
+
+
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking --enable-ruby19interp argument" >&5
+$as_echo_n "checking --enable-ruby19interp argument... " >&6; }
+# Check whether --enable-ruby19interp was given.
+if test "${enable_ruby19interp+set}" = set; then :
+  enableval=$enable_ruby19interp;
+else
+  enable_ruby19interp="no"
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_ruby19interp" >&5
+$as_echo "$enable_ruby19interp" >&6; }
+if test "$enable_ruby19interp" = "dynamic"; then
+  if test "$enable_rubyinterp" != "dynamic"; then
+	as_fn_error $? "--enable-ruby19interp=dynamic requires --enable-rubyinterp=dynamic" "$LINENO" 5
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking --with-ruby19-command argument" >&5
+$as_echo_n "checking --with-ruby19-command argument... " >&6; }
+
+
+# Check whether --with-ruby19-command was given.
+if test "${with_ruby19_command+set}" = set; then :
+  withval=$with_ruby19_command; RUBY19_CMD="$withval"; vi_cv_path_ruby19="$withval"; { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RUBY19_CMD" >&5
+$as_echo "$RUBY19_CMD" >&6; }
+else
+  RUBY19_CMD="ruby"; { $as_echo "$as_me:${as_lineno-$LINENO}: result: defaulting to $RUBY19_CMD" >&5
+$as_echo "defaulting to $RUBY19_CMD" >&6; }
+fi
+
+  # Extract the first word of "$RUBY19_CMD", so it can be a program name with args.
+set dummy $RUBY19_CMD; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_vi_cv_path_ruby19+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $vi_cv_path_ruby19 in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_vi_cv_path_ruby19="$vi_cv_path_ruby19" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_vi_cv_path_ruby19="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+vi_cv_path_ruby19=$ac_cv_path_vi_cv_path_ruby19
+if test -n "$vi_cv_path_ruby19"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vi_cv_path_ruby19" >&5
+$as_echo "$vi_cv_path_ruby19" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  if test "X$vi_cv_path_ruby19" != "X"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking Ruby19 version" >&5
+$as_echo_n "checking Ruby19 version... " >&6; }
+    if $vi_cv_path_ruby19 -e '(VERSION rescue RUBY_VERSION) >= "1.9.0" or exit 1' >/dev/null 2>/dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: OK" >&5
+$as_echo "OK" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking Ruby rbconfig" >&5
+$as_echo_n "checking Ruby rbconfig... " >&6; }
+      ruby19_rbconfig="RbConfig"
+      if ! $vi_cv_path_ruby19 -r rbconfig -e 'RbConfig' >/dev/null 2>/dev/null; then
+	ruby19_rbconfig="Config"
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ruby19_rbconfig" >&5
+$as_echo "$ruby19_rbconfig" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking Ruby header files" >&5
+$as_echo_n "checking Ruby header files... " >&6; }
+      ruby19hdrdir=`$vi_cv_path_ruby19 -r mkmf -e "print $ruby19_rbconfig::CONFIG['rubyhdrdir'] || $ruby19_rbconfig::CONFIG['archdir'] || \\$hdrdir" 2>/dev/null`
+      if test "X$ruby19hdrdir" != "X"; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ruby19hdrdir" >&5
+$as_echo "$ruby19hdrdir" >&6; }
+	RUBY19_CFLAGS="-I$ruby19hdrdir"
+        ruby19archdir=`$vi_cv_path_ruby19 -r rbconfig -e "print ($ruby19_rbconfig::CONFIG.has_key? 'rubyarchhdrdir') ? $ruby19_rbconfig::CONFIG['rubyarchhdrdir'] : '$ruby19hdrdir/'+$ruby19_rbconfig::CONFIG['arch']"`
+        if test -d "$ruby19archdir"; then
+          RUBY19_CFLAGS="$RUBY19_CFLAGS -I$ruby19archdir"
+        fi
+        ruby19version=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig::CONFIG['ruby19_version'].gsub(/\./, '')[0,2]"`
+	if test "X$ruby19version" = "X"; then
+	  ruby19version=`$vi_cv_path_ruby19 -e "print ((VERSION rescue RUBY_VERSION)).gsub(/\./, '')[0,2]"`
+	fi
+        RUBY19_CFLAGS="$RUBY19_CFLAGS -DRUBY19_VERSION=$ruby19version"
+	ruby19libs=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig::CONFIG['LIBS']"`
+	if test "X$ruby19libs" != "X"; then
+	  RUBY19_LIBS="$ruby19libs"
+	fi
+	libruby19arg=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig.expand($ruby19_rbconfig::CONFIG['LIBRUBYARG'])"`
+	libruby19a=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig.expand($ruby19_rbconfig::CONFIG['LIBRUBY_A'])"`
+	ruby19libdir=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig.expand($ruby19_rbconfig::CONFIG['libdir'])"`
+	if test -f "$ruby19libdir/$libruby19a"; then
+	  libruby19arg="$libruby19arg"
+	  RUBY19_LIBS="$RUBY19_LIBS -L$ruby19libdir"
+        elif test -d "/System/Library/Frameworks/Ruby.framework"; then
+                        RUBY19_LIBS="-framework Ruby"
+                        RUBY19_CFLAGS="-DRUBY19_VERSION=$ruby19version -DRUBY19_FRAMEWORK"
+            libruby19arg=
+	fi
+
+	if test "X$libruby19arg" != "X"; then
+	  RUBY19_LIBS="$libruby19arg $RUBY19_LIBS"
+	fi
+	ruby19ldflags=`$vi_cv_path_ruby19 -r rbconfig -e "print $ruby19_rbconfig::CONFIG['LDFLAGS']"`
+	if test "X$ruby19ldflags" != "X"; then
+	  	  	  	  ruby19ldflags=`echo "$ruby19ldflags" | sed -e 's/-arch\ ppc//' -e 's/-arch\ i386//' -e 's/-arch\ x86_64//'`
+	  if test "X$ruby19ldflags" != "X"; then
+	    if test "X`echo \"$LDFLAGS\" | $FGREP -e \"$ruby19ldflags\"`" = "X"; then
+	      LDFLAGS="$ruby19ldflags $LDFLAGS"
+	    fi
+	  fi
+	fi
+        if test "X$ruby19ldflags" != "X"; then
+          LDFLAGS="$ruby19ldflags $LDFLAGS"
+        fi
+	RUBY19_SRC="if_ruby19.c"
+	RUBY19_OBJ="objects/if_ruby19.o"
+	RUBY19_PRO="if_ruby19.pro"
+
+	$as_echo "#define FEAT_RUBY19 1" >>confdefs.h
+
+	if test "$enable_ruby19interp" = "dynamic"; then
+	  libruby19=`$vi_cv_path_ruby19 -r rbconfig -e "puts $ruby19_rbconfig::CONFIG['LIBRUBY_SO']"`
+	  $as_echo "#define DYNAMIC_RUBY19 1" >>confdefs.h
+
+	  RUBY19_CFLAGS="-DDYNAMIC_RUBY19_DLL=\\\"$libruby19\\\" -DDYNAMIC_RUBY19_VER=$ruby19version $RUBY19_CFLAGS"
+	  RUBY19_LIBS=
+	fi
+      else
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: not found; disabling Ruby" >&5
+$as_echo "not found; disabling Ruby" >&6; }
+      fi
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: too old; need Ruby version 1.9.0 or later" >&5
+$as_echo "too old; need Ruby version 1.9.0 or later" >&6; }
+    fi
+  fi
+
+  if test "$fail_if_missing" = "yes" -a -z "$RUBY19_OBJ"; then
     as_fn_error $? "could not configure Ruby" "$LINENO" 5
   fi
 fi
@@ -9585,6 +9946,26 @@ $as_echo "no GUI selected; hangul input has been disabled" >&6; }
   fi
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking --disable-uimfep argument" >&5
+$as_echo_n "checking --disable-uimfep argument... " >&6; }
+# Check whether --enable-uimfep was given.
+if test "${enable_uimfep+set}" = set; then :
+  enableval=$enable_uimfep;
+else
+  enable_uimfep="yes"
+fi
+
+if test "$enable_uimfep" = "yes"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  $as_echo "#define FEAT_UIMFEP 1" >>confdefs.h
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+fi
+
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether toupper is broken" >&5
 $as_echo_n "checking whether toupper is broken... " >&6; }
@@ -9915,7 +10296,7 @@ fi
 for ac_header in stdarg.h stdint.h stdlib.h string.h \
 	sys/select.h sys/utsname.h termcap.h fcntl.h \
 	sgtty.h sys/ioctl.h sys/time.h sys/types.h \
-	termio.h iconv.h inttypes.h langinfo.h math.h \
+	termio.h iconv.h inttypes.h langinfo.h math.h migemo.h \
 	unistd.h stropts.h errno.h sys/resource.h \
 	sys/systeminfo.h locale.h sys/stream.h termios.h \
 	libc.h sys/statfs.h poll.h sys/poll.h pwd.h \
@@ -13097,6 +13478,64 @@ rm -f core conftest.err conftest.$ac_objext \
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no \"po/Makefile\" - disabled" >&5
 $as_echo "no \"po/Makefile\" - disabled" >&6; };
   fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking --disable-migemo argument" >&5
+$as_echo_n "checking --disable-migemo argument... " >&6; }
+# Check whether --enable-migemo was given.
+if test "${enable_migemo+set}" = set; then :
+  enableval=$enable_migemo;
+else
+  enable_migemo="yes"
+fi
+
+if test "$enable_migemo" = "yes"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for migemo_open in -lmigemo" >&5
+$as_echo_n "checking for migemo_open in -lmigemo... " >&6; }
+if ${ac_cv_lib_migemo_migemo_open+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmigemo  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char migemo_open ();
+int
+main ()
+{
+return migemo_open ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_migemo_migemo_open=yes
+else
+  ac_cv_lib_migemo_migemo_open=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_migemo_migemo_open" >&5
+$as_echo "$ac_cv_lib_migemo_migemo_open" >&6; }
+if test "x$ac_cv_lib_migemo_migemo_open" = xyes; then :
+  LIBS="$LIBS -lmigemo"; $as_echo "#define HAVE_MIGEMO 1" >>confdefs.h
+
+fi
+
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }

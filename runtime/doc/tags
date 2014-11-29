@@ -768,6 +768,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 'regexpengine'	options.txt	/*'regexpengine'*
 'relativenumber'	options.txt	/*'relativenumber'*
 'remap'	options.txt	/*'remap'*
+'renderoptions'	options.txt	/*'renderoptions'*
 'report'	options.txt	/*'report'*
 'restorescreen'	options.txt	/*'restorescreen'*
 'revins'	options.txt	/*'revins'*
@@ -778,6 +779,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 'rlc'	options.txt	/*'rlc'*
 'rnu'	options.txt	/*'rnu'*
 'ro'	options.txt	/*'ro'*
+'rop'	options.txt	/*'rop'*
 'rs'	options.txt	/*'rs'*
 'rtp'	options.txt	/*'rtp'*
 'ru'	options.txt	/*'ru'*
@@ -1185,6 +1187,7 @@ $VIMRUNTIME	starting.txt	/*$VIMRUNTIME*
 +dialog_gui	various.txt	/*+dialog_gui*
 +diff	various.txt	/*+diff*
 +digraphs	various.txt	/*+digraphs*
++directx	various.txt	/*+directx*
 +dnd	various.txt	/*+dnd*
 +emacs_tags	various.txt	/*+emacs_tags*
 +eval	various.txt	/*+eval*
@@ -3639,7 +3642,7 @@ E201	autocmd.txt	/*E201*
 E202	options.txt	/*E202*
 E203	autocmd.txt	/*E203*
 E204	autocmd.txt	/*E204*
-E205	options.txt	/*E205*
+E205	if_pyth.txt	/*E205*
 E206	options.txt	/*E206*
 E207	editing.txt	/*E207*
 E208	message.txt	/*E208*
@@ -4371,7 +4374,6 @@ E883	eval.txt	/*E883*
 E884	eval.txt	/*E884*
 E885	sign.txt	/*E885*
 E886	starting.txt	/*E886*
-E887	if_pyth.txt	/*E887*
 E89	message.txt	/*E89*
 E90	message.txt	/*E90*
 E91	options.txt	/*E91*

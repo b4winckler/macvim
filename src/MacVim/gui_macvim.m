@@ -67,6 +67,14 @@ macvim_early_init()
             path = [path stringByAppendingPathComponent:@"runtime"];
             vim_setenv((char_u*)"VIMRUNTIME", (char_u*)[path UTF8String]);
         }
+
+        NSString *lang = [[[NSBundle mainBundle]
+            preferredLocalizations] objectAtIndex:0];
+	if ([lang isEqualToString:@"Japanese"])
+            vim_setenv((char_u*)"LANG", (char_u*)"ja_JP.UTF-8");
+
+	if (mch_isdir("/opt/local/share/terminfo") == FALSE)
+            vim_setenv((char_u*)"TERMINFO", (char_u*)"/usr/share/terminfo");
     }
 
 #if 0   // NOTE: setlocale(LC_ALL, "") seems to work after a restart so this is
@@ -1272,8 +1280,15 @@ im_set_control(int enable)
 
 
     void
+#if defined(FEAT_UIMFEP)
+gui_im_set_active(int active)
+#else // FEAT_UIMFEP
 im_set_active(int active)
+#endif // FEAT_UIMFEP
 {
+    // Don't enable IM if imdisableactivate is true.
+    if (p_imdisableactivate && active)
+        return;
     // Tell frontend to enable/disable IM (called e.g. when the mode changes).
     if (!p_imdisable) {
         int msgid = active ? ActivateKeyScriptMsgID : DeactivateKeyScriptMsgID;
@@ -1284,7 +1299,11 @@ im_set_active(int active)
 
 
     int
+#if defined(FEAT_UIMFEP)
+gui_im_get_status(void)
+#else // FEAT_UIMFEP
 im_get_status(void)
+#endif // FEAT_UIMFEP
 {
     return [[MMBackend sharedInstance] imState];
 }
@@ -1814,6 +1833,11 @@ void *gui_macvim_new_autoreleasepool()
 void gui_macvim_release_autoreleasepool(void *pool)
 {
     [(id)pool release];
+}
+
+void gui_macvim_set_proportional_font(int proportional_font)
+{
+    [[MMBackend sharedInstance] setProportionalFont:proportional_font];
 }
 
 // -- Client/Server ---------------------------------------------------------

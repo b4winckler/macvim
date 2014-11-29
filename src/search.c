@@ -1052,6 +1052,311 @@ first_submatch(rp)
 }
 #endif
 
+#ifdef USE_MIGEMO
+# define MIGEMO_QUERY_MAXSIZE 40960
+/* Load migemo header */
+# ifndef DYNAMIC_MIGEMO
+#  include <migemo.h>
+# else /* DYNAMIC_MIGEMO */
+
+# define MIGEMO_PROC FARPROC
+# ifndef DYNAMIC_MIGEMO_DLL
+#  define DYNAMIC_MIGEMO_DLL "migemo.dll"
+# endif
+
+#  define MIGEMO_OPINDEX_OR 0
+#  define MIGEMO_OPINDEX_NEST_IN 1
+#  define MIGEMO_OPINDEX_NEST_OUT 2
+#  define MIGEMO_OPINDEX_SELECT_IN 3
+#  define MIGEMO_OPINDEX_SELECT_OUT 4
+#  define MIGEMO_OPINDEX_NEWLINE 5
+
+typedef struct _migemo migemo;
+typedef int (*MIGEMO_PROC_CHAR2INT)(unsigned char*, unsigned int*);
+typedef int (*MIGEMO_PROC_INT2CHAR)(unsigned int, unsigned char*);
+static HANDLE hDllMigemo = NULL;
+migemo* (__stdcall *dll_migemo_open)(char*);
+void (__stdcall *dll_migemo_close)(migemo*);
+unsigned char* (__stdcall *dll_migemo_query)(migemo*, unsigned char*);
+void (__stdcall *dll_migemo_release)(migemo*, unsigned char*);
+int (__stdcall *dll_migemo_set_operator)(migemo*, int index, unsigned char* op);
+const unsigned char* (__stdcall *dll_migemo_get_operator)(migemo*, int index);
+void (__stdcall *dll_migemo_setproc_char2int)(migemo*, MIGEMO_PROC_CHAR2INT);
+void (__stdcall *dll_migemo_setproc_int2char)(migemo*, MIGEMO_PROC_INT2CHAR);
+
+#  define migemo_open dll_migemo_open
+#  define migemo_close dll_migemo_close
+#  define migemo_query dll_migemo_query
+#  define migemo_release dll_migemo_release
+#  define migemo_set_operator dll_migemo_set_operator
+#  define migemo_get_operator dll_migemo_get_operator
+#  define migemo_setproc_char2int dll_migemo_setproc_char2int
+#  define migemo_setproc_int2char dll_migemo_setproc_int2char
+
+    static void
+dyn_migemo_end()
+{
+    if (hDllMigemo)
+    {
+	FreeLibrary(hDllMigemo);
+	hDllMigemo = NULL;
+    }
+}
+
+    static int
+dyn_migemo_init()
+{
+    static struct { char* name; MIGEMO_PROC* ptr; } migemo_func_table[] = {
+	{"migemo_open", (MIGEMO_PROC*)&dll_migemo_open},
+	{"migemo_close", (MIGEMO_PROC*)&dll_migemo_close},
+	{"migemo_query", (MIGEMO_PROC*)&dll_migemo_query},
+	{"migemo_release", (MIGEMO_PROC*)&dll_migemo_release},
+	{"migemo_set_operator", (MIGEMO_PROC*)&dll_migemo_set_operator},
+	{"migemo_get_operator", (MIGEMO_PROC*)&dll_migemo_get_operator},
+	{"migemo_setproc_char2int", (MIGEMO_PROC*)&dll_migemo_setproc_char2int},
+	{"migemo_setproc_int2char", (MIGEMO_PROC*)&dll_migemo_setproc_int2char},
+	{NULL, NULL},
+    };
+    int i;
+
+    if (hDllMigemo)
+	return 1;
+    if (!(hDllMigemo = LoadLibraryEx(DYNAMIC_MIGEMO_DLL, NULL, 0)))
+	return 0;
+    for (i = 0; migemo_func_table[i].ptr; ++i)
+    {
+	if (!(*migemo_func_table[i].ptr = GetProcAddress(hDllMigemo,
+			migemo_func_table[i].name)))
+	{
+	    dyn_migemo_end();
+	    return 0;
+	}
+    }
+    return 1;
+}
+# endif /* DYNAMIC_MIGEMO */
+
+    static int 
+vimigemo_char2int(unsigned char* p, unsigned int* code)
+{
+    unsigned int ch = *p;
+    int len = 1;
+
+#ifdef FEAT_MBYTE
+    if (has_mbyte)
+    {
+	ch = (*mb_ptr2char)(p);
+	len = (*mb_ptr2len)(p);
+    }
+#endif
+    if (code)
+	*code = ch;
+    return len;
+}
+
+    static int
+vimigemo_int2char(unsigned int code, unsigned char* buf)
+{
+    int len;
+
+#ifdef FEAT_MBYTE
+    if (has_mbyte && (len = (*mb_char2len)(code)) != 1)
+    {
+	if (buf)
+	    (*mb_char2bytes)(code, buf);
+    }
+    else
+#endif
+    {
+	len = 0;
+	switch (code)
+	{
+	    case '\\':
+	    case '.': case '*': case '^': case '$': case '/':
+	    case '[': case ']': case '~':
+		if (buf)
+		    buf[len] = '\\';
+		++len;
+	    default:
+		if (buf)
+		    buf[len] = (unsigned char)(code & 0xFF);
+		++len;
+		break;
+	}
+    }
+
+    return len;
+}
+
+    int
+migemo_enabled()
+{
+    return
+#ifdef DYNAMIC_MIGEMO
+	dyn_migemo_init()
+#else
+	1
+#endif
+	;
+}
+
+static migemo* migemo_object = NULL;
+static int migemo_tryload = 0;
+
+    static void
+init_migemo()
+{
+# ifdef DYNAMIC_MIGEMO
+    if (!dyn_migemo_init())
+	return;
+# endif
+    if (migemo_tryload || migemo_object)
+	return;
+
+    migemo_tryload = 1;
+    migemo_object = migemo_open((char *)p_migdict);
+
+    if (!migemo_object)
+	return;
+
+    migemo_set_operator(migemo_object,
+	MIGEMO_OPINDEX_OR, (char_u *)"\\|");
+    migemo_set_operator(migemo_object,
+	MIGEMO_OPINDEX_NEST_IN, (char_u *)"\\%(");
+    migemo_set_operator(migemo_object,
+	MIGEMO_OPINDEX_NEST_OUT, (char_u *)"\\)");
+    migemo_set_operator(migemo_object,
+	MIGEMO_OPINDEX_NEST_OUT, (char_u *)"\\)");
+    migemo_set_operator(migemo_object,
+	MIGEMO_OPINDEX_NEWLINE, (char_u *)"\\_s*");
+    migemo_setproc_int2char(migemo_object, vimigemo_int2char);
+    migemo_setproc_char2int(migemo_object,
+	(MIGEMO_PROC_CHAR2INT)vimigemo_char2int);
+}
+
+    void
+reset_migemo(int lastcall)
+{
+    if (migemo_object)
+	migemo_close(migemo_object);
+    migemo_object = NULL;
+    migemo_tryload = 0;
+# ifdef DYNAMIC_MIGEMO
+    if (lastcall)
+	dyn_migemo_end();
+# endif
+}
+
+    char_u*
+query_migemo(char_u* str)
+{
+    char_u *retval = NULL;
+
+    if (str)
+    {
+	init_migemo();
+	if (migemo_object)
+	{
+	    char_u *query = migemo_query(migemo_object, str);
+
+	    if (query != NULL)
+	    {
+		retval = vim_strsave(query);
+		migemo_release(migemo_object, query);
+	    }
+	}
+    }
+    return retval ? retval : str;
+}
+
+    int
+check_migemo_able_string(char_u* str)
+{
+    size_t len;
+
+    len = STRLEN(str);
+    /* Disabled because of adding query size limitation. */
+#if 0
+    if (len == 1 && vim_strchr("kstnKSTN", str[0]))
+	return 0;
+#endif
+    /* TODO: Incomplete method.  To be improved. */
+    if (len >= 1 && (vim_strchr(str, '^')))
+	return 0;
+    if (len >= 2 && !STRNCMP(str, "\\<", 2))
+	return 0;
+    /* Search for multibyte char */
+#ifdef FEAT_MBYTE
+    if (has_mbyte)
+	while (*str)
+	{
+	    if ((*mb_ptr2len)(str) > 1)
+		return 0;
+	    ++str;
+	}
+#endif
+    return 1;
+}
+
+    static int
+searchit_migemo(win, buf, pos, dir, str, count, options, pat_use, stop_lnum,
+	tm, did)
+    win_T	*win;
+    buf_T	*buf;
+    pos_T	*pos;
+    int		dir;
+    char_u	*str;
+    long	count;
+    int		options;
+    int		pat_use;
+    linenr_T	stop_lnum;	/* stop after this line number when != 0 */
+    proftime_T*	tm;
+    int		*did;
+{
+    int retval = 0;
+    int didval = 0;
+
+    if (str && buf && STRLEN(p_migdict) > 0 && check_migemo_able_string(str))
+    {
+	init_migemo();
+	if (migemo_object)
+	{
+	    char_u	*query;
+	    char_u	*newstr = NULL;
+	    
+	    /* Remove backslash in str */
+	    if (vim_strchr(str, '\\') && (newstr = vim_strsave(str)))
+	    {
+		char_u *p, *end = newstr + STRLEN(newstr);
+
+		for (p = newstr; p[0] != NUL; ++p)
+		{
+		    if ((p = vim_strchr(p, '\\')) == NULL)
+			break;
+		    mch_memmove(p, p + 1, end - p);
+		}
+		str = newstr;
+	    }
+	    query = migemo_query(migemo_object, str);
+	    if (query && STRLEN(query) < MIGEMO_QUERY_MAXSIZE)
+	    {
+		retval = searchit(win, buf, pos, dir, query, count, options,
+			pat_use, stop_lnum, tm);
+		didval = 1;
+	    }
+	    if (query)
+		migemo_release(migemo_object, query);
+	    if (newstr)
+		vim_free(newstr);
+	}
+    }
+
+    if (did)
+	*did = didval;
+    return retval;
+}
+#endif /* USE_MIGEMO */
+
 /*
  * Highest level string search function.
  * Search for the 'count'th occurrence of pattern 'pat' in direction 'dirc'
@@ -1362,12 +1667,30 @@ do_search(oap, dirc, pat, count, options, tm)
 	     lrFswap(searchstr,0);
 #endif
 
+#ifdef USE_MIGEMO
+	{
+	    int did_migemo = 0;
+	    if (options & SEARCH_MIGEMO)
+		c = searchit_migemo(
+			curwin, curbuf, &pos,
+			dirc == '/' ? FORWARD : BACKWARD,
+			searchstr, count, spats[0].off.end + (options &
+			    (SEARCH_KEEP + SEARCH_PEEK + SEARCH_HIS
+			     + SEARCH_MSG + SEARCH_START
+			     + ((pat != NULL && *pat == ';') ?
+				 0 : SEARCH_NOOF))),
+			RE_LAST, (linenr_T)0, tm, &did_migemo);
+	    if (!did_migemo)
+#endif /* USE_MIGEMO */
 	c = searchit(curwin, curbuf, &pos, dirc == '/' ? FORWARD : BACKWARD,
 		searchstr, count, spats[0].off.end + (options &
 		       (SEARCH_KEEP + SEARCH_PEEK + SEARCH_HIS
 			+ SEARCH_MSG + SEARCH_START
 			+ ((pat != NULL && *pat == ';') ? 0 : SEARCH_NOOF))),
 		RE_LAST, (linenr_T)0, tm);
+#ifdef USE_MIGEMO
+	}
+#endif /* USE_MIGEMO */
 
 	if (dircp != NULL)
 	    *dircp = dirc;	/* restore second '/' or '?' for normal_cmd() */
@@ -2582,7 +2905,12 @@ findsent(dir, count)
 	/* go back to the previous non-blank char */
 	found_dot = FALSE;
 	while ((c = gchar_pos(&pos)) == ' ' || c == '\t' ||
-	     (dir == BACKWARD && vim_strchr((char_u *)".!?)]\"'", c) != NULL))
+	     (dir == BACKWARD && vim_strchr((char_u *)".!?)]\"'", c) != NULL)
+#ifdef FEAT_MBYTE
+	     || (dir == BACKWARD && (*mb_char2len)(c) > 1
+		 && mb_get_class(ml_get_pos(&pos)) == 1)
+#endif
+	     )
 	{
 	    if (vim_strchr((char_u *)".!?", c) != NULL)
 	    {
@@ -2632,6 +2960,24 @@ findsent(dir, count)
 		    break;
 		}
 	    }
+#ifdef FEAT_MBYTE
+	    if (has_mbyte && (*mb_char2len)(c) > 1
+		    && mb_get_class(ml_get_pos(&pos)) == 1)
+	    {
+		tpos = pos;
+		for (;;)
+		{
+		    c = inc(&tpos);
+		    if (c == -1 || (*mb_char2len)(c) <= 1
+			    || mb_get_class(ml_get_pos(&tpos)) != 1)
+			break;
+		}
+		pos = tpos;
+		if (gchar_pos(&pos) == NUL)
+		    inc(&pos);
+		break;
+	    }
+#endif
 	    if ((*func)(&pos) == -1)
 	    {
 		if (count)

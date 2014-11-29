@@ -1,0 +1,11 @@
+*os_risc.txt*   For Vim バージョン 7.4.  Last change: 2011 May 10
+
+
+		VIMリファレンスマニュアル    by Thomas Leonard
+
+
+						*riscos* *RISCOS* *RISC-OS*
+RISC OS サポートはパッチ 7.3.187 によって削除されました。
+RISC OS で Vim を使いたい場合はそのパッチ以前のファイルを取得してください。
+
+ vim:tw=78:ts=8:ft=help:norl:

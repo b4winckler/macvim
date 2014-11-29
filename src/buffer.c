@@ -284,6 +284,31 @@ open_buffer(read_stdin, eap, flags)
 	    aucmd_prepbuf(&aco, old_curbuf);
 #endif
 	    do_modelines(0);
+
+	    /* specified ff and enc, bin in modelines */
+	    if (file_ff_differs(curbuf, TRUE))
+	    {
+		/* reload buffer */
+		if (eap)
+		{
+		    /* restore ++ff and ++enc, ++bin if specified */
+#ifdef FEAT_MBYTE
+		    if (eap->force_enc)
+		    {
+			char_u *fenc = enc_canonize(eap->cmd + eap->force_enc);
+			if (fenc) {
+			    vim_free(curbuf->b_p_fenc);
+			    curbuf->b_p_fenc = fenc;
+			}
+		    }
+#endif
+		    if (eap->force_ff)
+			set_fileformat(eap->force_ff, OPT_LOCAL);
+		    if (eap->force_bin)
+			curbuf->b_p_bin = eap->force_bin;
+		}
+		buf_reload(curbuf, curbuf->b_orig_mode);
+	    }
 	    curbuf->b_flags &= ~(BF_CHECK_RO | BF_NEVERLOADED);
 
 #ifdef FEAT_AUTOCMD

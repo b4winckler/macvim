@@ -21,7 +21,7 @@
 //
 // Icons
 //
-IDR_VIM		ICON "vim.ico"
+IDR_VIM		ICON "vim2.ico"
 
 #ifdef FEAT_GUI_W32
 IDR_VIM_ERROR	ICON "vim_error.ico"

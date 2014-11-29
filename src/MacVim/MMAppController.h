@@ -53,6 +53,7 @@
 - (IBAction)selectPreviousWindow:(id)sender;
 - (IBAction)orderFrontPreferencePanel:(id)sender;
 - (IBAction)openWebsite:(id)sender;
+- (IBAction)openWebsiteKaoriYa:(id)sender;
 - (IBAction)showVimHelp:(id)sender;
 - (IBAction)zoomAll:(id)sender;
 

@@ -75,10 +75,13 @@ if has("gui_macvim")
   an <silent> 9998.311 Window.Zoom\ All		    <Nop>
   an <silent> 9998.320 Window.Toggle\ Full\ Screen\ Mode :set invfullscreen<CR>
   an 9998.330 Window.-SEP1-			    <Nop>
+  an <silent> 9998.331 Window.Select\ Next\ Window     <Nop>
+  an <silent> 9998.332 Window.Select\ Previous\ Window <Nop>
+  an 9998.333 Window.-SEP2-			    <Nop>
   " TODO! Grey out if no tabs are visible.
   an <silent> 9998.340 Window.Select\ Next\ Tab	    :tabnext<CR>
   an <silent> 9998.350 Window.Select\ Previous\ Tab :tabprevious<CR>
-  an 9998.360 Window.-SEP2-			    <Nop>
+  an 9998.360 Window.-SEP3-			    <Nop>
   an <silent> 9998.370 Window.Bring\ All\ To\ Front <Nop>
 endif
 
@@ -1224,6 +1227,8 @@ if has("gui_macvim")
   macm Window.Zoom		key=<D-C-z>	action=performZoom:
   macm Window.Zoom\ All		key=<D-M-C-z>	action=zoomAll:		alt=YES
   macm Window.Toggle\ Full\ Screen\ Mode	key=<D-C-f>
+  macm Window.Select\ Next\ Window		key=<D-]>	action=selectNextWindow:
+  macm Window.Select\ Previous\ Window	key=<D-[>	action=selectPreviousWindow:
   macm Window.Select\ Next\ Tab			key=<D-}>
   macm Window.Select\ Previous\ Tab		key=<D-{>
   macm Window.Bring\ All\ To\ Front		action=arrangeInFront:

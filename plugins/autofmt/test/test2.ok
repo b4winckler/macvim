@@ -1,0 +1,63 @@
+Results of test2:
+
+
+1254595216
+{
+    1.
+aaaaa
+bbbbb
+
+    1.
+aaaaa
+bbbbb
+}
+{
+    1. aaaaa
+       bbbbb
+
+    1. aaaaa
+       bbbbb
+}
+
+
+1254595217
+{
+# 1. aaa
+#    bbb
+
+# 1. aaa
+#    bbb
+}
+{
+# 1. aaa
+#    bbb
+
+# 1. aaa
+#    bbb
+}
+
+
+1254595219
+{
+/* aaaaa
+ * bbbbb
+ * ccccc
+ * */
+
+/* aaaaa
+ * bbbbb
+ * ccccc
+ * */
+}
+{
+/* aaaaa
+ * bbbbb
+ * ccccc
+ */
+
+/* aaaaa
+ * bbbbb
+ * ccccc
+ * */
+}
+

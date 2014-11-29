@@ -1232,7 +1232,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>73</string>
+	<string>20140805</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
@@ -1278,7 +1278,9 @@
 		</dict>
 	</array>
 	<key>SUFeedURL</key>
-	<string>http://b4winckler.github.com/macvim/appcast/stable.xml</string>
+	<string>http://macvim-kaoriya.googlecode.com/svn/wiki/latest.xml</string>
+	<key>SUPublicDSAKeyFile</key>
+	<string>dsa_pub.pem</string>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
 

@@ -1,0 +1,57 @@
+BUG: second line is not properly indented.
+
+
+Results of bug1:
+
+STARTTEST
+:set fo=cq tw=10 ai
+/^{/+1
+:set formatexpr=
+3gqgq
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+3gqgq
+ENDTEST
+
+case1
+{
+      aaaaa
+    bbbbb
+  ccccc
+}
+{
+      aaaaa
+    bbbbb
+  ccccc
+}
+
+STARTTEST
+:set fo=cq tw=10 ai
+/^{/+1
+:set formatexpr=
+5gqgq
+/^{/+1
+:set formatexpr=autofmt#compat#formatexpr()
+5gqgq
+ENDTEST
+
+case2
+{
+/*
+ *     aaaaa
+ *   bbbbb
+ * ccccc
+ */
+}
+{
+/*
+ *     aaaaa
+ *   bbbbb
+ * ccccc
+ */
+}
+
+STARTTEST
+:g/^STARTTEST/.,/^ENDTEST/d
+:1;/^Results/,$wq! test.out
+ENDTEST

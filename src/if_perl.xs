@@ -150,6 +150,11 @@ typedef int perl_key;
 #define load_dll(n) dlopen((n), RTLD_LAZY|RTLD_GLOBAL)
 #define symbol_from_dll dlsym
 #define close_dll dlclose
+# if defined(MACOS_X_UNIX)
+#  define DYNAMIC_PERL_DLL "/System/Library/Perl/lib/5.10/libperl.dylib"
+# else
+#  define DYNAMIC_PERL_DLL "libperl.so"
+# endif
 #else
 #define PERL_PROC FARPROC
 #define load_dll vimLoadLib
@@ -413,112 +418,113 @@ static void (*boot_DynaLoader)_((pTHX_ CV*));
 static struct {
     char* name;
     PERL_PROC* ptr;
+    int ignorable;
 } perl_funcname_table[] = {
-    {"perl_alloc", (PERL_PROC*)&perl_alloc},
-    {"perl_construct", (PERL_PROC*)&perl_construct},
-    {"perl_destruct", (PERL_PROC*)&perl_destruct},
-    {"perl_free", (PERL_PROC*)&perl_free},
-    {"perl_run", (PERL_PROC*)&perl_run},
-    {"perl_parse", (PERL_PROC*)&perl_parse},
-    {"Perl_get_context", (PERL_PROC*)&Perl_get_context},
-    {"Perl_croak", (PERL_PROC*)&Perl_croak},
+    {"perl_alloc", (PERL_PROC*)&perl_alloc, FALSE},
+    {"perl_construct", (PERL_PROC*)&perl_construct, FALSE},
+    {"perl_destruct", (PERL_PROC*)&perl_destruct, FALSE},
+    {"perl_free", (PERL_PROC*)&perl_free, FALSE},
+    {"perl_run", (PERL_PROC*)&perl_run, FALSE},
+    {"perl_parse", (PERL_PROC*)&perl_parse, FALSE},
+    {"Perl_get_context", (PERL_PROC*)&Perl_get_context, FALSE},
+    {"Perl_croak", (PERL_PROC*)&Perl_croak, FALSE},
 #ifdef PERL5101_OR_LATER
-    {"Perl_croak_xs_usage", (PERL_PROC*)&Perl_croak_xs_usage},
+    {"Perl_croak_xs_usage", (PERL_PROC*)&Perl_croak_xs_usage, TRUE},
 #endif
 #ifdef PERL_IMPLICIT_CONTEXT
-    {"Perl_croak_nocontext", (PERL_PROC*)&Perl_croak_nocontext},
+    {"Perl_croak_nocontext", (PERL_PROC*)&Perl_croak_nocontext, FALSE},
 #endif
-    {"Perl_dowantarray", (PERL_PROC*)&Perl_dowantarray},
-    {"Perl_free_tmps", (PERL_PROC*)&Perl_free_tmps},
-    {"Perl_gv_stashpv", (PERL_PROC*)&Perl_gv_stashpv},
-    {"Perl_markstack_grow", (PERL_PROC*)&Perl_markstack_grow},
-    {"Perl_mg_find", (PERL_PROC*)&Perl_mg_find},
-    {"Perl_newXS", (PERL_PROC*)&Perl_newXS},
-    {"Perl_newSV", (PERL_PROC*)&Perl_newSV},
-    {"Perl_newSViv", (PERL_PROC*)&Perl_newSViv},
-    {"Perl_newSVpv", (PERL_PROC*)&Perl_newSVpv},
-    {"Perl_call_argv", (PERL_PROC*)&Perl_call_argv},
-    {"Perl_call_pv", (PERL_PROC*)&Perl_call_pv},
-    {"Perl_eval_sv", (PERL_PROC*)&Perl_eval_sv},
-    {"Perl_get_sv", (PERL_PROC*)&Perl_get_sv},
-    {"Perl_eval_pv", (PERL_PROC*)&Perl_eval_pv},
-    {"Perl_call_method", (PERL_PROC*)&Perl_call_method},
-    {"Perl_pop_scope", (PERL_PROC*)&Perl_pop_scope},
-    {"Perl_push_scope", (PERL_PROC*)&Perl_push_scope},
-    {"Perl_save_int", (PERL_PROC*)&Perl_save_int},
+    {"Perl_dowantarray", (PERL_PROC*)&Perl_dowantarray, FALSE},
+    {"Perl_free_tmps", (PERL_PROC*)&Perl_free_tmps, FALSE},
+    {"Perl_gv_stashpv", (PERL_PROC*)&Perl_gv_stashpv, FALSE},
+    {"Perl_markstack_grow", (PERL_PROC*)&Perl_markstack_grow, FALSE},
+    {"Perl_mg_find", (PERL_PROC*)&Perl_mg_find, FALSE},
+    {"Perl_newXS", (PERL_PROC*)&Perl_newXS, FALSE},
+    {"Perl_newSV", (PERL_PROC*)&Perl_newSV, FALSE},
+    {"Perl_newSViv", (PERL_PROC*)&Perl_newSViv, FALSE},
+    {"Perl_newSVpv", (PERL_PROC*)&Perl_newSVpv, FALSE},
+    {"Perl_call_argv", (PERL_PROC*)&Perl_call_argv, FALSE},
+    {"Perl_call_pv", (PERL_PROC*)&Perl_call_pv, FALSE},
+    {"Perl_eval_sv", (PERL_PROC*)&Perl_eval_sv, FALSE},
+    {"Perl_get_sv", (PERL_PROC*)&Perl_get_sv, FALSE},
+    {"Perl_eval_pv", (PERL_PROC*)&Perl_eval_pv, FALSE},
+    {"Perl_call_method", (PERL_PROC*)&Perl_call_method, FALSE},
+    {"Perl_pop_scope", (PERL_PROC*)&Perl_pop_scope, FALSE},
+    {"Perl_push_scope", (PERL_PROC*)&Perl_push_scope, FALSE},
+    {"Perl_save_int", (PERL_PROC*)&Perl_save_int, FALSE},
 #if (PERL_REVISION == 5) && (PERL_VERSION >= 20)
-    {"Perl_save_strlen", (PERL_PROC*)&Perl_save_strlen},
+    {"Perl_save_strlen", (PERL_PROC*)&Perl_save_strlen, FALSE},
 #endif
-    {"Perl_stack_grow", (PERL_PROC*)&Perl_stack_grow},
-    {"Perl_set_context", (PERL_PROC*)&Perl_set_context},
+    {"Perl_stack_grow", (PERL_PROC*)&Perl_stack_grow, FALSE},
+    {"Perl_set_context", (PERL_PROC*)&Perl_set_context, FALSE},
 #if (PERL_REVISION == 5) && (PERL_VERSION >= 14)
-    {"Perl_sv_2bool_flags", (PERL_PROC*)&Perl_sv_2bool_flags},
-    {"Perl_xs_apiversion_bootcheck",(PERL_PROC*)&Perl_xs_apiversion_bootcheck},
+    {"Perl_sv_2bool_flags", (PERL_PROC*)&Perl_sv_2bool_flags, FALSE},
+    {"Perl_xs_apiversion_bootcheck",(PERL_PROC*)&Perl_xs_apiversion_bootcheck, FALSE},
 #else
-    {"Perl_sv_2bool", (PERL_PROC*)&Perl_sv_2bool},
+    {"Perl_sv_2bool", (PERL_PROC*)&Perl_sv_2bool, FALSE},
 #endif
-    {"Perl_sv_2iv", (PERL_PROC*)&Perl_sv_2iv},
-    {"Perl_sv_2mortal", (PERL_PROC*)&Perl_sv_2mortal},
+    {"Perl_sv_2iv", (PERL_PROC*)&Perl_sv_2iv, FALSE},
+    {"Perl_sv_2mortal", (PERL_PROC*)&Perl_sv_2mortal, FALSE},
 #if (PERL_REVISION == 5) && (PERL_VERSION >= 8)
-    {"Perl_sv_2pv_flags", (PERL_PROC*)&Perl_sv_2pv_flags},
-    {"Perl_sv_2pv_nolen", (PERL_PROC*)&Perl_sv_2pv_nolen},
+    {"Perl_sv_2pv_flags", (PERL_PROC*)&Perl_sv_2pv_flags, FALSE},
+    {"Perl_sv_2pv_nolen", (PERL_PROC*)&Perl_sv_2pv_nolen, FALSE},
 #else
-    {"Perl_sv_2pv", (PERL_PROC*)&Perl_sv_2pv},
+    {"Perl_sv_2pv", (PERL_PROC*)&Perl_sv_2pv, FALSE},
 #endif
 #ifdef PERL589_OR_LATER
-    {"Perl_sv_2iv_flags", (PERL_PROC*)&Perl_sv_2iv_flags},
-    {"Perl_newXS_flags", (PERL_PROC*)&Perl_newXS_flags},
+    {"Perl_sv_2iv_flags", (PERL_PROC*)&Perl_sv_2iv_flags, FALSE},
+    {"Perl_newXS_flags", (PERL_PROC*)&Perl_newXS_flags, FALSE},
 #endif
-    {"Perl_sv_bless", (PERL_PROC*)&Perl_sv_bless},
+    {"Perl_sv_bless", (PERL_PROC*)&Perl_sv_bless, FALSE},
 #if (PERL_REVISION == 5) && (PERL_VERSION >= 8)
-    {"Perl_sv_catpvn_flags", (PERL_PROC*)&Perl_sv_catpvn_flags},
+    {"Perl_sv_catpvn_flags", (PERL_PROC*)&Perl_sv_catpvn_flags, FALSE},
 #else
-    {"Perl_sv_catpvn", (PERL_PROC*)&Perl_sv_catpvn},
+    {"Perl_sv_catpvn", (PERL_PROC*)&Perl_sv_catpvn, FALSE},
 #endif
-    {"Perl_sv_free", (PERL_PROC*)&Perl_sv_free},
-    {"Perl_sv_isa", (PERL_PROC*)&Perl_sv_isa},
-    {"Perl_sv_magic", (PERL_PROC*)&Perl_sv_magic},
-    {"Perl_sv_setiv", (PERL_PROC*)&Perl_sv_setiv},
-    {"Perl_sv_setpv", (PERL_PROC*)&Perl_sv_setpv},
-    {"Perl_sv_setpvn", (PERL_PROC*)&Perl_sv_setpvn},
+    {"Perl_sv_free", (PERL_PROC*)&Perl_sv_free, FALSE},
+    {"Perl_sv_isa", (PERL_PROC*)&Perl_sv_isa, FALSE},
+    {"Perl_sv_magic", (PERL_PROC*)&Perl_sv_magic, FALSE},
+    {"Perl_sv_setiv", (PERL_PROC*)&Perl_sv_setiv, FALSE},
+    {"Perl_sv_setpv", (PERL_PROC*)&Perl_sv_setpv, FALSE},
+    {"Perl_sv_setpvn", (PERL_PROC*)&Perl_sv_setpvn, FALSE},
 #if (PERL_REVISION == 5) && (PERL_VERSION >= 8)
-    {"Perl_sv_setsv_flags", (PERL_PROC*)&Perl_sv_setsv_flags},
+    {"Perl_sv_setsv_flags", (PERL_PROC*)&Perl_sv_setsv_flags, FALSE},
 #else
-    {"Perl_sv_setsv", (PERL_PROC*)&Perl_sv_setsv},
+    {"Perl_sv_setsv", (PERL_PROC*)&Perl_sv_setsv, FALSE},
 #endif
-    {"Perl_sv_upgrade", (PERL_PROC*)&Perl_sv_upgrade},
+    {"Perl_sv_upgrade", (PERL_PROC*)&Perl_sv_upgrade, FALSE},
 #if (PERL_REVISION == 5) && (PERL_VERSION < 10)
-    {"Perl_Tstack_sp_ptr", (PERL_PROC*)&Perl_Tstack_sp_ptr},
-    {"Perl_Top_ptr", (PERL_PROC*)&Perl_Top_ptr},
-    {"Perl_Tstack_base_ptr", (PERL_PROC*)&Perl_Tstack_base_ptr},
-    {"Perl_Tstack_max_ptr", (PERL_PROC*)&Perl_Tstack_max_ptr},
-    {"Perl_Ttmps_ix_ptr", (PERL_PROC*)&Perl_Ttmps_ix_ptr},
-    {"Perl_Ttmps_floor_ptr", (PERL_PROC*)&Perl_Ttmps_floor_ptr},
-    {"Perl_Tmarkstack_ptr_ptr", (PERL_PROC*)&Perl_Tmarkstack_ptr_ptr},
-    {"Perl_Tmarkstack_max_ptr", (PERL_PROC*)&Perl_Tmarkstack_max_ptr},
-    {"Perl_TSv_ptr", (PERL_PROC*)&Perl_TSv_ptr},
-    {"Perl_TXpv_ptr", (PERL_PROC*)&Perl_TXpv_ptr},
-    {"Perl_Tna_ptr", (PERL_PROC*)&Perl_Tna_ptr},
+    {"Perl_Tstack_sp_ptr", (PERL_PROC*)&Perl_Tstack_sp_ptr, FALSE},
+    {"Perl_Top_ptr", (PERL_PROC*)&Perl_Top_ptr, FALSE},
+    {"Perl_Tstack_base_ptr", (PERL_PROC*)&Perl_Tstack_base_ptr, FALSE},
+    {"Perl_Tstack_max_ptr", (PERL_PROC*)&Perl_Tstack_max_ptr, FALSE},
+    {"Perl_Ttmps_ix_ptr", (PERL_PROC*)&Perl_Ttmps_ix_ptr, FALSE},
+    {"Perl_Ttmps_floor_ptr", (PERL_PROC*)&Perl_Ttmps_floor_ptr, FALSE},
+    {"Perl_Tmarkstack_ptr_ptr", (PERL_PROC*)&Perl_Tmarkstack_ptr_ptr, FALSE},
+    {"Perl_Tmarkstack_max_ptr", (PERL_PROC*)&Perl_Tmarkstack_max_ptr, FALSE},
+    {"Perl_TSv_ptr", (PERL_PROC*)&Perl_TSv_ptr, FALSE},
+    {"Perl_TXpv_ptr", (PERL_PROC*)&Perl_TXpv_ptr, FALSE},
+    {"Perl_Tna_ptr", (PERL_PROC*)&Perl_Tna_ptr, FALSE},
 #else
-    {"Perl_sv_free2", (PERL_PROC*)&Perl_sv_free2},
-    {"Perl_sys_init", (PERL_PROC*)&Perl_sys_init},
-    {"Perl_sys_term", (PERL_PROC*)&Perl_sys_term},
-    {"Perl_call_list", (PERL_PROC*)&Perl_call_list},
+    {"Perl_sv_free2", (PERL_PROC*)&Perl_sv_free2, FALSE},
+    {"Perl_sys_init", (PERL_PROC*)&Perl_sys_init, FALSE},
+    {"Perl_sys_term", (PERL_PROC*)&Perl_sys_term, FALSE},
+    {"Perl_call_list", (PERL_PROC*)&Perl_call_list, FALSE},
 # if (PERL_REVISION == 5) && (PERL_VERSION >= 14)
 # else
-    {"Perl_ISv_ptr", (PERL_PROC*)&Perl_ISv_ptr},
-    {"Perl_Istack_max_ptr", (PERL_PROC*)&Perl_Istack_max_ptr},
-    {"Perl_Istack_base_ptr", (PERL_PROC*)&Perl_Istack_base_ptr},
-    {"Perl_IXpv_ptr", (PERL_PROC*)&Perl_IXpv_ptr},
-    {"Perl_Itmps_ix_ptr", (PERL_PROC*)&Perl_Itmps_ix_ptr},
-    {"Perl_Itmps_floor_ptr", (PERL_PROC*)&Perl_Itmps_floor_ptr},
-    {"Perl_Ina_ptr", (PERL_PROC*)&Perl_Ina_ptr},
-    {"Perl_Imarkstack_ptr_ptr", (PERL_PROC*)&Perl_Imarkstack_ptr_ptr},
-    {"Perl_Imarkstack_max_ptr", (PERL_PROC*)&Perl_Imarkstack_max_ptr},
-    {"Perl_Istack_sp_ptr", (PERL_PROC*)&Perl_Istack_sp_ptr},
-    {"Perl_Iop_ptr", (PERL_PROC*)&Perl_Iop_ptr},
-    {"Perl_Iscopestack_ix_ptr", (PERL_PROC*)&Perl_Iscopestack_ix_ptr},
-    {"Perl_Iunitcheckav_ptr", (PERL_PROC*)&Perl_Iunitcheckav_ptr},
+    {"Perl_ISv_ptr", (PERL_PROC*)&Perl_ISv_ptr, FALSE},
+    {"Perl_Istack_max_ptr", (PERL_PROC*)&Perl_Istack_max_ptr, FALSE},
+    {"Perl_Istack_base_ptr", (PERL_PROC*)&Perl_Istack_base_ptr, FALSE},
+    {"Perl_IXpv_ptr", (PERL_PROC*)&Perl_IXpv_ptr, FALSE},
+    {"Perl_Itmps_ix_ptr", (PERL_PROC*)&Perl_Itmps_ix_ptr, FALSE},
+    {"Perl_Itmps_floor_ptr", (PERL_PROC*)&Perl_Itmps_floor_ptr, FALSE},
+    {"Perl_Ina_ptr", (PERL_PROC*)&Perl_Ina_ptr, FALSE},
+    {"Perl_Imarkstack_ptr_ptr", (PERL_PROC*)&Perl_Imarkstack_ptr_ptr, FALSE},
+    {"Perl_Imarkstack_max_ptr", (PERL_PROC*)&Perl_Imarkstack_max_ptr, FALSE},
+    {"Perl_Istack_sp_ptr", (PERL_PROC*)&Perl_Istack_sp_ptr, FALSE},
+    {"Perl_Iop_ptr", (PERL_PROC*)&Perl_Iop_ptr, FALSE},
+    {"Perl_Iscopestack_ix_ptr", (PERL_PROC*)&Perl_Iscopestack_ix_ptr, FALSE},
+    {"Perl_Iunitcheckav_ptr", (PERL_PROC*)&Perl_Iunitcheckav_ptr, FALSE},
 # endif
 #endif
 #if (PERL_REVISION == 5) && (PERL_VERSION >= 14)
@@ -526,13 +532,13 @@ static struct {
     {"PL_thr_key", (PERL_PROC*)&dll_PL_thr_key},
 #  endif
 #else
-    {"Perl_Idefgv_ptr", (PERL_PROC*)&Perl_Idefgv_ptr},
-    {"Perl_Ierrgv_ptr", (PERL_PROC*)&Perl_Ierrgv_ptr},
-    {"Perl_Isv_yes_ptr", (PERL_PROC*)&Perl_Isv_yes_ptr},
-    {"Perl_Gthr_key_ptr", (PERL_PROC*)&Perl_Gthr_key_ptr},
+    {"Perl_Idefgv_ptr", (PERL_PROC*)&Perl_Idefgv_ptr, FALSE},
+    {"Perl_Ierrgv_ptr", (PERL_PROC*)&Perl_Ierrgv_ptr, FALSE},
+    {"Perl_Isv_yes_ptr", (PERL_PROC*)&Perl_Isv_yes_ptr, FALSE},
+    {"Perl_Gthr_key_ptr", (PERL_PROC*)&Perl_Gthr_key_ptr, FALSE},
 #endif
-    {"boot_DynaLoader", (PERL_PROC*)&boot_DynaLoader},
-    {"", NULL},
+    {"boot_DynaLoader", (PERL_PROC*)&boot_DynaLoader, FALSE},
+    {"", NULL, FALSE},
 };
 
 /* Work around for perl-5.18.
@@ -569,7 +575,8 @@ perl_runtime_link_init(char *libname, int verbose)
     for (i = 0; perl_funcname_table[i].ptr; ++i)
     {
 	if (!(*perl_funcname_table[i].ptr = symbol_from_dll(hPerlLib,
-			perl_funcname_table[i].name)))
+			perl_funcname_table[i].name)) &&
+			!perl_funcname_table[i].ignorable)
 	{
 	    close_dll(hPerlLib);
 	    hPerlLib = NULL;
@@ -589,7 +596,16 @@ perl_runtime_link_init(char *libname, int verbose)
 perl_enabled(verbose)
     int		verbose;
 {
-    return perl_runtime_link_init(DYNAMIC_PERL_DLL, verbose) == OK;
+    int ret = FAIL;
+    int mustfree = FALSE;
+    char *s = (char *)vim_getenv((char_u *)"PERL_DLL", &mustfree);
+    if (s != NULL)
+        ret = perl_runtime_link_init(s, verbose);
+    if (mustfree)
+        vim_free(s);
+    if (ret == FAIL)
+        ret = perl_runtime_link_init(DYNAMIC_PERL_DLL, verbose);
+    return (ret == OK);
 }
 #endif /* DYNAMIC_PERL */
 

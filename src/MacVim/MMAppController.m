@@ -60,6 +60,8 @@ static NSTimeInterval MMRequestTimeout = 5;
 static NSTimeInterval MMReplyTimeout = 5;
 
 static NSString *MMWebsiteString = @"http://code.google.com/p/macvim/";
+static NSString *MMWebsiteKaoriYaString =
+    @"http://code.google.com/p/macvim-kaoriya/";
 
 #if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
 // Latency (in s) between FS event occuring and being reported to MacVim.
@@ -323,7 +325,8 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         int idx = [fileMenu indexOfItemWithAction:@selector(fileOpen:)];
         if (idx >= 0 && idx+1 < [fileMenu numberOfItems])
 
-        recentFilesMenuItem = [fileMenu itemWithTitle:@"Open Recent"];
+        recentFilesMenuItem =
+            [fileMenu itemWithTitle:NSLocalizedString(@"Open Recent", nil)];
         [[recentFilesMenuItem submenu] performSelector:@selector(_setMenuName:)
                                         withObject:@"NSRecentDocumentsMenu"];
 
@@ -1168,6 +1171,13 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
             [NSURL URLWithString:MMWebsiteString]];
 }
 
+- (IBAction)openWebsiteKaoriYa:(id)sender
+{
+    ASLogDebug(@"Open MacVim-KaoriYa website");
+    [[NSWorkspace sharedWorkspace] openURL:
+            [NSURL URLWithString:MMWebsiteKaoriYaString]];
+}
+
 - (IBAction)showVimHelp:(id)sender
 {
     ASLogDebug(@"Open window with Vim help");
@@ -1209,6 +1219,14 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
     // This action is called when the user clicks the "use ATSUI renderer"
     // button in the advanced preferences pane.
+    [self rebuildPreloadCache];
+}
+
+- (IBAction)inlineImButtonClicked:(id)sender
+{
+    ASLogDebug(@"Toggle inline IM option");
+    // This action is called when the user clicks the "use inline IM" button
+    // in the advanced preferences pane.
     [self rebuildPreloadCache];
 }
 

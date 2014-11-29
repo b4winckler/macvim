@@ -105,6 +105,10 @@ install:
 	if not exist $(INSTALLDIR) $(MKD) $(INSTALLDIR)
 	$(CP) $(LANGUAGE).mo $(INSTALLDIR)\$(PACKAGE).mo
 
+install-all: all
+	FOR %%l IN ($(LANGUAGES)) DO @IF NOT EXIST $(VIMRUNTIME)\lang\%%l\LC_MESSAGES $(MKD) $(VIMRUNTIME)\lang\%%l\LC_MESSAGES
+	FOR %%l IN ($(LANGUAGES)) DO @$(CP) %%l.mo $(VIMRUNTIME)\lang\%%l\LC_MESSAGES\$(PACKAGE).mo
+
 clean:
 	$(RM) *.mo
 	$(RM) *.pot
