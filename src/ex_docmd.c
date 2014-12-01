@@ -60,6 +60,7 @@ static char_u *get_user_command_name __ARGS((int idx));
 # define IS_USER_CMDIDX(idx) (FALSE)
 #endif
 
+static int compute_buffer_local_count __ARGS((int addr_type, int lnum, int local));
 #ifdef FEAT_EVAL
 static char_u	*do_one_cmd __ARGS((char_u **, int, struct condstack *, char_u *(*fgetline)(int, void *, int), void *cookie));
 #else
@@ -133,7 +134,7 @@ static int	getargopt __ARGS((exarg_T *eap));
 #endif
 
 static int	check_more __ARGS((int, int));
-static linenr_T get_address __ARGS((char_u **, int skip, int to_other_file));
+static linenr_T get_address __ARGS((char_u **, int addr_type, int skip, int to_other_file));
 static void	get_flags __ARGS((exarg_T *eap));
 #if !defined(FEAT_PERL) \
 	|| !defined(FEAT_PYTHON) || !defined(FEAT_PYTHON3) \
@@ -1687,6 +1688,102 @@ getline_cookie(fgetline, cookie)
 }
 #endif
 
+
+/*
+ * Helper function to apply an offset for buffer commands, i.e. ":bdelete",
+ * ":bwipeout", etc.
+ * Returns the buffer number.
+ */
+    static int
+compute_buffer_local_count(addr_type, lnum, offset)
+    int	    addr_type;
+    int	    lnum;
+    int	    offset;
+{
+    buf_T   *buf;
+    buf_T   *nextbuf;
+    int     count = offset;
+
+    buf = firstbuf;
+    while (buf->b_next != NULL && buf->b_fnum < lnum)
+	buf = buf->b_next;
+    while (count != 0)
+    {
+	count += (offset < 0) ? 1 : -1;
+	nextbuf = (offset < 0) ? buf->b_prev : buf->b_next;
+	if (nextbuf == NULL)
+	    break;
+	buf = nextbuf;
+	if (addr_type == ADDR_LOADED_BUFFERS)
+	    /* skip over unloaded buffers */
+	    while (buf->b_ml.ml_mfp == NULL)
+	    {
+		nextbuf = (offset < 0) ? buf->b_prev : buf->b_next;
+		if (nextbuf == NULL)
+		    break;
+		buf = nextbuf;
+	    }
+    }
+    /* we might have gone too far, last buffer is not loadedd */
+    if (addr_type == ADDR_LOADED_BUFFERS)
+	while (buf->b_ml.ml_mfp == NULL)
+	{
+	    nextbuf = (offset >= 0) ? buf->b_prev : buf->b_next;
+	    if (nextbuf == NULL)
+		break;
+	    buf = nextbuf;
+	}
+    return buf->b_fnum;
+}
+
+#ifdef FEAT_WINDOWS
+static int current_win_nr __ARGS((win_T *win));
+static int current_tab_nr __ARGS((tabpage_T *tab));
+
+    static int
+current_win_nr(win)
+    win_T	*win;
+{
+    win_T	*wp;
+    int		nr = 0;
+
+    for (wp = firstwin; wp != NULL; wp = wp->w_next)
+    {
+	++nr;
+	if (wp == win)
+	    break;
+    }
+    return nr;
+}
+
+    static int
+current_tab_nr(tab)
+    tabpage_T   *tab;
+{
+    tabpage_T	*tp;
+    int		nr = 0;
+
+    for (tp = first_tabpage; tp != NULL; tp = tp->tp_next)
+    {
+	++nr;
+	if (tp == tab)
+	    break;
+    }
+    return nr;
+}
+
+# define CURRENT_WIN_NR current_win_nr(curwin)
+# define LAST_WIN_NR current_win_nr(NULL)
+# define CURRENT_TAB_NR current_tab_nr(curtab)
+# define LAST_TAB_NR current_tab_nr(NULL)
+#else
+# define CURRENT_WIN_NR 1
+# define LAST_WIN_NR 1
+# define CURRENT_TAB_NR 1
+# define LAST_TAB_NR 1
+#endif
+
+
 /*
  * Execute one Ex command.
  *
@@ -1694,10 +1791,11 @@ getline_cookie(fgetline, cookie)
  *
  * 1. skip comment lines and leading space
  * 2. handle command modifiers
- * 3. parse range
- * 4. parse command
- * 5. parse arguments
- * 6. switch on command name
+ * 3. find the command
+ * 4. parse range
+ * 5. Parse the command.
+ * 6. parse arguments
+ * 7. switch on command name
  *
  * Note: "fgetline" can be NULL.
  *
@@ -1737,6 +1835,7 @@ do_one_cmd(cmdlinep, sourcing,
 #endif
     cmdmod_T		save_cmdmod;
     int			ni;			/* set when Not Implemented */
+    char_u		*cmd;
 
     vim_memset(&ea, 0, sizeof(ea));
     ea.line1 = 1;
@@ -1776,7 +1875,7 @@ do_one_cmd(cmdlinep, sourcing,
     for (;;)
     {
 /*
- * 1. skip comment lines and leading white space and colons
+ * 1. Skip comment lines and leading white space and colons.
  */
 	while (*ea.cmd == ' ' || *ea.cmd == '\t' || *ea.cmd == ':')
 	    ++ea.cmd;
@@ -1801,7 +1900,7 @@ do_one_cmd(cmdlinep, sourcing,
 	}
 
 /*
- * 2. handle command modifiers.
+ * 2. Handle command modifiers.
  */
 	p = ea.cmd;
 	if (VIM_ISDIGIT(*ea.cmd))
@@ -2010,7 +2109,18 @@ do_one_cmd(cmdlinep, sourcing,
 #endif
 
 /*
- * 3. parse a range specifier of the form: addr [,addr] [;addr] ..
+ * 3. Skip over the range to find the command.  Let "p" point to after it.
+ *
+ * We need the command to know what kind of range it uses.
+ */
+    cmd = ea.cmd;
+    ea.cmd = skip_range(ea.cmd, NULL);
+    if (*ea.cmd == '*' && vim_strchr(p_cpo, CPO_STAR) == NULL)
+	ea.cmd = skipwhite(ea.cmd + 1);
+    p = find_command(&ea, NULL);
+
+/*
+ * 4. parse a range specifier of the form: addr [,addr] [;addr] ..
  *
  * where 'addr' is:
  *
@@ -2026,28 +2136,94 @@ do_one_cmd(cmdlinep, sourcing,
  * is equal to the lower.
  */
 
+    if (ea.cmdidx != CMD_SIZE
+#ifdef FEAT_USR_CMDS
+	&& ea.cmdidx != CMD_USER
+#endif
+       )
+	ea.addr_type = cmdnames[(int)ea.cmdidx].cmd_addr_type;
+    else
+	ea.addr_type = ADDR_LINES;
+    ea.cmd = cmd;
+
     /* repeat for all ',' or ';' separated addresses */
     for (;;)
     {
 	ea.line1 = ea.line2;
-	ea.line2 = curwin->w_cursor.lnum;   /* default is current line number */
+	switch (ea.addr_type)
+	{
+	    case ADDR_LINES:
+		/* default is current line number */
+		ea.line2 = curwin->w_cursor.lnum;
+		break;
+	    case ADDR_WINDOWS:
+		lnum = CURRENT_WIN_NR;
+		ea.line2 = lnum;
+		break;
+	    case ADDR_ARGUMENTS:
+		ea.line2 = curwin->w_arg_idx + 1;
+		break;
+	    case ADDR_LOADED_BUFFERS:
+	    case ADDR_UNLOADED_BUFFERS:
+		ea.line2 = curbuf->b_fnum;
+		break;
+	    case ADDR_TABS:
+		lnum = CURRENT_TAB_NR;
+		ea.line2 = lnum;
+		break;
+	}
 	ea.cmd = skipwhite(ea.cmd);
-	lnum = get_address(&ea.cmd, ea.skip, ea.addr_count == 0);
+	lnum = get_address(&ea.cmd, ea.addr_type, ea.skip, ea.addr_count == 0);
 	if (ea.cmd == NULL)		    /* error detected */
 	    goto doend;
 	if (lnum == MAXLNUM)
 	{
 	    if (*ea.cmd == '%')		    /* '%' - all lines */
 	    {
+		buf_T	*buf;
 		++ea.cmd;
-		ea.line1 = 1;
-		ea.line2 = curbuf->b_ml.ml_line_count;
+		switch (ea.addr_type)
+		{
+		    case ADDR_LINES:
+			ea.line1 = 1;
+			ea.line2 = curbuf->b_ml.ml_line_count;
+			break;
+		    case ADDR_LOADED_BUFFERS:
+			buf = firstbuf;
+			while (buf->b_next != NULL && buf->b_ml.ml_mfp == NULL)
+			    buf = buf->b_next;
+			ea.line1 = buf->b_fnum;
+			buf = lastbuf;
+			while (buf->b_prev != NULL && buf->b_ml.ml_mfp == NULL)
+			    buf = buf->b_prev;
+			ea.line2 = buf->b_fnum;
+			break;
+		    case ADDR_UNLOADED_BUFFERS:
+			ea.line1 = firstbuf->b_fnum;
+			ea.line2 = lastbuf->b_fnum;
+			break;
+		    case ADDR_WINDOWS:
+		    case ADDR_TABS:
+			errormsg = (char_u *)_(e_invrange);
+			goto doend;
+			break;
+		    case ADDR_ARGUMENTS:
+			ea.line1 = 1;
+			ea.line2 = ARGCOUNT;
+			break;
+		}
 		++ea.addr_count;
 	    }
 					    /* '*' - visual area */
 	    else if (*ea.cmd == '*' && vim_strchr(p_cpo, CPO_STAR) == NULL)
 	    {
 		pos_T	    *fp;
+
+		if (ea.addr_type != ADDR_LINES)
+		{
+		    errormsg = (char_u *)_(e_invrange);
+		    goto doend;
+		}
 
 		++ea.cmd;
 		if (!ea.skip)
@@ -2091,7 +2267,7 @@ do_one_cmd(cmdlinep, sourcing,
     check_cursor_lnum();
 
 /*
- * 4. parse command
+ * 5. Parse the command.
  */
 
     /*
@@ -2105,8 +2281,8 @@ do_one_cmd(cmdlinep, sourcing,
      * If we got a line, but no command, then go to the line.
      * If we find a '|' or '\n' we set ea.nextcmd.
      */
-    if (*ea.cmd == NUL || *ea.cmd == '"' ||
-			       (ea.nextcmd = check_nextcmd(ea.cmd)) != NULL)
+    if (*ea.cmd == NUL || *ea.cmd == '"'
+			      || (ea.nextcmd = check_nextcmd(ea.cmd)) != NULL)
     {
 	/*
 	 * strange vi behaviour:
@@ -2151,9 +2327,6 @@ do_one_cmd(cmdlinep, sourcing,
 	}
 	goto doend;
     }
-
-    /* Find the command and let "p" point to after it. */
-    p = find_command(&ea, NULL);
 
 #ifdef FEAT_AUTOCMD
     /* If this looks like an undefined user command and there are CmdUndefined
@@ -2236,7 +2409,7 @@ do_one_cmd(cmdlinep, sourcing,
 	ea.forceit = FALSE;
 
 /*
- * 5. parse arguments
+ * 6. Parse arguments.
  */
     if (!IS_USER_CMDIDX(ea.cmdidx))
 	ea.argt = (long)cmdnames[(int)ea.cmdidx].cmd_argt;
@@ -2683,7 +2856,7 @@ do_one_cmd(cmdlinep, sourcing,
 #endif
 
 /*
- * 6. switch on command name
+ * 7. Switch on command name.
  *
  * The "ea" structure holds the arguments that can be used.
  */
@@ -3220,7 +3393,7 @@ set_one_cmd_context(xp, buff)
     ea.argt = 0;
 
 /*
- * 2. skip comment lines and leading space, colons or bars
+ * 1. skip comment lines and leading space, colons or bars
  */
     for (cmd = buff; vim_strchr((char_u *)" \t:|", *cmd) != NULL; cmd++)
 	;
@@ -3235,13 +3408,9 @@ set_one_cmd_context(xp, buff)
     }
 
 /*
- * 3. parse a range specifier of the form: addr [,addr] [;addr] ..
+ * 3. Skip over the range to find the command.
  */
     cmd = skip_range(cmd, &xp->xp_context);
-
-/*
- * 4. parse command
- */
     xp->xp_pattern = cmd;
     if (*cmd == NUL)
 	return NULL;
@@ -3347,7 +3516,7 @@ set_one_cmd_context(xp, buff)
     }
 
 /*
- * 5. parse arguments
+ * 6. parse arguments
  */
     if (!IS_USER_CMDIDX(ea.cmdidx))
 	ea.argt = (long)cmdnames[(int)ea.cmdidx].cmd_argt;
@@ -3583,7 +3752,7 @@ set_one_cmd_context(xp, buff)
     }
 
 /*
- * 6. switch on command name
+ * 6. Switch on command name.
  */
     switch (ea.cmdidx)
     {
@@ -4099,8 +4268,9 @@ skip_range(cmd, ctx)
  * Return MAXLNUM when no Ex address was found.
  */
     static linenr_T
-get_address(ptr, skip, to_other_file)
+get_address(ptr, addr_type, skip, to_other_file)
     char_u	**ptr;
+    int		addr_type;  /* flag: one of ADDR_LINES, ... */
     int		skip;	    /* only skip the address, don't use it */
     int		to_other_file;  /* flag: may jump to other file */
 {
@@ -4119,137 +4289,188 @@ get_address(ptr, skip, to_other_file)
 	switch (*cmd)
 	{
 	    case '.':			    /* '.' - Cursor position */
-			++cmd;
+		++cmd;
+		switch (addr_type)
+		{
+		    case ADDR_LINES:
 			lnum = curwin->w_cursor.lnum;
 			break;
+		    case ADDR_WINDOWS:
+			lnum = CURRENT_WIN_NR;
+			break;
+		    case ADDR_ARGUMENTS:
+			lnum = curwin->w_arg_idx + 1;
+			break;
+		    case ADDR_LOADED_BUFFERS:
+		    case ADDR_UNLOADED_BUFFERS:
+			lnum = curbuf->b_fnum;
+			break;
+		    case ADDR_TABS:
+			lnum = CURRENT_TAB_NR;
+			break;
+		}
+		break;
 
 	    case '$':			    /* '$' - last line */
-			++cmd;
+		++cmd;
+		switch (addr_type)
+		{
+		    case ADDR_LINES:
 			lnum = curbuf->b_ml.ml_line_count;
 			break;
+		    case ADDR_WINDOWS:
+			lnum = LAST_WIN_NR;
+			break;
+		    case ADDR_ARGUMENTS:
+			lnum = ARGCOUNT;
+			break;
+		    case ADDR_LOADED_BUFFERS:
+		    case ADDR_UNLOADED_BUFFERS:
+			lnum = lastbuf->b_fnum;
+			break;
+		    case ADDR_TABS:
+			lnum = LAST_TAB_NR;
+			break;
+		}
+		break;
 
 	    case '\'':			    /* ''' - mark */
-			if (*++cmd == NUL)
+		if (*++cmd == NUL)
+		{
+		    cmd = NULL;
+		    goto error;
+		}
+		if (addr_type != ADDR_LINES)
+		{
+		    EMSG(_(e_invaddr));
+		    goto error;
+		}
+		if (skip)
+		    ++cmd;
+		else
+		{
+		    /* Only accept a mark in another file when it is
+		     * used by itself: ":'M". */
+		    fp = getmark(*cmd, to_other_file && cmd[1] == NUL);
+		    ++cmd;
+		    if (fp == (pos_T *)-1)
+			/* Jumped to another file. */
+			lnum = curwin->w_cursor.lnum;
+		    else
+		    {
+			if (check_mark(fp) == FAIL)
 			{
 			    cmd = NULL;
 			    goto error;
 			}
-			if (skip)
-			    ++cmd;
-			else
-			{
-			    /* Only accept a mark in another file when it is
-			     * used by itself: ":'M". */
-			    fp = getmark(*cmd, to_other_file && cmd[1] == NUL);
-			    ++cmd;
-			    if (fp == (pos_T *)-1)
-				/* Jumped to another file. */
-				lnum = curwin->w_cursor.lnum;
-			    else
-			    {
-				if (check_mark(fp) == FAIL)
-				{
-				    cmd = NULL;
-				    goto error;
-				}
-				lnum = fp->lnum;
-			    }
-			}
-			break;
+			lnum = fp->lnum;
+		    }
+		}
+		break;
 
 	    case '/':
 	    case '?':			/* '/' or '?' - search */
-			c = *cmd++;
-			if (skip)	/* skip "/pat/" */
-			{
-			    cmd = skip_regexp(cmd, c, (int)p_magic, NULL);
-			    if (*cmd == c)
-				++cmd;
-			}
-			else
-			{
-			    pos = curwin->w_cursor; /* save curwin->w_cursor */
-			    /*
-			     * When '/' or '?' follows another address, start
-			     * from there.
-			     */
-			    if (lnum != MAXLNUM)
-				curwin->w_cursor.lnum = lnum;
-			    /*
-			     * Start a forward search at the end of the line.
-			     * Start a backward search at the start of the line.
-			     * This makes sure we never match in the current
-			     * line, and can match anywhere in the
-			     * next/previous line.
-			     */
-			    if (c == '/')
-				curwin->w_cursor.col = MAXCOL;
-			    else
-				curwin->w_cursor.col = 0;
-			    searchcmdlen = 0;
-			    if (!do_search(NULL, c, cmd, 1L,
-					       SEARCH_HIS | SEARCH_MSG, NULL))
-			    {
-				curwin->w_cursor = pos;
-				cmd = NULL;
-				goto error;
-			    }
-			    lnum = curwin->w_cursor.lnum;
-			    curwin->w_cursor = pos;
-			    /* adjust command string pointer */
-			    cmd += searchcmdlen;
-			}
-			break;
+		c = *cmd++;
+		if (addr_type != ADDR_LINES)
+		{
+		    EMSG(_(e_invaddr));
+		    goto error;
+		}
+		if (skip)	/* skip "/pat/" */
+		{
+		    cmd = skip_regexp(cmd, c, (int)p_magic, NULL);
+		    if (*cmd == c)
+			++cmd;
+		}
+		else
+		{
+		    pos = curwin->w_cursor; /* save curwin->w_cursor */
+		    /*
+		     * When '/' or '?' follows another address, start
+		     * from there.
+		     */
+		    if (lnum != MAXLNUM)
+			curwin->w_cursor.lnum = lnum;
+		    /*
+		     * Start a forward search at the end of the line.
+		     * Start a backward search at the start of the line.
+		     * This makes sure we never match in the current
+		     * line, and can match anywhere in the
+		     * next/previous line.
+		     */
+		    if (c == '/')
+			curwin->w_cursor.col = MAXCOL;
+		    else
+			curwin->w_cursor.col = 0;
+		    searchcmdlen = 0;
+		    if (!do_search(NULL, c, cmd, 1L,
+				       SEARCH_HIS | SEARCH_MSG, NULL))
+		    {
+			curwin->w_cursor = pos;
+			cmd = NULL;
+			goto error;
+		    }
+		    lnum = curwin->w_cursor.lnum;
+		    curwin->w_cursor = pos;
+		    /* adjust command string pointer */
+		    cmd += searchcmdlen;
+		}
+		break;
 
 	    case '\\':		    /* "\?", "\/" or "\&", repeat search */
-			++cmd;
-			if (*cmd == '&')
-			    i = RE_SUBST;
-			else if (*cmd == '?' || *cmd == '/')
-			    i = RE_SEARCH;
-			else
-			{
-			    EMSG(_(e_backslash));
-			    cmd = NULL;
-			    goto error;
-			}
+		++cmd;
+		if (addr_type != ADDR_LINES)
+		{
+		    EMSG(_(e_invaddr));
+		    goto error;
+		}
+		if (*cmd == '&')
+		    i = RE_SUBST;
+		else if (*cmd == '?' || *cmd == '/')
+		    i = RE_SEARCH;
+		else
+		{
+		    EMSG(_(e_backslash));
+		    cmd = NULL;
+		    goto error;
+		}
 
-			if (!skip)
-			{
-			    /*
-			     * When search follows another address, start from
-			     * there.
-			     */
-			    if (lnum != MAXLNUM)
-				pos.lnum = lnum;
-			    else
-				pos.lnum = curwin->w_cursor.lnum;
+		if (!skip)
+		{
+		    /*
+		     * When search follows another address, start from
+		     * there.
+		     */
+		    if (lnum != MAXLNUM)
+			pos.lnum = lnum;
+		    else
+			pos.lnum = curwin->w_cursor.lnum;
 
-			    /*
-			     * Start the search just like for the above
-			     * do_search().
-			     */
-			    if (*cmd != '?')
-				pos.col = MAXCOL;
-			    else
-				pos.col = 0;
-			    if (searchit(curwin, curbuf, &pos,
-					*cmd == '?' ? BACKWARD : FORWARD,
-					(char_u *)"", 1L, SEARCH_MSG,
-						i, (linenr_T)0, NULL) != FAIL)
-				lnum = pos.lnum;
-			    else
-			    {
-				cmd = NULL;
-				goto error;
-			    }
-			}
-			++cmd;
-			break;
+		    /*
+		     * Start the search just like for the above
+		     * do_search().
+		     */
+		    if (*cmd != '?')
+			pos.col = MAXCOL;
+		    else
+			pos.col = 0;
+		    if (searchit(curwin, curbuf, &pos,
+				*cmd == '?' ? BACKWARD : FORWARD,
+				(char_u *)"", 1L, SEARCH_MSG,
+					i, (linenr_T)0, NULL) != FAIL)
+			lnum = pos.lnum;
+		    else
+		    {
+			cmd = NULL;
+			goto error;
+		    }
+		}
+		++cmd;
+		break;
 
 	    default:
-			if (VIM_ISDIGIT(*cmd))	/* absolute line number */
-			    lnum = getdigits(&cmd);
+		if (VIM_ISDIGIT(*cmd))	/* absolute line number */
+		    lnum = getdigits(&cmd);
 	}
 
 	for (;;)
@@ -4259,7 +4480,29 @@ get_address(ptr, skip, to_other_file)
 		break;
 
 	    if (lnum == MAXLNUM)
-		lnum = curwin->w_cursor.lnum;	/* "+1" is same as ".+1" */
+	    {
+		switch (addr_type)
+		{
+		    case ADDR_LINES:
+			/* "+1" is same as ".+1" */
+			lnum = curwin->w_cursor.lnum;
+			break;
+		    case ADDR_WINDOWS:
+			lnum = CURRENT_WIN_NR;
+			break;
+		    case ADDR_ARGUMENTS:
+			lnum = curwin->w_arg_idx + 1;
+			break;
+		    case ADDR_LOADED_BUFFERS:
+		    case ADDR_UNLOADED_BUFFERS:
+			lnum = curbuf->b_fnum;
+			break;
+		    case ADDR_TABS:
+			lnum = CURRENT_TAB_NR;
+			break;
+		}
+	    }
+
 	    if (VIM_ISDIGIT(*cmd))
 		i = '+';		/* "number" is same as "+number" */
 	    else
@@ -4268,10 +4511,53 @@ get_address(ptr, skip, to_other_file)
 		n = 1;
 	    else
 		n = getdigits(&cmd);
-	    if (i == '-')
+	    if (addr_type == ADDR_LOADED_BUFFERS
+		    || addr_type == ADDR_UNLOADED_BUFFERS)
+		lnum = compute_buffer_local_count(addr_type, lnum, (i == '-') ? -1 * n : n);
+	    else if (i == '-')
 		lnum -= n;
 	    else
 		lnum += n;
+
+	    switch (addr_type)
+	    {
+		case ADDR_LINES:
+		    break;
+		case ADDR_ARGUMENTS:
+		    if (lnum < 0)
+			lnum = 0;
+		    else if (lnum >= ARGCOUNT)
+			lnum = ARGCOUNT;
+		    break;
+		case ADDR_TABS:
+		    if (lnum < 0)
+		    {
+			lnum = 0;
+			break;
+		    }
+		    if (lnum >= LAST_TAB_NR)
+			lnum = LAST_TAB_NR;
+		    break;
+		case ADDR_WINDOWS:
+		    if (lnum < 0)
+		    {
+			lnum = 0;
+			break;
+		    }
+		    if (lnum >= LAST_WIN_NR)
+			lnum = LAST_WIN_NR;
+		    break;
+		case ADDR_LOADED_BUFFERS:
+		case ADDR_UNLOADED_BUFFERS:
+		    if (lnum < firstbuf->b_fnum)
+		    {
+			lnum = firstbuf->b_fnum;
+			break;
+		    }
+		    if (lnum > lastbuf->b_fnum)
+			lnum = lastbuf->b_fnum;
+		    break;
+	    }
 	}
     } while (*cmd == '/' || *cmd == '?');
 
@@ -6567,12 +6853,16 @@ not_exiting()
 }
 
 /*
- * ":quit": quit current window, quit Vim if closed the last window.
+ * ":quit": quit current window, quit Vim if the last window is closed.
  */
     static void
 ex_quit(eap)
     exarg_T	*eap;
 {
+#if defined(FEAT_WINDOWS) || defined(FEAT_AUTOCMD)
+    win_T	*wp;
+#endif
+
 #ifdef FEAT_CMDWIN
     if (cmdwin_type != 0)
     {
@@ -6586,11 +6876,27 @@ ex_quit(eap)
 	text_locked_msg();
 	return;
     }
+#ifdef FEAT_WINDOWS
+    if (eap->addr_count > 0)
+    {
+	int	wnr = eap->line2;
+
+	for (wp = firstwin; wp->w_next != NULL; wp = wp->w_next)
+	    if (--wnr <= 0)
+		break;
+    }
+    else
+#endif
+#if defined(FEAT_WINDOWS) || defined(FEAT_AUTOCMD)
+	wp = curwin;
+#endif
+
 #ifdef FEAT_AUTOCMD
     apply_autocmds(EVENT_QUITPRE, NULL, NULL, FALSE, curbuf);
     /* Refuse to quit when locked or when the buffer in the last window is
      * being closed (can only happen in autocommands). */
-    if (curbuf_locked() || (curbuf->b_nwindows == 1 && curbuf->b_closing))
+    if (curbuf_locked() || (wp->w_buffer->b_nwindows == 1
+						  && wp->w_buffer->b_closing))
 	return;
 #endif
 
@@ -6623,7 +6929,7 @@ ex_quit(eap)
 	need_mouse_correct = TRUE;
 # endif
 	/* close window; may free buffer */
-	win_close(curwin, !P_HID(curwin->w_buffer) || eap->forceit);
+	win_close(wp, !P_HID(wp->w_buffer) || eap->forceit);
 #endif
     }
 }
@@ -6685,6 +6991,8 @@ ex_quit_all(eap)
 ex_close(eap)
     exarg_T	*eap;
 {
+    win_T	*win;
+    int		winnr = 0;
 # ifdef FEAT_CMDWIN
     if (cmdwin_type != 0)
 	cmdwin_result = Ctrl_C;
@@ -6695,7 +7003,21 @@ ex_close(eap)
 		&& !curbuf_locked()
 #endif
 		)
-	    ex_win_close(eap->forceit, curwin, NULL);
+	{
+	    if (eap->addr_count == 0)
+		ex_win_close(eap->forceit, curwin, NULL);
+	    else {
+		for (win = firstwin; win != NULL; win = win->w_next)
+		{
+		    winnr++;
+		    if (winnr == eap->line2)
+			break;
+		}
+		if (win == NULL)
+		    win = lastwin;
+		ex_win_close(eap->forceit, win, NULL);
+	    }
+	}
 }
 
 # ifdef FEAT_QUICKFIX
@@ -6821,6 +7143,8 @@ ex_tabonly(eap)
 	    MSG(_("Already only one tab page"));
 	else
 	{
+	    if (eap->addr_count > 0)
+		goto_tabpage(eap->line2);
 	    /* Repeat this up to a 1000 times, because autocommands may mess
 	     * up the lists. */
 	    for (done = 0; done < 1000; ++done)
@@ -6899,9 +7223,23 @@ tabpage_close_other(tp, forceit)
 ex_only(eap)
     exarg_T	*eap;
 {
+    win_T   *wp;
+    int	    wnr;
 # ifdef FEAT_GUI
     need_mouse_correct = TRUE;
 # endif
+    if (eap->addr_count > 0)
+    {
+	wnr = eap->line2;
+	for (wp = firstwin; --wnr > 0; )
+	{
+	    if (wp->w_next == NULL)
+		break;
+	    else
+		wp = wp->w_next;
+	}
+	win_goto(wp);
+    }
     close_others(TRUE, eap->forceit);
 }
 
@@ -6935,7 +7273,23 @@ ex_hide(eap)
 # ifdef FEAT_GUI
 	    need_mouse_correct = TRUE;
 # endif
-	    win_close(curwin, FALSE);	/* don't free buffer */
+	    if (eap->addr_count == 0)
+		win_close(curwin, FALSE);	/* don't free buffer */
+	    else
+	    {
+		int	winnr = 0;
+		win_T	*win;
+
+		for (win = firstwin; win != NULL; win = win->w_next)
+		{
+		    winnr++;
+		    if (winnr == eap->line2)
+			break;
+		}
+		if (win == NULL)
+		    win = lastwin;
+		win_close(win, FALSE);
+	    }
 	}
 #endif
     }
@@ -8671,7 +9025,7 @@ ex_copymove(eap)
 {
     long	n;
 
-    n = get_address(&eap->arg, FALSE, FALSE);
+    n = get_address(&eap->arg, eap->addr_type, FALSE, FALSE);
     if (eap->arg == NULL)	    /* error detected */
     {
 	eap->nextcmd = NULL;
