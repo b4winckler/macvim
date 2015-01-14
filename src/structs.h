@@ -1805,6 +1805,7 @@ struct file_buffer
     cryptstate_T *b_cryptstate;	/* Encryption state while reading or writing
 				 * the file. NULL when not using encryption. */
 #endif
+    int		b_mapped_ctrl_c; /* modes where CTRL-C is mapped */
 
 #ifdef FEAT_ODB_EDITOR
     uint32_t    b_odb_server_id;    /* FourCC of the ODB server (0 if none) */
