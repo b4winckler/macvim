@@ -1609,7 +1609,7 @@ x_IOerror_handler(dpy)
 /*
  * If the X11 connection was lost try to restore it.
  * Helps when the X11 server was stopped and restarted while Vim was inactive
- * (e.g. though tmux).
+ * (e.g. through tmux).
  */
     static void
 may_restore_clipboard()
@@ -1617,6 +1617,17 @@ may_restore_clipboard()
     if (xterm_dpy_was_reset)
     {
 	xterm_dpy_was_reset = FALSE;
+
+# ifndef LESSTIF_VERSION
+	/* This has been reported to avoid Vim getting stuck. */
+	if (app_context != (XtAppContext)NULL)
+	{
+	    XtDestroyApplicationContext(app_context);
+	    app_context = (XtAppContext)NULL;
+	    x11_display = NULL; /* freed by XtDestroyApplicationContext() */
+	}
+# endif
+
 	setup_term_clip();
 	get_x11_title(FALSE);
     }

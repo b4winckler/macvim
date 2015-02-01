@@ -1,4 +1,4 @@
-*eval.txt*	For Vim version 7.4.  Last change: 2014 Nov 27
+*eval.txt*	For Vim version 7.4.  Last change: 2015 Jan 27
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -956,7 +956,7 @@ Decimal, Hexadecimal (starting with 0x or 0X), or Octal (starting with 0).
 Floating point numbers can be written in two forms:
 
 	[-+]{N}.{M}
-	[-+]{N}.{M}e[-+]{exp}
+	[-+]{N}.{M}[eE][-+]{exp}
 
 {N} and {M} are numbers.  Both {N} and {M} must be present and can only
 contain digits.
@@ -2395,6 +2395,10 @@ col({expr})	The result is a Number, which is the byte index of the column
 			    number of bytes in the cursor line plus one)
 		    'x	    position of mark x (if the mark is not set, 0 is
 			    returned)
+		    v       In Visual mode: the start of the Visual area (the
+			    cursor is the end).  When not in Visual mode
+			    returns the cursor position.  Differs from |'<| in
+			    that it's updated right away.
 		Additionally {expr} can be [lnum, col]: a |List| with the line
 		and column number. Most useful when the column is "$", to get
 		the last column of a specific line.  When "lnum" or "col" is
@@ -2961,9 +2965,12 @@ extend({expr1}, {expr2} [, {expr3}])			*extend()*
 
 feedkeys({string} [, {mode}])				*feedkeys()*
 		Characters in {string} are queued for processing as if they
-		come from a mapping or were typed by the user.	They are added
-		to the end of the typeahead buffer, thus if a mapping is still
-		being executed these characters come after them.
+		come from a mapping or were typed by the user.
+		By default the string is added to the end of the typeahead
+		buffer, thus if a mapping is still being executed the
+		characters come after them.  Use the 'i' flag to insert before
+		other characters, they will be executed next, before any
+		characters from a mapping.
 		The function does not wait for processing of keys contained in
 		{string}.
 		To include special keys into {string}, use double-quotes
@@ -2977,6 +2984,7 @@ feedkeys({string} [, {mode}])				*feedkeys()*
 		't'	Handle keys as if typed; otherwise they are handled as
 			if coming from a mapping.  This matters for undo,
 			opening folds, etc.
+		'i'	Insert the string instead of appending (see above).
 		Return value is always 0.
 
 filereadable({file})					*filereadable()*
@@ -6418,6 +6426,10 @@ virtcol({expr})						*virtcol()*
 			    plus one)
 		    'x	    position of mark x (if the mark is not set, 0 is
 			    returned)
+		    v       In Visual mode: the start of the Visual area (the
+			    cursor is the end).  When not in Visual mode
+			    returns the cursor position.  Differs from |'<| in
+			    that it's updated right away.
 		Note that only marks in the current file can be used.
 		Examples: >
   virtcol(".")	   with text "foo^Lbar", with cursor on the "^L", returns 5
@@ -7367,7 +7379,7 @@ This does NOT work: >
 				:unlet v
 <							*E741*
 			If you try to change a locked variable you get an
-			error message: "E741: Value of {name} is locked"
+			error message: "E741: Value is locked: {name}"
 
 			[depth] is relevant when locking a |List| or
 			|Dictionary|.  It specifies how deep the locking goes:

@@ -1,4 +1,4 @@
-*options.txt*	For Vim version 7.4.  Last change: 2014 Nov 05
+*options.txt*	For Vim version 7.4.  Last change: 2014 Dec 17
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -59,9 +59,7 @@ achieve special effects.  These options come in three forms:
 :se[t] {option}:{value}
 			Set string or number option to {value}.
 			For numeric options the value can be given in decimal,
-			hex (preceded with 0x) or octal (preceded with '0')
-			(hex and octal are only available for machines which
-			have the strtol() function).
+ 			hex (preceded with 0x) or octal (preceded with '0').
 			The old value can be inserted by typing 'wildchar' (by
 			default this is a <Tab> or CTRL-E if 'compatible' is
 			set).  See |cmdline-completion|.
@@ -735,8 +733,6 @@ A jump table for the options with a short description can be found at |Q_op|.
 	open a file, switch buffers, delete a buffer or open/close a window.
 	It will change to the directory containing the file which was opened
 	or selected.
-	This option is provided for backward compatibility with the Vim
-	released with Sun ONE Studio 4 Enterprise Edition.
 	Note: When this option is on some plugins may not work.
 
 				*'arabic'* *'arab'* *'noarabic'* *'noarab'*

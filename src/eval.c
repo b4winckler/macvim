@@ -6007,6 +6007,7 @@ list_free(l, recurse)
 
 /*
  * Allocate a list item.
+ * It is not initialized, don't forget to set v_lock.
  */
     listitem_T *
 listitem_alloc()
@@ -7868,7 +7869,7 @@ get_env_tv(arg, rettv, evaluate)
     if (evaluate)
     {
 	if (len == 0)
-           return FAIL; /* can't be an environment variable */
+	    return FAIL; /* invalid empty name */
 
 	cc = name[len];
 	name[len] = NUL;
@@ -10118,14 +10119,18 @@ f_eval(argvars, rettv)
     typval_T	*argvars;
     typval_T	*rettv;
 {
-    char_u	*s;
+    char_u	*s, *p;
 
     s = get_tv_string_chk(&argvars[0]);
     if (s != NULL)
 	s = skipwhite(s);
 
+    p = s;
     if (s == NULL || eval1(&s, rettv, TRUE) == FAIL)
     {
+	if (p != NULL && !aborting())
+	    EMSG2(_(e_invexpr2), p);
+	need_clr_eos = FALSE;
 	rettv->v_type = VAR_NUMBER;
 	rettv->vval.v_number = 0;
     }
@@ -10496,6 +10501,7 @@ f_feedkeys(argvars, rettv)
     typval_T    *rettv UNUSED;
 {
     int		remap = TRUE;
+    int		insert = FALSE;
     char_u	*keys, *flags;
     char_u	nbuf[NUMBUFLEN];
     int		typed = FALSE;
@@ -10520,6 +10526,7 @@ f_feedkeys(argvars, rettv)
 		    case 'n': remap = FALSE; break;
 		    case 'm': remap = TRUE; break;
 		    case 't': typed = TRUE; break;
+		    case 'i': insert = TRUE; break;
 		}
 	    }
 	}
@@ -10530,7 +10537,7 @@ f_feedkeys(argvars, rettv)
 	if (keys_esc != NULL)
 	{
 	    ins_typebuf(keys_esc, (remap ? REMAP_YES : REMAP_NONE),
-					       typebuf.tb_len, !typed, FALSE);
+				  insert ? 0 : typebuf.tb_len, !typed, FALSE);
 	    vim_free(keys_esc);
 	    if (vgetc_busy)
 		typebuf_was_filled = TRUE;
@@ -11945,7 +11952,8 @@ getpos_both(argvars, rettv, getcurpos)
 #endif
 							      (varnumber_T)0);
 	if (getcurpos)
-	    list_append_number(l, (varnumber_T)curwin->w_curswant + 1);
+	    list_append_number(l, curwin->w_curswant == MAXCOL ?
+		    (varnumber_T)MAXCOL : (varnumber_T)curwin->w_curswant + 1);
     }
     else
 	rettv->vval.v_number = FALSE;
@@ -18736,6 +18744,7 @@ get_cmd_output_as_rettv(argvars, rettv, retlist)
 		goto errret;
 	    }
 	    li->li_tv.v_type = VAR_STRING;
+	    li->li_tv.v_lock = 0;
 	    li->li_tv.vval.v_string = s;
 	    list_append(list, li);
 	}

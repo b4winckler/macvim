@@ -109,6 +109,7 @@ static match_T search_hl;	/* used for 'hlsearch' highlight matching */
 
 #ifdef FEAT_FOLDING
 static foldinfo_T win_foldinfo;	/* info for 'foldcolumn' */
+static int compute_foldcolumn __ARGS((win_T *wp, int col));
 #endif
 
 /*
@@ -1202,7 +1203,7 @@ win_update(wp)
 			lnumb = wp->w_lines[i].wl_lnum;
 			/* When there is a fold column it might need updating
 			 * in the next line ("J" just above an open fold). */
-			if (wp->w_p_fdc > 0)
+			if (compute_foldcolumn(wp, 0) > 0)
 			    ++lnumb;
 		    }
 		}
@@ -2238,13 +2239,16 @@ win_draw_end(wp, c1, c2, row, endrow, hl)
 #else
 # define FDC_OFF 0
 #endif
+#ifdef FEAT_FOLDING
+    int		fdc = compute_foldcolumn(wp, 0);
+#endif
 
 #ifdef FEAT_RIGHTLEFT
     if (wp->w_p_rl)
     {
 	/* No check for cmdline window: should never be right-left. */
 # ifdef FEAT_FOLDING
-	n = wp->w_p_fdc;
+	n = fdc;
 
 	if (n > 0)
 	{
@@ -2293,9 +2297,9 @@ win_draw_end(wp, c1, c2, row, endrow, hl)
 	}
 #endif
 #ifdef FEAT_FOLDING
-	if (wp->w_p_fdc > 0)
+	if (fdc > 0)
 	{
-	    int	    nn = n + wp->w_p_fdc;
+	    int	    nn = n + fdc;
 
 	    /* draw the fold column at the left */
 	    if (nn > W_WIDTH(wp))
@@ -2345,6 +2349,24 @@ advance_color_col(vcol, color_cols)
 #endif
 
 #ifdef FEAT_FOLDING
+/*
+ * Compute the width of the foldcolumn.  Based on 'foldcolumn' and how much
+ * space is available for window "wp", minus "col".
+ */
+    static int
+compute_foldcolumn(wp, col)
+    win_T *wp;
+    int   col;
+{
+    int fdc = wp->w_p_fdc;
+    int wmw = wp == curwin && p_wmw == 0 ? 1 : p_wmw;
+    int wwidth = W_WIDTH(wp);
+
+    if (fdc > wwidth - (col + wmw))
+	fdc = wwidth - (col + wmw);
+    return fdc;
+}
+
 /*
  * Display one folded line.
  */
@@ -2396,10 +2418,9 @@ fold_line(wp, fold_count, foldinfo, lnum, row)
 
     /*
      * 2. Add the 'foldcolumn'
+     *    Reduce the width when there is not enough space.
      */
-    fdc = wp->w_p_fdc;
-    if (fdc > W_WIDTH(wp) - col)
-	fdc = W_WIDTH(wp) - col;
+    fdc = compute_foldcolumn(wp, col);
     if (fdc > 0)
     {
 	fill_foldcolumn(buf, wp, TRUE, lnum);
@@ -2787,23 +2808,24 @@ fill_foldcolumn(p, wp, closed, lnum)
     int		level;
     int		first_level;
     int		empty;
+    int		fdc = compute_foldcolumn(wp, 0);
 
     /* Init to all spaces. */
-    copy_spaces(p, (size_t)wp->w_p_fdc);
+    copy_spaces(p, (size_t)fdc);
 
     level = win_foldinfo.fi_level;
     if (level > 0)
     {
 	/* If there is only one column put more info in it. */
-	empty = (wp->w_p_fdc == 1) ? 0 : 1;
+	empty = (fdc == 1) ? 0 : 1;
 
 	/* If the column is too narrow, we start at the lowest level that
 	 * fits and use numbers to indicated the depth. */
-	first_level = level - wp->w_p_fdc - closed + 1 + empty;
+	first_level = level - fdc - closed + 1 + empty;
 	if (first_level < 1)
 	    first_level = 1;
 
-	for (i = 0; i + empty < wp->w_p_fdc; ++i)
+	for (i = 0; i + empty < fdc; ++i)
 	{
 	    if (win_foldinfo.fi_lnum == lnum
 			      && first_level + i >= win_foldinfo.fi_low_level)
@@ -2819,7 +2841,7 @@ fill_foldcolumn(p, wp, closed, lnum)
 	}
     }
     if (closed)
-	p[i >= wp->w_p_fdc ? i - 1 : i] = '+';
+	p[i >= fdc ? i - 1 : i] = '+';
 }
 #endif /* FEAT_FOLDING */
 
@@ -2842,6 +2864,9 @@ win_line(wp, lnum, startrow, endrow, nochange)
     unsigned	off;			/* offset in ScreenLines/ScreenAttrs */
     int		c = 0;			/* init for GCC */
     long	vcol = 0;		/* virtual column (for tabs) */
+#ifdef FEAT_LINEBREAK
+    long	vcol_sbr = -1;		/* virtual column after showbreak */
+#endif
     long	vcol_prev = -1;		/* "vcol" of previous character */
     char_u	*line;			/* current line */
     char_u	*ptr;			/* current position in "line" */
@@ -3000,6 +3025,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 					   wrapping */
     int		vcol_off	= 0;	/* offset for concealed characters */
     int		did_wcol	= FALSE;
+    int		old_boguscols   = 0;
 # define VCOL_HLC (vcol - vcol_off)
 # define FIX_FOR_BOGUSCOLS \
     { \
@@ -3007,6 +3033,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 	vcol -= vcol_off; \
 	vcol_off = 0; \
 	col -= boguscols; \
+	old_boguscols = boguscols; \
 	boguscols = 0; \
     }
 #else
@@ -3551,12 +3578,14 @@ win_line(wp, lnum, startrow, endrow, nochange)
 #ifdef FEAT_FOLDING
 	    if (draw_state == WL_FOLD - 1 && n_extra == 0)
 	    {
+		int fdc = compute_foldcolumn(wp, 0);
+
 		draw_state = WL_FOLD;
-		if (wp->w_p_fdc > 0)
+		if (fdc > 0)
 		{
 		    /* Draw the 'foldcolumn'. */
 		    fill_foldcolumn(extra, wp, FALSE, lnum);
-		    n_extra = wp->w_p_fdc;
+		    n_extra = fdc;
 		    p_extra = extra;
 		    p_extra[n_extra] = NUL;
 		    c_extra = NUL;
@@ -3759,6 +3788,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 		    n_extra = (int)STRLEN(p_sbr);
 		    char_attr = hl_attr(HLF_AT);
 		    need_showbreak = FALSE;
+		    vcol_sbr = vcol + MB_CHARLEN(p_sbr);
 		    /* Correct end of highlighted area for 'showbreak',
 		     * required when 'linebreak' is also set. */
 		    if (tocol == vcol)
@@ -4516,9 +4546,17 @@ win_line(wp, lnum, startrow, endrow, nochange)
 		if (c == TAB && (!wp->w_p_list || lcs_tab1))
 		{
 		    int tab_len = 0;
+		    long vcol_adjusted = vcol; /* removed showbreak length */
+#ifdef FEAT_LINEBREAK
+		    /* only adjust the tab_len, when at the first column
+		     * after the showbreak value was drawn */
+		    if (*p_sbr != NUL && vcol == vcol_sbr && wp->w_p_wrap)
+			vcol_adjusted = vcol - MB_CHARLEN(p_sbr);
+#endif
 		    /* tab amount depends on current column */
 		    tab_len = (int)wp->w_buffer->b_p_ts
-					- vcol % (int)wp->w_buffer->b_p_ts - 1;
+					- vcol_adjusted % (int)wp->w_buffer->b_p_ts - 1;
+
 #ifdef FEAT_LINEBREAK
 		    if (!wp->w_p_lbr || !wp->w_p_list)
 #endif
@@ -4533,10 +4571,16 @@ win_line(wp, lnum, startrow, endrow, nochange)
 			int	saved_nextra = n_extra;
 
 #ifdef FEAT_CONCEAL
-			if (is_concealing && vcol_off > 0)
+			if ((is_concealing || boguscols > 0) && vcol_off > 0)
 			    /* there are characters to conceal */
 			    tab_len += vcol_off;
+			/* boguscols before FIX_FOR_BOGUSCOLS macro from above
+			 */
+			if (wp->w_p_list && lcs_tab1 && old_boguscols > 0
+							 && n_extra > tab_len)
+			    tab_len += n_extra - tab_len;
 #endif
+
 			/* if n_extra > 0, it gives the number of chars, to
 			 * use for a tab, else we need to calculate the width
 			 * for a tab */
@@ -4565,7 +4609,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 #ifdef FEAT_CONCEAL
 			/* n_extra will be increased by FIX_FOX_BOGUSCOLS
 			 * macro below, so need to adjust for that here */
-			if (is_concealing && vcol_off > 0)
+			if ((is_concealing || boguscols > 0) && vcol_off > 0)
 			    n_extra -= vcol_off;
 #endif
 		    }
@@ -4578,6 +4622,12 @@ win_line(wp, lnum, startrow, endrow, nochange)
 		     * the tab can be longer than 'tabstop' when there
 		     * are concealed characters. */
 		    FIX_FOR_BOGUSCOLS;
+		    /* Make sure, the highlighting for the tab char will be
+		     * correctly set further below (effectively reverts the
+		     * FIX_FOR_BOGSUCOLS macro */
+		    if (old_boguscols > 0 && n_extra > tab_len && wp->w_p_list
+								  && lcs_tab1)
+			tab_len += n_extra - tab_len;
 #endif
 #ifdef FEAT_MBYTE
 		    mb_utf8 = FALSE;	/* don't draw as UTF-8 */
@@ -6073,7 +6123,7 @@ screen_line(row, coloff, endcol, clear_width
 	    int c;
 
 	    c = fillchar_vsep(&hl);
-	    if (ScreenLines[off_to] != c
+	    if (ScreenLines[off_to] != (schar_T)c
 # ifdef FEAT_MBYTE
 		    || (enc_utf8 && (int)ScreenLinesUC[off_to]
 						       != (c >= 0x80 ? c : 0))
@@ -10617,7 +10667,8 @@ win_redr_ruler(wp, always)
 	    this_ru_col = (WITH_WIDTH(width) + 1) / 2;
 	if (this_ru_col + o < WITH_WIDTH(width))
 	{
-	    while (this_ru_col + o < WITH_WIDTH(width))
+	    /* need at least 3 chars left for get_rel_pos() + NUL */
+	    while (this_ru_col + o < WITH_WIDTH(width) && RULER_BUF_LEN > i + 4)
 	    {
 #ifdef FEAT_MBYTE
 		if (has_mbyte)

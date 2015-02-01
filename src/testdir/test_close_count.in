@@ -1,8 +1,8 @@
 Tests for :[count]close! and :[count]hide     vim: set ft=vim :
 
 STARTTEST
+:so small.vim
 :let tests = []
-:so tiny.vim
 :for i in range(5)
 :new
 :endfor
@@ -28,7 +28,7 @@ STARTTEST
 :new
 :new
 :2wincmd w
-:-2close!
+:-1close!
 :let buffers = []
 :windo call add(buffers, bufnr('%'))
 :call add(tests, buffers)
@@ -46,7 +46,6 @@ ENDTEST
 
 STARTTEST
 :let tests = []
-:so tiny.vim
 :for i in range(5)
 :new
 :endfor
@@ -62,7 +61,7 @@ STARTTEST
 :let buffers = []
 :windo call add(buffers, bufnr('%'))
 :call add(tests, buffers)
-:9hide
+:$hide
 :let buffers = []
 :windo call add(buffers, bufnr('%'))
 :call add(tests, buffers)
@@ -94,7 +93,6 @@ ENDTEST
 
 STARTTEST
 :let tests = []
-:so tiny.vim
 :set hidden
 :for i in range(5)
 :new
@@ -123,7 +121,6 @@ ENDTEST
 
 STARTTEST
 :let tests = []
-:so tiny.vim
 :set hidden
 :for i in range(5)
 :new

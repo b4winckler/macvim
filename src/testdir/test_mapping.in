@@ -8,8 +8,23 @@ STARTTEST
 :inoreab чкпр   vim
 GAчкпр 
 
-
-: " langmap should not get remapped in insert mode
+:" mapping of ctrl-c in Insert mode
+:set cpo-=< cpo-=k
+:inoremap <c-c> <ctrl-c>
+:cnoremap <c-c> dummy
+:cunmap <c-c>
+GA
+TEST2: CTRL-C |A|
+
+:unmap <c-c>
+:unmap! <c-c>
+:"
+:" mapping of ctrl-c in Visual mode
+:vnoremap <c-c> :<C-u>$put ='vmap works'
+GV
+:vunmap <c-c>
+:"
+:" langmap should not get remapped in insert mode
 :inoremap { FAIL_ilangmap
 :set langmap=+{ langnoremap
 o+
