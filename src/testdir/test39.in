@@ -23,6 +23,9 @@ G$khhhhhkkcmno
 /^aaaa/
 :exe ":norm! l\<C-V>jjjlllI\<Right>\<Right>  \<Esc>"
 :/^aa/,/^$/w >> test.out
+/xaaa$/
+:exe ":norm! \<C-V>jjjI<>\<Left>p\<Esc>"
+:/xaaa$/,/^$/w >> test.out
 :" Test for Visual block was created with the last <C-v>$
 /^A23$/
 :exe ":norm! l\<C-V>j$Aab\<Esc>"
@@ -35,11 +38,14 @@ G$khhhhhkkcmno
 /^C23$/
 :exe ":norm! l\<C-V>j$hhAab\<Esc>"
 :.,/^$/w >> test.out
-:" Test for Visual block insert when virtualedit=all
-:set ve=all
+:" Test for Visual block insert when virtualedit=all and utf-8 encoding
+:set ve=all enc=utf-8
 :/\t\tline
 :exe ":norm! 07l\<C-V>jjIx\<Esc>"
-:set ve=
+:.,/^$/w >> test.out
+:" Test for Visual block append when virtualedit=all
+:exe ":norm! 012l\<C-v>jjAx\<Esc>"
+:set ve= enc=latin1
 :.,/^$/w >> test.out
 :" gUe must uppercase a whole word, also when ß changes to SS
 Gothe youtußeuu endYpk0wgUe
@@ -76,6 +82,15 @@ aaaaaa
 bbbbbb
 cccccc
 dddddd
+
+xaaa
+bbbb
+cccc
+dddd
+
+yaaa
+¿¿¿
+bbb
 
 A23
 4567
