@@ -43,5 +43,5 @@ installed via homebrew) use this configure call instead:
 ## Credits
 
 * Logo by [Ethan Muller](https://dribbble.com/shots/1100850-Vim-Icon-Replacement)
-* Yosemite tweaks and fixes https://github.com/b4winckler/macvim/pull/45
-* Yosemite fullscreen fix https://github.com/jonashaag/macvim/commit/0c68453e1a6bb7150ab694b126f3db9cb8cd971f
+* Yosemite tweaks and fixes by [zenangst](https://github.com/b4winckler/macvim/pull/45)
+* Yosemite fullscreen fix [jonashaag](https://github.com/jonashaag/macvim/commit/0c68453e1a6bb7150ab694b126f3db9cb8cd971f)
