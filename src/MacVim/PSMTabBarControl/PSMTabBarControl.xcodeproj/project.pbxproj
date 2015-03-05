@@ -74,6 +74,10 @@
 		A2D98B0B0A2B432C0064C6F8 /* PSMUnifiedTabStyle.m in Sources */ = {isa = PBXBuildFile; fileRef = A2D98B080A2B432C0064C6F8 /* PSMUnifiedTabStyle.m */; };
 		A2D98B120A2B43FA0064C6F8 /* NSBezierPath_AMShading.h in Headers */ = {isa = PBXBuildFile; fileRef = A2D98B0F0A2B43FA0064C6F8 /* NSBezierPath_AMShading.h */; };
 		A2D98B130A2B43FA0064C6F8 /* NSBezierPath_AMShading.m in Sources */ = {isa = PBXBuildFile; fileRef = A2D98B100A2B43FA0064C6F8 /* NSBezierPath_AMShading.m */; };
+		BD13A64219AB98E900C641C3 /* PSMYosemiteTabStyle.h in Headers */ = {isa = PBXBuildFile; fileRef = BD13A64019AB98E900C641C3 /* PSMYosemiteTabStyle.h */; };
+		BD13A64319AB98E900C641C3 /* PSMYosemiteTabStyle.m in Sources */ = {isa = PBXBuildFile; fileRef = BD13A64119AB98E900C641C3 /* PSMYosemiteTabStyle.m */; };
+		BD4C36AB19ABC9E600B38C9D /* TabNewYosemite.png in Resources */ = {isa = PBXBuildFile; fileRef = BD4C36A919ABC9E600B38C9D /* TabNewYosemite.png */; };
+		BD4C36AC19ABC9E600B38C9D /* TabNewYosemite@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = BD4C36AA19ABC9E600B38C9D /* TabNewYosemite@2x.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -172,6 +176,10 @@
 		A2D98B080A2B432C0064C6F8 /* PSMUnifiedTabStyle.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; name = PSMUnifiedTabStyle.m; path = source/PSMUnifiedTabStyle.m; sourceTree = "<group>"; };
 		A2D98B0F0A2B43FA0064C6F8 /* NSBezierPath_AMShading.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = NSBezierPath_AMShading.h; path = source/NSBezierPath_AMShading.h; sourceTree = "<group>"; };
 		A2D98B100A2B43FA0064C6F8 /* NSBezierPath_AMShading.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; name = NSBezierPath_AMShading.m; path = source/NSBezierPath_AMShading.m; sourceTree = "<group>"; };
+		BD13A64019AB98E900C641C3 /* PSMYosemiteTabStyle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PSMYosemiteTabStyle.h; path = source/PSMYosemiteTabStyle.h; sourceTree = "<group>"; };
+		BD13A64119AB98E900C641C3 /* PSMYosemiteTabStyle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = PSMYosemiteTabStyle.m; path = source/PSMYosemiteTabStyle.m; sourceTree = "<group>"; };
+		BD4C36A919ABC9E600B38C9D /* TabNewYosemite.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = TabNewYosemite.png; path = images/TabNewYosemite.png; sourceTree = "<group>"; };
+		BD4C36AA19ABC9E600B38C9D /* TabNewYosemite@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "TabNewYosemite@2x.png"; path = "images/TabNewYosemite@2x.png"; sourceTree = "<group>"; };
 		DD92D38A0106425D02CA0E72 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
@@ -304,27 +312,29 @@
 		54D33B2C06778E4400C9C163 /* Framework */ = {
 			isa = PBXGroup;
 			children = (
-				0259C57AFE90428111CA0C5A /* PSMTabBarControl.h */,
-				0259C576FE90428111CA0C5A /* PSMTabBarControl.m */,
-				A251BE830959A1B90058BC7F /* PSMTabBarCell.h */,
-				A251BE840959A1B90058BC7F /* PSMTabBarCell.m */,
-				A2D32EDA09A634C900EC8662 /* PSMTabStyle.h */,
+				A2D98B0F0A2B43FA0064C6F8 /* NSBezierPath_AMShading.h */,
+				A2D98B100A2B43FA0064C6F8 /* NSBezierPath_AMShading.m */,
 				A2D32EE609A6399300EC8662 /* PSMAquaTabStyle.h */,
 				A2D32EE709A6399300EC8662 /* PSMAquaTabStyle.m */,
 				A2D32EFE09A63D7A00EC8662 /* PSMMetalTabStyle.h */,
 				A2D32EFF09A63D7A00EC8662 /* PSMMetalTabStyle.m */,
-				A2D98B070A2B432C0064C6F8 /* PSMUnifiedTabStyle.h */,
-				A2D98B080A2B432C0064C6F8 /* PSMUnifiedTabStyle.m */,
-				A268EA5F09A9831800E082AA /* PSMRolloverButton.h */,
-				A268EA6009A9831800E082AA /* PSMRolloverButton.m */,
 				A251BE810959A1B90058BC7F /* PSMOverflowPopUpButton.h */,
 				A251BE820959A1B90058BC7F /* PSMOverflowPopUpButton.m */,
 				A2129BAF09AEB58F00724E6C /* PSMProgressIndicator.h */,
 				A2129BB009AEB58F00724E6C /* PSMProgressIndicator.m */,
+				A268EA5F09A9831800E082AA /* PSMRolloverButton.h */,
+				A268EA6009A9831800E082AA /* PSMRolloverButton.m */,
+				A251BE830959A1B90058BC7F /* PSMTabBarCell.h */,
+				A251BE840959A1B90058BC7F /* PSMTabBarCell.m */,
+				0259C57AFE90428111CA0C5A /* PSMTabBarControl.h */,
+				0259C576FE90428111CA0C5A /* PSMTabBarControl.m */,
 				A2082A8D09EAEB33009AC8BE /* PSMTabDragAssistant.h */,
 				A2082A8E09EAEB33009AC8BE /* PSMTabDragAssistant.m */,
-				A2D98B0F0A2B43FA0064C6F8 /* NSBezierPath_AMShading.h */,
-				A2D98B100A2B43FA0064C6F8 /* NSBezierPath_AMShading.m */,
+				A2D32EDA09A634C900EC8662 /* PSMTabStyle.h */,
+				A2D98B070A2B432C0064C6F8 /* PSMUnifiedTabStyle.h */,
+				A2D98B080A2B432C0064C6F8 /* PSMUnifiedTabStyle.m */,
+				BD13A64019AB98E900C641C3 /* PSMYosemiteTabStyle.h */,
+				BD13A64119AB98E900C641C3 /* PSMYosemiteTabStyle.m */,
 			);
 			name = Framework;
 			sourceTree = "<group>";
@@ -354,6 +364,8 @@
 		A251BE8E0959A21A0058BC7F /* Images */ = {
 			isa = PBXGroup;
 			children = (
+				BD4C36A919ABC9E600B38C9D /* TabNewYosemite.png */,
+				BD4C36AA19ABC9E600B38C9D /* TabNewYosemite@2x.png */,
 				A2C0D99309AF870000ED379C /* pi.png */,
 				A2072B5C09AC1FA500304BCB /* Warning.png */,
 				A2072A2409ABD88600304BCB /* Folder.tif */,
@@ -401,6 +413,7 @@
 			files = (
 				546DEAF2067F630E0098DCC4 /* PSMTabBarControl.h in Headers */,
 				A251BE850959A1B90058BC7F /* PSMOverflowPopUpButton.h in Headers */,
+				BD13A64219AB98E900C641C3 /* PSMYosemiteTabStyle.h in Headers */,
 				A251BE870959A1B90058BC7F /* PSMTabBarCell.h in Headers */,
 				A2D32EDC09A634C900EC8662 /* PSMTabStyle.h in Headers */,
 				A2D32EE809A6399300EC8662 /* PSMAquaTabStyle.h in Headers */,
@@ -439,6 +452,8 @@
 /* Begin PBXProject section */
 		0259C573FE90428111CA0C5A /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+			};
 			buildConfigurationList = C056398B08A954F8003078D8 /* Build configuration list for PBXProject "PSMTabBarControl" */;
 			compatibilityVersion = "Xcode 2.4";
 			developmentRegion = English;
@@ -482,8 +497,10 @@
 				52A57C0F15BBA230003EC59C /* TabClose_Front.png in Resources */,
 				52A57C1015BBA230003EC59C /* TabClose_Front_Pressed.png in Resources */,
 				52A57C1115BBA230003EC59C /* TabClose_Front_Rollover.png in Resources */,
+				BD4C36AB19ABC9E600B38C9D /* TabNewYosemite.png in Resources */,
 				523897F415BDA9AC00498A53 /* TabClose_Front_Pressed@2x.png in Resources */,
 				523897F515BDA9AC00498A53 /* TabClose_Front_Rollover@2x.png in Resources */,
+				BD4C36AC19ABC9E600B38C9D /* TabNewYosemite@2x.png in Resources */,
 				523897F615BDA9AC00498A53 /* TabClose_Front@2x.png in Resources */,
 				523897F715BDA9AC00498A53 /* TabNewMetal@2x.png in Resources */,
 				523897F815BDA9AC00498A53 /* TabNewMetalPressed@2x.png in Resources */,
@@ -509,6 +526,7 @@
 				A2D32F0109A63D7A00EC8662 /* PSMMetalTabStyle.m in Sources */,
 				A268EA6309A9831800E082AA /* PSMRolloverButton.m in Sources */,
 				A2129BB309AEB58F00724E6C /* PSMProgressIndicator.m in Sources */,
+				BD13A64319AB98E900C641C3 /* PSMYosemiteTabStyle.m in Sources */,
 				A2082A9109EAEB34009AC8BE /* PSMTabDragAssistant.m in Sources */,
 				A2D98B0B0A2B432C0064C6F8 /* PSMUnifiedTabStyle.m in Sources */,
 				A2D98B130A2B43FA0064C6F8 /* NSBezierPath_AMShading.m in Sources */,

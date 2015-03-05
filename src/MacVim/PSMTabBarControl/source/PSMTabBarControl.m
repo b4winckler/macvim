@@ -14,6 +14,7 @@
 #import "PSMMetalTabStyle.h"
 #import "PSMAquaTabStyle.h"
 #import "PSMUnifiedTabStyle.h"
+#import "PSMYosemiteTabStyle.h"
 #import "PSMTabDragAssistant.h"
 
 @interface PSMTabBarControl (Private)
@@ -260,8 +261,9 @@
     }
 	else if ([name isEqualToString:@"Unified"]){
 		style = [[PSMUnifiedTabStyle alloc] init];
-	}
-	else {
+	} else if ([name isEqualToString:@"Yosemite"]) {
+        style = [[PSMYosemiteTabStyle alloc] init];
+    } else {
         style = [[PSMMetalTabStyle alloc] init];
     }
    

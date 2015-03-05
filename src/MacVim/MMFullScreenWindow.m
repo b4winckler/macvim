@@ -55,7 +55,7 @@ enum {
 
 @implementation MMFullScreenWindow
 
-- (MMFullScreenWindow *)initWithWindow:(NSWindow *)t view:(MMVimView *)v 
+- (MMFullScreenWindow *)initWithWindow:(NSWindow *)t view:(MMVimView *)v
                                backgroundColor:(NSColor *)back
 {
     NSScreen* screen = [t screen];
@@ -65,7 +65,7 @@ enum {
     // you can't change the style of an existing window in cocoa. create a new
     // window and move the MMTextView into it.
     // (another way would be to make the existing window large enough that the
-    // title bar is off screen. but that doesn't work with multiple screens).  
+    // title bar is off screen. but that doesn't work with multiple screens).
     self = [super initWithContentRect:[screen frame]
                             styleMask:NSBorderlessWindowMask
                               backing:NSBackingStoreBuffered
@@ -74,7 +74,7 @@ enum {
                                // we want the content rect to be relative to
                                // the main screen (ie, pass nil for screen).
                                screen:nil];
-      
+
     if (self == nil)
         return nil;
 
@@ -150,12 +150,20 @@ enum {
     // fool delegate
     id delegate = [target delegate];
     [target setDelegate:nil];
-    
+
     // make target's window controller believe that it's now controlling us
     [[target windowController] setWindow:self];
 
+    NSString *style;
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+    style = @"Yosemite";
+#else
+    style = @"Unified";
+#endif
+
     oldTabBarStyle = [[view tabBarControl] styleName];
-    [[view tabBarControl] setStyleNamed:@"Unified"];
+    [[view tabBarControl] setStyleNamed:style];
 
     // add text view
     oldPosition = [view frame].origin;
@@ -163,7 +171,7 @@ enum {
     [view removeFromSuperviewWithoutNeedingDisplay];
     [[self contentView] addSubview:view];
     [self setInitialFirstResponder:[view textView]];
-    
+
     // NOTE: Calling setTitle:nil causes an exception to be raised (and it is
     // possible that 'target' has no title when we get here).
     if ([target title]) {
@@ -177,7 +185,7 @@ enum {
     [self setOpaque:[target isOpaque]];
 
     // don't set this sooner, so we don't get an additional
-    // focus gained message  
+    // focus gained message
     [self setDelegate:delegate];
 
     // Store view dimension used before entering full-screen, then resize the
@@ -265,7 +273,7 @@ enum {
     // fix delegate
     id delegate = [self delegate];
     [self setDelegate:nil];
-    
+
     // move text view back to original window, hide fullScreen window,
     // show original window
     // do this _after_ resetting delegate and window controller, so the
@@ -317,13 +325,13 @@ enum {
     // sooner
     [target setDelegate:delegate];
 
-    // fade back in  
+    // fade back in
     if (didBlend) {
         CGDisplayFade(token, .25, kCGDisplayBlendSolidColor,
             kCGDisplayBlendNormal, .0, .0, .0, false);
         CGReleaseDisplayFadeReservation(token);
     }
-    
+
     [self autorelease]; // Balance the above retain
 
     state = LeftFullScreen;
