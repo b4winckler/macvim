@@ -22,6 +22,19 @@ Run `./configure` in the `src/` directory with the flags you want (call
                   --enable-perlinterp \
                   --enable-cscope
 
+If you'd like to build with lua, use:
+
+    $ ./configure --with-features=huge \
+                  --enable-rubyinterp \
+                  --enable-pythoninterp \
+                  --enable-perlinterp \
+                  --with-lua-prefix=/usr/local/Cellar/lua/5.1.5 \
+                  --with-luajit \
+                  --enable-luainterp \
+                  --enable-cscope
+
+These settings are for homebrew installed versions of luajit and lua 5.1.5.
+
 Now build the project using `make`:
 
     $ make
