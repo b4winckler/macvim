@@ -8,14 +8,14 @@ For now, I plan to not provide snapshot releases until I can confirm they work
 properly. In the meantime you must build the project yourself:
 
 ```
-	cd src
-	./configure --with-features=huge \
-                --enable-rubyinterp \
-                --enable-pythoninterp \
-                --enable-perlinterp \
-                --enable-cscope
-	make
-	open MacVim/build/Release
+cd src
+./configure --with-features=huge \
+            --enable-rubyinterp \
+            --enable-pythoninterp \
+            --enable-perlinterp \
+            --enable-cscope
+make
+open MacVim/build/Release
 ```
 
 Built file will be in `MacVim/build/Release`.
@@ -24,14 +24,14 @@ If you'd like to build with lua support (this assumes you have lua 5.1.5 and lua
 installed via homebrew) use this configure call instead:
 
 ```
-	./configure --with-features=huge \
-                --enable-rubyinterp \
-                --enable-pythoninterp \
-                --enable-perlinterp \
-                --with-lua-prefix=/usr/local/Cellar/lua/5.1.5 \
-                --with-luajit \
-                --enable-luainterp \
-                --enable-cscope
+./configure --with-features=huge \
+            --enable-rubyinterp \
+            --enable-pythoninterp \
+            --enable-perlinterp \
+            --with-lua-prefix=/usr/local/Cellar/lua/5.1.5 \
+            --with-luajit \
+            --enable-luainterp \
+            --enable-cscope
 ```
 
 ## Features
