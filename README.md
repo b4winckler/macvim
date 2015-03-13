@@ -18,7 +18,7 @@ make
 open MacVim/build/Release
 ```
 
-Built file will be in `MacVim/build/Release`.
+Built file will be in `src/MacVim/build/Release`.
 
 If you'd like to build with lua support (this assumes you have lua 5.1.5 and luajit
 installed via homebrew) use this configure call instead:
