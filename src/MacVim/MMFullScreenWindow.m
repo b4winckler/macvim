@@ -379,6 +379,15 @@ enum {
     [self resizeVimView];
 }
 
+- (CGFloat) viewOffset {
+    CGFloat menuBarHeight = 0;
+    if([self screen] != [[NSScreen screens] objectAtIndex:0]) {
+        // Screens other than the primary screen will not hide their menu bar, adjust the visible view down by the menu height
+        menuBarHeight = [[[NSApplication sharedApplication] mainMenu] menuBarHeight]-1;
+    }
+    return menuBarHeight;
+}
+
 - (void)centerView
 {
     NSRect outer = [self frame], inner = [view frame];
@@ -387,7 +396,7 @@ enum {
     // rendering issues may arise (screen looks blurry, each redraw clears the
     // entire window, etc.).
     NSPoint origin = { floor((outer.size.width - inner.size.width)/2),
-                       floor((outer.size.height - inner.size.height)/2) };
+                       floor((outer.size.height - inner.size.height)/2 - [self viewOffset]/2) };
 
     [view setFrameOrigin:origin];
 }
@@ -486,6 +495,8 @@ enum {
     // size since it compensates for menu and dock.
     int maxRows, maxColumns;
     NSSize size = [[self screen] frame].size;
+    size.height -= [self viewOffset];
+    
     [view constrainRows:&maxRows columns:&maxColumns toSize:size];
 
     // Compute current fu size
