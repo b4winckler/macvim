@@ -78,7 +78,8 @@ get_indent_str(ptr, ts, list)
 	    if (!list || lcs_tab1)    /* count a tab for what it is worth */
 		count += ts - (count % ts);
 	    else
-	/* in list mode, when tab is not set, count screen char width for Tab: ^I */
+		/* In list mode, when tab is not set, count screen char width
+		 * for Tab, displays: ^I */
 		count += ptr2cells(ptr);
 	}
 	else if (*ptr == ' ')
@@ -3430,10 +3431,14 @@ get_keystroke()
 	    buf = alloc(buflen);
 	else if (maxlen < 10)
 	{
+	    char_u  *t_buf = buf;
+
 	    /* Need some more space. This might happen when receiving a long
 	     * escape sequence. */
 	    buflen += 100;
 	    buf = vim_realloc(buf, buflen);
+	    if (buf == NULL)
+		vim_free(t_buf);
 	    maxlen = (buflen - 6 - len) / 3;
 	}
 	if (buf == NULL)
@@ -5377,6 +5382,12 @@ do_c_expr_indent()
 	fixthisline(get_c_indent);
 }
 
+/* Find result cache for cpp_baseclass */
+typedef struct {
+    int	    found;
+    lpos_T  lpos;
+} cpp_baseclass_cache_T;
+
 /*
  * Functions for C-indenting.
  * Most of this originally comes from Eric Fischer.
@@ -5410,7 +5421,7 @@ static int	cin_iswhileofdo __ARGS((char_u *, linenr_T));
 static int	cin_is_if_for_while_before_offset __ARGS((char_u *line, int *poffset));
 static int	cin_iswhileofdo_end __ARGS((int terminated));
 static int	cin_isbreak __ARGS((char_u *));
-static int	cin_is_cpp_baseclass __ARGS((colnr_T *col));
+static int	cin_is_cpp_baseclass __ARGS((cpp_baseclass_cache_T *cached));
 static int	get_baseclass_amount __ARGS((int col));
 static int	cin_ends_in __ARGS((char_u *, char_u *, char_u *));
 static int	cin_starts_with __ARGS((char_u *s, char *word));
@@ -5509,7 +5520,7 @@ cin_has_js_key(text)
     char_u *text;
 {
     char_u *s = skipwhite(text);
-    int	    quote = 0;
+    int	    quote = -1;
 
     if (*s == '\'' || *s == '"')
     {
@@ -6373,15 +6384,19 @@ cin_isbreak(p)
  * This is a lot of guessing.  Watch out for "cond ? func() : foo".
  */
     static int
-cin_is_cpp_baseclass(col)
-    colnr_T	*col;	    /* return: column to align with */
+cin_is_cpp_baseclass(cached)
+    cpp_baseclass_cache_T *cached; /* input and output */
 {
+    lpos_T	*pos = &cached->lpos;	    /* find position */
     char_u	*s;
     int		class_or_struct, lookfor_ctor_init, cpp_base_class;
     linenr_T	lnum = curwin->w_cursor.lnum;
     char_u	*line = ml_get_curline();
 
-    *col = 0;
+    if (pos->lnum <= lnum)
+	return cached->found;	/* Use the cached result */
+
+    pos->col = 0;
 
     s = skipwhite(line);
     if (*s == '#')		/* skip #define FOO x ? (x) : x */
@@ -6425,6 +6440,7 @@ cin_is_cpp_baseclass(col)
 	--lnum;
     }
 
+    pos->lnum = lnum;
     line = ml_get(lnum);
     s = cin_skipcomment(line);
     for (;;)
@@ -6457,7 +6473,7 @@ cin_is_cpp_baseclass(col)
 		 * cpp-base-class-declaration or constructor-initialization */
 		cpp_base_class = TRUE;
 		lookfor_ctor_init = class_or_struct = FALSE;
-		*col = 0;
+		pos->col = 0;
 		s = cin_skipcomment(s + 1);
 	    }
 	    else
@@ -6498,24 +6514,27 @@ cin_is_cpp_baseclass(col)
 		class_or_struct = FALSE;
 		lookfor_ctor_init = FALSE;
 	    }
-	    else if (*col == 0)
+	    else if (pos->col == 0)
 	    {
 		/* it can't be a constructor-initialization any more */
 		lookfor_ctor_init = FALSE;
 
 		/* the first statement starts here: lineup with this one... */
 		if (cpp_base_class)
-		    *col = (colnr_T)(s - line);
+		    pos->col = (colnr_T)(s - line);
 	    }
 
 	    /* When the line ends in a comma don't align with it. */
 	    if (lnum == curwin->w_cursor.lnum && *s == ',' && cin_nocode(s + 1))
-		*col = 0;
+		pos->col = 0;
 
 	    s = cin_skipcomment(s + 1);
 	}
     }
 
+    cached->found = cpp_base_class;
+    if (cpp_base_class)
+	pos->lnum = lnum;
     return cpp_base_class;
 }
 
@@ -6671,20 +6690,43 @@ find_match_char(c, ind_maxparen)	    /* XXX */
     pos_T	cursor_save;
     pos_T	*trypos;
     static pos_T pos_copy;
+    int		ind_maxp_wk;
 
     cursor_save = curwin->w_cursor;
-    if ((trypos = findmatchlimit(NULL, c, 0, ind_maxparen)) != NULL)
+    ind_maxp_wk = ind_maxparen;
+retry:
+    if ((trypos = findmatchlimit(NULL, c, 0, ind_maxp_wk)) != NULL)
     {
 	/* check if the ( is in a // comment */
 	if ((colnr_T)cin_skip2pos(trypos) > trypos->col)
+	{
+	    ind_maxp_wk = ind_maxparen - (int)(cursor_save.lnum - trypos->lnum);
+	    if (ind_maxp_wk > 0)
+	    {
+		curwin->w_cursor = *trypos;
+		curwin->w_cursor.col = 0;	/* XXX */
+		goto retry;
+	    }
 	    trypos = NULL;
+	}
 	else
 	{
+	    pos_T	*trypos_wk;
+
 	    pos_copy = *trypos;	    /* copy trypos, findmatch will change it */
 	    trypos = &pos_copy;
 	    curwin->w_cursor = *trypos;
-	    if (ind_find_start_comment() != NULL) /* XXX */
+	    if ((trypos_wk = ind_find_start_comment()) != NULL) /* XXX */
+	    {
+		ind_maxp_wk = ind_maxparen - (int)(cursor_save.lnum
+			- trypos_wk->lnum);
+		if (ind_maxp_wk > 0)
+		{
+		    curwin->w_cursor = *trypos_wk;
+		    goto retry;
+		}
 		trypos = NULL;
+	    }
 	}
     }
     curwin->w_cursor = cursor_save;
@@ -7001,6 +7043,7 @@ get_c_indent()
     char_u	*linecopy;
     pos_T	*trypos;
     pos_T	*tryposBrace = NULL;
+    pos_T	tryposBraceCopy;
     pos_T	our_paren_pos;
     char_u	*start;
     int		start_brace;
@@ -7024,7 +7067,7 @@ get_c_indent()
 #define LOOKFOR_CPP_BASECLASS	9
 #define LOOKFOR_ENUM_OR_INIT	10
 #define LOOKFOR_JS_KEY		11
-#define LOOKFOR_NO_COMMA	12
+#define LOOKFOR_COMMA		12
 
     int		whilelevel;
     linenr_T	lnum;
@@ -7036,6 +7079,7 @@ get_c_indent()
     int		original_line_islabel;
     int		added_to_amount = 0;
     int		js_cur_has_key = 0;
+    cpp_baseclass_cache_T cache_cpp_baseclass = { FALSE, { MAXLNUM, 0 } };
 
     /* make a copy, value is changed below */
     int		ind_continuation = curbuf->b_ind_continuation;
@@ -7538,7 +7582,11 @@ get_c_indent()
 	/*
 	 * We are inside braces, there is a { before this line at the position
 	 * stored in tryposBrace.
+	 * Make a copy of tryposBrace, it may point to pos_copy inside
+	 * find_start_brace(), which may be changed somewhere.
 	 */
+	tryposBraceCopy = *tryposBrace;
+	tryposBrace = &tryposBraceCopy;
 	trypos = tryposBrace;
 	ourscope = trypos->lnum;
 	start = ml_get(ourscope);
@@ -7838,7 +7886,8 @@ get_c_indent()
 		    else
 		    {
 			if (lookfor != LOOKFOR_TERM
-					  && lookfor != LOOKFOR_CPP_BASECLASS)
+					&& lookfor != LOOKFOR_CPP_BASECLASS
+					&& lookfor != LOOKFOR_COMMA)
 			{
 			    amount = scope_amount;
 			    if (theline[0] == '{')
@@ -8061,7 +8110,7 @@ get_c_indent()
 		n = FALSE;
 		if (lookfor != LOOKFOR_TERM && curbuf->b_ind_cpp_baseclass > 0)
 		{
-		    n = cin_is_cpp_baseclass(&col);
+		    n = cin_is_cpp_baseclass(&cache_cpp_baseclass);
 		    l = ml_get_curline();
 		}
 		if (n)
@@ -8082,7 +8131,8 @@ get_c_indent()
 		    }
 		    else
 								     /* XXX */
-			amount = get_baseclass_amount(col);
+			amount = get_baseclass_amount(
+						cache_cpp_baseclass.lpos.col);
 		    break;
 		}
 		else if (lookfor == LOOKFOR_CPP_BASECLASS)
@@ -8130,23 +8180,31 @@ get_c_indent()
 		    amount = get_indent();
 		    break;
 		}
-		if (lookfor == LOOKFOR_NO_COMMA)
+		if (lookfor == LOOKFOR_COMMA)
 		{
-		    if (terminated != ',')
+		    if (tryposBrace != NULL && tryposBrace->lnum
+						    >= curwin->w_cursor.lnum)
+			break;
+		    if (terminated == ',')
 			/* line below current line is the one that starts a
 			 * (possibly broken) line ending in a comma. */
 			break;
-		    amount = get_indent();
-		    if (curwin->w_cursor.lnum - 1 == ourscope)
-			/* line above is start of the scope, thus current line
-			 * is the one that stars a (possibly broken) line
-			 * ending in a comma. */
-			break;
+		    else
+		    {
+			amount = get_indent();
+			if (curwin->w_cursor.lnum - 1 == ourscope)
+			    /* line above is start of the scope, thus current
+			     * line is the one that stars a (possibly broken)
+			     * line ending in a comma. */
+			    break;
+		    }
 		}
 
 		if (terminated == 0 || (lookfor != LOOKFOR_UNTERM
 							&& terminated == ','))
 		{
+		    if (*skipwhite(l) == '[' || l[STRLEN(l) - 1] == '[')
+			amount += ind_continuation;
 		    /*
 		     * if we're in the middle of a paren thing,
 		     * go back to the line that starts it so
@@ -8385,7 +8443,10 @@ get_c_indent()
 			     *	    100 +
 			     * ->	    here;
 			     */
+			    l = ml_get_curline();
 			    amount = cur_amount;
+			    if (*skipwhite(l) == ']' || l[STRLEN(l) - 1] == ']')
+				break;
 
 			    /*
 			     * If previous line ends in ',', check whether we
@@ -8414,8 +8475,9 @@ get_c_indent()
 				     *        5,
 				     *     6,
 				     */
-				    lookfor = LOOKFOR_NO_COMMA;
-				    amount = get_indent();	    /* XXX */
+				    if (cin_iscomment(skipwhite(l)))
+					break;
+				    lookfor = LOOKFOR_COMMA;
 				    trypos = find_match_char('[',
 						      curbuf->b_ind_maxparen);
 				    if (trypos != NULL)
@@ -8445,7 +8507,8 @@ get_c_indent()
 				    cont_amount = cin_get_equal_amount(
 						       curwin->w_cursor.lnum);
 				if (lookfor != LOOKFOR_TERM
-						 && lookfor != LOOKFOR_JS_KEY)
+						&& lookfor != LOOKFOR_JS_KEY
+						&& lookfor != LOOKFOR_COMMA)
 				    lookfor = LOOKFOR_UNTERM;
 			    }
 			}
@@ -8739,13 +8802,13 @@ term_again:
 		n = FALSE;
 		if (curbuf->b_ind_cpp_baseclass != 0 && theline[0] != '{')
 		{
-		    n = cin_is_cpp_baseclass(&col);
+		    n = cin_is_cpp_baseclass(&cache_cpp_baseclass);
 		    l = ml_get_curline();
 		}
 		if (n)
 		{
 								     /* XXX */
-		    amount = get_baseclass_amount(col);
+		    amount = get_baseclass_amount(cache_cpp_baseclass.lpos.col);
 		    break;
 		}
 
@@ -10164,11 +10227,15 @@ unix_expandpath(gap, path, wildoff, flags, didstar)
 		}
 		else
 		{
+		    struct stat sb;
+
 		    /* no more wildcards, check if there is a match */
 		    /* remove backslashes for the remaining components only */
 		    if (*path_end != NUL)
 			backslash_halve(buf + len + 1);
-		    if (mch_getperm(buf) >= 0)	/* add existing file */
+		    /* add existing file or symbolic link */
+		    if ((flags & EW_ALLLINKS) ? mch_lstat((char *)buf, &sb) >= 0
+						      : mch_getperm(buf) >= 0)
 		    {
 #ifdef MACOS_CONVERT
 			size_t precomp_len = STRLEN(buf)+1;
@@ -10768,7 +10835,7 @@ gen_expand_wildcards(num_pat, pat, num_file, file, flags)
 		    vim_free(p);
 		    ga_clear_strings(&ga);
 		    i = mch_expand_wildcards(num_pat, pat, num_file, file,
-								       flags);
+							 flags|EW_KEEPDOLLAR);
 		    recursive = FALSE;
 		    return i;
 		}
@@ -10915,6 +10982,7 @@ expand_backtick(gap, pat, flags)
  * EW_EXEC	add executable files
  * EW_NOTFOUND	add even when it doesn't exist
  * EW_ADDSLASH	add slash after directory name
+ * EW_ALLLINKS	add symlink also when the referred file does not exist
  */
     void
 addfile(gap, f, flags)
@@ -10924,9 +10992,11 @@ addfile(gap, f, flags)
 {
     char_u	*p;
     int		isdir;
+    struct stat sb;
 
-    /* if the file/dir doesn't exist, may not add it */
-    if (!(flags & EW_NOTFOUND) && mch_getperm(f) < 0)
+    /* if the file/dir/link doesn't exist, may not add it */
+    if (!(flags & EW_NOTFOUND) && ((flags & EW_ALLLINKS)
+			? mch_lstat((char *)f, &sb) < 0 : mch_getperm(f) < 0))
 	return;
 
 #ifdef FNAME_ILLEGAL
@@ -10939,8 +11009,10 @@ addfile(gap, f, flags)
     if ((isdir && !(flags & EW_DIR)) || (!isdir && !(flags & EW_FILE)))
 	return;
 
-    /* If the file isn't executable, may not add it.  Do accept directories. */
-    if (!isdir && (flags & EW_EXEC) && !mch_can_exe(f, NULL))
+    /* If the file isn't executable, may not add it.  Do accept directories.
+     * When invoked from expand_shellcmd() do not use $PATH. */
+    if (!isdir && (flags & EW_EXEC)
+			     && !mch_can_exe(f, NULL, !(flags & EW_SHELLCMD)))
 	return;
 
     /* Make room for another item in the file list. */
@@ -10999,7 +11071,7 @@ get_cmd_output(cmd, infile, flags, ret_len)
 	return NULL;
 
     /* get a name for the temp file */
-    if ((tempname = vim_tempname('o')) == NULL)
+    if ((tempname = vim_tempname('o', FALSE)) == NULL)
     {
 	EMSG(_(e_notmp));
 	return NULL;

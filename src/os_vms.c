@@ -12,7 +12,7 @@
 #include	"vim.h"
 
 /* define _generic_64 for use in time functions */
-#ifndef VAX
+#if !defined(VAX) && !defined(PROTO)
 #   include <gen64def.h>
 #else
 /* based on Alpha's gen64def.h; the file is absent on VAX */
@@ -483,7 +483,8 @@ mch_expand_wildcards(int num_pat, char_u **pat, int *num_file, char_u ***file, i
 		continue;
 
 	    /* Skip files that are not executable if we check for that. */
-	    if (!dir && (flags & EW_EXEC) && !mch_can_exe(vms_fmatch[i], NULL))
+	    if (!dir && (flags & EW_EXEC)
+		 && !mch_can_exe(vms_fmatch[i], NULL, !(flags & EW_SHELLCMD)))
 		continue;
 
 	    /* allocate memory for pointers */

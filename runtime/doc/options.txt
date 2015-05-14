@@ -1,4 +1,4 @@
-*options.txt*	For Vim version 7.4.  Last change: 2014 Jul 23
+*options.txt*	For Vim version 7.4.  Last change: 2015 Feb 17
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -59,9 +59,7 @@ achieve special effects.  These options come in three forms:
 :se[t] {option}:{value}
 			Set string or number option to {value}.
 			For numeric options the value can be given in decimal,
-			hex (preceded with 0x) or octal (preceded with '0')
-			(hex and octal are only available for machines which
-			have the strtol() function).
+ 			hex (preceded with 0x) or octal (preceded with '0').
 			The old value can be inserted by typing 'wildchar' (by
 			default this is a <Tab> or CTRL-E if 'compatible' is
 			set).  See |cmdline-completion|.
@@ -538,11 +536,11 @@ number can be specified where "vim:" or "Vim:" is used:
 	vim<{vers}:	version before {vers}
 	vim={vers}:	version {vers}
 	vim>{vers}:	version after {vers}
-{vers} is 600 for Vim 6.0 (hundred times the major version plus minor).
-For example, to use a modeline only for Vim 6.0 and later:
-	/* vim600: set foldmethod=marker: */ ~
-To use a modeline for Vim before version 5.7:
-	/* vim<570: set sw=4: */ ~
+{vers} is 700 for Vim 7.0 (hundred times the major version plus minor).
+For example, to use a modeline only for Vim 7.0:
+	/* vim700: set foldmethod=marker */ ~
+To use a modeline for Vim after version 7.2:
+	/* vim>702: set cole=2: */ ~
 There can be no blanks between "vim" and the ":".
 
 
@@ -735,8 +733,6 @@ A jump table for the options with a short description can be found at |Q_op|.
 	open a file, switch buffers, delete a buffer or open/close a window.
 	It will change to the directory containing the file which was opened
 	or selected.
-	This option is provided for backward compatibility with the Vim
-	released with Sun ONE Studio 4 Enterprise Edition.
 	Note: When this option is on some plugins may not work.
 
 				*'arabic'* *'arab'* *'noarabic'* *'noarab'*
@@ -926,7 +922,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 
 						*'backupcopy'* *'bkc'*
 'backupcopy' 'bkc'	string	(Vi default for Unix: "yes", otherwise: "auto")
-			global
+			global or local to buffer |global-local|
 			{not in Vi}
 	When writing a file and a backup is made, this option tells how it's
 	done.  This is a comma separated list of words.
@@ -1325,6 +1321,9 @@ A jump table for the options with a short description can be found at |Q_op|.
 	nofile only:	The buffer name is fixed, it is not handled like a
 			file name.  It is not modified in response to a |:cd|
 			command.
+	both:		When using ":e bufname" and already editing "bufname"
+			the buffer is made empty and autocommands are
+			triggered as usual for |:edit|.
 							*E676*
 	"acwrite" implies that the buffer name is not related to a file, like
 	"nofile", but it will be written.  Thus, in contrast to "nofile" and
@@ -2226,7 +2225,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 
 
 						*'cryptmethod'* *'cm'*
-'cryptmethod'		string	(default "zip")
+'cryptmethod' 'cm'	string	(default "zip")
 			global or local to buffer |global-local|
 			{not in Vi}
 	Method used for encryption when the buffer is written to a file:
@@ -2234,10 +2233,18 @@ A jump table for the options with a short description can be found at |Q_op|.
 	   zip		PkZip compatible method.  A weak kind of encryption.
 			Backwards compatible with Vim 7.2 and older.
 							*blowfish*
-	   blowfish	Blowfish method.  Strong encryption.  Requires Vim 7.3
-			or later, files can NOT be read by Vim 7.2 and older.
-			This adds a "seed" to the file, every time you write
-			the file the encrypted bytes will be different.
+	   blowfish	Blowfish method.  Medium strong encryption but it has
+			an implementation flaw.  Requires Vim 7.3 or later,
+			files can NOT be read by Vim 7.2 and older.  This adds
+			a "seed" to the file, every time you write the file
+			the encrypted bytes will be different.
+							*blowfish2*
+	   blowfish2	Blowfish method.  Medium strong encryption.  Requires
+			Vim 7.4.399 or later, files can NOT be read by Vim 7.3
+			and older.  This adds a "seed" to the file, every time
+			you write the file the encrypted bytes will be
+			different.  The whole undo file is encrypted, not just
+			the pieces of text.
 
 	When reading an encrypted file 'cryptmethod' will be set automatically
 	to the detected method of the file being read.  Thus if you write it
@@ -2949,8 +2956,8 @@ A jump table for the options with a short description can be found at |Q_op|.
 	  2. If a <NL> is found and 'fileformats' includes "unix", 'fileformat'
 	     is set to "unix".  Note that when a <NL> is found without a
 	     preceding <CR>, "unix" is preferred over "dos".
-	  3. If 'fileformat' has not yet been set, and if 'fileformats'
-	     includes "mac", 'fileformat' is set to "mac".
+	  3. If 'fileformat' has not yet been set, and if a <CR> is found, and
+	     if 'fileformats' includes "mac", 'fileformat' is set to "mac".
 	     This means that "mac" is only chosen when:
 	      "unix" is not present or no <NL> is found in the file, and
 	      "dos" is not present or no <CR><NL> is found in the file.
@@ -3448,7 +3455,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 	NOTE: This option is reset when 'compatible' is set.
 
 						*'grepformat'* *'gfm'*
-'grepformat' 'gfm'	string	(default "%f:%l%m,%f  %l%m")
+'grepformat' 'gfm'	string	(default "%f:%l:%m,%f:%l%m,%f  %l%m")
 			global
 			{not in Vi}
 	Format to recognize for the ":grep" command output.
@@ -3500,7 +3507,8 @@ A jump table for the options with a short description can be found at |Q_op|.
 	the height of the cursor can be changed.  This can be done by
 	specifying a block cursor, or a percentage for a vertical or
 	horizontal cursor.
-	For a console the 't_SI' and 't_EI' escape sequences are used.
+	For a console the 't_SI', 't_SR', and 't_EI' escape sequences are
+	used.
 
 	The option is a comma separated list of parts.  Each part consist of a
 	mode-list and an argument-list:
@@ -4102,6 +4110,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 	When Vim was compiled with HAVE_X11 defined, the original icon will be
 	restored if possible |X11|.  See |X11-icon| for changing the icon on
 	X11.
+	For MS-Windows the icon can be changed, see |windows-icon|.
 
 						*'iconstring'*
 'iconstring'		string	(default "")
@@ -4627,6 +4636,8 @@ A jump table for the options with a short description can be found at |Q_op|.
 	be able to execute Normal mode commands.
 	This is the opposite of the 'keymap' option, where characters are
 	mapped in Insert mode.
+	Also consider setting 'langnoremap' to avoid 'langmap' applies to
+	characters resulting from a mapping.
 	This option cannot be set from a |modeline| or in the |sandbox|, for
 	security reasons.
 
@@ -4681,6 +4692,18 @@ A jump table for the options with a short description can be found at |Q_op|.
 		:set langmenu=de_DE.ISO_8859-1
 		:source $VIMRUNTIME/menu.vim
 <	Warning: This deletes all menus that you defined yourself!
+
+					*'langnoremap'* *'lnr'*
+'langnoremap' 'lnr'	boolean (default off)
+			global
+			{not in Vi}
+			{only available when compiled with the |+langmap|
+			feature}
+	When on, setting 'langmap' does not apply to characters resulting from
+	a mapping.  This basically means, if you noticed that setting
+	'langmap' disables some of your mappings, try setting this option.
+	This option defaults to off for backwards compatibility.  Set it on if
+	that works for you to avoid mappings to break.
 
 					*'laststatus'* *'ls'*
 'laststatus' 'ls'	number	(default 1)
@@ -4796,33 +4819,38 @@ A jump table for the options with a short description can be found at |Q_op|.
 			{not in Vi}
 	Strings to use in 'list' mode and for the |:list| command.  It is a
 	comma separated list of string settings.
-	  						*lcs-eol*
+							*lcs-eol*
 	  eol:c		Character to show at the end of each line.  When
 			omitted, there is no extra character at the end of the
 			line.
-	  						*lcs-tab*
+							*lcs-tab*
 	  tab:xy	Two characters to be used to show a tab.  The first
 			char is used once.  The second char is repeated to
 			fill the space that the tab normally occupies.
 			"tab:>-" will show a tab that takes four spaces as
 			">---".  When omitted, a tab is show as ^I.
-	  						*lcs-trail*
+							*lcs-space*
+	  space:c	Character to show for a space.  When omitted, spaces
+			are left blank.
+							*lcs-trail*
 	  trail:c	Character to show for trailing spaces.  When omitted,
-			trailing spaces are blank.
-	  						*lcs-extends*
+			trailing spaces are blank.  Overrides the "space"
+			setting for trailing spaces.
+							*lcs-extends*
 	  extends:c	Character to show in the last column, when 'wrap' is
 			off and the line continues beyond the right of the
 			screen.
-	  						*lcs-precedes*
+							*lcs-precedes*
 	  precedes:c	Character to show in the first column, when 'wrap'
 			is off and there is text preceding the character
 			visible in the first column.
-	  						*lcs-conceal*
+							*lcs-conceal*
 	  conceal:c	Character to show in place of concealed text, when
 			'conceallevel' is set to 1.
-	  						*lcs-nbsp*
-	  nbsp:c	Character to show for a non-breakable space (character
-			0xA0, 160).  Left blank when omitted.
+							*lcs-nbsp*
+	  nbsp:c	Character to show for a non-breakable space character
+			(0xA0 (160 decimal) and U+202F).  Left blank when
+			omitted.
 
 	The characters ':' and ',' should not be used.  UTF-8 characters can
 	be used when 'encoding' is "utf-8", otherwise only printable
@@ -4833,7 +4861,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 	    :set lcs=tab:>-,eol:<,nbsp:%
 	    :set lcs=extends:>,precedes:<
 <	The "NonText" highlighting will be used for "eol", "extends" and
-	"precedes".  "SpecialKey" for "nbsp", "tab" and "trail".
+	"precedes".  "SpecialKey" for "nbsp", "space", "tab" and "trail".
 	|hl-NonText| |hl-SpecialKey|
 
 			*'lpl'* *'nolpl'* *'loadplugins'* *'noloadplugins'*
@@ -5732,6 +5760,10 @@ A jump table for the options with a short description can be found at |Q_op|.
 	Note that when using the NFA engine and the pattern contains something
 	that is not supported the pattern will not match.  This is only useful
 	for debugging the regexp engine.
+	Using automatic selection enables Vim to switch the engine, if the
+	default engine becomes too costly.  E.g., when the NFA engine uses too
+	many states.  This should prevent Vim from hanging on a combination of
+	a complex pattern with long text.
 
 		*'relativenumber'* *'rnu'* *'norelativenumber'* *'nornu'*
 'relativenumber' 'rnu'	boolean	(default off)
@@ -5764,6 +5796,77 @@ A jump table for the options with a short description can be found at |Q_op|.
 	NOTE: To avoid portability problems with Vim scripts, always keep
 	this option at the default "on".  Only switch it off when working with
 	old Vi scripts.
+
+                                               *'renderoptions'* *'rop'*
+'renderoptions' 'rop'	string  (default: empty)
+			global
+			{not in Vi}
+			{only available when compiled with GUI and DIRECTX on
+			MS-Windows}
+	Select a text renderer and set its options.  The options depend on the
+	renderer.
+
+	Syntax: >
+		set rop=type:{renderer}(,{name}:{value})*
+<
+	Currently, only one optional renderer is available.
+
+	render	behavior    ~
+	directx	Vim will draw text using DirectX (DirectWrite).  It makes
+		drawn glyphs more beautiful than default GDI.
+		It requires 'encoding' is "utf-8", and only works on
+		MS-Windows Vista or newer version.
+
+		Options:
+		  name	    meaning		type	value       ~
+		  gamma	    gamma		float	1.0 - 2.2 (maybe)
+		  contrast  enhancedContrast	float	(unknown)
+		  level	    clearTypeLevel	float	(unknown)
+		  geom	    pixelGeometry	int	0 - 2 (see below)
+		  renmode   renderingMode	int	0 - 6 (see below)
+		  taamode   textAntialiasMode	int	0 - 3 (see below)
+
+		See this URL for detail:
+		  http://msdn.microsoft.com/en-us/library/dd368190.aspx
+
+		For geom: structure of a device pixel.
+		  0 - DWRITE_PIXEL_GEOMETRY_FLAT
+		  1 - DWRITE_PIXEL_GEOMETRY_RGB
+		  2 - DWRITE_PIXEL_GEOMETRY_BGR
+
+		See this URL for detail:
+		  http://msdn.microsoft.com/en-us/library/dd368114.aspx
+
+		For renmode: method of rendering glyphs.
+		  0 - DWRITE_RENDERING_MODE_DEFAULT
+		  1 - DWRITE_RENDERING_MODE_ALIASED
+		  2 - DWRITE_RENDERING_MODE_GDI_CLASSIC
+		  3 - DWRITE_RENDERING_MODE_GDI_NATURAL
+		  4 - DWRITE_RENDERING_MODE_NATURAL
+		  5 - DWRITE_RENDERING_MODE_NATURAL_SYMMETRIC
+		  6 - DWRITE_RENDERING_MODE_OUTLINE
+
+		See this URL for detail:
+		  http://msdn.microsoft.com/en-us/library/dd368118.aspx
+
+		For taamode: antialiasing mode used for drawing text.
+		  0 - D2D1_TEXT_ANTIALIAS_MODE_DEFAULT
+		  1 - D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE
+		  2 - D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE
+		  3 - D2D1_TEXT_ANTIALIAS_MODE_ALIASED
+
+		See this URL for detail:
+		  http://msdn.microsoft.com/en-us/library/dd368170.aspx
+
+		Example: >
+		  set encoding=utf-8
+		  set gfn=Ricty_Diminished:h12:cSHIFTJIS
+		  set rop=type:directx
+<
+		If select a raster font (Courier, Terminal or FixedSys) to
+		'guifont', it fallbacks to be drawn by GDI automatically.
+
+	Other render types are currently not supported.
 
 						*'report'*
 'report'		number	(default 2)
@@ -7791,6 +7894,9 @@ A jump table for the options with a short description can be found at |Q_op|.
 	current buffer: >
 		setlocal ul=-1
 <	This helps when you run out of memory for a single change.
+
+	The local value is set to -123456 when the global value is to be used.
+
 	Also see |clear-undo|.
 
 						*'undoreload'* *'ur'*
@@ -7898,6 +8004,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 			fold options
 	   options	options and mappings local to a window or buffer (not
 			global values for local options)
+	   localoptions same as "options"
 	   slash	backslashes in file names replaced with forward
 			slashes
 	   unix		with Unix end-of-line format (single <NL>), even when

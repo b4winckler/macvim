@@ -2,7 +2,7 @@
 " Header: "{{{
 " Maintainer:	Bram Moolenaar
 " Original Author: Andy Wokula <anwoku@yahoo.de>
-" Last Change:	2014 Jul 04
+" Last Change:	2015 Jan 11
 " Version:	1.0
 " Description:	HTML indent script with cached state for faster indenting on a
 "		range of lines.
@@ -245,6 +245,10 @@ call s:AddITags(s:indent_tags, [
     \ 'header', 'group', 'keygen', 'mark', 'math', 'meter', 'nav', 'output',
     \ 'progress', 'ruby', 'section', 'svg', 'texture', 'time', 'video',
     \ 'wbr', 'text'])
+
+" Tags added for web components:
+call s:AddITags(s:indent_tags, [
+    \ 'content', 'shadow', 'template'])
 "}}}
 
 " Add Block Tags: these contain alien content
@@ -287,7 +291,7 @@ func! s:CountITags(text)
   let s:nextrel = 0  " relative indent steps for next line [unit &sw]:
   let s:block = 0		" assume starting outside of a block
   let s:countonly = 1	" don't change state
-  call substitute(a:text, '<\zs/\=\w\+\>\|<!--\|-->', '\=s:CheckTag(submatch(0))', 'g')
+  call substitute(a:text, '<\zs/\=\w\+\(-\w\+\)*\>\|<!--\|-->', '\=s:CheckTag(submatch(0))', 'g')
   let s:countonly = 0
 endfunc "}}}
 
@@ -299,7 +303,7 @@ func! s:CountTagsAndState(text)
   let s:nextrel = 0  " relative indent steps for next line [unit &sw]:
 
   let s:block = b:hi_newstate.block
-  let tmp = substitute(a:text, '<\zs/\=\w\+\>\|<!--\|-->', '\=s:CheckTag(submatch(0))', 'g')
+  let tmp = substitute(a:text, '<\zs/\=\w\+\(-\w\+\)*\>\|<!--\|-->', '\=s:CheckTag(submatch(0))', 'g')
   if s:block == 3
     let b:hi_newstate.scripttype = s:GetScriptType(matchstr(tmp, '\C.*<SCRIPT\>\zs[^>]*'))
   endif
@@ -311,6 +315,9 @@ func! s:CheckTag(itag)
   "{{{
   " Returns an empty string or "SCRIPT".
   " a:itag can be "tag" or "/tag" or "<!--" or "-->"
+  if (s:CheckCustomTag(a:itag))
+    return ""
+  endif
   let ind = s:get_tag(a:itag)
   if ind == -1
     " closing tag
@@ -363,6 +370,36 @@ func! s:CheckBlockTag(blocktag, ind)
     " we get here if starting and closing a block-tag on the same line
   endif
   return ""
+endfunc "}}}
+
+" Used by s:CheckTag().
+func! s:CheckCustomTag(ctag)
+  "{{{
+  " Returns 1 if ctag is the tag for a custom element, 0 otherwise.
+  " a:ctag can be "tag" or "/tag" or "<!--" or "-->"
+  let pattern = '\%\(\w\+-\)\+\w\+'
+  if match(a:ctag, pattern) == -1
+    return 0
+  endif
+  if matchstr(a:ctag, '\/\ze.\+') == "/"
+    " closing tag
+    if s:block != 0
+      " ignore ctag within a block
+      return 1
+    endif
+    if s:nextrel == 0
+      let s:curind -= 1
+    else
+      let s:nextrel -= 1
+    endif
+  else
+    " opening tag
+    if s:block != 0
+      return 1
+    endif
+    let s:nextrel += 1
+  endif
+  return 1
 endfunc "}}}
 
 " Return the <script> type: either "javascript" or ""
@@ -497,7 +534,7 @@ func! s:FreshState(lnum)
   " If previous line ended in a closing tag, line up with the opening tag.
   if !swendtag && text =~ '</\w\+\s*>\s*$'
     call cursor(state.lnum, 99999)
-    normal F<
+    normal! F<
     let start_lnum = HtmlIndent_FindStartTag()
     if start_lnum > 0
       let state.baseindent = indent(start_lnum)
@@ -883,7 +920,7 @@ endfunc "}}}
 " THE MAIN INDENT FUNCTION. Return the amount of indent for v:lnum.
 func! HtmlIndent()
   "{{{
-  if prevnonblank(v:lnum - 1) <= 1
+  if prevnonblank(v:lnum - 1) < 1
     " First non-blank line has no indent.
     return 0
   endif
@@ -898,7 +935,7 @@ func! HtmlIndent()
   " a tag works very differently. Do not do this when the line starts with
   " "<", it gets the "htmlTag" ID but we are not inside a tag then.
   if curtext !~ '^\s*<'
-    normal ^
+    normal! ^
     let stack = synstack(v:lnum, col('.'))  " assumes there are no tabs
     let foundHtmlString = 0
     for synid in reverse(stack)

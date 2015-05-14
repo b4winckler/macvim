@@ -85,7 +85,7 @@ enum {
 {
     if (!(self = [super initWithFrame:frame]))
         return nil;
-    
+
     vimController = controller;
     scrollbars = [[NSMutableArray alloc] init];
 
@@ -122,15 +122,23 @@ enum {
 
     [textView setAutoresizingMask:NSViewNotSizable];
     [self addSubview:textView];
-    
+
     // Create the tab view (which is never visible, but the tab bar control
     // needs it to function).
     tabView = [[NSTabView alloc] initWithFrame:NSZeroRect];
 
     // Create the tab bar control (which is responsible for actually
     // drawing the tabline and tabs).
-    NSRect tabFrame = { { 0, frame.size.height - 22 },
-                        { frame.size.width, 22 } };
+
+    CGFloat tabBarHeight;
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+    tabBarHeight = 25;
+#else
+    tabBarHeight = 22;
+#endif
+
+    NSRect tabFrame = { { 0, frame.size.height - tabBarHeight },
+                        { frame.size.width, tabBarHeight } };
     tabBarControl = [[PSMTabBarControl alloc] initWithFrame:tabFrame];
 
     [tabView setDelegate:tabBarControl];
@@ -139,10 +147,17 @@ enum {
     [tabBarControl setDelegate:self];
     [tabBarControl setHidden:YES];
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+    [tabBarControl setStyleNamed:@"Yosemite"];
+    [tabBarControl setCellMinWidth:120];
+    [tabBarControl setCellMaxWidth:[[NSScreen mainScreen] frame].size.width];
+    [tabBarControl setCellOptimumWidth:[[NSScreen mainScreen] frame].size.width];
+#else
     [tabBarControl setCellMinWidth:[ud integerForKey:MMTabMinWidthKey]];
     [tabBarControl setCellMaxWidth:[ud integerForKey:MMTabMaxWidthKey]];
     [tabBarControl setCellOptimumWidth:
                                      [ud integerForKey:MMTabOptimumWidthKey]];
+#endif
 
     [tabBarControl setShowAddTabButton:[ud boolForKey:MMShowAddTabButtonKey]];
     [[tabBarControl addTabButton] setTarget:self];
@@ -152,9 +167,9 @@ enum {
                             [NSArray arrayWithObject:NSFilenamesPboardType]];
 
     [tabBarControl setAutoresizingMask:NSViewWidthSizable|NSViewMinYMargin];
-    
+
     //[tabBarControl setPartnerView:textView];
-    
+
     // tab bar resizing only works if awakeFromNib is called (that's where
     // the NSViewFrameDidChangeNotification callback is installed). Sounds like
     // a PSMTabBarControl bug, let's live with it for now.
@@ -247,7 +262,7 @@ enum {
 - (void)cleanup
 {
     vimController = nil;
-    
+
     // NOTE! There is a bug in PSMTabBarControl in that it retains the delegate
     // so reset the delegate here, otherwise the delegate may never get
     // released.

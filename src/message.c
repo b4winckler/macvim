@@ -1701,7 +1701,9 @@ msg_prt_line(s, list)
 	else if (has_mbyte && (l = (*mb_ptr2len)(s)) > 1)
 	{
 	    col += (*mb_ptr2cells)(s);
-	    if (lcs_nbsp != NUL && list && mb_ptr2char(s) == 160)
+	    if (lcs_nbsp != NUL && list
+		    && (mb_ptr2char(s) == 160
+			|| mb_ptr2char(s) == 0x202f))
 	    {
 		mb_char2bytes(lcs_nbsp, buf);
 		buf[(*mb_ptr2len)(buf)] = NUL;
@@ -1763,6 +1765,11 @@ msg_prt_line(s, list)
 	    else if (c == ' ' && trail != NULL && s > trail)
 	    {
 		c = lcs_trail;
+		attr = hl_attr(HLF_8);
+	    }
+	    else if (c == ' ' && list && lcs_space != NUL)
+	    {
+		c = lcs_space;
 		attr = hl_attr(HLF_8);
 	    }
 	}
@@ -4034,11 +4041,11 @@ tv_float(tvs, idxp)
  * pointer for resulting string argument if "str_m" is zero (as per ISO C99).
  *
  * The return value is the number of characters which would be generated
- * for the given input, excluding the trailing null. If this value
+ * for the given input, excluding the trailing NUL. If this value
  * is greater or equal to "str_m", not all characters from the result
  * have been stored in str, output bytes beyond the ("str_m"-1) -th character
  * are discarded. If "str_m" is greater than zero it is guaranteed
- * the resulting string will be null-terminated.
+ * the resulting string will be NUL-terminated.
  */
 
 /*

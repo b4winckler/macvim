@@ -2513,13 +2513,18 @@ mch_print_init(psettings, jobname, forceit)
     props = enc_canon_props(p_encoding);
     if (!(props & ENC_8BIT) && ((*p_pmcs != NUL) || !(props & ENC_UNICODE)))
     {
+	int cmap_first = 0;
+
 	p_mbenc_first = NULL;
 	for (cmap = 0; cmap < (int)NUM_ELEMENTS(prt_ps_mbfonts); cmap++)
 	    if (prt_match_encoding((char *)p_encoding, &prt_ps_mbfonts[cmap],
 								    &p_mbenc))
 	    {
 		if (p_mbenc_first == NULL)
+		{
 		    p_mbenc_first = p_mbenc;
+		    cmap_first = cmap;
+		}
 		if (prt_match_charset((char *)p_pmcs, &prt_ps_mbfonts[cmap],
 								   &p_mbchar))
 		    break;
@@ -2527,7 +2532,10 @@ mch_print_init(psettings, jobname, forceit)
 
 	/* Use first encoding matched if no charset matched */
 	if (p_mbchar == NULL && p_mbenc_first != NULL)
+	{
 	    p_mbenc = p_mbenc_first;
+	    cmap = cmap_first;
+	}
     }
 
     prt_out_mbyte = (p_mbenc != NULL);
@@ -2751,7 +2759,7 @@ mch_print_init(psettings, jobname, forceit)
     /* If the user didn't specify a file name, use a temp file. */
     if (psettings->outfile == NULL)
     {
-	prt_ps_file_name = vim_tempname('p');
+	prt_ps_file_name = vim_tempname('p', TRUE);
 	if (prt_ps_file_name == NULL)
 	{
 	    EMSG(_(e_notmp));
@@ -2960,12 +2968,12 @@ mch_print_begin(psettings)
     if (!prt_find_resource("prolog", res_prolog))
     {
 	EMSG(_("E456: Can't find PostScript resource file \"prolog.ps\""));
-	return FALSE;
+	goto theend;
     }
     if (!prt_open_resource(res_prolog))
-	return FALSE;
+	goto theend;
     if (!prt_check_resource(res_prolog, PRT_PROLOG_VERSION))
-	return FALSE;
+	goto theend;
 #ifdef FEAT_MBYTE
     if (prt_out_mbyte)
     {
@@ -2973,12 +2981,12 @@ mch_print_begin(psettings)
 	if (!prt_find_resource("cidfont", res_cidfont))
 	{
 	    EMSG(_("E456: Can't find PostScript resource file \"cidfont.ps\""));
-	    return FALSE;
+	    goto theend;
 	}
 	if (!prt_open_resource(res_cidfont))
-	    return FALSE;
+	    goto theend;
 	if (!prt_check_resource(res_cidfont, PRT_CID_PROLOG_VERSION))
-	    return FALSE;
+	    goto theend;
     }
 #endif
 
@@ -3012,12 +3020,12 @@ mch_print_begin(psettings)
 		{
 		    EMSG2(_("E456: Can't find PostScript resource file \"%s.ps\""),
 			    p_encoding);
-		    return FALSE;
+		    goto theend;
 		}
 	    }
 	}
 	if (!prt_open_resource(res_encoding))
-	    return FALSE;
+	    goto theend;
 	/* For the moment there are no checks on encoding resource files to
 	 * perform */
 #ifdef FEAT_MBYTE
@@ -3034,10 +3042,10 @@ mch_print_begin(psettings)
 	    {
 		EMSG2(_("E456: Can't find PostScript resource file \"%s.ps\""),
 							  prt_ascii_encoding);
-		return FALSE;
+		goto theend;
 	    }
 	    if (!prt_open_resource(res_encoding))
-		return FALSE;
+		goto theend;
 	    /* For the moment there are no checks on encoding resource files to
 	     * perform */
 	}
@@ -3050,7 +3058,7 @@ mch_print_begin(psettings)
 	{
 	    EMSG2(_("E620: Unable to convert to print encoding \"%s\""),
 		    p_encoding);
-	    return FALSE;
+	    goto theend;
 	}
 	prt_do_conv = TRUE;
     }
@@ -3063,10 +3071,10 @@ mch_print_begin(psettings)
 	{
 	    EMSG2(_("E456: Can't find PostScript resource file \"%s.ps\""),
 								    prt_cmap);
-	    return FALSE;
+	    goto theend;
 	}
 	if (!prt_open_resource(res_cmap))
-	    return FALSE;
+	    goto theend;
     }
 #endif
 
@@ -3140,15 +3148,15 @@ mch_print_begin(psettings)
 
     /* Add required procsets - NOTE: order is important! */
     if (!prt_add_resource(res_prolog))
-	return FALSE;
+	goto theend;
 #ifdef FEAT_MBYTE
     if (prt_out_mbyte)
     {
 	/* Add CID font procset, and any user supplied CMap */
 	if (!prt_add_resource(res_cidfont))
-	    return FALSE;
+	    goto theend;
 	if (prt_custom_cmap && !prt_add_resource(res_cmap))
-	    return FALSE;
+	    goto theend;
     }
 #endif
 
@@ -3158,7 +3166,7 @@ mch_print_begin(psettings)
 	/* There will be only one Roman font encoding to be included in the PS
 	 * file. */
 	if (!prt_add_resource(res_encoding))
-	    return FALSE;
+	    goto theend;
 
     prt_dsc_noarg("EndProlog");
 

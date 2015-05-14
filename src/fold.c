@@ -234,6 +234,8 @@ hasFoldingWin(win, lnum, firstp, lastp, cache, infop)
 	return FALSE;
     }
 
+    if (last > win->w_buffer->b_ml.ml_line_count)
+	last = win->w_buffer->b_ml.ml_line_count;
     if (lastp != NULL)
 	*lastp = last;
     if (firstp != NULL)
@@ -845,8 +847,8 @@ foldUpdate(wp, top, bot)
     fold_T	*fp;
 
     /* Mark all folds from top to bot as maybe-small. */
-    (void)foldFind(&curwin->w_folds, top, &fp);
-    while (fp < (fold_T *)curwin->w_folds.ga_data + curwin->w_folds.ga_len
+    (void)foldFind(&wp->w_folds, top, &fp);
+    while (fp < (fold_T *)wp->w_folds.ga_data + wp->w_folds.ga_len
 	    && fp->fd_top < bot)
     {
 	fp->fd_small = MAYBE;

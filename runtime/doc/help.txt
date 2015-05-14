@@ -1,4 +1,4 @@
-*help.txt*	For Vim version 7.4.  Last change: 2012 Dec 06
+*help.txt*	For Vim version 7.4.  Last change: 2015 Apr 15
 
 			VIM - main help file
 									 k
@@ -24,6 +24,7 @@ Get specific help:  It is possible to go directly to whatever you want help
 		      Command-line editing	  c_	   :help c_<Del>
 		      Vim command argument	  -	   :help -r
 		      Option			  '	   :help 'textwidth'
+		      Regular expression	  /	   :help /[
   Search for help:  Type ":help word", then hit CTRL-D to see matching
 		    help entries for "word".
 		    Or use ":helpgrep word". |:helpgrep|

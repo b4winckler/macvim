@@ -135,6 +135,13 @@
 # endif
 #endif
 
+/* Check support for rendering options */
+#ifdef FEAT_GUI
+# if defined(FEAT_DIRECTX)
+#  define FEAT_RENDER_OPTIONS
+# endif
+#endif
+
 /* Visual Studio 2005 has 'deprecated' many of the standard CRT functions */
 #if _MSC_VER >= 1400
 # define _CRT_SECURE_NO_DEPRECATE
@@ -793,7 +800,8 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define EXPAND_HISTORY		41
 #define EXPAND_USER		42
 #define EXPAND_SYNTIME		43
-#define EXPAND_MACACTION	44
+#define EXPAND_USER_ADDR_TYPE	44
+#define EXPAND_MACACTION	45
 
 /* Values for exmode_active (0 is no exmode) */
 #define EXMODE_NORMAL		1
@@ -809,15 +817,16 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define WILD_LONGEST		7
 #define WILD_ALL_KEEP		8
 
-#define WILD_LIST_NOTFOUND	1
-#define WILD_HOME_REPLACE	2
-#define WILD_USE_NL		4
-#define WILD_NO_BEEP		8
-#define WILD_ADD_SLASH		16
-#define WILD_KEEP_ALL		32
-#define WILD_SILENT		64
-#define WILD_ESCAPE		128
-#define WILD_ICASE		256
+#define WILD_LIST_NOTFOUND	0x01
+#define WILD_HOME_REPLACE	0x02
+#define WILD_USE_NL		0x04
+#define WILD_NO_BEEP		0x08
+#define WILD_ADD_SLASH		0x10
+#define WILD_KEEP_ALL		0x20
+#define WILD_SILENT		0x40
+#define WILD_ESCAPE		0x80
+#define WILD_ICASE		0x100
+#define WILD_ALLLINKS		0x200
 
 /* Flags for expand_wildcards() */
 #define EW_DIR		0x01	/* include directory names */
@@ -831,8 +840,12 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define EW_ICASE	0x100	/* ignore case */
 #define EW_NOERROR	0x200	/* no error for bad regexp */
 #define EW_NOTWILD	0x400	/* add match with literal name if exists */
+#define EW_KEEPDOLLAR	0x800	/* do not escape $, $var is expanded */
 /* Note: mostly EW_NOTFOUND and EW_SILENT are mutually exclusive: EW_NOTFOUND
  * is used when executing commands and EW_SILENT for interactive expanding. */
+#define EW_ALLLINKS	0x1000	/* also links not pointing to existing file */
+#define EW_SHELLCMD	0x2000	/* called from expand_shellcmd(), don't check
+				 * if executable is in $PATH */
 
 /* Flags for find_file_*() functions. */
 #define FINDFILE_FILE	0	/* only files */
@@ -933,6 +946,7 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define FNAME_INCL	8	/* apply 'includeexpr' */
 #define FNAME_REL	16	/* ".." and "./" are relative to the (current)
 				   file instead of the current directory */
+#define FNAME_UNESC	32	/* remove backslashes used for escaping */
 
 /* Values for buflist_getfile() */
 #define GETF_SETMARK	0x01	/* set pcmark before jumping */
@@ -1014,6 +1028,7 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define RE_MAGIC	1	/* 'magic' option */
 #define RE_STRING	2	/* match in string instead of buffer text */
 #define RE_STRICT	4	/* don't allow [abc] without ] */
+#define RE_AUTO		8	/* automatic engine selection */
 
 #ifdef FEAT_SYN_HL
 /* values for reg_do_extmatch */
@@ -1322,6 +1337,7 @@ enum auto_event
     EVENT_SHELLFILTERPOST,	/* after ":1,2!cmd", ":w !cmd", ":r !cmd". */
     EVENT_TEXTCHANGED,		/* text was modified */
     EVENT_TEXTCHANGEDI,		/* text was modified in Insert mode*/
+    EVENT_CMDUNDEFINED,		/* command undefined */
     NUM_EVENTS			/* MUST be the last one */
 };
 
@@ -1992,7 +2008,7 @@ typedef int VimClipboard;	/* This is required for the prototypes. */
 
 #ifndef FEAT_VIRTUALEDIT
 # define getvvcol(w, p, s, c, e) getvcol(w, p, s, c, e)
-# define virtual_active() 0
+# define virtual_active() FALSE
 # define virtual_op FALSE
 #endif
 
@@ -2036,6 +2052,20 @@ typedef int VimClipboard;	/* This is required for the prototypes. */
 #ifdef _MSC_VER
 /* Avoid useless warning "conversion from X to Y of greater size". */
  #pragma warning(disable : 4312)
+/* Avoid warning for old style function declarators */
+ #pragma warning(disable : 4131)
+/* Avoid warning for conversion to type with smaller range */
+ #pragma warning(disable : 4244)
+/* Avoid warning for conversion to larger size */
+ #pragma warning(disable : 4306)
+/* Avoid warning for unreferenced formal parameter */
+ #pragma warning(disable : 4100)
+/* Avoid warning for differs in indirection to slightly different base type */
+ #pragma warning(disable : 4057)
+/* Avoid warning for constant conditional expression */
+ #pragma warning(disable : 4127)
+/* Avoid warning for assignment within conditional */
+ #pragma warning(disable : 4706)
 #endif
 
 /* Note: a NULL argument for vim_realloc() is not portable, don't use it. */
@@ -2271,7 +2301,7 @@ typedef int VimClipboard;	/* This is required for the prototypes. */
 #define AUTOLOAD_CHAR '#'
 
 #ifdef FEAT_EVAL
-# define SET_NO_HLSEARCH(flag) no_hlsearch = (flag); set_vim_var_nr(VV_HLSEARCH, !no_hlsearch)
+# define SET_NO_HLSEARCH(flag) no_hlsearch = (flag); set_vim_var_nr(VV_HLSEARCH, !no_hlsearch && p_hls)
 #else
 # define SET_NO_HLSEARCH(flag) no_hlsearch = (flag)
 #endif

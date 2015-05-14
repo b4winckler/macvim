@@ -1057,6 +1057,10 @@ AC_ARG_ENABLE(pythoninterp,
 	[enable_pythoninterp="no"])
 AC_MSG_RESULT($enable_pythoninterp)
 if test "$enable_pythoninterp" = "yes" -o "$enable_pythoninterp" = "dynamic"; then
+  if test "x$features" = "xtiny" -o "x$features" = "xsmall"; then
+    AC_MSG_ERROR([cannot use Python with tiny or small features])
+  fi
+
   dnl -- find the python executable
   AC_PATH_PROGS(vi_cv_path_python, python2 python)
   if test "X$vi_cv_path_python" != "X"; then
@@ -1138,6 +1142,9 @@ __:
 	@echo "python_LINKFORSHARED='$(LINKFORSHARED)'"
 	@echo "python_DLLLIBRARY='$(DLLLIBRARY)'"
 	@echo "python_INSTSONAME='$(INSTSONAME)'"
+	@echo "python_PYTHONFRAMEWORK='$(PYTHONFRAMEWORK)'"
+	@echo "python_PYTHONFRAMEWORKPREFIX='$(PYTHONFRAMEWORKPREFIX)'"
+	@echo "python_PYTHONFRAMEWORKINSTALLDIR='$(PYTHONFRAMEWORKINSTALLDIR)'"
 eof
 	    dnl -- delete the lines from make about Entering/Leaving directory
 	    eval "`cd ${PYTHON_CONFDIR} && make -f "${tmp_mkf}" __ | sed '/ directory /d'`"
@@ -1145,11 +1152,33 @@ eof
 	    if test "x$MACOSX" = "xyes" && ${vi_cv_path_python} -c \
 		"import sys; sys.exit(${vi_cv_var_python_version} < 2.3)"; then
 	      vi_cv_path_python_plibs="-framework Python"
+	      if test "x${vi_cv_path_python}" != "x/usr/bin/python" && test -n "${python_PYTHONFRAMEWORKPREFIX}"; then
+		  vi_cv_path_python_plibs="-F${python_PYTHONFRAMEWORKPREFIX} -framework Python"
+	      fi
 	    else
 	      if test "${vi_cv_var_python_version}" = "1.4"; then
 		  vi_cv_path_python_plibs="${PYTHON_CONFDIR}/libModules.a ${PYTHON_CONFDIR}/libPython.a ${PYTHON_CONFDIR}/libObjects.a ${PYTHON_CONFDIR}/libParser.a"
 	      else
 		  vi_cv_path_python_plibs="-L${PYTHON_CONFDIR} -lpython${vi_cv_var_python_version}"
+	      fi
+	      dnl -- Check if the path contained in python_LINKFORSHARED is
+	      dnl    usable for vim build. If not, make and try other
+	      dnl    candidates.
+	      if test -n "${python_LINKFORSHARED}" && test -n "${python_PYTHONFRAMEWORKPREFIX}"; then
+	        python_link_symbol=`echo ${python_LINKFORSHARED} | sed 's/\([[^ \t]][[^ \t]]*[[ \t]][[ \t]]*[[^ \t]][[^ \t]]*\)[[ \t]].*/\1/'`
+		python_link_path=`echo ${python_LINKFORSHARED} |   sed 's/\([[^ \t]][[^ \t]]*[[ \t]][[ \t]]*[[^ \t]][[^ \t]]*\)[[ \t]][[ \t]]*\(.*\)/\2/'`
+	        if test -n "${python_link_path}" && ! test -x "${python_link_path}"; then
+	          dnl -- The path looks relative. Guess the absolute one using
+		  dnl    the prefix and try that.
+	          python_link_path="${python_PYTHONFRAMEWORKPREFIX}/${python_link_path}"
+		  if test -n "${python_link_path}" && ! test -x "${python_link_path}"; then
+		    dnl -- A last resort.
+		    python_link_path="${python_PYTHONFRAMEWORKINSTALLDIR}/Versions/${vi_cv_var_python_version}/${python_PYTHONFRAMEWORK}"
+	            dnl -- No check is done. The last word is left to the
+	            dnl    "sanity" test on link flags that follows shortly.
+		  fi
+	          python_LINKFORSHARED="${python_link_symbol} ${python_link_path}"
+	        fi
 	      fi
 	      vi_cv_path_python_plibs="${vi_cv_path_python_plibs} ${python_BASEMODLIBS} ${python_LIBS} ${python_SYSLIBS} ${python_LINKFORSHARED}"
 	      dnl remove -ltermcap, it can conflict with an earlier -lncurses
@@ -1269,6 +1298,10 @@ AC_ARG_ENABLE(python3interp,
 	[enable_python3interp="no"])
 AC_MSG_RESULT($enable_python3interp)
 if test "$enable_python3interp" = "yes" -o "$enable_python3interp" = "dynamic"; then
+  if test "x$features" = "xtiny" -o "x$features" = "xsmall"; then
+    AC_MSG_ERROR([cannot use Python with tiny or small features])
+  fi
+
   dnl -- find the python3 executable
   AC_PATH_PROGS(vi_cv_path_python3, python3 python)
   if test "X$vi_cv_path_python3" != "X"; then
@@ -1469,9 +1502,9 @@ if test "$python_ok" = yes && test "$python3_ok" = yes; then
   AC_MSG_CHECKING(whether we can do without RTLD_GLOBAL for Python)
   cflags_save=$CFLAGS
   CFLAGS="$CFLAGS $PYTHON_CFLAGS"
-  ldflags_save=$LDFLAGS
+  libs_save=$LIBS
   dnl -ldl must go first to make this work on Archlinux (Roland Puntaier)
-  LDFLAGS="-ldl $LDFLAGS"
+  LIBS="-ldl $LIBS"
   AC_RUN_IFELSE([AC_LANG_SOURCE([
     #include <dlfcn.h>
     /* If this program fails, then RTLD_GLOBAL is needed.
@@ -1509,14 +1542,14 @@ if test "$python_ok" = yes && test "$python3_ok" = yes; then
     [AC_MSG_RESULT(yes);AC_DEFINE(PY_NO_RTLD_GLOBAL)], [AC_MSG_RESULT(no)])
 
   CFLAGS=$cflags_save
-  LDFLAGS=$ldflags_save
+  LIBS=$libs_save
 
   AC_MSG_CHECKING(whether we can do without RTLD_GLOBAL for Python3)
   cflags_save=$CFLAGS
   CFLAGS="$CFLAGS $PYTHON3_CFLAGS"
-  ldflags_save=$LDFLAGS
+  libs_save=$LIBS
   dnl -ldl must go first to make this work on Archlinux (Roland Puntaier)
-  LDFLAGS="-ldl $LDFLAGS"
+  LIBS="-ldl $LIBS"
   AC_RUN_IFELSE([AC_LANG_SOURCE([
     #include <dlfcn.h>
     #include <wchar.h>
@@ -1555,7 +1588,7 @@ if test "$python_ok" = yes && test "$python3_ok" = yes; then
     [AC_MSG_RESULT(yes);AC_DEFINE(PY3_NO_RTLD_GLOBAL)], [AC_MSG_RESULT(no)])
 
   CFLAGS=$cflags_save
-  LDFLAGS=$ldflags_save
+  LIBS=$libs_save
 
   PYTHON_SRC="if_python.c"
   PYTHON_OBJ="objects/if_python.o"
@@ -1746,6 +1779,10 @@ AC_ARG_ENABLE(rubyinterp,
 	[enable_rubyinterp="no"])
 AC_MSG_RESULT($enable_rubyinterp)
 if test "$enable_rubyinterp" = "yes" -o "$enable_rubyinterp" = "dynamic"; then
+  if test "x$features" = "xtiny" -o "x$features" = "xsmall"; then
+    AC_MSG_ERROR([cannot use Ruby with tiny or small features])
+  fi
+
   AC_MSG_CHECKING(--with-ruby-command argument)
   AC_SUBST(vi_cv_path_ruby)
   AC_ARG_WITH(ruby-command, [  --with-ruby-command=RUBY  name of the Ruby command (default: ruby)],
@@ -3782,21 +3819,24 @@ fi
 dnl Check for multibyte locale functions
 dnl Find out if _Xsetlocale() is supported by libX11.
 dnl Check if X_LOCALE should be defined.
-
-if test "$enable_multibyte" = "yes"; then
+if test "x$with_x" = "xyes"; then
   cflags_save=$CFLAGS
-  ldflags_save=$LDFLAGS
-  if test "x$x_includes" != "xNONE" ; then
-    CFLAGS="$CFLAGS -I$x_includes"
-    LDFLAGS="$X_LIBS $LDFLAGS -lX11"
-    AC_MSG_CHECKING(whether X_LOCALE needed)
-    AC_TRY_COMPILE([#include <X11/Xlocale.h>],,
-	AC_TRY_LINK_FUNC([_Xsetlocale], [AC_MSG_RESULT(yes)
-		AC_DEFINE(X_LOCALE)], AC_MSG_RESULT(no)),
-	AC_MSG_RESULT(no))
-  fi
+  libs_save=$LIBS
+  LIBS="$LIBS $X_LIBS $GUI_LIB_LOC $GUI_X_LIBS $X_PRE_LIBS $X_LIB $X_EXTRA_LIBS"
+  CFLAGS="$CFLAGS $X_CFLAGS"
+
+  AC_MSG_CHECKING(whether X_LOCALE needed)
+  AC_TRY_COMPILE([#include <X11/Xlocale.h>],,
+      AC_TRY_LINK_FUNC([_Xsetlocale], [AC_MSG_RESULT(yes)
+	      AC_DEFINE(X_LOCALE)], AC_MSG_RESULT(no)),
+      AC_MSG_RESULT(no))
+
+  AC_MSG_CHECKING(whether Xutf8SetWMProperties() can be used)
+  AC_TRY_LINK_FUNC([Xutf8SetWMProperties], [AC_MSG_RESULT(yes)
+	      AC_DEFINE(HAVE_XUTF8SETWMPROPERTIES)], AC_MSG_RESULT(no))
+
   CFLAGS=$cflags_save
-  LDFLAGS=$ldflags_save
+  LIBS=$libs_save
 fi
 
 dnl Link with xpg4, it is said to make Korean locale working
@@ -3878,7 +3918,7 @@ if test "$enable_nls" = "yes"; then
     else
       AC_MSG_RESULT([msgfmt not found - disabled]);
     fi
-    if test $have_gettext = "yes"; then
+    if test $have_gettext = "yes" -a "x$features" != "xtiny" -a "x$features" != "xsmall"; then
       AC_DEFINE(HAVE_GETTEXT)
       MAKEMO=yes
       AC_SUBST(MAKEMO)

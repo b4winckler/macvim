@@ -110,7 +110,7 @@ static void check_tty __ARGS((mparm_T *parmp));
 static void read_stdin __ARGS((void));
 static void create_windows __ARGS((mparm_T *parmp));
 # ifdef FEAT_WINDOWS
-static void edit_buffers __ARGS((mparm_T *parmp));
+static void edit_buffers __ARGS((mparm_T *parmp, char_u *cwd));
 # endif
 static void exe_pre_commands __ARGS((mparm_T *parmp));
 static void exe_commands __ARGS((mparm_T *parmp));
@@ -149,6 +149,9 @@ static char *(main_errors[]) =
 
 #ifndef PROTO		/* don't want a prototype for main() */
 #ifndef NO_VIM_MAIN	/* skip this for unittests */
+
+static char_u *start_dir = NULL;	/* current working dir on startup */
+
     int
 # ifdef VIMDLL
 _export
@@ -184,6 +187,14 @@ main
      * NameBuff.  Thus emsg2() cannot be called!
      */
     mch_early_init();
+
+#if defined(WIN32) && defined(FEAT_MBYTE)
+    /*
+     * MingW expands command line arguments, which confuses our code to
+     * convert when 'encoding' changes.  Get the unexpanded arguments.
+     */
+    argc = get_cmd_argsW(&argv);
+#endif
 
     /* Many variables are in "params" so that we can pass them to invoked
      * functions without a lot of arguments.  "argc" and "argv" are also
@@ -411,12 +422,17 @@ main
 	 */
 	if (!params.literal)
 	{
+	    start_dir = alloc(MAXPATHL);
+	    if (start_dir != NULL)
+		mch_dirname(start_dir, MAXPATHL);
 	    /* Temporarily add '(' and ')' to 'isfname'.  These are valid
 	     * filename characters but are excluded from 'isfname' to make
 	     * "gf" work on a file name in parenthesis (e.g.: see vim.h). */
 	    do_cmdline_cmd((char_u *)":set isf+=(,)");
 	    alist_expand(NULL, 0);
 	    do_cmdline_cmd((char_u *)":set isf&");
+	    if (start_dir != NULL)
+		mch_chdir((char *)start_dir);
 	}
 #endif
 	fname = alist_name(&GARGLIST[0]);
@@ -442,6 +458,8 @@ main
 	 * If the cd fails, it doesn't matter.
 	 */
 	(void)vim_chdirfile(fname);
+	if (start_dir != NULL)
+	    mch_dirname(start_dir, MAXPATHL);
     }
 #endif
     TIME_MSG("expanding arguments");
@@ -496,6 +514,8 @@ main
 		expand_env((char_u *)"$HOME", NameBuff, MAXPATHL);
 		vim_chdir(NameBuff);
 	    }
+	    if (start_dir != NULL)
+		mch_dirname(start_dir, MAXPATHL);
 	}
     }
 #endif
@@ -862,8 +882,8 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
 #ifdef FEAT_CRYPT
     if (params.ask_for_key)
     {
-	(void)blowfish_self_test();
-	(void)get_crypt_key(TRUE, TRUE);
+	crypt_check_current_method();
+	(void)crypt_get_key(TRUE, TRUE);
 	TIME_MSG("getting crypt key");
     }
 #endif
@@ -935,8 +955,9 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
      * If opened more than one window, start editing files in the other
      * windows.
      */
-    edit_buffers(&params);
+    edit_buffers(&params, start_dir);
 #endif
+    vim_free(start_dir);
 
 #ifdef FEAT_DIFF
     if (params.diff_mode)
@@ -1100,7 +1121,7 @@ main_loop(cmdwin, noexmode)
     int		noexmode;   /* TRUE when return on entering Ex mode */
 {
     oparg_T	oa;				/* operator arguments */
-    int		previous_got_int = FALSE;	/* "got_int" was TRUE */
+    volatile int previous_got_int = FALSE;	/* "got_int" was TRUE */
 #ifdef FEAT_CONCEAL
     linenr_T	conceal_old_cursor_line = 0;
     linenr_T	conceal_new_cursor_line = 0;
@@ -1305,9 +1326,9 @@ main_loop(cmdwin, noexmode)
 		char_u *p;
 
 		/* msg_attr_keep() will set keep_msg to NULL, must free the
-		 * string here. */
+		 * string here. Don't reset keep_msg, msg_attr_keep() uses it
+		 * to check for duplicates. */
 		p = keep_msg;
-		keep_msg = NULL;
 		msg_attr(p, keep_msg_attr);
 		vim_free(p);
 	    }
@@ -1569,6 +1590,9 @@ getout(exitval)
 #ifdef FEAT_EVAL
     if (garbage_collect_at_exit)
 	garbage_collect();
+#endif
+#if defined(WIN32) && defined(FEAT_MBYTE)
+    free_cmd_argsW();
 #endif
 
     mch_exit(exitval);
@@ -2798,8 +2822,9 @@ create_windows(parmp)
      * windows.  make_windows() has already opened the windows.
      */
     static void
-edit_buffers(parmp)
+edit_buffers(parmp, cwd)
     mparm_T	*parmp;
+    char_u	*cwd;			/* current working dir */
 {
     int		arg_idx;		/* index in argument list */
     int		i;
@@ -2824,6 +2849,8 @@ edit_buffers(parmp)
     arg_idx = 1;
     for (i = 1; i < parmp->window_count; ++i)
     {
+	if (cwd != NULL)
+	    mch_chdir((char *)cwd);
 	/* When w_arg_idx is -1 remove the window (see create_windows()). */
 	if (curwin->w_arg_idx == -1)
 	{
@@ -3990,6 +4017,7 @@ build_drop_cmd(filec, filev, tabs, sendReply)
     int		i;
     char_u	*inicmd = NULL;
     char_u	*p;
+    char_u	*cdp;
     char_u	*cwd;
 
     if (filec > 0 && filev[0][0] == '+')
@@ -4011,7 +4039,7 @@ build_drop_cmd(filec, filev, tabs, sendReply)
 	vim_free(cwd);
 	return NULL;
     }
-    p = vim_strsave_escaped_ext(cwd,
+    cdp = vim_strsave_escaped_ext(cwd,
 #ifdef BACKSLASH_IN_FILENAME
 		    "",  /* rem_backslash() will tell what chars to escape */
 #else
@@ -4019,12 +4047,11 @@ build_drop_cmd(filec, filev, tabs, sendReply)
 #endif
 		    '\\', TRUE);
     vim_free(cwd);
-    if (p == NULL)
+    if (cdp == NULL)
 	return NULL;
     ga_init2(&ga, 1, 100);
     ga_concat(&ga, (char_u *)"<C-\\><C-N>:cd ");
-    ga_concat(&ga, p);
-    vim_free(p);
+    ga_concat(&ga, cdp);
 
     /* Call inputsave() so that a prompt for an encryption key works. */
     ga_concat(&ga, (char_u *)"<CR>:if exists('*inputsave')|call inputsave()|endif|");
@@ -4060,8 +4087,21 @@ build_drop_cmd(filec, filev, tabs, sendReply)
 
     /* Switch back to the correct current directory (prior to temporary path
      * switch) unless 'autochdir' is set, in which case it will already be
-     * correct after the :drop command. */
-    ga_concat(&ga, (char_u *)":if !exists('+acd')||!&acd|cd -|endif<CR>");
+     * correct after the :drop command. With line breaks and spaces:
+     *  if !exists('+acd') || !&acd
+     *    if haslocaldir()
+     *	    cd -
+     *      lcd -
+     *    elseif getcwd() ==# "current path"
+     *      cd -
+     *    endif
+     *  endif
+     */
+    ga_concat(&ga, (char_u *)":if !exists('+acd')||!&acd|if haslocaldir()|");
+    ga_concat(&ga, (char_u *)"cd -|lcd -|elseif getcwd() ==# \"");
+    ga_concat(&ga, cdp);
+    ga_concat(&ga, (char_u *)"\"|cd -|endif|endif<CR>");
+    vim_free(cdp);
 
     if (sendReply)
 	ga_concat(&ga, (char_u *)":call SetupRemoteReplies()<CR>");

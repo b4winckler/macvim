@@ -137,7 +137,7 @@ typedef struct
 #ifdef FEAT_LINEBREAK
     int		wo_bri;
 # define w_p_bri w_onebuf_opt.wo_bri	/* 'breakindent' */
-    char_u		*wo_briopt;
+    char_u	*wo_briopt;
 # define w_p_briopt w_onebuf_opt.wo_briopt /* 'breakindentopt' */
 #endif
 #ifdef FEAT_DIFF
@@ -1203,10 +1203,11 @@ struct dictitem_S
 
 typedef struct dictitem_S dictitem_T;
 
-#define DI_FLAGS_RO	1 /* "di_flags" value: read-only variable */
-#define DI_FLAGS_RO_SBX 2 /* "di_flags" value: read-only in the sandbox */
-#define DI_FLAGS_FIX	4 /* "di_flags" value: fixed variable, not allocated */
-#define DI_FLAGS_LOCK	8 /* "di_flags" value: locked variable */
+#define DI_FLAGS_RO	1  /* "di_flags" value: read-only variable */
+#define DI_FLAGS_RO_SBX 2  /* "di_flags" value: read-only in the sandbox */
+#define DI_FLAGS_FIX	4  /* "di_flags" value: fixed: no :unlet or remove() */
+#define DI_FLAGS_LOCK	8  /* "di_flags" value: locked variable */
+#define DI_FLAGS_ALLOC	16 /* "di_flags" value: separately allocated */
 
 /*
  * Structure to hold info about a Dictionary.
@@ -1222,6 +1223,20 @@ struct dictvar_S
     dict_T	*dv_used_next;	/* next dict in used dicts list */
     dict_T	*dv_used_prev;	/* previous dict in used dicts list */
 };
+
+/* structure used for explicit stack while garbage collecting hash tables */
+typedef struct ht_stack_S
+{
+    hashtab_T		*ht;
+    struct ht_stack_S	*prev;
+} ht_stack_T;
+
+/* structure used for explicit stack while garbage collecting lists */
+typedef struct list_stack_S
+{
+    list_T		*list;
+    struct list_stack_S	*prev;
+} list_stack_T;
 
 /* values for b_syn_spell: what to do with toplevel text */
 #define SYNSPL_DEFAULT	0	/* spell check if @Spell not defined */
@@ -1250,6 +1265,24 @@ typedef struct {
     long	match;		/* nr of times matched */
 } syn_time_T;
 #endif
+
+#ifdef FEAT_CRYPT
+/*
+ * Structure to hold the type of encryption and the state of encryption or
+ * decryption.
+ */
+typedef struct {
+    int	    method_nr;
+    void    *method_state;  /* method-specific state information */
+} cryptstate_T;
+
+/* values for method_nr */
+# define CRYPT_M_ZIP	0
+# define CRYPT_M_BF	1
+# define CRYPT_M_BF2	2
+# define CRYPT_M_COUNT	3 /* number of crypt methods */
+#endif
+
 
 /*
  * These are items normally related to a buffer.  But when using ":ownsyntax"
@@ -1519,6 +1552,8 @@ struct file_buffer
 
     int		b_p_ai;		/* 'autoindent' */
     int		b_p_ai_nopaste;	/* b_p_ai saved for paste mode */
+    char_u	*b_p_bkc;	/* 'backupcopy' */
+    unsigned	b_bkc_flags;    /* flags for 'backupcopy' */
     int		b_p_ci;		/* 'copyindent' */
     int		b_p_bin;	/* 'binary' */
 #ifdef FEAT_MBYTE
@@ -1774,6 +1809,11 @@ struct file_buffer
 
 #ifdef FEAT_SIGNS
     signlist_T	*b_signlist;	/* list of signs to draw */
+# ifdef FEAT_NETBEANS_INTG
+    int		b_has_sign_column; /* Flag that is set when a first sign is
+				    * added and remains set until the end of
+				    * the netbeans session. */
+# endif
 #endif
 
 #ifdef FEAT_NETBEANS_INTG
@@ -1781,12 +1821,19 @@ struct file_buffer
     int		b_was_netbeans_file;/* TRUE if b_netbeans_file was once set */
 #endif
 
+#ifdef FEAT_CRYPT
+    cryptstate_T *b_cryptstate;	/* Encryption state while reading or writing
+				 * the file. NULL when not using encryption. */
+#endif
+    int		b_mapped_ctrl_c; /* modes where CTRL-C is mapped */
+
 #ifdef FEAT_ODB_EDITOR
     uint32_t    b_odb_server_id;    /* FourCC of the ODB server (0 if none) */
     void        *b_odb_token;       /* NSAppleEventDescriptor (optional) */
     char_u      *b_odb_fname;       /* Custom file name (optional) */
 #endif
-};
+
+}; /* file_buffer */
 
 
 #ifdef FEAT_DIFF
@@ -2274,6 +2321,7 @@ struct window_S
 #ifdef FEAT_LINEBREAK
     linenr_T	w_nrwidth_line_count;	/* line count when ml_nrwidth_width
 					 * was computed. */
+    long	w_nuw_cached;		/* 'numberwidth' option cached */
     int		w_nrwidth_width;	/* nr of chars to print line count. */
 #endif
 

@@ -759,11 +759,14 @@ getcmdline(firstc, count, indent)
 #ifdef FEAT_CMDWIN
 	if (c == cedit_key || c == K_CMDWIN)
 	{
-	    /*
-	     * Open a window to edit the command line (and history).
-	     */
-	    c = ex_window();
-	    some_key_typed = TRUE;
+	    if (ex_normal_busy == 0 && got_int == FALSE)
+	    {
+		/*
+		 * Open a window to edit the command line (and history).
+		 */
+		c = ex_window();
+		some_key_typed = TRUE;
+	    }
 	}
 # ifdef FEAT_DIGRAPHS
 	else
@@ -2250,6 +2253,9 @@ getexmodeline(promptc, cookie, indent)
     got_int = FALSE;
     while (!got_int)
     {
+	long    sw;
+	char_u *s;
+
 	if (ga_grow(&line_ga, 40) == FAIL)
 	    break;
 
@@ -2301,13 +2307,12 @@ getexmodeline(promptc, cookie, indent)
 		msg_col = startcol;
 		msg_clr_eos();
 		line_ga.ga_len = 0;
-		continue;
+		goto redraw;
 	    }
 
 	    if (c1 == Ctrl_T)
 	    {
-		long	    sw = get_sw_value(curbuf);
-
+		sw = get_sw_value(curbuf);
 		p = (char_u *)line_ga.ga_data;
 		p[line_ga.ga_len] = NUL;
 		indent = get_indent_str(p, 8, FALSE);
@@ -2315,9 +2320,9 @@ getexmodeline(promptc, cookie, indent)
 add_indent:
 		while (get_indent_str(p, 8, FALSE) < indent)
 		{
-		    char_u *s = skipwhite(p);
-
-		    ga_grow(&line_ga, 1);
+		    ga_grow(&line_ga, 2);  /* one more for the NUL */
+		    p = (char_u *)line_ga.ga_data;
+		    s = skipwhite(p);
 		    mch_memmove(s + 1, s, line_ga.ga_len - (s - p) + 1);
 		    *s = ' ';
 		    ++line_ga.ga_len;
@@ -2366,13 +2371,15 @@ redraw:
 		{
 		    p[line_ga.ga_len] = NUL;
 		    indent = get_indent_str(p, 8, FALSE);
-		    --indent;
-		    indent -= indent % get_sw_value(curbuf);
+		    if (indent > 0)
+		    {
+			--indent;
+			indent -= indent % get_sw_value(curbuf);
+		    }
 		}
 		while (get_indent_str(p, 8, FALSE) > indent)
 		{
-		    char_u *s = skipwhite(p);
-
+		    s = skipwhite(p);
 		    mch_memmove(s - 1, s, line_ga.ga_len - (s - p) + 1);
 		    --line_ga.ga_len;
 		}
@@ -4571,6 +4578,8 @@ ExpandFromContext(xp, pat, num_file, file, options)
 	flags |= EW_KEEPALL;
     if (options & WILD_SILENT)
 	flags |= EW_SILENT;
+    if (options & WILD_ALLLINKS)
+	flags |= EW_ALLLINKS;
 
     if (xp->xp_context == EXPAND_FILES
 	    || xp->xp_context == EXPAND_DIRECTORIES
@@ -4705,6 +4714,7 @@ ExpandFromContext(xp, pat, num_file, file, options)
 #endif
 #ifdef FEAT_USR_CMDS
 	    {EXPAND_USER_COMMANDS, get_user_commands, FALSE, TRUE},
+	    {EXPAND_USER_ADDR_TYPE, get_user_cmd_addr_type, FALSE, TRUE},
 	    {EXPAND_USER_CMD_FLAGS, get_user_cmd_flags, FALSE, TRUE},
 	    {EXPAND_USER_NARGS, get_user_cmd_nargs, FALSE, TRUE},
 	    {EXPAND_USER_COMPLETE, get_user_cmd_complete, FALSE, TRUE},
@@ -4893,6 +4903,7 @@ expand_shellcmd(filepat, num_file, file, flagsarg)
     char_u	*s, *e;
     int		flags = flagsarg;
     int		ret;
+    int		did_curdir = FALSE;
 
     if (buf == NULL)
 	return FAIL;
@@ -4904,7 +4915,7 @@ expand_shellcmd(filepat, num_file, file, flagsarg)
 	if (pat[i] == '\\' && pat[i + 1] == ' ')
 	    STRMOVE(pat + i, pat + i + 1);
 
-    flags |= EW_FILE | EW_EXEC;
+    flags |= EW_FILE | EW_EXEC | EW_SHELLCMD;
 
     /* For an absolute name we don't use $PATH. */
     if (mch_isFullName(pat))
@@ -4921,11 +4932,22 @@ expand_shellcmd(filepat, num_file, file, flagsarg)
 
     /*
      * Go over all directories in $PATH.  Expand matches in that directory and
-     * collect them in "ga".
+     * collect them in "ga".  When "." is not in $PATH also expand for the
+     * current directory, to find "subdir/cmd".
      */
     ga_init2(&ga, (int)sizeof(char *), 10);
-    for (s = path; *s != NUL; s = e)
+    for (s = path; ; s = e)
     {
+	if (*s == NUL)
+	{
+	    if (did_curdir)
+		break;
+	    /* Find directories in the current directory, path is empty. */
+	    did_curdir = TRUE;
+	}
+	else if (*s == '.')
+	    did_curdir = TRUE;
+
 	if (*s == ' ')
 	    ++s;	/* Skip space used for absolute path name. */
 
@@ -6377,6 +6399,9 @@ ex_window()
 #ifdef FEAT_RIGHTLEFT
     int			save_cmdmsg_rl = cmdmsg_rl;
 #endif
+#ifdef FEAT_FOLDING
+    int			save_KeyTyped;
+#endif
 
     /* Can't do this recursively.  Can't do it when typing a password. */
     if (cmdwin_type != 0
@@ -6511,8 +6536,19 @@ ex_window()
     RedrawingDisabled = i;
 
 # ifdef FEAT_AUTOCMD
+
+#  ifdef FEAT_FOLDING
+    save_KeyTyped = KeyTyped;
+#  endif
+
     /* Trigger CmdwinLeave autocommands. */
     apply_autocmds(EVENT_CMDWINLEAVE, typestr, typestr, FALSE, curbuf);
+
+#  ifdef FEAT_FOLDING
+    /* Restore KeyTyped in case it is modified by autocommands */
+    KeyTyped = save_KeyTyped;
+#  endif
+
 # endif
 
     /* Restore the command line info. */

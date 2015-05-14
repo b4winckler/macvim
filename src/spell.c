@@ -311,9 +311,10 @@
 # include <time.h>	/* for time_t */
 #endif
 
-#define MAXWLEN 250		/* Assume max. word len is this many bytes.
+#define MAXWLEN 254		/* Assume max. word len is this many bytes.
 				   Some places assume a word length fits in a
-				   byte, thus it can't be above 255. */
+				   byte, thus it can't be above 255.
+				   Must be >= PFD_NOTSPECIAL. */
 
 /* Type used for indexes in the word tree need to be at least 4 bytes.  If int
  * is 8 bytes we could use something smaller, but what? */
@@ -1154,11 +1155,14 @@ spell_check(wp, ptr, attrp, capcol, docount)
 	    if (capcol != NULL && wp->w_s->b_cap_prog != NULL)
 	    {
 		regmatch_T	regmatch;
+		int		r;
 
 		/* Check for end of sentence. */
 		regmatch.regprog = wp->w_s->b_cap_prog;
 		regmatch.rm_ic = FALSE;
-		if (vim_regexec(&regmatch, ptr, 0))
+		r = vim_regexec(&regmatch, ptr, 0);
+		wp->w_s->b_cap_prog = regmatch.regprog;
+		if (r)
 		    *capcol = (int)(regmatch.endp[0] - ptr);
 	    }
 
@@ -1786,7 +1790,6 @@ can_compound(slang, word, flags)
     char_u	*word;
     char_u	*flags;
 {
-    regmatch_T	regmatch;
 #ifdef FEAT_MBYTE
     char_u	uflags[MAXWLEN * 2];
     int		i;
@@ -1808,9 +1811,7 @@ can_compound(slang, word, flags)
     else
 #endif
 	p = flags;
-    regmatch.regprog = slang->sl_compprog;
-    regmatch.rm_ic = FALSE;
-    if (!vim_regexec(&regmatch, p, 0))
+    if (!vim_regexec_prog(&slang->sl_compprog, FALSE, p, 0))
 	return FALSE;
 
     /* Count the number of syllables.  This may be slow, do it last.  If there
@@ -1930,8 +1931,7 @@ valid_word_prefix(totprefcnt, arridx, flags, word, slang, cond_req)
 {
     int		prefcnt;
     int		pidx;
-    regprog_T	*rp;
-    regmatch_T	regmatch;
+    regprog_T	**rp;
     int		prefid;
 
     prefid = (unsigned)flags >> 24;
@@ -1950,12 +1950,10 @@ valid_word_prefix(totprefcnt, arridx, flags, word, slang, cond_req)
 
 	/* Check the condition, if there is one.  The condition index is
 	 * stored in the two bytes above the prefix ID byte.  */
-	rp = slang->sl_prefprog[((unsigned)pidx >> 8) & 0xffff];
-	if (rp != NULL)
+	rp = &slang->sl_prefprog[((unsigned)pidx >> 8) & 0xffff];
+	if (*rp != NULL)
 	{
-	    regmatch.regprog = rp;
-	    regmatch.rm_ic = FALSE;
-	    if (!vim_regexec(&regmatch, word, 0))
+	    if (!vim_regexec_prog(rp, FALSE, word, 0))
 		continue;
 	}
 	else if (cond_req)
@@ -4841,6 +4839,7 @@ typedef struct afffile_S
     unsigned	af_nosuggest;	/* NOSUGGEST ID */
     int		af_pfxpostpone;	/* postpone prefixes without chop string and
 				   without flags */
+    int		af_ignoreextra;	/* IGNOREEXTRA present */
     hashtab_T	af_pref;	/* hashtable for prefixes, affheader_T */
     hashtab_T	af_suff;	/* hashtable for suffixes, affheader_T */
     hashtab_T	af_comp;	/* hashtable for compound flags, compitem_T */
@@ -5605,6 +5604,10 @@ spell_read_aff(spin, fname)
 	    {
 		aff->af_pfxpostpone = TRUE;
 	    }
+	    else if (is_aff_rule(items, itemcnt, "IGNOREEXTRA", 1))
+	    {
+		aff->af_ignoreextra = TRUE;
+	    }
 	    else if ((STRCMP(items[0], "PFX") == 0
 					      || STRCMP(items[0], "SFX") == 0)
 		    && aff_todo == 0
@@ -5712,9 +5715,11 @@ spell_read_aff(spin, fname)
 		int		lasti = 5;
 
 		/* Myspell allows extra text after the item, but that might
-		 * mean mistakes go unnoticed.  Require a comment-starter.
-		 * Hunspell uses a "-" item. */
-		if (itemcnt > lasti && *items[lasti] != '#'
+		 * mean mistakes go unnoticed.  Require a comment-starter,
+		 * unless IGNOREEXTRA is used.  Hunspell uses a "-" item. */
+		if (itemcnt > lasti
+			&& !aff->af_ignoreextra
+			&& *items[lasti] != '#'
 			&& (STRCMP(items[lasti], "-") != 0
 						     || itemcnt != lasti + 1))
 		    smsg((char_u *)_(e_afftrailing), fname, lnum, items[lasti]);
@@ -6896,7 +6901,6 @@ store_aff_word(spin, word, afflist, affile, ht, xht, condit, flags,
     hashitem_T	*hi;
     affheader_T	*ah;
     affentry_T	*ae;
-    regmatch_T	regmatch;
     char_u	newword[MAXWLEN];
     int		retval = OK;
     int		i, j;
@@ -6937,15 +6941,14 @@ store_aff_word(spin, word, afflist, affile, ht, xht, condit, flags,
 		     * When a previously added affix had CIRCUMFIX this one
 		     * must have it too, if it had not then this one must not
 		     * have one either. */
-		    regmatch.regprog = ae->ae_prog;
-		    regmatch.rm_ic = FALSE;
 		    if ((xht != NULL || !affile->af_pfxpostpone
 				|| ae->ae_chop != NULL
 				|| ae->ae_flags != NULL)
 			    && (ae->ae_chop == NULL
 				|| STRLEN(ae->ae_chop) < wordlen)
 			    && (ae->ae_prog == NULL
-				|| vim_regexec(&regmatch, word, (colnr_T)0))
+				|| vim_regexec_prog(&ae->ae_prog, FALSE,
+							    word, (colnr_T)0))
 			    && (((condit & CONDIT_CFIX) == 0)
 				== ((condit & CONDIT_AFF) == 0
 				    || ae->ae_flags == NULL
@@ -9423,7 +9426,7 @@ spell_add_word(word, len, bad, idx, undo)
     {
 	if (int_wordlist == NULL)
 	{
-	    int_wordlist = vim_tempname('s');
+	    int_wordlist = vim_tempname('s', FALSE);
 	    if (int_wordlist == NULL)
 		return;
 	}
@@ -10471,6 +10474,7 @@ check_need_cap(lnum, col)
 		break;
 	    }
 	}
+	curwin->w_s->b_cap_prog = regmatch.regprog;
     }
 
     vim_free(line_copy);

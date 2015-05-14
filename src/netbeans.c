@@ -148,6 +148,11 @@ static int inAtomic = 0;
     static void
 nb_close_socket(void)
 {
+    buf_T	*buf;
+
+    for (buf = firstbuf; buf != NULL; buf = buf->b_next)
+	buf->b_has_sign_column = FALSE;
+
 #ifdef FEAT_GUI_X11
     if (inputHandler != (XtInputId)NULL)
     {
@@ -1109,10 +1114,18 @@ nb_get_buf(int bufno)
     {
 	if (bufno >= buf_list_size) /* grow list */
 	{
+	    nbbuf_T *t_buf_list = buf_list;
+
 	    incr = bufno - buf_list_size + 90;
 	    buf_list_size += incr;
 	    buf_list = (nbbuf_T *)vim_realloc(
 				   buf_list, buf_list_size * sizeof(nbbuf_T));
+	    if (buf_list == NULL)
+	    {
+		vim_free(t_buf_list);
+		buf_list_size = 0;
+		return NULL;
+	    }
 	    vim_memset(buf_list + buf_list_size - incr, 0,
 						      incr * sizeof(nbbuf_T));
 	}
@@ -2712,8 +2725,15 @@ nb_do_cmd(
     static void
 nb_set_curbuf(buf_T *buf)
 {
-    if (curbuf != buf && buf_jump_open_win(buf) == NULL)
+    if (curbuf != buf) {
+	if (buf_jump_open_win(buf) != NULL)
+	    return;
+# ifdef FEAT_WINDOWS
+	if ((swb_flags & SWB_USETAB) && buf_jump_open_tab(buf) != NULL)
+	    return;
+# endif
 	set_curbuf(buf, DOBUF_GOTO);
+    }
 }
 
 /*
@@ -3713,11 +3733,18 @@ addsigntype(
 	    {
 		int incr;
 		int oldlen = globalsignmaplen;
+		char **t_globalsignmap = globalsignmap;
 
 		globalsignmaplen *= 2;
 		incr = globalsignmaplen - oldlen;
 		globalsignmap = (char **)vim_realloc(globalsignmap,
 					   globalsignmaplen * sizeof(char *));
+		if (globalsignmap == NULL)
+		{
+		    vim_free(t_globalsignmap);
+		    globalsignmaplen = 0;
+		    return;
+		}
 		vim_memset(globalsignmap + oldlen, 0, incr * sizeof(char *));
 	    }
 	}
@@ -3743,11 +3770,18 @@ addsigntype(
 	{
 	    int incr;
 	    int oldlen = buf->signmaplen;
+	    int *t_signmap = buf->signmap;
 
 	    buf->signmaplen *= 2;
 	    incr = buf->signmaplen - oldlen;
 	    buf->signmap = (int *)vim_realloc(buf->signmap,
 					       buf->signmaplen * sizeof(int));
+	    if (buf->signmap == NULL)
+	    {
+		vim_free(t_signmap);
+		buf->signmaplen = 0;
+		return;
+	    }
 	    vim_memset(buf->signmap + oldlen, 0, incr * sizeof(int));
 	}
     }

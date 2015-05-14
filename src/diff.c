@@ -688,9 +688,9 @@ ex_diffupdate(eap)
 	return;
 
     /* We need three temp file names. */
-    tmp_orig = vim_tempname('o');
-    tmp_new = vim_tempname('n');
-    tmp_diff = vim_tempname('d');
+    tmp_orig = vim_tempname('o', TRUE);
+    tmp_new = vim_tempname('n', TRUE);
+    tmp_diff = vim_tempname('d', TRUE);
     if (tmp_orig == NULL || tmp_new == NULL || tmp_diff == NULL)
 	goto theend;
 
@@ -920,8 +920,8 @@ ex_diffpatch(eap)
 #endif
 
     /* We need two temp file names. */
-    tmp_orig = vim_tempname('o');
-    tmp_new = vim_tempname('n');
+    tmp_orig = vim_tempname('o', FALSE);
+    tmp_new = vim_tempname('n', FALSE);
     if (tmp_orig == NULL || tmp_new == NULL)
 	goto theend;
 
@@ -2107,12 +2107,20 @@ diff_infold(wp, lnum)
  * "dp" and "do" commands.
  */
     void
-nv_diffgetput(put)
+nv_diffgetput(put, count)
     int		put;
+    long	count;
 {
     exarg_T	ea;
+    char_u	buf[30];
 
-    ea.arg = (char_u *)"";
+    if (count == 0)
+	ea.arg = (char_u *)"";
+    else
+    {
+	vim_snprintf((char *)buf, 30, "%ld", count);
+	ea.arg = buf;
+    }
     if (put)
 	ea.cmdidx = CMD_diffput;
     else
@@ -2325,7 +2333,7 @@ ex_diffgetput(eap)
 		    end_skip = 0;
 	    }
 
-	    buf_empty = FALSE;
+	    buf_empty = bufempty();
 	    added = 0;
 	    for (i = 0; i < count; ++i)
 	    {
