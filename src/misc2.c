@@ -2470,6 +2470,12 @@ static struct key_name_entry
     {K_SNR,		(char_u *)"SNR"},
 #endif
     {K_PLUG,		(char_u *)"Plug"},
+#ifdef FEAT_GUI_MACVIM
+    {K_SWIPELEFT,	(char_u *)"SwipeLeft"},
+    {K_SWIPERIGHT,	(char_u *)"SwipeRight"},
+    {K_SWIPEUP,		(char_u *)"SwipeUp"},
+    {K_SWIPEDOWN,	(char_u *)"SwipeDown"},
+#endif
     {0,			NULL}
 };
 

@@ -623,6 +623,7 @@ ac_subst_vars='LTLIBOBJS
 LIBOBJS
 LINK_AS_NEEDED
 DEPEND_CFLAGS_FILTER
+XCODEFLAGS
 MAKEMO
 MSGFMT
 INSTALL_TOOL_LANGS
@@ -687,6 +688,7 @@ PERL_PRO
 PERL_OBJ
 PERL_SRC
 shrpenv
+vi_cv_perlsitelib
 vi_cv_perllib
 vi_cv_path_perl
 MZSCHEME_MZC
@@ -774,8 +776,9 @@ ac_user_opts='
 enable_option_checking
 enable_fail_if_missing
 enable_darwin
-with_mac_arch
 with_developer_dir
+with_macsdk
+with_macarchs
 with_local_dir
 with_vim_name
 with_ex_name
@@ -818,6 +821,7 @@ enable_motif_check
 enable_athena_check
 enable_nextaw_check
 enable_carbon_check
+enable_macvim_check
 enable_gtktest
 with_gnome_includes
 with_gnome_libs
@@ -829,6 +833,7 @@ enable_acl
 enable_gpm
 enable_sysmouse
 enable_nls
+with_xcodecfg
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1473,13 +1478,14 @@ Optional Features:
   --enable-hangulinput    Include Hangul input support.
   --enable-xim            Include XIM input support.
   --enable-fontset        Include X fontset output support.
-  --enable-gui=OPTS     X11 GUI default=auto OPTS=auto/no/gtk2/gnome2/motif/athena/neXtaw/photon/carbon
+  --enable-gui=OPTS     X11 GUI default=auto OPTS=auto/no/gtk2/gnome2/motif/athena/neXtaw/photon/carbon/macvim
   --enable-gtk2-check     If auto-select GUI, check for GTK+ 2 default=yes
   --enable-gnome-check    If GTK GUI, check for GNOME default=no
   --enable-motif-check    If auto-select GUI, check for Motif default=yes
   --enable-athena-check   If auto-select GUI, check for Athena default=yes
   --enable-nextaw-check   If auto-select GUI, check for neXtaw default=yes
   --enable-carbon-check   If auto-select GUI, check for Carbon default=yes
+  --enable-macvim-check   If auto-select GUI, check for MacVim default=yes
   --disable-gtktest       Do not try to compile and run a test GTK program
   --disable-largefile     omit support for large files
   --disable-acl           Don't check for ACL support.
@@ -1490,8 +1496,9 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-mac-arch=ARCH    current, intel, ppc or both
   --with-developer-dir=PATH    use PATH as location for Xcode developer tools
+  --with-macsdk=SDK       SDK version (10.4, 10.5, 10.6, ...)
+  --with-macarchs=ARCHS   space separated list of archs (i386 x86_64 ppc ...)
   --with-local-dir=PATH   search PATH instead of /usr/local for local libraries.
   --without-local-dir     do not search /usr/local for local libraries.
   --with-vim-name=NAME    what to call the Vim executable
@@ -1514,6 +1521,7 @@ Optional Packages:
   --with-gnome            Specify prefix for GNOME files
   --with-motif-lib=STRING   Library for Motif
   --with-tlib=library     terminal library to be used
+  --with-xcodecfg=CFG     Debug, Release (default: Release)
 
 Some influential environment variables:
   CC          C compiler command
@@ -4176,19 +4184,6 @@ $as_echo "no, Darwin support disabled" >&6; }
 $as_echo "yes, Darwin support excluded" >&6; }
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking --with-mac-arch argument" >&5
-$as_echo_n "checking --with-mac-arch argument... " >&6; }
-
-# Check whether --with-mac-arch was given.
-if test "${with_mac_arch+set}" = set; then :
-  withval=$with_mac_arch; MACARCH="$withval"; { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MACARCH" >&5
-$as_echo "$MACARCH" >&6; }
-else
-  MACARCH="current"; { $as_echo "$as_me:${as_lineno-$LINENO}: result: defaulting to $MACARCH" >&5
-$as_echo "defaulting to $MACARCH" >&6; }
-fi
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking --with-developer-dir argument" >&5
 $as_echo_n "checking --with-developer-dir argument... " >&6; }
 
@@ -4254,13 +4249,31 @@ $as_echo "$DEVELOPER_DIR" >&6; }
     fi
   fi
 
-  if test "x$MACARCH" = "xboth"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for 10.4 universal SDK" >&5
-$as_echo_n "checking for 10.4 universal SDK... " >&6; }
-                            save_cppflags="$CPPFLAGS"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking --with-macsdk argument" >&5
+$as_echo_n "checking --with-macsdk argument... " >&6; }
+
+# Check whether --with-macsdk was given.
+if test "${with_macsdk+set}" = set; then :
+  withval=$with_macsdk;  MACSDK="$withval"; { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MACSDK" >&5
+$as_echo "$MACSDK" >&6; }
+else
+   MACSDK=""; { $as_echo "$as_me:${as_lineno-$LINENO}: result: using default" >&5
+$as_echo "using default" >&6; }
+fi
+
+
+  if test -n "$MACSDK"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if SDK is supported" >&5
+$as_echo_n "checking if SDK is supported... " >&6; }
     save_cflags="$CFLAGS"
     save_ldflags="$LDFLAGS"
-    CFLAGS="$CFLAGS -isysroot $DEVELOPER_DIR/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc"
+    sdkflags="$DEVELOPER_DIR/SDKs/MacOSX$MACSDK"
+    if test "x$MACSDK" = "x10.4"; then
+      sdkflags="$sdkflags""u"
+    fi
+    sdkflags="$sdkflags.sdk -mmacosx-version-min=$MACSDK"
+    CFLAGS="$CFLAGS -isysroot $sdkflags"
+    LDFLAGS="$LDFLAGS -Wl,-syslibroot,$sdkflags"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -4273,17 +4286,43 @@ main ()
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: found" >&5
-$as_echo "found" >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        XCODEFLAGS="$XCODEFLAGS -sdk macosx$MACSDK MACOSX_DEPLOYMENT_TARGET=$MACSDK"
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
-$as_echo "not found" >&6; }
-	CFLAGS="$save_cflags"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if Intel architecture is supported" >&5
-$as_echo_n "checking if Intel architecture is supported... " >&6; }
-	CPPFLAGS="$CPPFLAGS -arch i386"
-	LDFLAGS="$save_ldflags -arch i386"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                        MACSDK=""
+        CFLAGS="$save_cflags"
+        LDFLAGS="$save_ldflags"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking --with-macarchs argument" >&5
+$as_echo_n "checking --with-macarchs argument... " >&6; }
+
+# Check whether --with-macarchs was given.
+if test "${with_macarchs+set}" = set; then :
+  withval=$with_macarchs;  ARCHS="$withval"; { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ARCHS" >&5
+$as_echo "$ARCHS" >&6; }
+else
+   ARCHS=""; { $as_echo "$as_me:${as_lineno-$LINENO}: result: defaulting to native arch" >&5
+$as_echo "defaulting to native arch" >&6; }
+fi
+
+
+  if test -n "$ARCHS"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if architectures are supported" >&5
+$as_echo_n "checking if architectures are supported... " >&6; }
+    save_cflags="$CFLAGS"
+    save_ldflags="$LDFLAGS"
+    archflags=`echo "$ARCHS" | sed -e 's/[[:<:]]/-arch /g'`
+    CFLAGS="$CFLAGS $archflags"
+    LDFLAGS="$LDFLAGS $archflags"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -4295,27 +4334,20 @@ main ()
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }; MACARCH="intel"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        XCODEFLAGS="$XCODEFLAGS ARCHS=\"$ARCHS\" ONLY_ACTIVE_ARCH=\"NO\""
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-		MACARCH="ppc"
-		CPPFLAGS="$save_cppflags -arch ppc"
-		LDFLAGS="$save_ldflags -arch ppc"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, will build for native arch only" >&5
+$as_echo "no, will build for native arch only" >&6; }
+        ARCHS=""
+        CFLAGS="$save_cflags"
+        LDFLAGS="$save_ldflags"
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-  elif test "x$MACARCH" = "xintel"; then
-    CPPFLAGS="$CPPFLAGS -arch intel"
-    LDFLAGS="$LDFLAGS -arch intel"
-  elif test "x$MACARCH" = "xppc"; then
-    CPPFLAGS="$CPPFLAGS -arch ppc"
-    LDFLAGS="$LDFLAGS -arch ppc"
   fi
+
 
   if test "$enable_darwin" = "yes"; then
     MACOSX=yes
@@ -4346,17 +4378,26 @@ if test "x$ac_cv_header_Carbon_Carbon_h" = xyes; then :
 fi
 
 
-    if test "x$CARBON" = "xyes"; then
+
+    SAVE_CPPFLAGS=$CPPFLAGS
+    SAVE_CFLAGS=$CFLAGS
+    CPPFLAGS="$CPPFLAGS -ObjC"
+    CFLAGS="$CFLAGS -ObjC"
+    ac_fn_c_check_header_mongrel "$LINENO" "Cocoa/Cocoa.h" "ac_cv_header_Cocoa_Cocoa_h" "$ac_includes_default"
+if test "x$ac_cv_header_Cocoa_Cocoa_h" = xyes; then :
+  COCOA=yes
+fi
+
+
+    CPPFLAGS=$SAVE_CPPFLAGS
+    CFLAGS=$SAVE_CFLAGS
+
+    if test "x$CARBON" = "xyes" -o "x$COCOA" = "xyes"; then
       if test -z "$with_x" -a "X$enable_gui" != Xmotif -a "X$enable_gui" != Xathena -a "X$enable_gui" != Xgtk2; then
 	with_x=no
       fi
     fi
   fi
-
-        if test "$MACARCH" = "intel" -o "$MACARCH" = "both"; then
-    CFLAGS=`echo "$CFLAGS" | sed 's/-O[23456789]/-Oz/'`
-  fi
-
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5603,6 +5644,8 @@ $as_echo "OK" >&6; }
 	shrpenv=""
       fi
       vi_cv_perllib=`$vi_cv_path_perl -MConfig -e 'print $Config{privlibexp}'`
+      vi_cv_perlsitelib=`$vi_cv_path_perl -MConfig -e 'print $Config{sitelibexp}'`
+
 
             perlcppflags=`$vi_cv_path_perl -Mlib=$srcdir -MExtUtils::Embed \
 	      -e 'ccflags;perl_inc;print"\n"' | sed -e 's/-fno[^ ]*//'`
@@ -5611,6 +5654,11 @@ $as_echo "OK" >&6; }
 			-e 's/-bE:perl.exp//' -e 's/-lc //'`
                   perlldflags=`cd $srcdir; $vi_cv_path_perl -MExtUtils::Embed \
 		-e 'ccdlflags' | sed -e 's/-bE:perl.exp//'`
+
+      if test "x$MACOSX" = "xyes"; then
+                                perllibs=`echo "$perllibs" | sed -e 's/-arch[^-]*//g'`
+        perlcppflags=`echo "$perlcppflags" | sed -e 's/-arch[^-]*//g'`
+      fi
 
                   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compile and link flags for Perl are sane" >&5
 $as_echo_n "checking if compile and link flags for Perl are sane... " >&6; }
@@ -5964,6 +6012,13 @@ rm -f core conftest.err conftest.$ac_objext \
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 	fi
+
+                                if test -n "$MACSDK"; then
+          PYTHON_CFLAGS=
+          PYTHON_LIBS=-framework Python
+          PYTHON_CONFDIR=
+          PYTHON_GETPATH_CFLAGS=
+        fi
 
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if compile and link flags for Python are sane" >&5
 $as_echo_n "checking if compile and link flags for Python are sane... " >&6; }
@@ -7013,9 +7068,10 @@ $as_echo "$rubyhdrdir" >&6; }
 	if test -f "$rubylibdir/$librubya"; then
 	  librubyarg="$librubyarg"
 	  RUBY_LIBS="$RUBY_LIBS -L$rubylibdir"
-	elif test "$librubyarg" = "libruby.a"; then
-	  	  librubyarg="-lruby"
-	  RUBY_LIBS="$RUBY_LIBS -L$rubylibdir"
+        elif test -d "/System/Library/Frameworks/Ruby.framework"; then
+                        RUBY_LIBS="-framework Ruby"
+                        RUBY_CFLAGS="-DRUBY_VERSION=$rubyversion"
+            librubyarg=
 	fi
 
 	if test "X$librubyarg" != "X"; then
@@ -7030,9 +7086,13 @@ $as_echo "$rubyhdrdir" >&6; }
 	    fi
 	  fi
 	fi
+        if test "X$rubyldflags" != "X"; then
+          LDFLAGS="$rubyldflags $LDFLAGS"
+        fi
 	RUBY_SRC="if_ruby.c"
 	RUBY_OBJ="objects/if_ruby.o"
 	RUBY_PRO="if_ruby.pro"
+
 	$as_echo "#define FEAT_RUBY 1" >>confdefs.h
 
 	if test "$enable_rubyinterp" = "dynamic"; then
@@ -8373,6 +8433,7 @@ SKIP_ATHENA=YES
 SKIP_NEXTAW=YES
 SKIP_PHOTON=YES
 SKIP_CARBON=YES
+SKIP_MACVIM=YES
 GUITYPE=NONE
 
 if test "x$QNX" = "xyes" -a "x$with_x" = "xno" ; then
@@ -8394,20 +8455,25 @@ $as_echo "Sorry, $enable_gui GUI is not supported" >&6; }
 
 elif test "x$MACOSX" = "xyes" -a "x$with_x" = "xno" ; then
   SKIP_CARBON=
+  SKIP_MACVIM=
   case "$enable_gui_canon" in
     no)		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no GUI support" >&5
 $as_echo "no GUI support" >&6; }
-		SKIP_CARBON=YES ;;
-    yes|"")	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes - automatic GUI support" >&5
-$as_echo "yes - automatic GUI support" >&6; } ;;
-    auto)	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: auto - Carbon GUI is outdated - disable GUI support" >&5
-$as_echo "auto - Carbon GUI is outdated - disable GUI support" >&6; }
+		SKIP_CARBON=YES
+		SKIP_MACVIM=YES ;;
+    yes|""|auto)	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes/auto - automatic GUI support" >&5
+$as_echo "yes/auto - automatic GUI support" >&6; }
 		SKIP_CARBON=YES ;;
     carbon)	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Carbon GUI support" >&5
-$as_echo "Carbon GUI support" >&6; } ;;
+$as_echo "Carbon GUI support" >&6; }
+		SKIP_MACVIM=YES ;;
+    macvim)	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: MacVim GUI support" >&5
+$as_echo "MacVim GUI support" >&6; }
+		SKIP_CARBON=YES ;;
     *)		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Sorry, $enable_gui GUI is not supported" >&5
 $as_echo "Sorry, $enable_gui GUI is not supported" >&6; }
-		SKIP_CARBON=YES ;;
+		SKIP_CARBON=YES
+		SKIP_MACVIM=YES ;;
   esac
 
 else
@@ -8422,6 +8488,7 @@ $as_echo "yes/auto - automatic GUI support" >&6; }
 		SKIP_MOTIF=
 		SKIP_ATHENA=
 		SKIP_NEXTAW=
+		SKIP_MACVIM=
 		SKIP_CARBON=;;
     gtk2)	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: GTK+ 2.x GUI support" >&5
 $as_echo "GTK+ 2.x GUI support" >&6; }
@@ -8549,28 +8616,49 @@ $as_echo "$enable_carbon_check" >&6; };
   fi
 fi
 
+if test "x$SKIP_MACVIM" != "xYES" -a "$enable_gui_canon" != "macvim"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether or not to look for MacVim" >&5
+$as_echo_n "checking whether or not to look for MacVim... " >&6; }
+  # Check whether --enable-macvim-check was given.
+if test "${enable_macvim_check+set}" = set; then :
+  enableval=$enable_macvim_check;
+else
+  enable_macvim_check="yes"
+fi
 
-if test "x$MACOSX" = "xyes" -a -z "$SKIP_CARBON" -a "x$CARBON" = "xyes"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Carbon GUI" >&5
-$as_echo_n "checking for Carbon GUI... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; };
-  GUITYPE=CARBONGUI
-  if test "$VIMNAME" = "vim"; then
-    VIMNAME=Vim
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_macvim_check" >&5
+$as_echo "$enable_macvim_check" >&6; };
+  if test "x$enable_macvim_check" = "xno"; then
+    SKIP_MACVIM=YES
   fi
+fi
 
-  if test "x$MACARCH" = "xboth"; then
-    CPPFLAGS="$CPPFLAGS -I$DEVELOPER_DIR/SDKs/MacOSX10.4u.sdk/Developer/Headers/FlatCarbon"
-  else
-    CPPFLAGS="$CPPFLAGS -I$DEVELOPER_DIR/Headers/FlatCarbon"
-  fi
-
+if test "x$MACOSX" = "xyes"; then
     if test x$prefix = xNONE; then
     prefix=/Applications
   fi
 
-    datadir='${prefix}/Vim.app/Contents/Resources'
+  if test -z "$SKIP_MACVIM" -a "x$COCOA" = "xyes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MacVim GUI" >&5
+$as_echo_n "checking for MacVim GUI... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+    GUITYPE=MACVIMGUI
+        datadir='${prefix}/MacVim.app/Contents/Resources'
+  elif test -z "$SKIP_CARBON" -a "x$CARBON" = "xyes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Carbon GUI" >&5
+$as_echo_n "checking for Carbon GUI... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+    GUITYPE=CARBONGUI
+        datadir='${prefix}/Vim.app/Contents/Resources'
+
+    CPPFLAGS="$CPPFLAGS -I$DEVELOPER_DIR/Headers/FlatCarbon"
+  fi
+
+  if test "$VIMNAME" = "vim"; then
+    VIMNAME=Vim
+  fi
 
     SKIP_GTK2=YES;
   SKIP_GNOME=YES;
@@ -8578,7 +8666,6 @@ $as_echo "yes" >&6; };
   SKIP_ATHENA=YES;
   SKIP_NEXTAW=YES;
   SKIP_PHOTON=YES;
-  SKIP_CARBON=YES
 fi
 
 
@@ -9289,7 +9376,6 @@ done
 
   CPPFLAGS=$cppflags_save
 fi
-
 
 if test -z "$SKIP_ATHENA" -o -z "$SKIP_NEXTAW" -o -z "$SKIP_MOTIF" -o -z "$SKIP_GTK2"; then
     cppflags_save=$CPPFLAGS
@@ -13251,9 +13337,25 @@ $as_echo "no" >&6; }
     OS_EXTRA_OBJ=`echo "$OS_EXTRA_OBJ" | sed -e 's+objects/os_macosx.o++'`
   fi
 fi
-if test "x$MACARCH" = "xboth" && test "x$GUITYPE" = "xCARBONGUI"; then
-  LDFLAGS="$LDFLAGS -isysroot $DEVELOPER_DIR/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc"
+
+if test "x$MACOSX" = "xyes"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking --with-xcodecfg argument" >&5
+$as_echo_n "checking --with-xcodecfg argument... " >&6; }
+
+# Check whether --with-xcodecfg was given.
+if test "${with_xcodecfg+set}" = set; then :
+  withval=$with_xcodecfg;  XCODEFLAGS="$XCODEFLAGS -configuration $withval"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+else
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: using default" >&5
+$as_echo "using default" >&6; }
 fi
+
+
+
+fi
+
 
 DEPEND_CFLAGS_FILTER=
 if test "$GCC" = yes; then

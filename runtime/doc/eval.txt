@@ -6644,6 +6644,7 @@ fname_case		Case in file names matters (for Amiga, MS-DOS, and
 folding			Compiled with |folding| support.
 footer			Compiled with GUI footer support. |gui-footer|
 fork			Compiled to use fork()/exec() instead of system().
+fullscreen              Compiled with 'fullscreen' support.
 gettext			Compiled with message translation |multi-lang|
 gui			Compiled with GUI enabled.
 gui_athena		Compiled with Athena GUI.
@@ -6651,6 +6652,7 @@ gui_gnome		Compiled with Gnome support (gui_gtk is also defined).
 gui_gtk			Compiled with GTK+ GUI (any version).
 gui_gtk2		Compiled with GTK+ 2 GUI (gui_gtk is also defined).
 gui_mac			Compiled with Macintosh GUI.
+gui_macvim		Compiled with MacVim GUI.
 gui_motif		Compiled with Motif GUI.
 gui_photon		Compiled with Photon GUI.
 gui_running		Vim is running in the GUI, or it will start soon.
@@ -6693,6 +6695,7 @@ multi_lang		Compiled with support for multiple languages.
 mzscheme		Compiled with MzScheme interface |mzscheme|.
 netbeans_enabled	Compiled with support for |netbeans| and connected.
 netbeans_intg		Compiled with support for |netbeans|.
+odbeditor               Compiled with |odbeditor| support.
 ole			Compiled with OLE automation support for Win32.
 os2			OS/2 version of Vim.
 path_extra		Compiled with up/downwards search in 'path' and 'tags'
@@ -6736,6 +6739,7 @@ tgetent			Compiled with tgetent support, able to use a termcap
 			or terminfo file.
 title			Compiled with window title support |'title'|.
 toolbar			Compiled with support for |gui-toolbar|.
+transparency            Compiled with 'transparency' support.
 unix			Unix version of Vim.
 user_commands		User-defined commands.
 vertsplit		Compiled with vertically split windows |:vsplit|.

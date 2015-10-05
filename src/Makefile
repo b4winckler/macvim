@@ -1293,6 +1293,22 @@ CARBONGUI_BUNDLE = gui_bundle
 APPDIR = $(VIMNAME).app
 CARBONGUI_TESTARG = VIMPROG=../$(APPDIR)/Contents/MacOS/$(VIMTARGET)
 
+# MACVIM GUI
+MACVIMGUI_SRC	= gui.c gui_beval.c MacVim/gui_macvim.m MacVim/MMBackend.m \
+		  MacVim/MacVim.m
+MACVIMGUI_OBJ	= objects/gui.o objects/gui_beval.o objects/pty.o \
+		  objects/gui_macvim.o objects/MMBackend.o objects/MacVim.o
+MACVIMGUI_DEFS	= -DFEAT_GUI_MACVIM -Wall -Wno-unknown-pragmas -pipe
+MACVIMGUI_IPATH	=
+MACVIMGUI_LIBS_DIR =
+MACVIMGUI_LIBS1	= -framework Cocoa -framework Carbon
+MACVIMGUI_LIBS2	=
+MACVIMGUI_INSTALL = install_normal
+MACVIMGUI_TARGETS =
+MACVIMGUI_MAN_TARGETS =
+MACVIMGUI_TESTTARGET = gui
+MACVIMGUI_BUNDLE = macvim
+
 # All GUI files
 ALL_GUI_SRC  = gui.c gui_gtk.c gui_gtk_f.c gui_motif.c gui_xmdlg.c gui_xmebw.c gui_athena.c gui_gtk_x11.c gui_x11.c gui_at_sb.c gui_at_fs.c pty.c
 ALL_GUI_PRO  = gui.pro gui_gtk.pro gui_motif.pro gui_xmdlg.pro gui_athena.pro gui_gtk_x11.pro gui_x11.pro gui_w16.pro gui_w32.pro gui_photon.pro
@@ -2351,7 +2367,7 @@ uninstall_runtime:
 
 # Clean up all the files that have been produced, except configure's.
 # We support common typing mistakes for Juergen! :-)
-clean celan: testclean
+clean celan: testclean macvimclean
 	-rm -f *.o objects/* core $(VIMTARGET).core $(VIMTARGET) vim xxd/*.o
 	-rm -f $(TOOLS) auto/osdef.h auto/pathdef.c auto/if_perl.c
 	-rm -f conftest* *~ auto/link.sed
@@ -2464,8 +2480,13 @@ lintinstall:
 
 auto/if_perl.c: if_perl.xs
 	$(PERL) -e 'unless ( $$] >= 5.005 ) { for (qw(na defgv errgv)) { print "#define PL_$$_ $$_\n" }}' > $@
-	$(PERL) $(PERLLIB)/ExtUtils/xsubpp -prototypes -typemap \
-	    $(PERLLIB)/ExtUtils/typemap if_perl.xs >> $@
+	-@if test -e $(PERLSITELIB)/ExtUtils/xsubpp; then \
+		$(PERL) $(PERLSITELIB)/ExtUtils/xsubpp -prototypes -typemap \
+			$(PERLLIB)/ExtUtils/typemap if_perl.xs >> $@; \
+	else \
+		$(PERL) $(PERLLIB)/ExtUtils/xsubpp -prototypes -typemap \
+			$(PERLLIB)/ExtUtils/typemap if_perl.xs >> $@; \
+	fi
 
 auto/osdef.h: auto/config.h osdef.sh osdef1.h.in osdef2.h.in
 	CC="$(CC) $(OSDEF_CFLAGS)" srcdir=$(srcdir) sh $(srcdir)/osdef.sh
@@ -2496,6 +2517,12 @@ auto/pathdef.c: Makefile auto/config.mk
 
 objects:
 	mkdir objects
+
+objects/MMBackend.o: MacVim/MMBackend.m
+	$(CCC) -fobjc-exceptions -o $@ MacVim/MMBackend.m
+
+objects/MacVim.o: MacVim/MacVim.m
+	$(CCC) -o $@ MacVim/MacVim.m
 
 objects/blowfish.o: blowfish.c
 	$(CCC) -o $@ blowfish.c
@@ -2589,6 +2616,9 @@ objects/gui_photon.o: gui_photon.c
 
 objects/gui_mac.o: gui_mac.c
 	$(CCC) -o $@ gui_mac.c
+
+objects/gui_macvim.o: MacVim/gui_macvim.m
+	$(CCC) -fobjc-exceptions -o $@ MacVim/gui_macvim.m
 
 objects/hangulin.o: hangulin.c
 	$(CCC) -o $@ hangulin.c
@@ -2838,6 +2868,18 @@ bundle-language: bundle-dir
 $(APPDIR)/Contents:
 	-$(SHELL) ./mkinstalldirs $(APPDIR)/Contents/MacOS
 	-$(SHELL) ./mkinstalldirs $(RESDIR)/English.lproj
+
+
+##############################################################################
+### MacVim GUI
+.PHONY: macvim macvimclean
+macvim: $(VIMTARGET)
+	xcodebuild -project MacVim/MacVim.xcodeproj $(XCODEFLAGS)
+
+macvimclean:
+	if test -d MacVim; then \
+		xcodebuild -project MacVim/MacVim.xcodeproj clean; \
+	fi
 
 
 ###############################################################################

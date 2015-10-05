@@ -126,6 +126,10 @@ static int  inputHandler = -1;		/* simply ret.value of WSAAsyncSelect() */
 extern HWND s_hwnd;			/* Gvim's Window handle */
 #endif
 static int r_cmdno;			/* current command number for reply */
+#ifdef FEAT_GUI_MACVIM
+static int sock_select(int s);
+#endif
+
 static int dosetvisible = FALSE;
 
 /*
@@ -164,6 +168,8 @@ nb_close_socket(void)
 	WSAAsyncSelect(nbsock, s_hwnd, 0, 0);
 	inputHandler = -1;
     }
+#  elif defined(FEAT_GUI_MACVIM)
+    gui_macvim_set_netbeans_socket(-1);
 #  endif
 # endif
 #endif
@@ -208,6 +214,22 @@ netbeans_close(void)
     }
 #endif
 }
+
+#if defined(FEAT_GUI_MACVIM)
+    static int
+sock_select(int s)
+{
+    fd_set readset;
+    struct timeval timeout;
+
+    FD_ZERO(&readset);
+    FD_SET(s, &readset);
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+
+    return select(s + 1, &readset, NULL, NULL, &timeout);
+}
+#endif /* FEAT_GUI_MACVIM */
 
 #define NB_DEF_HOST "localhost"
 #define NB_DEF_ADDR "3219"
@@ -755,6 +777,13 @@ netbeans_read()
 	nbdebug(("messageFromNetbeans() called without a socket\n"));
 	return;
     }
+
+#ifdef FEAT_GUI_MACVIM
+    /* It may happen that socket is not readable because socket has been already
+     * read by timing of CFRunLoop callback. So check socket using select. */
+    if (sock_select(nbsock) <= 0)
+	return;
+#endif
 
     /* Allocate a buffer to read into. */
     if (buf == NULL)
@@ -2784,7 +2813,7 @@ ex_nbstart(eap)
 {
 #ifdef FEAT_GUI
 # if !defined(FEAT_GUI_X11) && !defined(FEAT_GUI_GTK)  \
-		&& !defined(FEAT_GUI_W32)
+		&& !defined(FEAT_GUI_W32) && !defined(FEAT_GUI_MACVIM)
     if (gui.in_use)
     {
 	EMSG(_("E838: netbeans is not supported with this GUI"));
@@ -2987,6 +3016,12 @@ netbeans_gui_register(void)
      */
     if (inputHandler == -1)
 	inputHandler = WSAAsyncSelect(nbsock, s_hwnd, WM_NETBEANS, FD_READ);
+#   elif defined(FEAT_GUI_MACVIM)
+    /*
+     * Tell Core Foundation we are interested in being called when there
+     * is input on the editor connection socket
+     */
+    gui_macvim_set_netbeans_socket(nbsock);
 #   endif
 #  endif
 # endif

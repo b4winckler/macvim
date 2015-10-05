@@ -5173,6 +5173,10 @@ nofail:
     /* Update machine specific information. */
     mch_post_buffer_write(buf);
 #endif
+#ifdef FEAT_ODB_EDITOR
+    odb_post_buffer_write(buf);
+#endif
+
     return retval;
 }
 
@@ -6183,7 +6187,8 @@ shorten_fnames(force)
 #if (defined(FEAT_DND) && defined(FEAT_GUI_GTK)) \
 	|| defined(FEAT_GUI_MSWIN) \
 	|| defined(FEAT_GUI_MAC) \
-	|| defined(PROTO)
+	|| defined(PROTO) \
+	|| defined(FEAT_GUI_MACVIM)
 /*
  * Shorten all filenames in "fnames[count]" by current directory.
  */
@@ -6720,6 +6725,9 @@ vim_rename(from, to)
 }
 
 static int already_warned = FALSE;
+#ifdef FEAT_GUI_MACVIM
+static int default_reload_choice = 0;
+#endif
 
 /*
  * Check if any not hidden buffer has been changed.
@@ -6762,6 +6770,9 @@ check_timestamps(focus)
 	++no_wait_return;
 	did_check_timestamps = TRUE;
 	already_warned = FALSE;
+#ifdef FEAT_GUI_MACVIM
+	default_reload_choice = 0;
+#endif
 	for (buf = firstbuf; buf != NULL; )
 	{
 	    /* Only check buffers in a window. */
@@ -6780,6 +6791,9 @@ check_timestamps(focus)
 	    }
 	    buf = buf->b_next;
 	}
+#ifdef FEAT_GUI_MACVIM
+	default_reload_choice = 0;
+#endif
 	--no_wait_return;
 	need_check_timestamps = FALSE;
 	if (need_wait_return && didit == 2)
@@ -7049,9 +7063,33 @@ buf_check_timestamp(buf, focus)
 		    STRCAT(tbuf, "\n");
 		    STRCAT(tbuf, mesg2);
 		}
+# ifdef FEAT_GUI_MACVIM
+		if (default_reload_choice > 0)
+		{
+		    if (default_reload_choice == 2)
+			reload = TRUE;
+		}
+		else
+		{
+		    switch (do_dialog(VIM_WARNING, (char_u *)_("Warning"), tbuf,
+					(char_u *)_("&OK\n&Load File\nLoad &All\n&Ignore All"),
+								1, NULL, TRUE))
+		    {
+			case 3:
+			    default_reload_choice = 2;
+			case 2:
+			    reload = TRUE;
+			    break;
+			case 4:
+			    default_reload_choice = 1;
+			    break;
+		    }
+		}
+# else
 		if (do_dialog(VIM_WARNING, (char_u *)_("Warning"), tbuf,
 			  (char_u *)_("&OK\n&Load File"), 1, NULL, TRUE) == 2)
 		    reload = TRUE;
+# endif
 	    }
 	    else
 #endif

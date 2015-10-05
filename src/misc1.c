@@ -2752,7 +2752,7 @@ skip_to_option_part(p)
     void
 changed()
 {
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
+#if defined(FEAT_XIM) && (defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
     /* The text of the preediting area is inserted, but this doesn't
      * mean a change of the buffer yet.  That is delayed until the
      * text is committed. (this means preedit becomes empty) */
@@ -3488,7 +3488,13 @@ get_keystroke()
 #ifdef FEAT_GUI
 		    || n == K_VER_SCROLLBAR
 		    || n == K_HOR_SCROLLBAR
-#endif
+# endif
+# ifdef FEAT_GUI_MACVIM
+		    || n == K_SWIPELEFT
+		    || n == K_SWIPERIGHT
+		    || n == K_SWIPEUP
+		    || n == K_SWIPEDOWN
+# endif
 	       )
 	    {
 		if (buf[1] == KS_MODIFIER)

@@ -145,11 +145,6 @@ if test "`(uname) 2>/dev/null`" = Darwin; then
     AC_MSG_RESULT([yes, Darwin support excluded])
   fi
 
-  AC_MSG_CHECKING(--with-mac-arch argument)
-  AC_ARG_WITH(mac-arch, [  --with-mac-arch=ARCH    current, intel, ppc or both],
-	MACARCH="$withval"; AC_MSG_RESULT($MACARCH),
-	MACARCH="current"; AC_MSG_RESULT(defaulting to $MACARCH))
-
   AC_MSG_CHECKING(--with-developer-dir argument)
   AC_ARG_WITH(developer-dir, [  --with-developer-dir=PATH    use PATH as location for Xcode developer tools],
 	DEVELOPER_DIR="$withval"; AC_MSG_RESULT($DEVELOPER_DIR),
@@ -166,39 +161,57 @@ if test "`(uname) 2>/dev/null`" = Darwin; then
     fi
   fi
 
-  if test "x$MACARCH" = "xboth"; then
-    AC_MSG_CHECKING(for 10.4 universal SDK)
-    dnl There is a terrible inconsistency (but we appear to get away with it):
-    dnl $CFLAGS uses the 10.4u SDK library for the headers, while $CPPFLAGS
-    dnl doesn't, because "gcc -E" doesn't grok it.  That means the configure
-    dnl tests using the preprocessor are actually done with the wrong header
-    dnl files. $LDFLAGS is set at the end, because configure uses it together
-    dnl with $CFLAGS and we can only have one -sysroot argument.
-    save_cppflags="$CPPFLAGS"
+  AC_MSG_CHECKING(--with-macsdk argument)
+  AC_ARG_WITH(macsdk,
+    [  --with-macsdk=SDK       SDK version (10.4, 10.5, 10.6, ...)],
+    [ MACSDK="$withval"; AC_MSG_RESULT($MACSDK) ],
+    [ MACSDK=""; AC_MSG_RESULT(using default) ])
+
+  if test -n "$MACSDK"; then
+    AC_MSG_CHECKING(if SDK is supported)
     save_cflags="$CFLAGS"
     save_ldflags="$LDFLAGS"
-    CFLAGS="$CFLAGS -isysroot $DEVELOPER_DIR/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc"
+    sdkflags="$DEVELOPER_DIR/SDKs/MacOSX$MACSDK"
+    if test "x$MACSDK" = "x10.4"; then
+      sdkflags="$sdkflags""u"
+    fi
+    sdkflags="$sdkflags.sdk -mmacosx-version-min=$MACSDK"
+    CFLAGS="$CFLAGS -isysroot $sdkflags"
+    LDFLAGS="$LDFLAGS -Wl,-syslibroot,$sdkflags"
     AC_TRY_LINK([ ], [ ],
-	AC_MSG_RESULT(found, will make universal binary),
-
-	AC_MSG_RESULT(not found)
-	CFLAGS="$save_cflags"
-	AC_MSG_CHECKING(if Intel architecture is supported)
-	CPPFLAGS="$CPPFLAGS -arch i386"
-	LDFLAGS="$save_ldflags -arch i386"
-	AC_TRY_LINK([ ], [ ],
-	    AC_MSG_RESULT(yes); MACARCH="intel",
-	    AC_MSG_RESULT(no, using PowerPC)
-		MACARCH="ppc"
-		CPPFLAGS="$save_cppflags -arch ppc"
-		LDFLAGS="$save_ldflags -arch ppc"))
-  elif test "x$MACARCH" = "xintel"; then
-    CPPFLAGS="$CPPFLAGS -arch intel"
-    LDFLAGS="$LDFLAGS -arch intel"
-  elif test "x$MACARCH" = "xppc"; then
-    CPPFLAGS="$CPPFLAGS -arch ppc"
-    LDFLAGS="$LDFLAGS -arch ppc"
+      [ AC_MSG_RESULT([yes])
+        XCODEFLAGS="$XCODEFLAGS -sdk macosx$MACSDK MACOSX_DEPLOYMENT_TARGET=$MACSDK" ],
+      [ AC_MSG_RESULT([no])
+        dnl Important to clear MACSDK so later on in the script we can assume
+        dnl that no SDK was chosen if it is empty.
+        MACSDK=""
+        CFLAGS="$save_cflags"
+        LDFLAGS="$save_ldflags" ])
   fi
+
+
+  AC_MSG_CHECKING(--with-macarchs argument)
+  AC_ARG_WITH(macarchs,
+    [  --with-macarchs=ARCHS   space separated list of archs (i386 x86_64 ppc ...)],
+    [ ARCHS="$withval"; AC_MSG_RESULT($ARCHS) ],
+    [ ARCHS=""; AC_MSG_RESULT(defaulting to native arch) ])
+
+  if test -n "$ARCHS"; then
+    AC_MSG_CHECKING(if architectures are supported)
+    save_cflags="$CFLAGS"
+    save_ldflags="$LDFLAGS"
+    archflags=`echo "$ARCHS" | sed -e 's/[[[:<:]]]/-arch /g'`
+    CFLAGS="$CFLAGS $archflags"
+    LDFLAGS="$LDFLAGS $archflags"
+    AC_TRY_LINK([ ], [ ],
+      [ AC_MSG_RESULT([yes])
+        XCODEFLAGS="$XCODEFLAGS ARCHS=\"$ARCHS\" ONLY_ACTIVE_ARCH=\"NO\"" ],
+      [ AC_MSG_RESULT([no, will build for native arch only])
+        ARCHS=""
+        CFLAGS="$save_cflags"
+        LDFLAGS="$save_ldflags" ])
+  fi
+
 
   if test "$enable_darwin" = "yes"; then
     MACOSX=yes
@@ -208,24 +221,25 @@ if test "`(uname) 2>/dev/null`" = Darwin; then
     dnl Removed -no-cpp-precomp, only for very old compilers.
     CPPFLAGS="$CPPFLAGS -DMACOS_X_UNIX"
 
-    dnl If Carbon is found, assume we don't want X11
-    dnl unless it was specifically asked for (--with-x)
+    dnl If Carbon or Cocoa is found, assume we don't want
+    dnl X11 unless it was specifically asked for (--with-x)
     dnl or Motif, Athena or GTK GUI is used.
     AC_CHECK_HEADER(Carbon/Carbon.h, CARBON=yes)
-    if test "x$CARBON" = "xyes"; then
+
+    SAVE_CPPFLAGS=$CPPFLAGS
+    SAVE_CFLAGS=$CFLAGS
+    CPPFLAGS="$CPPFLAGS -ObjC"
+    CFLAGS="$CFLAGS -ObjC"
+    AC_CHECK_HEADER(Cocoa/Cocoa.h, COCOA=yes)
+    CPPFLAGS=$SAVE_CPPFLAGS
+    CFLAGS=$SAVE_CFLAGS
+
+    if test "x$CARBON" = "xyes" -o "x$COCOA" = "xyes"; then
       if test -z "$with_x" -a "X$enable_gui" != Xmotif -a "X$enable_gui" != Xathena -a "X$enable_gui" != Xgtk2; then
 	with_x=no
       fi
     fi
   fi
-
-  dnl Avoid a bug with -O2 with gcc 4.0.1.  Symptom: malloc() reports double
-  dnl free.  This happens in expand_filename(), because the optimizer swaps
-  dnl two blocks of code, both using "repl", that can't be swapped.
-  if test "$MACARCH" = "intel" -o "$MACARCH" = "both"; then
-    CFLAGS=`echo "$CFLAGS" | sed 's/-O[[23456789]]/-Oz/'`
-  fi
-
 else
   AC_MSG_RESULT(no)
 fi
@@ -932,7 +946,9 @@ if test "$enable_perlinterp" = "yes" -o "$enable_perlinterp" = "dynamic"; then
 	shrpenv=""
       fi
       vi_cv_perllib=`$vi_cv_path_perl -MConfig -e 'print $Config{privlibexp}'`
+      vi_cv_perlsitelib=`$vi_cv_path_perl -MConfig -e 'print $Config{sitelibexp}'`
       AC_SUBST(vi_cv_perllib)
+      AC_SUBST(vi_cv_perlsitelib)
       dnl Remove "-fno-something", it breaks using cproto.
       perlcppflags=`$vi_cv_path_perl -Mlib=$srcdir -MExtUtils::Embed \
 	      -e 'ccflags;perl_inc;print"\n"' | sed -e 's/-fno[[^ ]]*//'`
@@ -944,6 +960,14 @@ if test "$enable_perlinterp" = "yes" -o "$enable_perlinterp" = "dynamic"; then
       dnl a test in configure may fail because of that.
       perlldflags=`cd $srcdir; $vi_cv_path_perl -MExtUtils::Embed \
 		-e 'ccdlflags' | sed -e 's/-bE:perl.exp//'`
+
+      if test "x$MACOSX" = "xyes"; then
+        dnl Perl on Mac OS X 10.5 and later adds "-arch" flags but these
+        dnl should only be included if requested by passing --with-archs
+        dnl to configure, so strip these flags first (if present)
+        perllibs=`echo "$perllibs" | sed -e 's/-arch[[^-]]*//g'`
+        perlcppflags=`echo "$perlcppflags" | sed -e 's/-arch[[^-]]*//g'`
+      fi
 
       dnl check that compiling a simple program still works with the flags
       dnl added for Perl.
@@ -1188,6 +1212,16 @@ eof
 	else
 	  AC_MSG_RESULT(no)
 	fi
+
+        dnl On Mac OS X, when an SDK has been explicitly chosen we can't rely
+        dnl on any of the search paths set above.  The -framework flag does it
+        dnl all for us.
+        if test -n "$MACSDK"; then
+          PYTHON_CFLAGS=
+          PYTHON_LIBS=-framework Python
+          PYTHON_CONFDIR=
+          PYTHON_GETPATH_CFLAGS=
+        fi
 
 	dnl Check that compiling a simple program still works with the flags
 	dnl added for Python.
@@ -1752,10 +1786,12 @@ if test "$enable_rubyinterp" = "yes" -o "$enable_rubyinterp" = "dynamic"; then
 	if test -f "$rubylibdir/$librubya"; then
 	  librubyarg="$librubyarg"
 	  RUBY_LIBS="$RUBY_LIBS -L$rubylibdir"
-	elif test "$librubyarg" = "libruby.a"; then
-	  dnl required on Mac OS 10.3 where libruby.a doesn't exist
-	  librubyarg="-lruby"
-	  RUBY_LIBS="$RUBY_LIBS -L$rubylibdir"
+        elif test -d "/System/Library/Frameworks/Ruby.framework"; then
+            dnl On Mac OS X it is safer to just use the -framework flag
+            RUBY_LIBS="-framework Ruby"
+            dnl Don't include the -I flag when -framework is set
+            RUBY_CFLAGS="-DRUBY_VERSION=$rubyversion"
+            librubyarg=
 	fi
 
 	if test "X$librubyarg" != "X"; then
@@ -1773,9 +1809,13 @@ if test "$enable_rubyinterp" = "yes" -o "$enable_rubyinterp" = "dynamic"; then
 	    fi
 	  fi
 	fi
+        if test "X$rubyldflags" != "X"; then
+          LDFLAGS="$rubyldflags $LDFLAGS"
+        fi
 	RUBY_SRC="if_ruby.c"
 	RUBY_OBJ="objects/if_ruby.o"
 	RUBY_PRO="if_ruby.pro"
+
 	AC_DEFINE(FEAT_RUBY)
 	if test "$enable_rubyinterp" = "dynamic"; then
 	  libruby=`$vi_cv_path_ruby -r rbconfig -e "puts $ruby_rbconfig::CONFIG[['LIBRUBY_SO']]"`
@@ -2050,7 +2090,7 @@ test "x$with_x" = xno -a "x$MACOSX" != "xyes" -a "x$QNX" != "xyes" && enable_gui
 
 AC_MSG_CHECKING(--enable-gui argument)
 AC_ARG_ENABLE(gui,
- [  --enable-gui[=OPTS]     X11 GUI [default=auto] [OPTS=auto/no/gtk2/gnome2/motif/athena/neXtaw/photon/carbon]], , enable_gui="auto")
+ [  --enable-gui[=OPTS]     X11 GUI [default=auto] [OPTS=auto/no/gtk2/gnome2/motif/athena/neXtaw/photon/carbon/macvim]], , enable_gui="auto")
 
 dnl Canonicalize the --enable-gui= argument so that it can be easily compared.
 dnl Do not use character classes for portability with old tools.
@@ -2065,6 +2105,7 @@ SKIP_ATHENA=YES
 SKIP_NEXTAW=YES
 SKIP_PHOTON=YES
 SKIP_CARBON=YES
+SKIP_MACVIM=YES
 GUITYPE=NONE
 
 if test "x$QNX" = "xyes" -a "x$with_x" = "xno" ; then
@@ -2081,15 +2122,20 @@ if test "x$QNX" = "xyes" -a "x$with_x" = "xno" ; then
 
 elif test "x$MACOSX" = "xyes" -a "x$with_x" = "xno" ; then
   SKIP_CARBON=
+  SKIP_MACVIM=
   case "$enable_gui_canon" in
     no)		AC_MSG_RESULT(no GUI support)
+		SKIP_CARBON=YES 
+		SKIP_MACVIM=YES ;;
+    yes|""|auto)	AC_MSG_RESULT(yes/auto - automatic GUI support)
 		SKIP_CARBON=YES ;;
-    yes|"")	AC_MSG_RESULT(yes - automatic GUI support) ;;
-    auto)	AC_MSG_RESULT(auto - Carbon GUI is outdated - disable GUI support)
+    carbon)	AC_MSG_RESULT(Carbon GUI support) 
+		SKIP_MACVIM=YES ;;
+    macvim)	AC_MSG_RESULT(MacVim GUI support) 
 		SKIP_CARBON=YES ;;
-    carbon)	AC_MSG_RESULT(Carbon GUI support) ;;
     *)		AC_MSG_RESULT([Sorry, $enable_gui GUI is not supported])
-		SKIP_CARBON=YES ;;
+		SKIP_CARBON=YES 
+		SKIP_MACVIM=YES ;;
   esac
 
 else
@@ -2102,6 +2148,7 @@ else
 		SKIP_MOTIF=
 		SKIP_ATHENA=
 		SKIP_NEXTAW=
+		SKIP_MACVIM=
 		SKIP_CARBON=;;
     gtk2)	AC_MSG_RESULT(GTK+ 2.x GUI support)
 		SKIP_GTK2=;;
@@ -2187,29 +2234,44 @@ if test "x$SKIP_CARBON" != "xYES" -a "$enable_gui_canon" != "carbon"; then
   fi
 fi
 
-
-if test "x$MACOSX" = "xyes" -a -z "$SKIP_CARBON" -a "x$CARBON" = "xyes"; then
-  AC_MSG_CHECKING(for Carbon GUI)
-  dnl already did the check, just give the message
-  AC_MSG_RESULT(yes);
-  GUITYPE=CARBONGUI
-  if test "$VIMNAME" = "vim"; then
-    VIMNAME=Vim
+if test "x$SKIP_MACVIM" != "xYES" -a "$enable_gui_canon" != "macvim"; then
+  AC_MSG_CHECKING(whether or not to look for MacVim)
+  AC_ARG_ENABLE(macvim-check,
+	[  --enable-macvim-check   If auto-select GUI, check for MacVim [default=yes]],
+	, enable_macvim_check="yes")
+  AC_MSG_RESULT($enable_macvim_check);
+  if test "x$enable_macvim_check" = "xno"; then
+    SKIP_MACVIM=YES
   fi
+fi
 
-  if test "x$MACARCH" = "xboth"; then
-    CPPFLAGS="$CPPFLAGS -I$DEVELOPER_DIR/SDKs/MacOSX10.4u.sdk/Developer/Headers/FlatCarbon"
-  else
-    CPPFLAGS="$CPPFLAGS -I$DEVELOPER_DIR/Headers/FlatCarbon"
-  fi
-
+if test "x$MACOSX" = "xyes"; then
   dnl Default install directory is not /usr/local
   if test x$prefix = xNONE; then
     prefix=/Applications
   fi
 
-  dnl Sorry for the hard coded default
-  datadir='${prefix}/Vim.app/Contents/Resources'
+  if test -z "$SKIP_MACVIM" -a "x$COCOA" = "xyes"; then
+    AC_MSG_CHECKING(for MacVim GUI)
+    dnl already did the check, just give the message
+    AC_MSG_RESULT(yes);
+    GUITYPE=MACVIMGUI
+    dnl Sorry for the hard coded default
+    datadir='${prefix}/MacVim.app/Contents/Resources'
+  elif test -z "$SKIP_CARBON" -a "x$CARBON" = "xyes"; then
+    AC_MSG_CHECKING(for Carbon GUI)
+    dnl already did the check, just give the message
+    AC_MSG_RESULT(yes);
+    GUITYPE=CARBONGUI
+    dnl Sorry for the hard coded default
+    datadir='${prefix}/Vim.app/Contents/Resources'
+
+    CPPFLAGS="$CPPFLAGS -I$DEVELOPER_DIR/Headers/FlatCarbon"
+  fi
+
+  if test "$VIMNAME" = "vim"; then
+    VIMNAME=Vim
+  fi
 
   dnl skip everything else
   SKIP_GTK2=YES;
@@ -2218,7 +2280,6 @@ if test "x$MACOSX" = "xyes" -a -z "$SKIP_CARBON" -a "x$CARBON" = "xyes"; then
   SKIP_ATHENA=YES;
   SKIP_NEXTAW=YES;
   SKIP_PHOTON=YES;
-  SKIP_CARBON=YES
 fi
 
 dnl define an autoconf function to check for a specified version of GTK, and
@@ -2640,7 +2701,6 @@ if test "$enable_xsmp" = "yes"; then
   AC_CHECK_HEADERS(X11/SM/SMlib.h)
   CPPFLAGS=$cppflags_save
 fi
-
 
 if test -z "$SKIP_ATHENA" -o -z "$SKIP_NEXTAW" -o -z "$SKIP_MOTIF" -o -z "$SKIP_GTK2"; then
   dnl Check for X11/xpm.h and X11/Sunkeysym.h with the GUI include path
@@ -3934,9 +3994,18 @@ if test "x$MACOSX" = "xyes"; then
     OS_EXTRA_OBJ=`echo "$OS_EXTRA_OBJ" | sed -e 's+objects/os_macosx.o++'`
   fi
 fi
-if test "x$MACARCH" = "xboth" && test "x$GUITYPE" = "xCARBONGUI"; then
-  LDFLAGS="$LDFLAGS -isysroot $DEVELOPER_DIR/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc"
+
+if test "x$MACOSX" = "xyes"; then
+  AC_MSG_CHECKING(--with-xcodecfg argument)
+  AC_ARG_WITH(xcodecfg,
+    [  --with-xcodecfg=CFG     Debug, Release (default: Release)],
+    [ XCODEFLAGS="$XCODEFLAGS -configuration $withval"
+      AC_MSG_RESULT($withval) ],
+    [ AC_MSG_RESULT(using default) ])
+
+  AC_SUBST(XCODEFLAGS)
 fi
+
 
 dnl gcc 3.1 changed the meaning of -MM.  The only solution appears to be to
 dnl use "-isystem" instead of "-I" for all non-Vim include dirs.

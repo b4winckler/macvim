@@ -267,6 +267,13 @@ enum key_extra
     , KE_NOP		/* doesn't do something */
     , KE_FOCUSGAINED	/* focus gained */
     , KE_FOCUSLOST	/* focus lost */
+
+#ifdef FEAT_GUI_MACVIM
+    , KE_SWIPELEFT	/* Swipe trackpad left */
+    , KE_SWIPERIGHT	/* Swipe trackpad right */
+    , KE_SWIPEUP	/* Swipe trackpad up */
+    , KE_SWIPEDOWN	/* Swipe trackpad down */
+#endif
 };
 
 /*
@@ -466,6 +473,13 @@ enum key_extra
 #define K_FOCUSLOST	TERMCAP2KEY(KS_EXTRA, KE_FOCUSLOST)
 
 #define K_CURSORHOLD	TERMCAP2KEY(KS_EXTRA, KE_CURSORHOLD)
+
+#ifdef FEAT_GUI_MACVIM
+# define K_SWIPELEFT	TERMCAP2KEY(KS_EXTRA, KE_SWIPELEFT)
+# define K_SWIPERIGHT	TERMCAP2KEY(KS_EXTRA, KE_SWIPERIGHT)
+# define K_SWIPEUP	TERMCAP2KEY(KS_EXTRA, KE_SWIPEUP)
+# define K_SWIPEDOWN	TERMCAP2KEY(KS_EXTRA, KE_SWIPEDOWN)
+#endif
 
 /* Bits for modifier mask */
 /* 0x01 cannot be used, because the modifier must be 0x02 or higher */

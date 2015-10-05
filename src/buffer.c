@@ -489,6 +489,10 @@ aucmd_abort:
 	return;
 #endif
 
+#ifdef FEAT_ODB_EDITOR
+    odb_buffer_close(buf);
+#endif
+
     /* Change directories when the 'acd' option is set. */
     DO_AUTOCHDIR
 
@@ -3311,6 +3315,10 @@ maketitle()
 	return;
     }
 
+#ifdef FEAT_GUI_MACVIM
+    gui_macvim_update_modified_flag();
+#endif
+
     need_maketitle = FALSE;
     if (!p_title && !p_icon && lasttitle == NULL && lasticon == NULL)
 	return;
@@ -3417,7 +3425,9 @@ maketitle()
 		STRCAT(buf, ")");
 	    }
 
+#ifndef FEAT_GUI_MACVIM
 	    append_arg_number(curwin, buf, SPACE_FOR_ARGNR, FALSE);
+#endif
 
 #if defined(FEAT_CLIENTSERVER)
 	    if (serverName != NULL)

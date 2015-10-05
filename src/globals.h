@@ -872,8 +872,10 @@ EXTERN int* (*iconv_errno) (void);
 #endif /* FEAT_MBYTE */
 
 #ifdef FEAT_XIM
-# ifdef FEAT_GUI_GTK
+# if defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM)
+#  ifndef FEAT_GUI_MACVIM
 EXTERN GtkIMContext	*xic INIT(= NULL);
+#  endif
 /*
  * Start and end column of the preedit area in virtual columns from the start
  * of the text line.  When there is no preedit area they are set to MAXCOL.
@@ -1325,11 +1327,13 @@ EXTERN Window	commWindow INIT(= None);
 EXTERN Window	clientWindow INIT(= None);
 EXTERN Atom	commProperty INIT(= None);
 EXTERN char_u	*serverDelayedStartName INIT(= NULL);
-# else
+# elif defined(WIN32)
 #  ifdef PROTO
 typedef int HWND;
 #  endif
 EXTERN HWND	clientWindow INIT(= 0);
+# elif defined(MAC_CLIENTSERVER)
+EXTERN int      clientWindow INIT(= 0);
 # endif
 #endif
 

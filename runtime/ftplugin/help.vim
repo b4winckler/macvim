@@ -18,5 +18,11 @@ if has("conceal")
   setlocal cole=2 cocu=nc
 endif
 
+if has("gui_macvim")
+  " Use swipe gesture to navigate back/forward
+  nmap <buffer> <silent> <SwipeLeft>  :po<CR>
+  nmap <buffer> <silent> <SwipeRight> :ta<CR>
+endif
+
 let &cpo = s:cpo_save
 unlet s:cpo_save

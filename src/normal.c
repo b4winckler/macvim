@@ -2637,7 +2637,8 @@ do_mouse(oap, c, dir, count, fixindent)
 	     * Windows only shows the popup menu on the button up event.
 	     */
 #if defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_GTK) \
-			  || defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MAC)
+	|| defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MAC) \
+	|| defined(FEAT_GUI_MACVIM)
 	    if (!is_click)
 		return FALSE;
 #endif
@@ -2647,7 +2648,8 @@ do_mouse(oap, c, dir, count, fixindent)
 #endif
 #if defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_GTK) \
 	    || defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_MSWIN) \
-	    || defined(FEAT_GUI_MAC) || defined(FEAT_GUI_PHOTON)
+	    || defined(FEAT_GUI_MAC) || defined(FEAT_GUI_PHOTON) \
+	    || defined(FEAT_GUI_MACVIM)
 	    if (gui.in_use)
 	    {
 		jump_flags = 0;
@@ -3862,6 +3864,9 @@ add_to_showcmd(c)
 	K_MOUSEDOWN, K_MOUSEUP, K_MOUSELEFT, K_MOUSERIGHT,
 	K_X1MOUSE, K_X1DRAG, K_X1RELEASE, K_X2MOUSE, K_X2DRAG, K_X2RELEASE,
 	K_CURSORHOLD,
+# ifdef FEAT_GUI_MACVIM
+	K_SWIPELEFT, K_SWIPERIGHT, K_SWIPEUP, K_SWIPEDOWN,
+# endif
 	0
     };
 #endif
@@ -4541,6 +4546,9 @@ nv_screengo(oap, dir, dist)
 nv_mousescroll(cap)
     cmdarg_T	*cap;
 {
+# ifdef FEAT_GUI_SCROLL_WHEEL_FORCE
+    int scroll_wheel_force = 0;
+# endif
 # ifdef FEAT_WINDOWS
     win_T *old_curwin = curwin;
 
@@ -4556,6 +4564,15 @@ nv_mousescroll(cap)
 	curbuf = curwin->w_buffer;
     }
 # endif
+# ifdef FEAT_GUI_SCROLL_WHEEL_FORCE
+    if (gui.in_use && gui.scroll_wheel_force >= 1)
+    {
+	scroll_wheel_force = gui.scroll_wheel_force;
+	if (scroll_wheel_force > 1000) scroll_wheel_force = 1000;
+    }
+    else
+	scroll_wheel_force = cap->arg >= 0 ? 3 : 6;
+# endif
 
     if (cap->arg == MSCR_UP || cap->arg == MSCR_DOWN)
     {
@@ -4565,8 +4582,13 @@ nv_mousescroll(cap)
 	}
 	else
 	{
+# ifdef FEAT_GUI_SCROLL_WHEEL_FORCE
+	    cap->count1 = scroll_wheel_force;
+	    cap->count0 = scroll_wheel_force;
+# else
 	    cap->count1 = 3;
 	    cap->count0 = 3;
+# endif
 	    nv_scroll_line(cap);
 	}
     }
@@ -4578,6 +4600,9 @@ nv_mousescroll(cap)
 	{
 	    int val, step = 6;
 
+#  ifdef FEAT_GUI_SCROLL_WHEEL_FORCE
+	    step = scroll_wheel_force;
+#  endif
 	    if (mod_mask & (MOD_MASK_SHIFT | MOD_MASK_CTRL))
 		step = W_WIDTH(curwin);
 	    val = curwin->w_leftcol + (cap->arg == MSCR_RIGHT ? -step : +step);
@@ -5231,11 +5256,20 @@ handle_tabmenu()
     {
 	case TABLINE_MENU_CLOSE:
 	    if (current_tab == 0)
+#ifdef FEAT_GUI_MACVIM
+		do_cmdline_cmd((char_u *)"conf tabclose");
+#else
 		do_cmdline_cmd((char_u *)"tabclose");
+#endif
 	    else
 	    {
+#ifdef FEAT_GUI_MACVIM
+		vim_snprintf((char *)IObuff, IOSIZE, "conf tabclose %d",
+								 current_tab);
+#else
 		vim_snprintf((char *)IObuff, IOSIZE, "tabclose %d",
 								 current_tab);
+#endif
 		do_cmdline_cmd(IObuff);
 	    }
 	    break;

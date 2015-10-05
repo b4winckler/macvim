@@ -4428,7 +4428,14 @@ iconv_end()
 
 #if defined(FEAT_XIM) || defined(PROTO)
 
-# if defined(FEAT_GUI_GTK) || defined(PROTO)
+# ifdef FEAT_GUI_MACVIM
+   typedef int	 GtkIMContext;
+   typedef int * gpointer;
+   typedef char  gchar;
+#  define g_return_if_fail(x) if (!(x)) return;
+# endif
+
+# if defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM) || defined(PROTO)
 static int xim_has_preediting INIT(= FALSE);  /* IM current status */
 
 /*
@@ -4451,9 +4458,12 @@ static int im_preedit_cursor   = 0;	/* cursor offset in characters       */
 static int im_preedit_trailing = 0;	/* number of characters after cursor */
 
 static unsigned long im_commit_handler_id  = 0;
+# ifndef FEAT_GUI_MACVIM
 static unsigned int  im_activatekey_keyval = GDK_VoidSymbol;
 static unsigned int  im_activatekey_state  = 0;
+# endif
 
+# ifndef FEAT_GUI_MACVIM
     void
 im_set_active(int active)
 {
@@ -4465,10 +4475,12 @@ im_set_active(int active)
     if (im_is_active != was_active)
 	xim_reset();
 }
+# endif
 
     void
 xim_set_focus(int focus)
 {
+# ifndef FEAT_GUI_MACVIM
     if (xic != NULL)
     {
 	if (focus)
@@ -4476,8 +4488,10 @@ xim_set_focus(int focus)
 	else
 	    gtk_im_context_focus_out(xic);
     }
+# endif
 }
 
+# ifndef FEAT_GUI_MACVIM
     void
 im_set_position(int row, int col)
 {
@@ -4493,6 +4507,7 @@ im_set_position(int row, int col)
 	gtk_im_context_set_cursor_location(xic, &area);
     }
 }
+# endif
 
 #  if 0 || defined(PROTO) /* apparently only used in gui_x11.c */
     void
@@ -4517,8 +4532,10 @@ im_add_to_input(char_u *str, int len)
     if (input_conv.vc_type != CONV_NONE)
 	vim_free(str);
 
+# ifndef FEAT_GUI_MACVIM
     if (p_mh) /* blank out the pointer if necessary */
 	gui_mch_mousehide(TRUE);
+# endif
 }
 
     static void
@@ -4559,8 +4576,10 @@ im_correct_cursor(int num_move_back)
 	add_to_input_buf(backkey, (int)sizeof(backkey));
 }
 
+# ifndef FEAT_GUI_MACVIM
 static int xim_expected_char = NUL;
 static int xim_ignored_char = FALSE;
+# endif
 
 /*
  * Update the mode and cursor while in an IM callback.
@@ -4579,6 +4598,7 @@ im_show_info(void)
     out_flush();
 }
 
+# ifndef FEAT_GUI_MACVIM
 /*
  * Callback invoked when the user finished preediting.
  * Put the final string into the input buffer.
@@ -4668,12 +4688,18 @@ im_commit_cb(GtkIMContext *context UNUSED,
     if (gtk_main_level() > 0)
 	gtk_main_quit();
 }
+# endif
 
 /*
  * Callback invoked after start to the preedit.
  */
+# ifndef FEAT_GUI_MACVIM
     static void
 im_preedit_start_cb(GtkIMContext *context UNUSED, gpointer data UNUSED)
+# else
+    void
+im_preedit_start_macvim()
+# endif
 {
 #ifdef XIM_DEBUG
     xim_log("im_preedit_start_cb()\n");
@@ -4688,8 +4714,13 @@ im_preedit_start_cb(GtkIMContext *context UNUSED, gpointer data UNUSED)
 /*
  * Callback invoked after end to the preedit.
  */
+# ifndef FEAT_GUI_MACVIM
     static void
 im_preedit_end_cb(GtkIMContext *context UNUSED, gpointer data UNUSED)
+# else
+    void
+im_preedit_end_macvim()
+# endif
 {
 #ifdef XIM_DEBUG
     xim_log("im_preedit_end_cb()\n");
@@ -4710,6 +4741,18 @@ im_preedit_end_cb(GtkIMContext *context UNUSED, gpointer data UNUSED)
     gui_update_cursor(TRUE, FALSE);
     im_show_info();
 }
+
+#ifdef FEAT_GUI_MACVIM
+    void
+im_preedit_abandon_macvim()
+{
+    /* Abandon preedit text, don't send any backspace sequences. */
+    im_preedit_cursor = 0;
+    im_preedit_trailing = 0;
+
+    im_preedit_end_macvim();
+}
+#endif
 
 /*
  * Callback invoked after changes to the preedit string.  If the preedit
@@ -4748,19 +4791,28 @@ im_preedit_end_cb(GtkIMContext *context UNUSED, gpointer data UNUSED)
  * remaining input from within the "retrieve_surrounding" signal handler, this
  * might not be necessary.  Gotta ask on vim-dev for opinions.
  */
+# ifndef FEAT_GUI_MACVIM
     static void
 im_preedit_changed_cb(GtkIMContext *context, gpointer data UNUSED)
+# else
+    void
+im_preedit_changed_macvim(char *preedit_string, int cursor_index)
+# endif
 {
+# ifndef FEAT_GUI_MACVIM
     char    *preedit_string = NULL;
     int	    cursor_index    = 0;
+# endif
     int	    num_move_back   = 0;
     char_u  *str;
     char_u  *p;
     int	    i;
 
+# ifndef FEAT_GUI_MACVIM
     gtk_im_context_get_preedit_string(context,
 				      &preedit_string, NULL,
 				      &cursor_index);
+# endif
 
 #ifdef XIM_DEBUG
     xim_log("im_preedit_changed_cb(): %s\n", preedit_string);
@@ -4830,12 +4882,15 @@ im_preedit_changed_cb(GtkIMContext *context, gpointer data UNUSED)
 	im_correct_cursor(num_move_back);
     }
 
+# ifndef FEAT_GUI_MACVIM
     g_free(preedit_string);
 
     if (gtk_main_level() > 0)
 	gtk_main_quit();
+# endif
 }
 
+# ifndef FEAT_GUI_MACVIM
 /*
  * Translate the Pango attributes at iter to Vim highlighting attributes.
  * Ignore attributes not supported by Vim highlighting.  This shouldn't have
@@ -4874,6 +4929,7 @@ translate_pango_attributes(PangoAttrIterator *iter)
 
     return char_attr;
 }
+# endif
 
 /*
  * Retrieve the highlighting attributes at column col in the preedit string.
@@ -4882,6 +4938,7 @@ translate_pango_attributes(PangoAttrIterator *iter)
     int
 im_get_feedback_attr(int col)
 {
+# ifndef FEAT_GUI_MACVIM
     char	    *preedit_string = NULL;
     PangoAttrList   *attr_list	    = NULL;
     int		    char_attr	    = -1;
@@ -4926,6 +4983,9 @@ im_get_feedback_attr(int col)
     g_free(preedit_string);
 
     return char_attr;
+# else
+    return HL_UNDERLINE;
+# endif
 }
 
     void
@@ -4935,6 +4995,7 @@ xim_init(void)
     xim_log("xim_init()\n");
 #endif
 
+# ifndef FEAT_GUI_MACVIM
     g_return_if_fail(gui.drawarea != NULL);
     g_return_if_fail(gui.drawarea->window != NULL);
 
@@ -4951,6 +5012,7 @@ xim_init(void)
 		     G_CALLBACK(&im_preedit_end_cb), NULL);
 
     gtk_im_context_set_client_window(xic, gui.drawarea->window);
+# endif
 }
 
     void
@@ -4960,18 +5022,21 @@ im_shutdown(void)
     xim_log("im_shutdown()\n");
 #endif
 
+# ifndef FEAT_GUI_MACVIM
     if (xic != NULL)
     {
 	gtk_im_context_focus_out(xic);
 	g_object_unref(xic);
 	xic = NULL;
     }
+# endif
     im_is_active = FALSE;
     im_commit_handler_id = 0;
     preedit_start_col = MAXCOL;
     xim_has_preediting = FALSE;
 }
 
+# ifndef FEAT_GUI_MACVIM
 /*
  * Convert the string argument to keyval and state for GdkEventKey.
  * If str is valid return TRUE, otherwise FALSE.
@@ -5077,10 +5142,12 @@ im_synthesize_keypress(unsigned int keyval, unsigned int state)
     g_free(event);
 #  endif
 }
+# endif // FEAT_GUI_MACVIM
 
     void
 xim_reset(void)
 {
+# ifndef FEAT_GUI_MACVIM
     if (xic != NULL)
     {
 	gtk_im_context_reset(xic);
@@ -5122,11 +5189,13 @@ xim_reset(void)
 	    }
 	}
     }
+# endif
 
     preedit_start_col = MAXCOL;
     xim_has_preediting = FALSE;
 }
 
+# ifndef FEAT_GUI_MACVIM
     int
 xim_queue_key_press_event(GdkEventKey *event, int down)
 {
@@ -5260,7 +5329,9 @@ xim_queue_key_press_event(GdkEventKey *event, int down)
 
     return FALSE;
 }
+# endif
 
+# ifndef FEAT_GUI_MACVIM
     int
 im_get_status(void)
 {
@@ -5286,6 +5357,7 @@ im_get_status(void)
 #  endif
     return im_is_active;
 }
+# endif
 
     int
 preedit_get_status(void)
@@ -5757,7 +5829,7 @@ im_get_status()
 
 # endif /* !FEAT_GUI_GTK */
 
-# if !defined(FEAT_GUI_GTK) || defined(PROTO)
+# if !(defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM)) || defined(PROTO)
 /*
  * Set up the status area.
  *

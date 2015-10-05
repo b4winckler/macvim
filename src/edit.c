@@ -1173,6 +1173,15 @@ doESCkey:
 	case K_MOUSERIGHT: /* Scroll wheel right */
 	    ins_mousescroll(MSCR_RIGHT);
 	    break;
+
+# ifdef FEAT_GUI_MACVIM
+	/* Gestures are ignored */
+	case K_SWIPELEFT:
+	case K_SWIPERIGHT:
+	case K_SWIPEUP:
+	case K_SWIPEDOWN:
+	    break;
+# endif
 #endif
 #ifdef FEAT_GUI_TABLINE
 	case K_TABLINE:
@@ -1183,6 +1192,7 @@ doESCkey:
 
 	case K_IGNORE:	/* Something mapped to nothing */
 	    break;
+
 
 #ifdef FEAT_AUTOCMD
 	case K_CURSORHOLD:	/* Didn't type something for a while. */
@@ -3639,7 +3649,12 @@ ins_compl_prep(c)
 
     /* Ignore end of Select mode mapping and mouse scroll buttons. */
     if (c == K_SELECT || c == K_MOUSEDOWN || c == K_MOUSEUP
-	    || c == K_MOUSELEFT || c == K_MOUSERIGHT)
+	    || c == K_MOUSELEFT || c == K_MOUSERIGHT
+# ifdef FEAT_GUI_MACVIM
+	    || c == K_SWIPELEFT || c == K_SWIPERIGHT || c == K_SWIPEUP
+	    || c == K_SWIPEDOWN
+# endif
+		    )
 	return retval;
 
     /* Set "compl_get_longest" when finding the first matches. */
@@ -9185,6 +9200,9 @@ ins_mousescroll(dir)
 # ifdef FEAT_INS_EXPAND
     int		did_scroll = FALSE;
 # endif
+# ifdef FEAT_GUI_SCROLL_WHEEL_FORCE
+    int		scroll_wheel_force = 0;
+# endif
 
     tpos = curwin->w_cursor;
 
@@ -9213,19 +9231,35 @@ ins_mousescroll(dir)
 	    )
 # endif
     {
+# ifdef FEAT_GUI_SCROLL_WHEEL_FORCE
+	if (gui.in_use && gui.scroll_wheel_force >= 1)
+	{
+	    scroll_wheel_force = gui.scroll_wheel_force;
+	    if (scroll_wheel_force > 1000) scroll_wheel_force = 1000;
+	}
+	else
+	    scroll_wheel_force = dir >= 0 ? 3 : 6;
+# endif
 	if (dir == MSCR_DOWN || dir == MSCR_UP)
 	{
 	    if (mod_mask & (MOD_MASK_SHIFT | MOD_MASK_CTRL))
 		scroll_redraw(dir,
 			(long)(curwin->w_botline - curwin->w_topline));
 	    else
+# ifdef FEAT_GUI_SCROLL_WHEEL_FORCE
+		scroll_redraw(dir, scroll_wheel_force);
+# else
 		scroll_redraw(dir, 3L);
+# endif
 	}
 #ifdef FEAT_GUI
 	else
 	{
 	    int val, step = 6;
 
+#  ifdef FEAT_GUI_SCROLL_WHEEL_FORCE
+	    step = scroll_wheel_force;
+#  endif
 	    if (mod_mask & (MOD_MASK_SHIFT | MOD_MASK_CTRL))
 		step = W_WIDTH(curwin);
 	    val = curwin->w_leftcol + (dir == MSCR_RIGHT ? -step : step);
@@ -9340,7 +9374,7 @@ ins_left()
     tpos = curwin->w_cursor;
     if (oneleft() == OK)
     {
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
+#if defined(FEAT_XIM) && (defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
 	/* Only call start_arrow() when not busy with preediting, it will
 	 * break undo.  K_LEFT is inserted in im_correct_cursor(). */
 	if (!im_is_preediting())

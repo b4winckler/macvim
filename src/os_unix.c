@@ -2109,7 +2109,8 @@ mch_settitle(title, icon)
     if (get_x11_windis() == OK)
 	type = 1;
 #else
-# if defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MAC) || defined(FEAT_GUI_GTK)
+# if defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MAC) \
+        || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM)
     if (gui.in_use)
 	type = 1;
 # endif
@@ -2138,7 +2139,8 @@ mch_settitle(title, icon)
 	    set_x11_title(title);		/* x11 */
 #endif
 #if defined(FEAT_GUI_GTK) \
-	|| defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MAC)
+	|| defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MAC) \
+        || defined(FEAT_GUI_MACVIM)
 	else
 	    gui_mch_settitle(title, icon);
 #endif
@@ -3198,6 +3200,10 @@ mch_early_init()
     signal_stack = (char *)alloc(SIGSTKSZ);
     init_signal_stack();
 #endif
+
+#ifdef FEAT_GUI_MACVIM
+    macvim_early_init();
+#endif
 }
 
 #if defined(EXITFREE) || defined(PROTO)
@@ -4042,6 +4048,12 @@ mch_call_shell(cmd, options)
 # endif
 
     out_flush();
+#ifdef FEAT_GUI_MACVIM
+    /* It is conceivable that the shell command will take a long time to finish
+     * so force a flush now. */
+    if (gui.in_use)
+	gui_macvim_force_flush();
+#endif
 
     if (options & SHELL_COOKED)
 	settmode(TMODE_COOK);	    /* set to normal mode */
@@ -4168,6 +4180,12 @@ mch_call_shell(cmd, options)
 	goto error;
 
     out_flush();
+#ifdef FEAT_GUI_MACVIM
+    /* It is conceivable that the shell command will take a long time to finish
+     * so force a flush now. */
+    if (gui.in_use)
+	gui_macvim_force_flush();
+#endif
     if (options & SHELL_COOKED)
 	settmode(TMODE_COOK);		/* set to normal mode */
 
@@ -4407,7 +4425,7 @@ mch_call_shell(cmd, options)
 		    /* push stream discipline modules */
 		    if (options & SHELL_COOKED)
 			SetupSlavePTY(pty_slave_fd);
-#  ifdef TIOCSCTTY
+#  if defined(TIOCSCTTY) && !defined(FEAT_GUI_MACVIM)
 		    /* Try to become controlling tty (probably doesn't work,
 		     * unless run by root) */
 		    ioctl(pty_slave_fd, TIOCSCTTY, (char *)NULL);
@@ -4895,6 +4913,10 @@ mch_call_shell(cmd, options)
 			windgoto(msg_row, msg_col);
 			cursor_on();
 			out_flush();
+# if FEAT_GUI_MACVIM
+			if (gui.in_use)
+			    gui_macvim_flush();
+# endif
 			if (got_int)
 			    break;
 

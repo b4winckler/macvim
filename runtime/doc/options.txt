@@ -709,16 +709,21 @@ A jump table for the options with a short description can be found at |Q_op|.
 	escape sequence to request cursor position report.
 
 			*'antialias'* *'anti'* *'noantialias'* *'noanti'*
-'antialias' 'anti'	boolean (default: off)
+'antialias' 'anti'	boolean (default off, on for MacVim)
 			global
 			{not in Vi}
-			{only available when compiled with GUI enabled
-			on Mac OS X}
+                        {only available when compiled with GUI enabled on
+			 Mac OS X}
 	This option only has an effect in the GUI version of Vim on Mac OS X
 	v10.2 or later.  When on, Vim will use smooth ("antialiased") fonts,
 	which can be easier to read at certain sizes on certain displays.
-	Setting this option can sometimes cause problems if 'guifont' is set
-	to its default (empty string).
+
+	Setting this option in the Carbon version can sometimes cause problems
+	if 'guifont' is set to its default (empty string).
+
+	Support for this option is not flawless in MacVim. In particular,
+	Monaco always seems to render not antialiased for point sizes up
+	to 10. The ATSUI renderer has better antialias support.
 
 			*'autochdir'* *'acd'* *'noautochdir'* *'noacd'*
 'autochdir' 'acd'	boolean (default off)
@@ -2605,8 +2610,8 @@ A jump table for the options with a short description can be found at |Q_op|.
 	This option cannot be set from a |modeline|.  It would most likely
 	corrupt the text.
 
-	NOTE: For GTK+ 2 it is highly recommended to set 'encoding' to
-	"utf-8".  Although care has been taken to allow different values of
+	NOTE: For MacVim and GTK+ 2 it is highly recommended to set 'encoding'
+	to "utf-8".  Although care has been taken to allow different values of
 	'encoding', "utf-8" is the natural choice for the environment and
 	avoids unnecessary conversion overhead.  "utf-8" has not been made
 	the default to prevent different behavior of the GUI and terminal
@@ -3330,8 +3335,8 @@ A jump table for the options with a short description can be found at |Q_op|.
 	modeline, see |sandbox-option|.  That stops the option from working,
 	since changing the buffer text is not allowed.
 
-						*'fsync'* *'fs'*
-'fsync' 'fs'		boolean	(default on)
+					*'fsync'* *'fs'* *'nofsync'* *'nofs'*
+'fsync' 'fs'		boolean (default on)
 			global
 			{not in Vi}
 	When on, the library function fsync() will be called after writing a
@@ -3343,6 +3348,88 @@ A jump table for the options with a short description can be found at |Q_op|.
 	systems without an fsync() implementation, this variable is always
 	off.
 	Also see 'swapsync' for controlling fsync() on swap files.
+
+			    *'fullscreen'* *'fu'* *'nofullscreen'* *'nofu'*
+'fullscreen' 'fu'	boolean (default off)
+			global
+			{not in Vi}
+			{only in MacVim GUI}
+	When this option is set, the whole screen is covered by Vim.  Screen
+	decorations drawn by the operating system (such as the dock or the
+	menu bar) are hidden.  Most of Vim's window chrome is hidden as well
+	(e.g. toolbar, title bar).  The tab bar and scroll bars remain visible.
+	Updates to the window position are ignored in fullscreen mode.
+
+	See 'fuoptions' for how Vim resizes and colors the background when 
+	entering and leaving fullscreen mode.
+
+	Note: Setting 'fullscreen' usually changes the size of the Vim
+	control. However, for technical reasons, 'lines' and 'columns' will
+	currently only be updated when Vim runs its event loop. As a
+	consequence, if you set 'fullscreen' and 'lines' or 'columns' in a
+	Vim script file, you should always set 'fullscreen' after setting
+	'lines' and 'columns', else 'lines' and 'columns' will be overwritten
+	with the values 'fullscreen' sets after the script has been executed
+	and the event loop is ran again.
+
+	XXX: Add fuenter/fuleave autocommands? You might want to display
+	a NERDTree or a Tlist only in fullscreen for example. Then again, this
+	could probably be in a sizechanged autocommand that triggers if the
+	size is above a certain threshold.
+	XXX: Think about how 'fullscreen' and 'transparency' should interact. 
+
+						*'fuoptions'* *'fuopt'*
+'fuoptions' 'fuopt'	string (default "maxvert,maxhorz")
+			global
+			{not in Vi}
+			{only in MacVim GUI}
+	In fullscreen mode, most of the screen is black, only a part of the
+	screen is covered by the actual Vim control.  The control is centered.
+	This option controls the size of the Vim control as well as the color
+	of the unused screen area. 
+	value	effect	~
+        maxvert	When entering fullscreen, 'lines' is set to the maximum number
+		of lines fitting on the screen in fullscreen mode. When
+		leaving fullscreen, if 'lines' is still equal to the maximized
+		number of lines, it is restored to the value it had before
+		entering fullscreen.
+        maxhorz	When entering fullscreen, 'columns' is set to the maximum number
+		of columns fitting on the screen in fullscreen mode. When
+		leaving fullscreen, if 'columns' is still equal to the maximized
+		number of columns, it is restored to the value it had before
+		entering fullscreen.
+	background:color
+		{not supported in Mac OS X native full screen}
+		When entering fullscreen, 'color' defines the color of the part
+		of the screen that is not occupied by the Vim control. If
+		'color' is an 8-digit hexadecimal number preceded by '#',
+		it is interpreted as an explicit color value '#aarrggbb', with
+		one byte each for the alpha, red, green, and blue values.
+		Otherwise, 'color' is interpreted as a highlight group name,
+		and the fullscreen background is filled with that highlight
+		group's background color, as defined by the current color
+		scheme.
+
+	Examples: 
+	Don't change size when entering fullscreen: >
+	  :set fuoptions=
+<	Only maximize vertically when entering fullscreen: >
+	  :set fuoptions=maxvert
+<	Maximize only vertically when entering fullscreen, and color the
+	background dark blue: >
+	  :set fuoptions=maxvert,background:#FF003042
+<	Don't change size when entering fullscreen, and color the background
+	like the current text background: >
+	  :set fuoptions=background:Normal
+<
+	XXX: what if the font size is changed? you probably never want to
+	restore the old 'lines' or 'columns' in that case.
+	XXX: Each time the Vim window resizes (for example due to font size
+	changes, re-maximize Vim to fullscreen?)
+	XXX: The approach doesn't restore vertical Vim size if fu is entered
+	without tabs and leaves with tabs (or the other way round).
+
+
 
 				   *'gdefault'* *'gd'* *'nogdefault'* *'nogd'*
 'gdefault' 'gd'		boolean	(default off)
@@ -3512,6 +3599,9 @@ A jump table for the options with a short description can be found at |Q_op|.
 	For Win32, GTK, Motif, Mac OS and Photon: >
 	    :set guifont=*
 <	will bring up a font requester, where you can pick the font you want.
+        In MacVim ":set guifont=*" calls: >
+	    :macaction orderFrontFontPanel:
+<	which is the same as choosing "Show Fonts..." from the main menu.
 
 	The font name depends on the GUI used.  See |setting-guifont| for a
 	way to set 'guifont' for various systems.
@@ -3525,12 +3615,15 @@ A jump table for the options with a short description can be found at |Q_op|.
 	      set guifontwide=Microsoft\ Yahei\ 12,WenQuanYi\ Zen\ Hei\ 12
 	    endif
 <
-	For Mac OSX you can use something like this: >
+	For Mac OS X you can use something like this: >
 	    :set guifont=Monaco:h10
-<	Also see 'macatsui', it can help fix display problems.
+<	Also see 'macatsui', it can help fix display problems {not in MacVim}.
+	In MacVim, fonts with spaces are set like this: >
+	    :set guifont=DejaVu\ Sans\ Mono:h13
+<
 								*E236*
 	Note that the fonts must be mono-spaced (all characters have the same
-	width).  An exception is GTK 2: all fonts are accepted, but
+        width).  An exception is MacVim and GTK 2: all fonts are accepted, but
 	mono-spaced fonts look best.
 
 	To preview a font on X11, you might be able to use the "xfontsel"
@@ -3594,13 +3687,19 @@ A jump table for the options with a short description can be found at |Q_op|.
 	Note: The size of these fonts must be exactly twice as wide as the one
 	specified with 'guifont' and the same height.
 
-	All GUI versions but GTK+ 2:
+	All GUI versions but MacVim and GTK+ 2:
 
 	'guifontwide' is only used when 'encoding' is set to "utf-8" and
 	'guifontset' is empty or invalid.
 	When 'guifont' is set and a valid font is found in it and
 	'guifontwide' is empty Vim will attempt to find a matching
 	double-width font and set 'guifontwide' to it.
+
+	MacVim only:				*guifontwide_macvim*
+
+        MacVim performs automatic font substitution.  If 'guifontwide' is set,
+        that font will be used for all wide fonts.  However, if a glyph is
+	not available in the wide font, then font substitution is still used.
 
 	GTK+ 2 GUI only:			*guifontwide_gtk2*
 
@@ -3686,6 +3785,8 @@ A jump table for the options with a short description can be found at |Q_op|.
 		foreground.  |gui-fork|
 		Note: Set this option in the vimrc file.  The forking may have
 		happened already when the |gvimrc| file is read.
+		MacVim does not support this flag due to limitations with
+		forking on Mac OS X.
 								*'go-i'*
 	  'i'	Use a Vim icon.  For GTK with KDE it is used in the left-upper
 		corner of the window.  It's black&white on non-GTK, because of
@@ -3704,10 +3805,10 @@ A jump table for the options with a short description can be found at |Q_op|.
 		Exception: Athena will always use grey menu items.
 								*'go-t'*
 	  't'	Include tearoff menu items.  Currently only works for Win32,
-		GTK+, and Motif 1.2 GUI.
+		GTK+ and Motif 1.2 GUI.
 								*'go-T'*
-	  'T'	Include Toolbar.  Currently only in Win32, GTK+, Motif, Photon
-		and Athena GUIs.
+	  'T'	Include Toolbar.  Currently only in Win32, GTK+, Motif,
+		Photon, MacVim and Athena GUIs.
 								*'go-r'*
 	  'r'	Right-hand scrollbar is always present.
 								*'go-R'*
@@ -4098,11 +4199,12 @@ A jump table for the options with a short description can be found at |Q_op|.
 			global
 			{not in Vi}
 			{only available when compiled with the |+xim|,
-			|+multi_byte_ime| or |global-ime| features}
+			|+multi_byte_ime| or |global-ime| features, always
+			available in MacVim}
 	When set the Input Method is never used.  This is useful to disable
 	the IM when it doesn't work properly.
-	Currently this option is on by default for SGI/IRIX machines.  This
-	may change in later releases.
+	Currently this option is on by default for SGI/IRIX.  This may change
+	in later releases.
 
 						*'iminsert'* *'imi'*
 'iminsert' 'imi'	number (default 0, 2 when an input method is supported)
@@ -4747,7 +4849,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 						*'macatsui'* *'nomacatsui'*
 'macatsui'		boolean	(default on)
 			global
-			{only available in Mac GUI version}
+			{only available in Mac Carbon GUI version}
 	This is a workaround for when drawing doesn't work properly.  When set
 	and compiled with multi-byte support ATSUI text drawing is used.  When
 	not set ATSUI text drawing is not used.  Switch this option off when
@@ -4759,6 +4861,19 @@ A jump table for the options with a short description can be found at |Q_op|.
 		endif
 <	Another option to check if you have drawing problems is
 	'termencoding'.
+	Note: MacVim does not use this option.
+
+				*'macmeta'* *'mmta'* *'nomacmeta'* *'nommta'*
+'macmeta'		boolean	(default off)
+			local to buffer
+			{only available in MacVim GUI}
+	Use option (alt) as meta key.  When on, option-key presses are not
+	interpreted, thus enabling bindings to <M-..>.  When off, option-key
+	presses are interpreted by the selected input method and inserted as
+	text.
+	Note: Some keys (e.g. <M-F1>, <M-Tab>, <M-Return>, <M-Left>) can be
+	bound with the Meta flag even when this option is disabled, but this
+	is not the case for the majority of keys (e.g. <M-a>, <M-`>).
 
 						*'magic'* *'nomagic'*
 'magic'			boolean	(default on)
@@ -5759,7 +5874,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 <
 				*'runtimepath'* *'rtp'* *vimfiles*
 'runtimepath' 'rtp'	string	(default:
-					Unix: "$HOME/.vim,
+					Unix, Mac OS X: "$HOME/.vim,
 						$VIM/vimfiles,
 						$VIMRUNTIME,
 						$VIM/vimfiles/after,
@@ -5774,7 +5889,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 						$VIMRUNTIME,
 						$VIM/vimfiles/after,
 						$HOME/vimfiles/after"
-					Macintosh: "$VIM:vimfiles,
+					Macintosh (pre-OS X): "$VIM:vimfiles,
 						$VIMRUNTIME,
 						$VIM:vimfiles:after"
 					RISC-OS: "Choices:vimfiles,
@@ -7209,8 +7324,9 @@ A jump table for the options with a short description can be found at |Q_op|.
 	For further details see |arabic.txt|.
 
 					*'termencoding'* *'tenc'*
-'termencoding' 'tenc'	string	(default ""; with GTK+ 2 GUI: "utf-8"; with
-						    Macintosh GUI: "macroman")
+'termencoding' 'tenc'	string	(default ""
+				 with GTK+ 2 and MacVim GUIs: "utf-8"
+				 with Macintosh (Carbon) GUI: "macroman")
 			global
 			{only available when compiled with the |+multi_byte|
 			feature}
@@ -7219,14 +7335,14 @@ A jump table for the options with a short description can be found at |Q_op|.
 	encoding the keyboard produces and the display will understand.  For
 	the GUI it only applies to the keyboard ( 'encoding' is used for the
 	display).  Except for the Mac when 'macatsui' is off, then
-	'termencoding' should be "macroman".
+	'termencoding' should be "macroman" (for the Carbon GUI).
 	In the Win32 console version the default value is the console codepage
 	when it differs from the ANSI codepage.
 								*E617*
-	Note: This does not apply to the GTK+ 2 GUI.  After the GUI has been
-	successfully initialized, 'termencoding' is forcibly set to "utf-8".
-	Any attempts to set a different value will be rejected, and an error
-	message is shown.
+        Note: This does not apply to the GTK+ 2 and MacVim GUIs.  After the
+        GUI has been successfully initialized, 'termencoding' is forcibly set
+        to "utf-8".  Any attempts to set a different value will be rejected,
+	and an error message is shown.
 	For the Win32 GUI 'termencoding' is not used for typed characters,
 	because the Win32 system always passes Unicode characters.
 	When empty, the same encoding is used as for the 'encoding' option.
@@ -7463,8 +7579,8 @@ A jump table for the options with a short description can be found at |Q_op|.
 				*'toolbar'* *'tb'*
 'toolbar' 'tb'		string	(default "icons,tooltips")
 			global
-			{only for |+GUI_GTK|, |+GUI_Athena|, |+GUI_Motif| and
-			|+GUI_Photon|}
+			{only for |+GUI_GTK|, |+GUI_Athena|, |+GUI_Motif|,
+			|+GUI_Photon| and |gui_macvim|}
 	The contents of this option controls various toolbar settings.  The
 	possible values are:
 		icons		Toolbar buttons are shown with icons.
@@ -7474,6 +7590,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 		tooltips	Tooltips are active for toolbar buttons.
 	Tooltips refer to the popup help text which appears after the mouse
 	cursor is placed over a toolbar button for a brief moment.
+	Note: Tooltips are always enabled in MacVim.
 
 	If you want the toolbar to be shown with icons as well as text, do the
 	following: >
@@ -7491,7 +7608,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 'toolbariconsize' 'tbis'	string	(default "small")
 				global
 				{not in Vi}
-				{only in the GTK+ 2 GUI}
+				{only in the GTK+ 2 and MacVim GUIs}
 	Controls the size of toolbar icons.  The possible values are:
 		tiny		Use tiny toolbar icons.
 		small		Use small toolbar icons (default).
@@ -7499,10 +7616,20 @@ A jump table for the options with a short description can be found at |Q_op|.
 		large		Use large toolbar icons.
 	The exact dimensions in pixels of the various icon sizes depend on
 	the current theme.  Common dimensions are large=32x32, medium=24x24,
-	small=20x20 and tiny=16x16.
+        small=20x20 and tiny=16x16.  In MacVim, both tiny and small equal
+	24x24, whereas medium and large equal 32x32.
 
 	If 'toolbariconsize' is empty, the global default size as determined
 	by user preferences or the current theme is used.
+
+						*'transparency'* *'transp'*
+'transparency' 'transp'	number  (default 0)
+			global
+			{not in Vi}
+			{only in MacVim GUI}
+	Transparency of the window background as a percent, with 0 meaning
+	opaque and 100 meaning completely transparent.  Trying to set a value
+	outside the range 0-100 results in an error.
 
 			     *'ttybuiltin'* *'tbi'* *'nottybuiltin'* *'notbi'*
 'ttybuiltin' 'tbi'	boolean	(default on)

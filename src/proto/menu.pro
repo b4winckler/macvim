@@ -19,4 +19,9 @@ void gui_mch_toggle_tearoffs __ARGS((int enable));
 void ex_emenu __ARGS((exarg_T *eap));
 vimmenu_T *gui_find_menu __ARGS((char_u *path_name));
 void ex_menutranslate __ARGS((exarg_T *eap));
+#ifdef FEAT_GUI_MACVIM
+void ex_macmenu __ARGS((exarg_T *eap));
+void ex_macmenukey __ARGS((exarg_T *eap));
+char_u *lookup_toolbar_item __ARGS((int idx));
+#endif
 /* vim: set ft=c : */

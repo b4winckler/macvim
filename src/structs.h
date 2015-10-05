@@ -1645,6 +1645,9 @@ struct file_buffer
 #ifdef FEAT_PERSISTENT_UNDO
     int		b_p_udf;	/* 'undofile' */
 #endif
+#ifdef FEAT_GUI_MACVIM
+    int		b_p_mmta;	/* 'macmeta' local value */
+#endif
 #ifdef FEAT_LISP
     char_u	*b_p_lw;	/* 'lispwords' local value */
 #endif
@@ -1778,6 +1781,11 @@ struct file_buffer
     int		b_was_netbeans_file;/* TRUE if b_netbeans_file was once set */
 #endif
 
+#ifdef FEAT_ODB_EDITOR
+    uint32_t    b_odb_server_id;    /* FourCC of the ODB server (0 if none) */
+    void        *b_odb_token;       /* NSAppleEventDescriptor (optional) */
+    char_u      *b_odb_fname;       /* Custom file name (optional) */
+#endif
 };
 
 
@@ -2512,6 +2520,13 @@ struct VimMenu
 #ifdef FEAT_GUI_PHOTON
     PtWidget_t	*id;
     PtWidget_t	*submenu_id;
+#endif
+#ifdef FEAT_GUI_MACVIM
+    char_u	*mac_action;	    /* Action this menu sends */
+    int		mac_key;	    /* Key equivalent */
+    int		mac_mods;	    /* Modifier flags for the above */
+    int		mac_alternate;	    /* Item is alternate of previous item */
+    int		was_grey;	    /* Remember last 'grey' state */
 #endif
 };
 #else

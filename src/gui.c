@@ -421,7 +421,7 @@ gui_init_check()
 #  endif
 # endif
     gui.menu_is_active = TRUE;	    /* default: include menu */
-# ifndef FEAT_GUI_GTK
+# if !(defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
     gui.menu_height = MENU_DEFAULT_HEIGHT;
     gui.menu_width = 0;
 # endif
@@ -746,6 +746,9 @@ gui_init()
 # ifdef FEAT_GUI_GTK
 	balloonEval = gui_mch_create_beval_area(gui.drawarea, NULL,
 						     &general_beval_cb, NULL);
+# elif defined(FEAT_GUI_MACVIM)
+	balloonEval = gui_mch_create_beval_area(NULL, NULL,
+						     &general_beval_cb, NULL);
 # else
 #  if defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA)
 	{
@@ -800,7 +803,8 @@ gui_exit(rc)
 }
 
 #if defined(FEAT_GUI_GTK) || defined(FEAT_GUI_X11) || defined(FEAT_GUI_MSWIN) \
-	|| defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MAC) || defined(PROTO)
+	|| defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MAC) \
+        || defined(PROTO) || defined(FEAT_GUI_MACVIM)
 # define NEED_GUI_UPDATE_SCREEN 1
 /*
  * Called when the GUI shell is closed by the user.  If there are no changed
@@ -870,6 +874,17 @@ gui_init_font(font_list, fontset)
 	    {
 		/* Isolate one comma separated font name. */
 		(void)copy_option_part(&font_list, font_name, FONTLEN, ",");
+
+#if defined(FEAT_GUI_MACVIM)
+                /* The font dialog is modeless in Mac OS X, so when
+                 * gui_mch_init_font() is called with "*" it brings up the
+                 * dialog and returns immediately.  In this case we don't want
+                 * it to be called again with NULL, so return here.  */
+                if (STRCMP(font_name, "*") == 0) {
+                    gui_mch_init_font(font_name, FALSE);
+                    return FALSE;
+                }
+#endif
 
 		/* Careful!!!  The Win32 version of gui_mch_init_font(), when
 		 * called with "*" will change p_guifont to the selected font
@@ -1292,7 +1307,8 @@ gui_update_cursor(force, clear_selection)
     void
 gui_position_menu()
 {
-# if !defined(FEAT_GUI_GTK) && !defined(FEAT_GUI_MOTIF)
+# if !(defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MOTIF) \
+        || defined(FEAT_GUI_MACVIM))
     if (gui.menu_is_active && gui.in_use)
 	gui_mch_set_menu_pos(0, 0, gui.menu_width, gui.menu_height);
 # endif
@@ -1320,7 +1336,8 @@ gui_position_components(total_width)
 	text_area_x += gui.scrollbar_width;
 
     text_area_y = 0;
-#if defined(FEAT_MENU) && !(defined(FEAT_GUI_GTK) || defined(FEAT_GUI_PHOTON))
+#if defined(FEAT_MENU) && !(defined(FEAT_GUI_GTK) || defined(FEAT_GUI_PHOTON) \
+        || defined(FEAT_GUI_MACVIM))
     gui.menu_width = total_width;
     if (gui.menu_is_active)
 	text_area_y += gui.menu_height;
@@ -1354,7 +1371,7 @@ gui_position_components(total_width)
 			      text_area_y,
 			      text_area_width,
 			      text_area_height
-#if defined(FEAT_XIM) && !defined(FEAT_GUI_GTK)
+#if defined(FEAT_XIM) && !defined(FEAT_GUI_GTK) && !defined(FEAT_GUI_MACVIM)
 				  + xim_get_status_area_height()
 #endif
 			      );
@@ -1404,7 +1421,7 @@ gui_get_base_height()
     /* We can't take the sizes properly into account until anything is
      * realized.  Therefore we recalculate all the values here just before
      * setting the size. (--mdcki) */
-#else
+#elif !defined(FEAT_GUI_MACVIM)
 # ifdef FEAT_MENU
     if (gui.menu_is_active)
 	base_height += gui.menu_height;
@@ -1485,7 +1502,7 @@ again:
 
     gui_update_scrollbars(TRUE);
     gui_update_cursor(FALSE, TRUE);
-#if defined(FEAT_XIM) && !defined(FEAT_GUI_GTK)
+#if defined(FEAT_XIM) && !defined(FEAT_GUI_GTK) && !defined(FEAT_GUI_MACVIM)
     xim_set_status_area();
 #endif
 
@@ -2373,7 +2390,7 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
     if (back != 0 && ((draw_flags & DRAW_BOLD) || (highlight_mask & HL_ITALIC)))
 	return FAIL;
 
-#if defined(FEAT_GUI_GTK)
+#if defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM)
     /* If there's no italic font, then fake it.
      * For GTK2, we don't need a different font for italic style. */
     if (hl_mask_todo & HL_ITALIC)
@@ -2407,6 +2424,14 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
     len = gui_gtk2_draw_string(gui.row, col, s, len, draw_flags);
 #else
 # ifdef FEAT_MBYTE
+#  ifdef FEAT_GUI_MACVIM
+    if (use_gui_macvim_draw_string)
+    {
+	/* The value returned is the length in display cells */
+	len = gui_macvim_draw_string(gui.row, col, s, len, draw_flags);
+    }
+    else
+#  endif
     if (enc_utf8)
     {
 	int	start;		/* index of bytes to be drawn */
@@ -2430,6 +2455,9 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
 	{
 	    c = utf_ptr2char(s + i);
 	    cn = utf_char2cells(c);
+#  ifdef FEAT_GUI_MACVIM
+	    curr_wide = (cn > 1);
+#  else
 	    if (cn > 1
 #  ifdef FEAT_XFONTSET
 		    && fontset == NOFONTSET
@@ -2438,6 +2466,7 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
 		curr_wide = TRUE;
 	    else
 		curr_wide = FALSE;
+#  endif
 	    comping = utf_iscomposing(c);
 	    if (!comping)	/* count cells from non-composing chars */
 		cells += cn;
@@ -2470,7 +2499,13 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
 		    if (prev_wide)
 			gui_mch_set_font(wide_font);
 		    gui_mch_draw_string(gui.row, scol, s + start, thislen,
-								  draw_flags);
+#  ifdef FEAT_GUI_MACVIM
+				    cells,
+				    draw_flags | (prev_wide ? DRAW_WIDE : 0)
+# else
+				    draw_flag
+#  endif
+				    );
 		    if (prev_wide)
 			gui_mch_set_font(font);
 		    start += thislen;
@@ -2500,13 +2535,17 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
 	    /* Draw a composing char on top of the previous char. */
 	    if (comping)
 	    {
-#  if (defined(__APPLE_CC__) || defined(__MRC__)) && TARGET_API_MAC_CARBON
+#  if !defined(FEAT_GUI_MACVIM) && \
+	(defined(__APPLE_CC__) || defined(__MRC__)) && TARGET_API_MAC_CARBON
 		/* Carbon ATSUI autodraws composing char over previous char */
 		gui_mch_draw_string(gui.row, scol, s + i, cl,
 						    draw_flags | DRAW_TRANSP);
 #  else
 		gui_mch_draw_string(gui.row, scol - cn, s + i, cl,
-						    draw_flags | DRAW_TRANSP);
+#  ifdef FEAT_GUI_MACVIM
+					0,
+#  endif
+					draw_flags | DRAW_TRANSP | DRAW_COMP);
 #  endif
 		start = i + cl;
 	    }
@@ -2518,7 +2557,11 @@ gui_outstr_nowrap(s, len, flags, fg, bg, back)
     else
 # endif
     {
-	gui_mch_draw_string(gui.row, col, s, len, draw_flags);
+	gui_mch_draw_string(gui.row, col, s, len,
+#  ifdef FEAT_GUI_MACVIM
+						len,
+#  endif
+						draw_flags);
 # ifdef FEAT_MBYTE
 	if (enc_dbcs == DBCS_JPNU)
 	{
@@ -3813,7 +3856,12 @@ gui_create_scrollbar(sb, type, wp)
     int		type;
     win_T	*wp;
 {
+#ifdef FEAT_GUI_MACVIM
+    /* This is passed over to another process, make sure it fits in 32 bit */
+    static int32_t sbar_ident = 0;
+#else
     static int	sbar_ident = 0;
+#endif
 
     sb->ident = sbar_ident++;	/* No check for too big, but would it happen? */
     sb->wp = wp;
@@ -4231,7 +4279,8 @@ gui_update_scrollbars(force)
 	    /* Calculate height and position in pixels */
 	    h = (sb->height + sb->status_height) * gui.char_height;
 	    y = sb->top * gui.char_height + gui.border_offset;
-#if defined(FEAT_MENU) && !defined(FEAT_GUI_GTK) && !defined(FEAT_GUI_MOTIF) && !defined(FEAT_GUI_PHOTON)
+#if defined(FEAT_MENU) && !(defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MOTIF) \
+        || defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MACVIM))
 	    if (gui.menu_is_active)
 		y += gui.menu_height;
 #endif
@@ -4925,8 +4974,17 @@ xy2win(x, y)
 
     row = Y_2_ROW(y);
     col = X_2_COL(x);
+# ifdef FEAT_GUI_MACVIM
+    /* Mouse cursor should always be an arrow when outside all windows */
+    if (row < 0 || col < 0 || col >= Columns || row >= Rows)
+    {
+	update_mouseshape(SHAPE_IDX_N);
+	return NULL;
+    }
+# else
     if (row < 0 || col < 0)		/* before first window */
 	return NULL;
+# endif
     wp = mouse_find_win(&row, &col);
 # ifdef FEAT_MOUSESHAPE
     if (State == HITRETURN || State == ASKMORE)
@@ -4969,6 +5027,8 @@ ex_gui(eap)
      * Check for "-f" argument: foreground, don't fork.
      * Also don't fork when started with "gvim -f".
      * Do fork when using "gui -b".
+     * Note that Mac OS X will never fork on :gui since it can only fork on
+     * startup right after scanning the command line.
      */
     if (arg[0] == '-'
 	    && (arg[1] == 'f' || arg[1] == 'b')
@@ -4992,7 +5052,8 @@ ex_gui(eap)
 }
 
 #if ((defined(FEAT_GUI_X11) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_W32) \
-	|| defined(FEAT_GUI_PHOTON)) && defined(FEAT_TOOLBAR)) || defined(PROTO)
+	|| defined(FEAT_GUI_PHOTON)) && defined(FEAT_TOOLBAR) \
+        || defined(FEAT_GUI_MACVIM)) || defined(PROTO)
 /*
  * This is shared between Athena, Motif and GTK.
  */
@@ -5392,7 +5453,8 @@ gui_do_findrepl(flags, find_text, repl_text, down)
 #if (defined(FEAT_DND) && defined(FEAT_GUI_GTK)) \
 	|| defined(FEAT_GUI_MSWIN) \
 	|| defined(FEAT_GUI_MAC) \
-	|| defined(PROTO)
+	|| defined(PROTO) \
+	|| defined(FEAT_GUI_MACVIM)
 
 #ifdef FEAT_WINDOWS
 static void gui_wingoto_xy __ARGS((int x, int y));

@@ -2977,7 +2977,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 #endif
 #define WL_LINE		WL_SBR + 1	/* text in the line */
     int		draw_state = WL_START;	/* what to draw next */
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
+#if defined(FEAT_XIM) && (defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
     int		feedback_col = 0;
     int		feedback_old_attr = -1;
 #endif
@@ -4826,14 +4826,19 @@ win_line(wp, lnum, startrow, endrow, nochange)
 		&& !attr_pri)
 	    char_attr = extra_attr;
 
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
+#if defined(FEAT_XIM) && (defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
 	/* XIM don't send preedit_start and preedit_end, but they send
 	 * preedit_changed and commit.  Thus Vim can't set "im_is_active", use
 	 * im_is_preediting() here. */
-	if (xic != NULL
-		&& lnum == wp->w_cursor.lnum
+	if (
+# ifndef FEAT_GUI_MACVIM
+		xic != NULL &&
+# endif
+		lnum == wp->w_cursor.lnum
 		&& (State & INSERT)
+# ifndef FEAT_GUI_MACVIM
 		&& !p_imdisable
+# endif
 		&& im_is_preediting()
 		&& draw_state == WL_LINE)
 	{
@@ -5752,7 +5757,9 @@ screen_line(row, coloff, endcol, clear_width
 	    hl = ScreenAttrs[off_to + CHAR_CELLS];
 	    if (hl > HL_ALL)
 		hl = syn_attr2attr(hl);
+# ifndef FEAT_GUI_MACVIM /* see comment on subpixel antialiasing */
 	    if (hl & HL_BOLD)
+# endif
 		redraw_this = TRUE;
 	}
 #endif
@@ -5883,7 +5890,9 @@ screen_line(row, coloff, endcol, clear_width
 		hl = ScreenAttrs[off_to];
 		if (hl > HL_ALL)
 		    hl = syn_attr2attr(hl);
+# ifndef FEAT_GUI_MACVIM /* see comment on subpixel antialiasing */
 		if (hl & HL_BOLD)
+# endif
 		    redraw_next = TRUE;
 	    }
 #endif
@@ -5969,7 +5978,9 @@ screen_line(row, coloff, endcol, clear_width
 	    if (gui.in_use && (col > startCol || !redraw_this))
 	    {
 		hl = ScreenAttrs[off_to];
+# ifndef FEAT_GUI_MACVIM /* see comment on subpixel antialiasing */
 		if (hl > HL_ALL || (hl & HL_BOLD))
+# endif
 		{
 		    int prev_cells = 1;
 # ifdef FEAT_MBYTE
@@ -7217,7 +7228,9 @@ screen_puts_len(text, textlen, row, col, attr)
 
 		if (n > HL_ALL)
 		    n = syn_attr2attr(n);
+# ifndef FEAT_GUI_MACVIM /* see comment on subpixel antialiasing */
 		if (n & HL_BOLD)
+# endif
 		    force_redraw_next = TRUE;
 	    }
 #endif
@@ -8171,6 +8184,12 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
 #if defined(FEAT_GUI) || defined(UNIX)
 		    || force_next
 #endif
+#ifdef FEAT_GUI_MACVIM
+		    /* force a clear if the next char will be cleared (see
+		     * comment on subpixel antialiasing) */
+		    || (gui.in_use && col+1 < end_col
+						&& ScreenLines[off+1] != c)
+#endif
 		    )
 	    {
 #if defined(FEAT_GUI) || defined(UNIX)
@@ -8190,12 +8209,21 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
 # endif
 		   )
 		{
+# ifndef FEAT_GUI_MACVIM
 		    if (ScreenLines[off] != ' '
 			    && (ScreenAttrs[off] > HL_ALL
 				|| ScreenAttrs[off] & HL_BOLD))
 			force_next = TRUE;
 		    else
 			force_next = FALSE;
+# else
+		    /* Mac OS X does subpixel antialiasing which often causes a
+		     * glyph to spill over into neighboring cells.  For this
+		     * reason we always clear the neighboring glyphs whenever a
+		     * glyph is cleared, just like other GUIs cope with the
+		     * bold trick. */
+		    force_next = (ScreenLines[off] != ' ');
+# endif
 		}
 #endif
 		ScreenLines[off] = c;
@@ -9862,13 +9890,14 @@ showmode()
 	    MSG_PUTS_ATTR("--", attr);
 #if defined(FEAT_XIM)
 	    if (
-# ifdef FEAT_GUI_GTK
+# if defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM)
 		    preedit_get_status()
 # else
 		    im_get_status()
 # endif
 	       )
-# ifdef FEAT_GUI_GTK /* most of the time, it's not XIM being used */
+# if defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM)
+		/* most of the time, it's not XIM being used */
 		MSG_PUTS_ATTR(" IM", attr);
 # else
 		MSG_PUTS_ATTR(" XIM", attr);

@@ -254,7 +254,17 @@ ui_delay(msec, ignoreinput)
 	gui_wait_for_chars(msec);
     else
 #endif
+    {
+#if defined(FEAT_GUI_MACVIM)
+        /* MacVim tries to be conservative with flushing, but when Vim takes a
+         * nap it really must flush (else timed error messages might not appear
+         * etc.).  Note that gui_mch_wait_for_chars() already does force a
+         * flush, so only do it here. */
+        if (gui.in_use)
+            gui_macvim_force_flush();
+#endif
 	mch_delay(msec, ignoreinput);
+    }
 }
 
 /*
@@ -304,7 +314,13 @@ ui_get_shellsize()
     int	    retval;
 
 #ifdef FEAT_GUI
-    if (gui.in_use)
+    if (gui.in_use
+# ifdef FEAT_GUI_MACVIM
+            /* Avoid using terminal dimensions for GUI window.  MacVim
+             * autosaves the dimensions of the first window. */
+            || gui.starting
+# endif
+            )
 	retval = gui_get_shellsize();
     else
 #endif
@@ -1090,7 +1106,11 @@ clip_invert_rectangle(row, col, height, width, invert)
 {
 #ifdef FEAT_GUI
     if (gui.in_use)
+# ifdef FEAT_GUI_MACVIM
+	gui_mch_invert_rectangle(row, col, height, width, invert);
+# else
 	gui_mch_invert_rectangle(row, col, height, width);
+#endif
     else
 #endif
 	screen_draw_rectangle(row, col, height, width, invert);
@@ -3101,7 +3121,8 @@ mouse_find_win(rowp, colp)
 
 #if defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MAC) \
 	|| defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_MSWIN) \
-	|| defined(FEAT_GUI_PHOTON) || defined(PROTO)
+	|| defined(FEAT_GUI_PHOTON) || defined(PROTO) \
+	|| defined(FEAT_GUI_MACVIM)
 /*
  * Translate window coordinates to buffer position without any side effects
  */
@@ -3262,7 +3283,7 @@ im_save_status(psave)
      * And don't save when the GUI is running but our window doesn't have
      * input focus (e.g., when a find dialog is open). */
     if (!p_imdisable && KeyTyped && !KeyStuffed
-# ifdef FEAT_XIM
+# if defined(FEAT_XIM) && !defined(FEAT_GUI_MACVIM)
 	    && xic != NULL
 # endif
 # ifdef FEAT_GUI

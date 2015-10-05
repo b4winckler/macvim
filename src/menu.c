@@ -100,7 +100,7 @@ ex_menu(eap)
     char_u	*arg;
     char_u	*p;
     int		i;
-#if defined(FEAT_GUI) && !defined(FEAT_GUI_GTK)
+#if defined(FEAT_GUI) && !(defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
     int		old_menu_height;
 # if defined(FEAT_TOOLBAR) && !defined(FEAT_GUI_W32) && !defined(FEAT_GUI_W16)
     int		old_toolbar_height;
@@ -272,7 +272,8 @@ ex_menu(eap)
 	EMSG(_(e_trailing));
 	goto theend;
     }
-#if defined(FEAT_GUI) && !(defined(FEAT_GUI_GTK) || defined(FEAT_GUI_PHOTON))
+#if defined(FEAT_GUI) && !(defined(FEAT_GUI_GTK) || defined(FEAT_GUI_PHOTON) \
+        || defined(FEAT_GUI_MACVIM))
     old_menu_height = gui.menu_height;
 # if defined(FEAT_TOOLBAR) && !defined(FEAT_GUI_W32) && !defined(FEAT_GUI_W16)
     old_toolbar_height = gui.toolbar_height;
@@ -391,7 +392,7 @@ ex_menu(eap)
 	vim_free(map_buf);
     }
 
-#if defined(FEAT_GUI) && !(defined(FEAT_GUI_GTK))
+#if defined(FEAT_GUI) && !(defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
     /* If the menubar height changed, resize the window */
     if (gui.in_use
 	    && (gui.menu_height != old_menu_height
@@ -772,6 +773,7 @@ add_menu_path(menu_path, menuarg, pri_tab, call_data
 	    }
 	}
 #if defined(FEAT_TOOLBAR) && !defined(FEAT_GUI_W32) \
+	&& !defined(FEAT_GUI_MACVIM) \
 	&& (defined(FEAT_BEVAL) || defined(FEAT_GUI_GTK))
 	/* Need to update the menu tip. */
 	if (modes & MENU_TIP_MODE)
@@ -967,6 +969,7 @@ remove_menu(menup, name, modes, silent)
 	{
 	    free_menu_string(menu, MENU_INDEX_TIP);
 #if defined(FEAT_TOOLBAR) && !defined(FEAT_GUI_W32) \
+	    && !defined(FEAT_GUI_MACVIM) \
 	    && (defined(FEAT_BEVAL) || defined(FEAT_GUI_GTK))
 	    /* Need to update the menu tip. */
 	    if (gui.in_use)
@@ -1022,6 +1025,9 @@ free_menu(menup)
 # ifdef FEAT_GUI_MOTIF
     vim_free(menu->xpm_fname);
 # endif
+#ifdef FEAT_GUI_MACVIM
+    vim_free(menu->mac_action);
+#endif
 #endif
     for (i = 0; i < MENU_MODES; i++)
 	free_menu_string(menu, i);
@@ -2187,6 +2193,9 @@ ex_emenu(eap)
     char_u	*p;
     int		idx;
     char_u	*mode;
+#ifdef FEAT_GUI_MACVIM
+    char_u	*old_arg;
+#endif
 
     saved_name = vim_strsave(eap->arg);
     if (saved_name == NULL)
@@ -2293,8 +2302,10 @@ ex_emenu(eap)
 	idx = MENU_INDEX_NORMAL;
     }
 
-    if (idx != MENU_INDEX_INVALID && menu->strings[idx] != NULL)
+    if (idx != MENU_INDEX_INVALID && menu->strings[idx] != NULL &&
+	    menu->strings[idx][0] != NUL)
     {
+
 	/* When executing a script or function execute the commands right now.
 	 * Otherwise put them in the typeahead buffer. */
 #ifdef FEAT_EVAL
@@ -2306,11 +2317,24 @@ ex_emenu(eap)
 	    ins_typebuf(menu->strings[idx], menu->noremap[idx], 0,
 						     TRUE, menu->silent[idx]);
     }
+#ifdef FEAT_GUI_MACVIM
+    else if (menu->mac_action != NULL && menu->strings[idx][0] == NUL)
+    {
+	/* This allows us to bind a menu to an action without mapping to
+	 * anything so that pressing the menu's key equivalent and typing
+	 * ":emenu ..." does the same thing.  (HACK: We count on the fact that
+	 * ex_macaction() only looks at eap->arg.) */
+	old_arg = eap->arg;
+	eap->arg = menu->mac_action;
+	ex_macaction(eap);
+	eap->arg = old_arg;
+    }
+#endif /* FEAT_GUI_MACVIM */
     else
 	EMSG2(_("E335: Menu not defined for %s mode"), mode);
 }
 
-#if defined(FEAT_GUI_MSWIN) \
+#if defined(FEAT_GUI_MSWIN) || defined(FEAT_GUI_MACVIM)\
 	|| (defined(FEAT_GUI_GTK) && defined(FEAT_MENU)) \
 	|| defined(FEAT_BEVAL_TIP) || defined(PROTO)
 /*
@@ -2565,5 +2589,327 @@ menu_translate_tab_and_shift(arg_start)
 
     return arg;
 }
+
+
+#ifdef FEAT_GUI_MACVIM
+    vimmenu_T *
+menu_for_path(char_u *menu_path)
+{
+    vimmenu_T	*menu;
+    char_u	*name;
+    char_u	*saved_name;
+    char_u	*p;
+
+    saved_name = vim_strsave(menu_path);
+    if (saved_name == NULL)
+	return NULL;
+
+    menu = root_menu;
+    name = saved_name;
+    while (*name)
+    {
+	/* Find in the menu hierarchy */
+	p = menu_name_skip(name);
+
+	while (menu != NULL)
+	{
+	    if (menu_name_equal(name, menu))
+	    {
+		if (*p == NUL && menu->children != NULL)
+		{
+		    EMSG(_("E333: Menu path must lead to a menu item"));
+		    menu = NULL;
+		}
+		else if (*p != NUL && menu->children == NULL)
+		{
+		    EMSG(_(e_notsubmenu));
+		    menu = NULL;
+		}
+		break;
+	    }
+	    menu = menu->next;
+	}
+	if (menu == NULL || *p == NUL)
+	    break;
+	menu = menu->children;
+	name = p;
+    }
+
+    vim_free(saved_name);
+
+    if (menu == NULL)
+    {
+	EMSG2(_("E334: Menu not found: %s"), menu_path);
+	return NULL;
+    }
+
+    return menu;
+}
+
+/*
+ * Handle the ":macmenu" command.
+ */
+    void
+ex_macmenu(eap)
+    exarg_T	*eap;
+{
+    vimmenu_T	*menu = NULL;
+    char_u	*arg;
+    char_u	*menu_path;
+    char_u	*p;
+    char_u	*keys;
+    int		len;
+    char_u	*linep;
+    char_u	*key_start;
+    char_u	*key = NULL;
+    char_u	*arg_start = NULL;
+    int		error = FALSE;
+    char_u	*action = NULL;
+    int		mac_key = 0;
+    int		mac_mods = 0;
+    int		mac_alternate = 0;
+    char_u	*last_dash;
+    int		bit;
+    int         set_action = FALSE;
+    int         set_key = FALSE;
+    int         set_alt = FALSE;
+
+    arg = eap->arg;
+
+    menu_path = arg;
+    if (*menu_path == '.')
+    {
+	EMSG2(_(e_invarg2), menu_path);
+	return;
+    }
+
+    keys = menu_translate_tab_and_shift(arg);
+
+    menu = menu_for_path(menu_path);
+    if (!menu) return;
+
+    /*
+     * Parse all key=value arguments.
+     */
+    arg = NULL;
+    linep = keys;
+    while (!ends_excmd(*linep))
+    {
+	key_start = linep;
+	if (*linep == '=')
+	{
+	    EMSG2(_("E415: unexpected equal sign: %s"), key_start);
+	    error = TRUE;
+	    break;
+	}
+
+	/*
+	 * Isolate the key ("action", "alt", or "key").
+	 */
+	while (*linep && !vim_iswhite(*linep) && *linep != '=')
+	    ++linep;
+	vim_free(key);
+	key = vim_strnsave_up(key_start, (int)(linep - key_start));
+	if (key == NULL)
+	{
+	    error = TRUE;
+	    break;
+	}
+	linep = skipwhite(linep);
+
+	/*
+	 * Check for the equal sign.
+	 */
+	if (*linep != '=')
+	{
+	    EMSG2(_("E416: missing equal sign: %s"), key_start);
+	    error = TRUE;
+	    break;
+	}
+	++linep;
+
+	/*
+	 * Isolate the argument.
+	 */
+	linep = skipwhite(linep);
+	arg_start = linep;
+	linep = skiptowhite(linep);
+
+	if (linep == arg_start)
+	{
+	    EMSG2(_("E417: missing argument: %s"), key_start);
+	    error = TRUE;
+	    break;
+	}
+	vim_free(arg);
+	arg = vim_strnsave(arg_start, (int)(linep - arg_start));
+	if (arg == NULL)
+	{
+	    error = TRUE;
+	    break;
+	}
+
+	/*
+	 * Store the argument.
+	 */
+	if (STRCMP(key, "ACTION") == 0)
+	{
+	    action = vim_strsave(arg);
+	    if (action == NULL)
+	    {
+		error = TRUE;
+		break;
+	    }
+
+	    if (!is_valid_macaction(action))
+	    {
+		EMSG2(_("E???: Invalid action: %s"), arg);
+		error = TRUE;
+		break;
+	    }
+
+	    set_action = TRUE;
+	}
+	else if (STRCMP(key, "ALT") == 0)
+	{
+	    len = (int)STRLEN(arg);
+	    if ( (len == 1 && (*arg == '0' || *arg == '1')) ||
+		 (STRICMP("no", arg) == 0 || STRICMP("yes", arg) == 0) )
+	    {
+		mac_alternate = (*arg == '1' || STRICMP("yes", arg) == 0);
+		set_alt = TRUE;
+	    }
+	    else
+	    {
+		EMSG2(_(e_invarg2), arg);
+		error = TRUE;
+		break;
+	    }
+	}
+	else if (STRCMP(key, "KEY") == 0)
+	{
+	    if (arg[0] != '<')
+	    {
+		EMSG2(_(e_invarg2), arg);
+		error = TRUE;
+		break;
+	    }
+
+            if (STRICMP("<nop>", arg) == 0)
+            {
+		/* This is to let the user unset a key equivalent, thereby
+		 * freeing up that key combination to be used for a :map
+		 * command (which would otherwise not be possible since key
+		 * equivalents take precedence over :map). */
+		mac_key = 0;
+		mac_mods = 0;
+		set_key = TRUE;
+                continue;
+            }
+
+	    /* Find end of modifier list */
+	    last_dash = arg;
+	    for (p = arg + 1; *p == '-' || vim_isIDc(*p); p++)
+	    {
+		if (*p == '-')
+		{
+		    last_dash = p;
+		    if (p[1] != NUL && p[2] == '>')
+			++p;	/* anything accepted, like <C-?> */
+		}
+		if (p[0] == 't' && p[1] == '_' && p[2] && p[3])
+		    p += 3;		/* skip t_xx, xx may be '-' or '>' */
+	    }
+
+	    if (*p == '>')	/* found matching '>' */
+	    {
+		/* Which modifiers are given? */
+		mac_mods = 0x0;
+		for (p = arg + 1; p < last_dash; p++)
+		{
+		    if (*p != '-')
+		    {
+			bit = name_to_mod_mask(*p);
+			if (bit == 0x0)
+			    break;	/* Illegal modifier name */
+			mac_mods |= bit;
+		    }
+		}
+
+		/*
+		 * Legal modifier name.
+		 */
+		if (p >= last_dash)
+		{
+		    /*
+		     * Modifier with single letter, or special key name.
+		     */
+		    if (mac_mods != 0 && last_dash[2] == '>')
+			mac_key = last_dash[1];
+		    else
+		    {
+			mac_key = get_special_key_code(last_dash + 1);
+			mac_key = handle_x_keys(mac_key);
+		    }
+		}
+	    }
+
+	    set_key = (mac_key != 0);
+
+	    if (mac_key == 0)
+	    {
+		EMSG2(_(e_invarg2), arg);
+		error = TRUE;
+		break;
+	    }
+	}
+	else
+	{
+	    EMSG2(_(e_invarg2), key_start);
+	    error = TRUE;
+	    break;
+	}
+
+	/*
+	 * Continue with next argument.
+	 */
+	linep = skipwhite(linep);
+    }
+
+    vim_free(key);
+    vim_free(arg);
+
+    /*
+     * Store all the keys that were set in the menu item.
+     */
+    if (!error)
+    {
+	if (set_action)
+	    menu->mac_action = action;
+	if (set_key)
+	{
+	    menu->mac_key = mac_key;
+	    menu->mac_mods = mac_mods;
+	}
+	if (set_alt)
+	    menu->mac_alternate = mac_alternate;
+    }
+    else
+    {
+	vim_free(action);
+    }
+}
+
+    char_u *
+lookup_toolbar_item(idx)
+    int idx;
+{
+    if (idx >= 0 && idx < TOOLBAR_NAME_COUNT)
+        return (char_u*)toolbar_names[idx];
+
+    return NULL;
+}
+
+#endif /* FEAT_GUI_MACVIM */
 
 #endif /* FEAT_MENU */

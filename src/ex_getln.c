@@ -94,7 +94,7 @@ static void	draw_cmdline __ARGS((int start, int len));
 static void	save_cmdline __ARGS((struct cmdline_info *ccp));
 static void	restore_cmdline __ARGS((struct cmdline_info *ccp));
 static int	cmdline_paste __ARGS((int regname, int literally, int remcr));
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
+#if defined(FEAT_XIM) && (defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
 static void	redrawcmd_preedit __ARGS((void));
 #endif
 #ifdef FEAT_WILDMENU
@@ -1381,6 +1381,14 @@ getcmdline(firstc, count, indent)
 	case K_X2RELEASE:
 		goto cmdline_not_changed;
 
+# ifdef FEAT_GUI_MACVIM
+	/* Gestures are ignored */
+	case K_SWIPELEFT:
+	case K_SWIPERIGHT:
+	case K_SWIPEUP:
+	case K_SWIPEDOWN:
+		goto cmdline_not_changed;
+# endif
 #endif	/* FEAT_MOUSE */
 
 #ifdef FEAT_GUI
@@ -2481,7 +2489,8 @@ cmdline_at_end()
 }
 #endif
 
-#if (defined(FEAT_XIM) && (defined(FEAT_GUI_GTK))) || defined(PROTO)
+#if (defined(FEAT_XIM) && (defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))) \
+	|| defined(PROTO)
 /*
  * Return the virtual column number at the current cursor position.
  * This is used by the IM code to obtain the start of the preedit string.
@@ -2509,7 +2518,7 @@ cmdline_getvcol_cursor()
 }
 #endif
 
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
+#if defined(FEAT_XIM) && (defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
 /*
  * If part of the command line is an IM preedit string, redraw it with
  * IM feedback attributes.  The cursor position is restored after drawing.
@@ -2518,7 +2527,9 @@ cmdline_getvcol_cursor()
 redrawcmd_preedit()
 {
     if ((State & CMDLINE)
+# ifndef FEAT_GUI_MACVIM
 	    && xic != NULL
+# endif
 	    /* && im_get_status()  doesn't work when using SCIM */
 	    && !p_imdisable
 	    && im_is_preediting())
@@ -2579,7 +2590,7 @@ redrawcmd_preedit()
 	msg_col = old_col;
     }
 }
-#endif /* FEAT_XIM && FEAT_GUI_GTK */
+#endif /* FEAT_XIM && (FEAT_GUI_GTK || FEAT_GUI_MACVIM) */
 
 /*
  * Allocate a new command line buffer.
@@ -3315,7 +3326,7 @@ cursorcmd()
     }
 
     windgoto(msg_row, msg_col);
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
+#if defined(FEAT_XIM) && (defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MACVIM))
     redrawcmd_preedit();
 #endif
 #ifdef MCH_CURSOR_SHAPE
@@ -4735,6 +4746,9 @@ ExpandFromContext(xp, pat, num_file, file, options)
 #endif
 	    {EXPAND_ENV_VARS, get_env_name, TRUE, TRUE},
 	    {EXPAND_USER, get_users, TRUE, FALSE},
+#ifdef FEAT_GUI_MACVIM
+	    {EXPAND_MACACTION, get_macaction_name, FALSE, FALSE},
+#endif
 	};
 	int	i;
 

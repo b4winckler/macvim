@@ -280,6 +280,10 @@ save_re_pat(idx, pat, magic)
 {
     if (spats[idx].pat != pat)
     {
+#if FEAT_GUI_MACVIM
+	if (RE_SEARCH == idx)
+	    gui_macvim_add_to_find_pboard(pat);
+#endif
 	vim_free(spats[idx].pat);
 	spats[idx].pat = vim_strsave(pat);
 	spats[idx].magic = magic;
@@ -449,6 +453,11 @@ set_last_search_pat(s, idx, magic, setlast)
     int		magic;
     int		setlast;
 {
+#if FEAT_GUI_MACVIM
+    if (RE_SEARCH == idx)
+	gui_macvim_add_to_find_pboard(s);
+#endif
+
     vim_free(spats[idx].pat);
     /* An empty string means that nothing should be matched. */
     if (*s == NUL)
@@ -5275,6 +5284,12 @@ exit_matched:
 		goto search_line;
 	}
 	line_breakcheck();
+#ifdef FEAT_GUI_MACVIM
+	/* This loop could potentially take a long time, so make sure MacVim
+	 * gets a chance to flush its output. */
+	if (gui.in_use)
+	    gui_macvim_flush();
+#endif
 #ifdef FEAT_INS_EXPAND
 	if (action == ACTION_EXPAND)
 	    ins_compl_check_keys(30);

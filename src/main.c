@@ -172,6 +172,13 @@ main
     int		i;
 #endif
 
+#ifdef FEAT_GUI_MACVIM
+    // Cocoa needs an NSAutoreleasePool in place or it will leak memory.
+    // This particular pool will hold autorelease objects created during
+    // initialization.
+    void *autoreleasePool = gui_macvim_new_autoreleasepool();
+#endif
+
     /*
      * Do any system-specific initialisations.  These can NOT use IObuff or
      * NameBuff.  Thus emsg2() cannot be called!
@@ -360,6 +367,14 @@ main
     command_line_scan(&params);
     TIME_MSG("parsing arguments");
 
+#if defined(MACOS_X) && defined(FEAT_GUI)
+    if (gui.starting && gui.dofork)
+	macosx_fork();	/* Never returns */
+# ifdef FEAT_GUI_MACVIM
+    gui_macvim_after_fork_init();
+# endif
+#endif
+
     /*
      * On some systems, when we compile with the GUI, we always use it.  On Mac
      * there is no terminal version, and on Windows we can't fork one off with
@@ -450,7 +465,8 @@ main
      * For GTK we can't be sure, but when started from the desktop it doesn't
      * make sense to try using a terminal.
      */
-#if defined(ALWAYS_USE_GUI) || defined(FEAT_GUI_X11) || defined(FEAT_GUI_GTK)
+#if defined(ALWAYS_USE_GUI) || defined(FEAT_GUI_X11) || defined(FEAT_GUI_GTK) \
+	|| defined(FEAT_GUI_MACVIM)
     if (gui.starting
 # ifdef FEAT_GUI_GTK
 	    && !isatty(2)
@@ -854,6 +870,33 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
 
     no_wait_return = TRUE;
 
+#ifdef FEAT_GUI_MACVIM
+    /* We want to delay calling this function for as long as possible, since it
+     * will result in faster startup for cached processes.  However, we react
+     * before create_windows() so that we can open files by adding to the
+     * arglist. */
+    gui_macvim_wait_for_startup();
+
+    /* Since MacVim may receive the list of files to open via an Apple event
+     * (as opposed to from the command line) we must manually check to see if
+     * the window layout should be changed. */
+    gui_macvim_get_window_layout(&params.window_count, &params.window_layout);
+
+# ifdef MAC_CLIENTSERVER
+    // NOTE: Can't set server name at same time as WIN32 because gui.in_use
+    // isn't set then.  Servers are only supported in GUI mode.
+    // Also, in case the above call blocks this process another Vim process may
+    // open in the meantime.  If it did then it could be named e.g. VIM3
+    // whereas this may be VIM2, which looks weird.
+    if (params.servername != NULL && gui.in_use)
+    {
+        serverRegisterName(params.servername);
+        vim_free(params.servername);
+        params.servername = NULL;
+    }
+# endif
+#endif
+
     /*
      * Create the requested number of windows and edit buffers in them.
      * Also does recovery if "recoverymode" set.
@@ -1005,7 +1048,7 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
     {
 # ifdef FEAT_GUI
 #  if !defined(FEAT_GUI_X11) && !defined(FEAT_GUI_GTK)  \
-		&& !defined(FEAT_GUI_W32)
+		&& !defined(FEAT_GUI_W32) && !defined(FEAT_GUI_MACVIM)
 	if (gui.in_use)
 	{
 	    mch_errmsg(_("netbeans is not supported with this GUI\n"));
@@ -1020,10 +1063,24 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
 
     TIME_MSG("before starting main loop");
 
+#ifdef FEAT_GUI_MACVIM
+    // The autorelease pool might have filled up quite a bit during
+    // initialization, so purge it before entering the main loop.
+    gui_macvim_release_autoreleasepool(autoreleasePool);
+
+    // The main loop sets up its own autorelease pool, but to be safe we still
+    // realloc this one here.
+    autoreleasePool = gui_macvim_new_autoreleasepool();
+#endif
+
     /*
      * Call the main command loop.  This never returns.
     */
     main_loop(FALSE, FALSE);
+
+#ifdef FEAT_GUI_MACVIM
+    gui_macvim_release_autoreleasepool(autoreleasePool);
+#endif
 
     return 0;
 }
@@ -1088,6 +1145,12 @@ main_loop(cmdwin, noexmode)
 #endif
 	    )
     {
+#ifdef FEAT_GUI_MACVIM
+        // Cocoa needs an NSAutoreleasePool in place or it will leak memory.
+        // This particular pool gets released once every loop.
+        void *autoreleasePool = gui_macvim_new_autoreleasepool();
+#endif
+
 	if (stuff_empty())
 	{
 	    did_check_timestamps = FALSE;
@@ -1324,11 +1387,18 @@ main_loop(cmdwin, noexmode)
 	}
 	else
 	    normal_cmd(&oa, TRUE);
+
+#ifdef FEAT_GUI_MACVIM
+        // TODO! Make sure there are no continue statements that will cause
+        // this not to be called or MacVim will leak memory!
+        gui_macvim_release_autoreleasepool(autoreleasePool);
+#endif
     }
 }
 
 
-#if defined(USE_XSMP) || defined(FEAT_GUI_MSWIN) || defined(PROTO)
+#if defined(USE_XSMP) || defined(FEAT_GUI_MSWIN) || defined(PROTO) \
+	|| defined(FEAT_GUI_MACVIM)
 /*
  * Exit, but leave behind swap files for modified buffers.
  */
@@ -1489,6 +1559,9 @@ getout(exitval)
 #endif
 #ifdef FEAT_NETBEANS_INTG
     netbeans_end();
+#endif
+#ifdef FEAT_ODB_EDITOR
+    odb_end();
 #endif
 #ifdef FEAT_CSCOPE
     cs_end();
@@ -1908,6 +1981,12 @@ command_line_scan(parmp)
 		    /* already processed, skip */
 		}
 #endif
+#ifdef FEAT_GUI_MACVIM
+		else if (STRNICMP(argv[0] + argv_idx, "nomru", 5) == 0)
+		{
+		    /* processed in gui_macvim.m, skip */
+		}
+#endif
 		else
 		{
 		    if (argv[0][argv_idx])
@@ -2026,7 +2105,7 @@ command_line_scan(parmp)
 		break;
 
 	    case 'p':		/* "-p[N]" open N tab pages */
-#ifdef TARGET_API_MAC_OSX
+#if defined(TARGET_API_MAC_OSX) && !defined(FEAT_GUI_MACVIM)
 		/* For some reason on MacOS X, an argument like:
 		   -psn_0_10223617 is passed in when invoke from Finder
 		   or with the 'open' command */
@@ -2971,7 +3050,7 @@ source_startup_scripts(parmp)
 #ifdef SYS_VIMRC_FILE
 	(void)do_source((char_u *)SYS_VIMRC_FILE, FALSE, DOSO_NONE);
 #endif
-#ifdef MACOS_X
+#if defined(MACOS_X) && !defined(FEAT_GUI_MACVIM)
 	(void)do_source((char_u *)"$VIMRUNTIME/macmap.vim", FALSE, DOSO_NONE);
 #endif
 
@@ -3639,9 +3718,11 @@ cmdsrv_main(argc, argv, serverName_arg, serverStr)
 #define ARGTYPE_SEND		3
     int		silent = FALSE;
     int		tabs = FALSE;
-# ifndef FEAT_X11
+# ifdef WIN32
     HWND	srv;
-# else
+# elif defined(MAC_CLIENTSERVER)
+    int         srv;
+# elif defined(FEAT_X11)
     Window	srv;
 
     setup_term_clip();
@@ -3733,7 +3814,7 @@ cmdsrv_main(argc, argv, serverName_arg, serverStr)
 	    else
 		ret = serverSendToVim(xterm_dpy, sname, *serverStr,
 						    NULL, &srv, 0, 0, silent);
-# else
+# elif defined(WIN32) || defined(MAC_CLIENTSERVER)
 	    /* Win32 always works? */
 	    ret = serverSendToVim(sname, *serverStr, NULL, &srv, 0, silent);
 # endif
@@ -3798,9 +3879,12 @@ cmdsrv_main(argc, argv, serverName_arg, serverStr)
 		    p = serverGetReply(srv, NULL, TRUE, TRUE);
 		    if (p == NULL)
 			break;
-# else
+# elif defined(FEAT_X11)
 		    if (serverReadReply(xterm_dpy, srv, &p, TRUE) < 0)
 			break;
+# elif defined(MAC_CLIENTSERVER)
+                    if (serverReadReply(srv, &p) < 0)
+                        break;
 # endif
 		    j = atoi((char *)p);
 		    if (j >= 0 && j < numFiles)
@@ -3827,11 +3911,14 @@ cmdsrv_main(argc, argv, serverName_arg, serverStr)
 	    /* Win32 always works? */
 	    if (serverSendToVim(sname, (char_u *)argv[i + 1],
 						    &res, NULL, 1, FALSE) < 0)
-# else
+# elif defined(FEAT_X11)
 	    if (xterm_dpy == NULL)
 		mch_errmsg(_("No display: Send expression failed.\n"));
 	    else if (serverSendToVim(xterm_dpy, sname, (char_u *)argv[i + 1],
 						 &res, NULL, 1, 1, FALSE) < 0)
+# elif defined(MAC_CLIENTSERVER)
+            if (serverSendToVim(sname, (char_u *)argv[i + 1],
+                        &res, NULL, 1, FALSE) < 0)
 # endif
 	    {
 		if (res != NULL && *res != NUL)
@@ -3846,10 +3933,10 @@ cmdsrv_main(argc, argv, serverName_arg, serverStr)
 	}
 	else if (STRICMP(argv[i], "--serverlist") == 0)
 	{
-# ifdef WIN32
+# if defined(WIN32) ||  defined(MAC_CLIENTSERVER)
 	    /* Win32 always works? */
 	    res = serverGetVimNames();
-# else
+# elif defined(FEAT_X11)
 	    if (xterm_dpy != NULL)
 		res = serverGetVimNames(xterm_dpy);
 # endif
