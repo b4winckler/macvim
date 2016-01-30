@@ -1278,7 +1278,7 @@
 		</dict>
 	</array>
 	<key>SUFeedURL</key>
-	<string>http://b4winckler.github.com/macvim/appcast/stable.xml</string>
+	<string>https://b4winckler.github.com/macvim/appcast/stable.xml</string>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
 
