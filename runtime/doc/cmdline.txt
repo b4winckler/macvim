@@ -1,4 +1,4 @@
-*cmdline.txt*   For Vim version 7.4.  Last change: 2014 Feb 23
+*cmdline.txt*   For Vim version 7.4.  Last change: 2015 Dec 17
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -56,7 +56,7 @@ history tables:
 These are completely separate.  Each history can only be accessed when
 entering the same type of line.
 Use the 'history' option to set the number of lines that are remembered
-(default: 20).
+(default: 50).
 Notes:
 - When you enter a command-line that is exactly the same as an older one, the
   old one is removed (to avoid repeated commands moving older commands out of
@@ -100,6 +100,11 @@ CTRL-E or <End>					*c_CTRL-E* *c_<End>* *c_End*
 
 							*c_<LeftMouse>*
 <LeftMouse>	Move the cursor to the position of the mouse click.
+
+							*c_<MiddleMouse>*
+<MiddleMouse>	Paste the contents of the clipboard (for X11 the primary
+		selection).  This is similar to using CTRL-R *, but no CR
+		characters are inserted between lines.
 
 CTRL-H						*c_<BS>* *c_CTRL-H* *c_BS*
 <BS>		Delete the character in front of the cursor (see |:fixdel| if
@@ -511,6 +516,8 @@ followed by another Vim command:
     :argdo
     :autocmd
     :bufdo
+    :cdo
+    :cfdo
     :command
     :cscope
     :debug
@@ -521,6 +528,8 @@ followed by another Vim command:
     :help
     :helpfind
     :lcscope
+    :ldo
+    :lfdo
     :make
     :normal
     :perl
@@ -597,6 +606,7 @@ starts editing the three files "foo bar", "goes to" and "school ".
 When you want to use the special characters '"' or '|' in a command, or want
 to use '%' or '#' in a file name, precede them with a backslash.  The
 backslash is not required in a range and in the ":substitute" command.
+See also |`=|.
 
 							*:_!*
 The '!' (bang) character after an Ex command makes the command behave in a
@@ -749,13 +759,13 @@ to insert special things while typing you can use the CTRL-R command.  For
 example, "%" stands for the current file name, while CTRL-R % inserts the
 current file name right away.  See |c_CTRL-R|.
 
-Note: If you want to avoid the special characters in a Vim script you may want
-to use |fnameescape()|.
+Note:  If you want to avoid the effects of special characters in a Vim script
+you may want to use |fnameescape()|.  Also see |`=|.
 
 
 In Ex commands, at places where a file name can be used, the following
 characters have a special meaning.  These can also be used in the expression
-function expand() |expand()|.
+function |expand()|.
 	%	Is replaced with the current file name.		  *:_%* *c_%*
 	#	Is replaced with the alternate file name.	  *:_#* *c_#*
 		This is remembered for every window.
@@ -790,6 +800,7 @@ it, no matter how many backslashes.
 	   #			alternate.file
 	   \#			#
 	   \\#			\#
+Also see |`=|.
 
 			       *:<cword>* *:<cWORD>* *:<cfile>* *<cfile>*
 			       *:<sfile>* *<sfile>* *:<afile>* *<afile>*
@@ -811,13 +822,13 @@ Note: these are typed literally, they are not special keys!
 		   <afile> only when the file name isn't used to match with
 		   (for FileType, Syntax and SpellFileMissing events).
 	<sfile>    When executing a ":source" command, is replaced with the
-		   file name of the sourced file.  *E498* 
-		   When executing a function, is replaced with
-		   "function {function-name}"; function call nesting is
-		   indicated like this:
-		   "function {function-name1}..{function-name2}".  Note that
-		   filename-modifiers are useless when <sfile> is used inside
-		   a function.
+		   file name of the sourced file.  *E498*
+		   When executing a function, is replaced with:
+		   "function {function-name}[{lnum}]"
+		   function call nesting is indicated like this:
+		   "function {function-name1}[{lnum}]..{function-name2}[{lnum}]"
+		   Note that filename-modifiers are useless when <sfile> is
+		   used inside a function.
 	<slnum>	   When executing a ":source" command, is replaced with the
 	           line number.  *E842*
 		   When executing a function it's the line number relative to
@@ -880,7 +891,7 @@ These modifiers can be given, in this order:
 	:gs?pat?sub?
 		Substitute all occurrences of "pat" with "sub".  Otherwise
 		this works like ":s".
-	:S	Escape special characters for use with a shell command (see 
+	:S	Escape special characters for use with a shell command (see
 		|shellescape()|). Must be the last one. Examples: >
 		    :!dir <cfile>:S
 		    :call system('chmod +w -- ' . expand('%:S'))
@@ -933,9 +944,8 @@ name).  This is included for backwards compatibility with version 3.0, the
 
 Note: Where a file name is expected wildcards expansion is done.  On Unix the
 shell is used for this, unless it can be done internally (for speed).
-Backticks also work, like in >
+Unless in |restricted-mode|, backticks work also, like in >
 	:n `echo *.c`
-(backtick expansion is not possible in |restricted-mode|)
 But expansion is only done if there are any wildcards before expanding the
 '%', '#', etc..  This avoids expanding wildcards inside a file name.  If you
 want to expand the result of <cfile>, add a wildcard character to it.
@@ -946,6 +956,7 @@ Examples: (alternate file name is "?readme?")
 	:e #.*		:e {files matching "?readme?.*"}
 	:cd <cfile>	:cd {file name under cursor}
 	:cd <cfile>*	:cd {file name under cursor plus "*" and then expanded}
+Also see |`=|.
 
 When the expanded argument contains a "!" and it is used for a shell command
 (":!cmd", ":r !cmd" or ":w !cmd"), the "!" is escaped with a backslash to
@@ -971,6 +982,8 @@ for the file "$home" in the root directory.  A few examples:
 	\$home		file "$home" in current directory
 	/\$home		file "$home" in root directory
 	\\$home		file "\\", followed by expanded $home
+
+Also see |`=|.
 
 ==============================================================================
 7. Command-line window				*cmdline-window* *cmdwin*
@@ -1083,6 +1096,9 @@ While in the command-line window you cannot use the mouse to put the cursor in
 another window, or drag statuslines of other windows.  You can drag the
 statusline of the command-line window itself and the statusline above it.
 Thus you can resize the command-line window, but not others.
+
+The |getcmdwintype()| function returns the type of the command-line being
+edited as described in |cmdwin-char|.
 
 
 AUTOCOMMANDS

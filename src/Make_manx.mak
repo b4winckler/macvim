@@ -1,6 +1,8 @@
 #
 # Makefile for VIM on the Amiga, using Aztec/Manx C 5.0 or later
 #
+# NOTE: THIS IS OLD AND PROBABLY NO LONGER WORKS.
+#
 # Note: Not all dependencies are included. This was done to avoid having
 #	to compile everything when a global variable or function is added.
 #	Careful when changing a global struct or variable!
@@ -37,6 +39,8 @@ DEL = $(SHELL) -c rm -f
 SRC =	blowfish.c \
 	buffer.c \
 	charset.c \
+	crypt.c \
+	crypt_zip.c \
 	diff.c \
 	digraph.c \
 	edit.c \
@@ -51,6 +55,7 @@ SRC =	blowfish.c \
 	getchar.c \
 	hardcopy.c \
 	hashtab.c \
+	json.c \
 	main.c \
 	mark.c \
 	memfile.c \
@@ -85,6 +90,8 @@ INCL = vim.h feature.h keymap.h macros.h ascii.h term.h structs.h os_amiga.h
 OBJ =	obj/blowfish.o \
 	obj/buffer.o \
 	obj/charset.o \
+	obj/crypt.o \
+	obj/crypt_zip.o \
 	obj/diff.o \
 	obj/digraph.o \
 	obj/edit.o \
@@ -99,6 +106,7 @@ OBJ =	obj/blowfish.o \
 	obj/getchar.o \
 	obj/hardcopy.o \
 	obj/hashtab.o \
+	obj/json.o \
 	obj/main.o \
 	obj/mark.o \
 	obj/memfile.o \
@@ -131,6 +139,8 @@ OBJ =	obj/blowfish.o \
 PRO =	proto/blowfish.pro \
 	proto/buffer.pro \
 	proto/charset.pro \
+	proto/crypt.pro \
+	proto/crypt_zip.pro \
 	proto/diff.pro \
 	proto/digraph.pro \
 	proto/edit.pro \
@@ -145,6 +155,7 @@ PRO =	proto/blowfish.pro \
 	proto/getchar.pro \
 	proto/hardcopy.pro \
 	proto/hashtab.pro \
+	proto/json.pro \
 	proto/main.pro \
 	proto/mark.pro \
 	proto/memfile.pro \
@@ -227,6 +238,12 @@ obj/buffer.o:	buffer.c
 obj/charset.o:	charset.c
 	$(CCSYM) $@ charset.c
 
+obj/crypt.o:	crypt.c
+	$(CCSYM) $@ crypt.c
+
+obj/crypt_zip.o: crypt_zip.c
+	$(CCSYM) $@ crypt_zip.c
+
 obj/diff.o:	diff.c
 	$(CCSYM) $@ diff.c
 
@@ -269,6 +286,9 @@ obj/hardcopy.o:	hardcopy.c
 
 obj/hashtab.o:	hashtab.c
 	$(CCSYM) $@ hashtab.c
+
+obj/json.o:	json.c
+	$(CCSYM) $@ json.c
 
 # Don't use $(SYMS) here, because main.c defines EXTERN
 obj/main.o:	main.c option.h globals.h

@@ -1,4 +1,4 @@
-*usr_41.txt*	For Vim version 7.4.  Last change: 2014 May 28
+*usr_41.txt*	For Vim version 7.4.  Last change: 2016 Feb 14
 
 		     VIM USER MANUAL - by Bram Moolenaar
 
@@ -793,6 +793,7 @@ Command line:					*command-line-functions*
 	getcmdpos()		get position of the cursor in the command line
 	setcmdpos()		set position of the cursor in the command line
 	getcmdtype()		return the current command-line type
+	getcmdwintype()		return the current command-line window type
 
 Quickfix and location lists:			*quickfix-functions*
 	getqflist()		list of quickfix errors
@@ -887,6 +888,19 @@ Mappings:				    *mapping-functions*
 	maparg()		get rhs of a mapping
 	wildmenumode()		check if the wildmode is active
 
+Testing:				    *test-functions*
+	assert_equal()       	assert that two expressions values are equal
+	assert_false()		assert that an expression is false
+	assert_true()		assert that an expression is true
+
+Inter-process communication:
+	ch_open()		open a channel
+	ch_close()		close a channel
+	ch_sendexpr()		send a JSON message over a channel
+	ch_sendraw()		send a raw message over a channel
+	jsonencode()		encode an expression to a JSON string
+	jsondecode()		decode a JSON string to Vim types
+
 Various:					*various-functions*
 	mode()			get current editing mode
 	visualmode()		last visual mode used
@@ -915,8 +929,10 @@ Various:					*various-functions*
 
 	luaeval()		evaluate Lua expression
 	mzeval()		evaluate |MzScheme| expression
+	perleval()		evaluate Perl expression (|+perl|)
 	py3eval()		evaluate Python expression (|+python3|)
 	pyeval()		evaluate Python expression (|+python|)
+	wordcount()             get byte/word/char count of buffer
 
 ==============================================================================
 *41.7*	Defining a function
@@ -2219,7 +2235,7 @@ This construct makes sure the function is only defined once: >
 	:endif
 <
 
-UNDO							*undo_ftplugin*
+UNDO						*undo_indent* *undo_ftplugin*
 
 When the user does ":setfiletype xyz" the effect of the previous filetype
 should be undone.  Set the b:undo_ftplugin variable to the commands that will
@@ -2233,6 +2249,9 @@ global value.  That is mostly the best way to reset the option value.
 
 This does require removing the "C" flag from 'cpoptions' to allow line
 continuation, as mentioned above |use-cpo-save|.
+
+For undoing the effect of an indent script, the b:undo_indent variable should
+be set accordingly.
 
 
 FILE NAME

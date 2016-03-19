@@ -27,6 +27,8 @@ RM =		rm
 SRC =	blowfish.c						\
 	buffer.c						\
 	charset.c						\
+	crypt.c							\
+	crypt_zip.c						\
 	diff.c							\
 	digraph.c						\
 	edit.c							\
@@ -41,6 +43,7 @@ SRC =	blowfish.c						\
 	getchar.c						\
 	hardcopy.c						\
 	hashtab.c						\
+	json.c							\
 	main.c							\
 	mark.c							\
 	mbyte.c							\

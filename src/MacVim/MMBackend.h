@@ -56,8 +56,6 @@ extern NSTimeInterval MMBalloonEvalInternalDelay;
     unsigned            numWholeLineChanges;
     unsigned            offsetForDrawDataPrune;
     BOOL                imState;
-    CFSocketRef         netbeansSocket;
-    CFRunLoopSourceRef  netbeansRunLoopSource;
     int                 winposX;
     int                 winposY;
 #ifdef FEAT_BEVAL
@@ -136,6 +134,8 @@ extern NSTimeInterval MMBalloonEvalInternalDelay;
 - (void)setFullScreenBackgroundColor:(int)color;
 
 - (void)setAntialias:(BOOL)antialias;
+- (void)setLigatures:(BOOL)ligatures;
+- (void)setBlurRadius:(int)radius;
 
 - (void)updateModifiedFlag;
 
@@ -155,8 +155,8 @@ extern NSTimeInterval MMBalloonEvalInternalDelay;
 - (BOOL)imState;
 - (void)setImState:(BOOL)activated;
 
-- (void)messageFromNetbeans;
-- (void)setNetbeansSocket:(int)socket;
+- (void *)addChannel:(channel_T *)channel part:(int)part;
+- (void)removeChannel:(void *)cookie;
 
 #ifdef FEAT_BEVAL
 - (void)setLastToolTip:(NSString *)toolTip;

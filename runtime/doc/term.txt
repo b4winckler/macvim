@@ -1,4 +1,4 @@
-*term.txt*      For Vim version 7.4.  Last change: 2014 May 13
+*term.txt*      For Vim version 7.4.  Last change: 2015 Nov 24
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -224,10 +224,11 @@ The options are listed below.  The associated termcap code is always equal to
 the last two characters of the option name.  Only one termcap code is
 required: Cursor motion, 't_cm'.
 
-The options 't_da', 't_db', 't_ms', 't_xs' represent flags in the termcap.
-When the termcap flag is present, the option will be set to "y".  But any
-non-empty string means that the flag is set.  An empty string means that the
-flag is not set.  't_CS' works like this too, but it isn't a termcap flag.
+The options 't_da', 't_db', 't_ms', 't_xs', 't_xn' represent flags in the
+termcap.  When the termcap flag is present, the option will be set to "y".
+But any non-empty string means that the flag is set.  An empty string means
+that the flag is not set.  't_CS' works like this too, but it isn't a termcap
+flag.
 
 OUTPUT CODES
 	option	meaning	~
@@ -281,6 +282,9 @@ OUTPUT CODES
 	t_vs	cursor very visible				*t_vs* *'t_vs'*
 								*t_xs* *'t_xs'*
 	t_xs	if non-empty, standout not erased by overwriting (hpterm)
+								*t_xn* *'t_xn'*
+	t_xn	if non-empty, writing a character at the last screen cell
+		does not cause scrolling
 	t_ZH	italics mode					*t_ZH* *'t_ZH'*
 	t_ZR	italics end					*t_ZR* *'t_ZR'*
 
@@ -290,11 +294,14 @@ Added by Vim (there are no standard codes for these):
 	t_WP	set window position (Y, X) in pixels		*t_WP* *'t_WP'*
 	t_WS	set window size (height, width) in characters	*t_WS* *'t_WS'*
 	t_SI	start insert mode (bar cursor shape)		*t_SI* *'t_SI'*
-	t_EI	end insert mode (block cursor shape)		*t_EI* *'t_EI'*
+	t_SR	start replace mode (underline cursor shape)	*t_SR* *'t_SR'*
+	t_EI	end insert or replace mode (block cursor shape)	*t_EI* *'t_EI'*
 		|termcap-cursor-shape|
 	t_RV	request terminal version string (for xterm)	*t_RV* *'t_RV'*
 		|xterm-8bit| |v:termresponse| |'ttymouse'| |xterm-codes|
 	t_u7	request cursor position (for xterm)		*t_u7* *'t_u7'*
+		see |'ambiwidth'|
+	t_RB	request terminal background color		*t_RB* *'t_RB'*
 		see |'ambiwidth'|
 
 KEY CODES
@@ -410,7 +417,7 @@ adjust the various t_ codes.  This avoids the problem that the xterm can
 produce different codes, depending on the mode it is in (8-bit, VT102,
 VT220, etc.).  The result is that codes like <xF1> are no longer needed.
 Note: This is only done on startup.  If the xterm options are changed after
-Vim has started, the escape sequences may not be recognized any more.
+Vim has started, the escape sequences may not be recognized anymore.
 
 							*xterm-resize*
 Window resizing with xterm only works if the allowWindowOps resource is
@@ -434,13 +441,16 @@ If one of these is not available, 't_Sb' and 't_Sf' are used.  't_me' is used
 to reset to the default colors.
 
 				*termcap-cursor-shape* *termcap-cursor-color*
-When Vim enters Insert mode the 't_SI' escape sequence is sent.  When leaving
-Insert mode 't_EI' is used.  But only if both are defined.  This can be used
-to change the shape or color of the cursor in Insert mode.  These are not
-standard termcap/terminfo entries, you need to set them yourself.
+When Vim enters Insert mode the 't_SI' escape sequence is sent.  When Vim
+enters Replace mode the 't_SR' escape sequence is sent if it is set, otherwise
+'t_SI' is sent.  When leaving Insert mode or Replace mode 't_EI' is used. This
+can be used to change the shape or color of the cursor in Insert or Replace
+mode. These are not standard termcap/terminfo entries, you need to set them
+yourself.
 Example for an xterm, this changes the color of the cursor: >
     if &term =~ "xterm"
 	let &t_SI = "\<Esc>]12;purple\x7"
+	let &t_SR = "\<Esc>]12;red\x7"
 	let &t_EI = "\<Esc>]12;blue\x7"
     endif
 NOTE: When Vim exits the shape for Normal mode will remain.  The shape from
@@ -842,7 +852,7 @@ Mouse clicks can be mapped.  The codes for mouse clicks are:
 
 The X1 and X2 buttons refer to the extra buttons found on some mice.  The
 'Microsoft Explorer' mouse has these buttons available to the right thumb.
-Currently X1 and X2 only work on Win32 environments.
+Currently X1 and X2 only work on Win32 and X11 environments.
 
 Examples: >
 	:noremap <MiddleMouse> <LeftMouse><MiddleMouse>

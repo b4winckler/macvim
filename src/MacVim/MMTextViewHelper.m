@@ -12,7 +12,7 @@
  *
  * Contains code shared between the different text renderers.  Unfortunately it
  * is not possible to let the text renderers inherit from this class since
- * MMTextView needs to inherit from NSTextView whereas MMAtsuiTextView needs to
+ * MMTextView needs to inherit from NSTextView whereas MMCoreTextView needs to
  * inherit from NSView.
  */
 
@@ -36,7 +36,6 @@ static float MMDragAreaSize = 73.0f;
 - (MMVimController *)vimController;
 - (void)doKeyDown:(NSString *)key;
 - (void)doInsertText:(NSString *)text;
-- (void)pollImState;
 - (void)hideMouseCursor;
 - (void)startDragTimerWithInterval:(NSTimeInterval)t;
 - (void)dragTimerFired:(NSTimer *)timer;
@@ -45,15 +44,12 @@ static float MMDragAreaSize = 73.0f;
 - (BOOL)inputManagerHandleMouseEvent:(NSEvent *)event;
 - (void)sendMarkedText:(NSString *)text position:(int32_t)pos;
 - (void)abandonMarkedText;
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 - (void)sendGestureEvent:(int)gesture flags:(int)flags;
-#endif
 @end
 
 
 
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
     static BOOL
 KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
 {
@@ -68,7 +64,6 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
 
     return [as isEqualToString:bs];
 }
-#endif
 
 
 @implementation MMTextViewHelper
@@ -79,6 +74,11 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
         return nil;
 
     signImages = [[NSMutableDictionary alloc] init];
+
+    useMouseTime =
+        [[NSUserDefaults standardUserDefaults] boolForKey:MMUseMouseTimeKey];
+    if (useMouseTime)
+        mouseDownTime = [[NSDate date] retain];
 
     return self;
 }
@@ -91,8 +91,8 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
     [markedText release];  markedText = nil;
     [markedTextAttributes release];  markedTextAttributes = nil;
     [signImages release];  signImages = nil;
+    [mouseDownTime release];  mouseDownTime = nil;
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
     if (asciiImSource) {
         CFRelease(asciiImSource);
         asciiImSource = NULL;
@@ -101,7 +101,6 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
         CFRelease(lastImSource);
         lastImSource = NULL;
     }
-#endif
 
     [super dealloc];
 }
@@ -128,20 +127,6 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
 - (void)keyDown:(NSEvent *)event
 {
     ASLogDebug(@"%@", event);
-
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
-    if (NULL == TISCopyCurrentKeyboardInputSource) {
-#endif
-
-        // NOTE: Check IM state _before_ key has been interpreted or we'll pick
-        // up the old IM state when it has been switched via a keyboard shortcut
-        // that MacVim cannot handle.
-        if (imControl)
-            [self pollImState];
-
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
-    }
-#endif
 
     // NOTE: Keyboard handling is complicated by the fact that we must call
     // interpretKeyEvents: otherwise key equivalents set up by input methods do
@@ -292,47 +277,6 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
     else interpretKeyEventsSwallowedKey = NO;
 }
 
-- (BOOL)performKeyEquivalent:(NSEvent *)event
-{
-    ASLogDebug(@"");
-    if ([event type] != NSKeyDown)
-        return NO;
-
-    // NOTE: Key equivalent handling was fixed in Leopard.  That is, an
-    // unhandled key equivalent is passed to keyDown: -- contrast this with
-    // pre-Leopard where unhandled key equivalents would simply disappear
-    // (hence the ugly hack below for Tiger).
-    if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_4)
-        return NO;
-
-    // HACK! KeyCode 50 represent the key which switches between windows
-    // within an application (like Cmd+Tab is used to switch between
-    // applications).  Return NO here, else the window switching does not work.
-    if ([event keyCode] == 50)
-        return NO;
-
-    // HACK! The -[NSRespoder cancelOperation:] indicates that Cmd-. is handled
-    // in a special way by the key window.  Indeed, if we pass this event on to
-    // keyDown: it will result in doCommandBySelector: being called with
-    // cancelOperation: as selector, otherwise it is called with cancel: as the
-    // selector (and we respond to cancel: there).
-    int flags = [event modifierFlags] & NSDeviceIndependentModifierFlagsMask;
-    NSString *unmod = [event charactersIgnoringModifiers];
-    if (flags == NSCommandKeyMask && [unmod isEqual:@"."])
-        return NO;
-
-    // HACK! Let the main menu try to handle any key down event, before
-    // passing it on to vim, otherwise key equivalents for menus will
-    // effectively be disabled.
-    if ([[NSApp mainMenu] performKeyEquivalent:event])
-        return YES;
-
-    // HACK! Pass the event on or it may disappear (Tiger does not pass Cmd-key
-    // events to keyDown:).
-    [self keyDown:event];
-    return YES;
-}
-
 - (void)scrollWheel:(NSEvent *)event
 {
     if ([self hasMarkedText]) {
@@ -340,7 +284,7 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
         // marked text moves outside the view as a result of scrolling.
         [self sendMarkedText:nil position:0];
         [self unmarkText];
-        [[NSInputManager currentInputManager] markedTextAbandoned:self];
+        [[NSTextInputContext currentInputContext] discardMarkedText];
     }
 
     float dx = [event deltaX];
@@ -376,7 +320,21 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
 
     int button = [event buttonNumber];
     int flags = [event modifierFlags];
-    int count = [event clickCount];
+    int repeat = 0;
+
+    if (useMouseTime) {
+        // Use Vim mouseTime option to handle multiple mouse down events
+        NSDate *now = [[NSDate date] retain];
+        id mouset = [[[self vimController] vimState] objectForKey:@"p_mouset"];
+        NSTimeInterval interval =
+            [now timeIntervalSinceDate:mouseDownTime] * 1000.0;
+        if (interval < (NSTimeInterval)[mouset longValue])
+            repeat = 1;
+        mouseDownTime = now;
+    } else {
+        repeat = [event clickCount] > 1;
+    }
+
     NSMutableData *data = [NSMutableData data];
 
     // If desired, intepret Ctrl-Click as a right mouse click.
@@ -394,7 +352,7 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
     [data appendBytes:&col length:sizeof(int)];
     [data appendBytes:&button length:sizeof(int)];
     [data appendBytes:&flags length:sizeof(int)];
-    [data appendBytes:&count length:sizeof(int)];
+    [data appendBytes:&repeat length:sizeof(int)];
 
     [[self vimController] sendMessage:MouseDownMsgID data:data];
 }
@@ -477,7 +435,6 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
     [[self vimController] sendMessage:MouseMovedMsgID data:data];
 }
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 - (void)swipeWithEvent:(NSEvent *)event
 {
     CGFloat dx = [event deltaX];
@@ -491,7 +448,6 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
 
     [self sendGestureEvent:type flags:[event modifierFlags]];
 }
-#endif
 
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender
 {
@@ -773,7 +729,11 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
         rect.origin.y += rect.size.height;
 
     rect.origin = [textView convertPoint:rect.origin toView:nil];
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7
+    rect = [[textView window] convertRectToScreen:rect];
+#else
     rect.origin = [[textView window] convertBaseToScreen:rect.origin];
+#endif
 
     return rect;
 }
@@ -782,31 +742,24 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
 {
     // This flag corresponds to the (negation of the) 'imd' option.  When
     // enabled changes to the input method are detected and forwarded to the
-    // backend.  On >=10.5 and later we do not forward changes to the input
-    // method, instead we let Vim be in complete control.
+    // backend. We do not forward changes to the input method, instead we let
+    // Vim be in complete control.
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
-    // The TIS symbols are weakly linked.
-    if (NULL != TISCopyCurrentKeyboardInputSource) {
-        // We get here when compiled on >=10.5 and running on >=10.5.
-
-        if (asciiImSource) {
-            CFRelease(asciiImSource);
-            asciiImSource = NULL;
-        }
-        if (lastImSource) {
-            CFRelease(lastImSource);
-            lastImSource = NULL;
-        }
-        if (enable) {
-            // Save current locale input source for use when IM is active and
-            // get an ASCII source for use when IM is deactivated (by Vim).
-            asciiImSource = TISCopyCurrentASCIICapableKeyboardInputSource();
-            NSString *locale = [[NSLocale currentLocale] localeIdentifier];
-            lastImSource = TISCopyInputSourceForLanguage((CFStringRef)locale);
-        }
+    if (asciiImSource) {
+        CFRelease(asciiImSource);
+        asciiImSource = NULL;
     }
-#endif
+    if (lastImSource) {
+        CFRelease(lastImSource);
+        lastImSource = NULL;
+    }
+    if (enable) {
+        // Save current locale input source for use when IM is active and
+        // get an ASCII source for use when IM is deactivated (by Vim).
+        asciiImSource = TISCopyCurrentASCIICapableKeyboardInputSource();
+        NSString *locale = [[NSLocale currentLocale] localeIdentifier];
+        lastImSource = TISCopyInputSourceForLanguage((CFStringRef)locale);
+    }
 
     imControl = enable;
     ASLogDebug(@"IM control %sabled", enable ? "en" : "dis");
@@ -822,31 +775,14 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
 
     imState = enable;
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
-    // The TIS symbols are weakly linked.
-    if (NULL != TISCopyCurrentKeyboardInputSource) {
-        // We get here when compiled on >=10.5 and running on >=10.5.
-
-        // Enable IM: switch back to input source used when IM was last on
-        // Disable IM: switch back to ASCII input source (set in setImControl:)
-        TISInputSourceRef ref = enable ? lastImSource : asciiImSource;
-        if (ref) {
-            ASLogDebug(@"Change input source: %@",
-                    TISGetInputSourceProperty(ref, kTISPropertyInputSourceID));
-            TISSelectInputSource(ref);
-        }
-
-        return;
+    // Enable IM: switch back to input source used when IM was last on
+    // Disable IM: switch back to ASCII input source (set in setImControl:)
+    TISInputSourceRef ref = enable ? lastImSource : asciiImSource;
+    if (ref) {
+        ASLogDebug(@"Change input source: %@",
+                TISGetInputSourceProperty(ref, kTISPropertyInputSourceID));
+        TISSelectInputSource(ref);
     }
-
-    // We get here when compiled on >=10.5 but running on 10.4 -- fall through
-    // and use old IM code...
-#endif
-#if (MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5)
-    // NOTE: The IM code is delegated to the frontend since calling it in
-    // the backend caused weird bugs (second dock icon appearing etc.).
-    KeyScript(enable ? smKeySysScript : smKeyRoman);
-#endif
 }
 
 - (BOOL)useInlineIm
@@ -861,9 +797,7 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
 
 - (void)checkImState
 {
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
-    if (imControl && NULL != TISCopyCurrentKeyboardInputSource) {
-        // We get here when compiled on >=10.5 and running on >=10.5.
+    if (imControl) {
         TISInputSourceRef cur = TISCopyCurrentKeyboardInputSource();
         BOOL state = !KeyboardInputSourcesEqual(asciiImSource, cur);
         BOOL isChanged = !KeyboardInputSourcesEqual(lastImSource, cur);
@@ -884,7 +818,6 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
         }
         return;
     }
-#endif
 }
 
 @end // MMTextViewHelper
@@ -970,28 +903,6 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
     [data appendBytes:chars length:length];
 
     [[self vimController] sendMessage:KeyDownMsgID data:data];
-}
-
-- (void)pollImState
-{
-#if (MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5)
-    // Compiled for <=10.4, running on 10.4
-
-    // IM is active whenever the current script is the system script and the
-    // system script isn't roman.  (Hence IM can only be active when using
-    // non-roman scripts.)
-
-    // NOTE: The IM code is delegated to the frontend since calling it in the
-    // backend caused weird bugs (second dock icon appearing etc.).
-    SInt32 currentScript = GetScriptManagerVariable(smKeyScript);
-    SInt32 systemScript = GetScriptManagerVariable(smSysScript);
-    BOOL state = currentScript != smRoman && currentScript == systemScript;
-    if (imState != state) {
-        imState = state;
-        int msgid = state ? ActivatedImMsgID : DeactivatedImMsgID;
-        [[self vimController] sendMessage:msgid data:nil];
-    }
-#endif
 }
 
 - (void)hideMouseCursor
@@ -1117,9 +1028,7 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
     // the Kotoeri manager "commits" the text on left clicks).
 
     if (event) {
-        NSInputManager *imgr = [NSInputManager currentInputManager];
-        if ([imgr wantsToHandleMouseEvents])
-            return [imgr handleMouseEvent:event];
+        return [[NSTextInputContext currentInputContext] handleEvent:event];
     }
 
     return NO;
@@ -1152,10 +1061,9 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
     // that the marked text should be abandoned.  (If pos is set to 0 Vim will
     // send backspace sequences to delete the old marked text.)
     [self sendMarkedText:nil position:-1];
-    [[NSInputManager currentInputManager] markedTextAbandoned:self];
+    [[NSTextInputContext currentInputContext] discardMarkedText];
 }
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 - (void)sendGestureEvent:(int)gesture flags:(int)flags
 {
     NSMutableData *data = [NSMutableData data];
@@ -1165,6 +1073,5 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
 
     [[self vimController] sendMessage:GestureMsgID data:data];
 }
-#endif
 
 @end // MMTextViewHelper (Private)

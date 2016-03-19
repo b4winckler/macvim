@@ -45,10 +45,8 @@
 #import "Miscellaneous.h"
 #import <unistd.h>
 #import <CoreServices/CoreServices.h>
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
 // Need Carbon for TIS...() functions
 #import <Carbon/Carbon.h>
-#endif
 
 
 #define MM_HANDLE_XCODE_MOD_EVENT 0
@@ -59,14 +57,12 @@
 static NSTimeInterval MMRequestTimeout = 5;
 static NSTimeInterval MMReplyTimeout = 5;
 
-static NSString *MMWebsiteString = @"http://code.google.com/p/macvim/";
+static NSString *MMWebsiteString = @"https://macvim-dev.github.io/macvim/";
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
 // Latency (in s) between FS event occuring and being reported to MacVim.
 // Should be small so that MacVim is notified of changes to the ~/.vim
 // directory more or less immediately.
 static CFTimeInterval MMEventStreamLatency = 0.1;
-#endif
 
 static float MMCascadeHorizontalOffset = 21;
 static float MMCascadeVerticalOffset = 23;
@@ -143,14 +139,11 @@ typedef struct
 - (NSScreen *)screenContainingTopLeftPoint:(NSPoint)pt;
 - (void)addInputSourceChangedObserver;
 - (void)removeInputSourceChangedObserver;
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
 - (void)inputSourceChanged:(NSNotification *)notification;
-#endif
 @end
 
 
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
     static void
 fsEventCallback(ConstFSEventStreamRef streamRef,
                 void *clientCallBackInfo,
@@ -161,7 +154,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 {
     [[MMAppController sharedInstance] handleFSEvent];
 }
-#endif
 
 @implementation MMAppController
 
@@ -207,10 +199,10 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         [NSNumber numberWithInt:0],     MMOpenInCurrentWindowKey,
         [NSNumber numberWithBool:NO],   MMNoFontSubstitutionKey,
         [NSNumber numberWithBool:YES],  MMLoginShellKey,
-        [NSNumber numberWithInt:2],     MMRendererKey,
+        [NSNumber numberWithInt:MMRendererCoreText],
+                                        MMRendererKey,
         [NSNumber numberWithInt:MMUntitledWindowAlways],
                                         MMUntitledWindowKey,
-        [NSNumber numberWithBool:NO],   MMTexturedWindowKey,
         [NSNumber numberWithBool:NO],   MMZoomBothKey,
         @"",                            MMLoginShellCommandKey,
         @"",                            MMLoginShellArgumentKey,
@@ -547,9 +539,7 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
             [alert setMessageText:NSLocalizedString(
                     @"Are you sure you want to quit MacVim?",
                     @"Quit dialog with no changed buffers, title")];
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
             [alert setShowsSuppressionButton:YES];
-#endif
 
             NSString *info = nil;
             if (numWindows > 1) {
@@ -579,12 +569,10 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
             if ([alert runModal] != NSAlertFirstButtonReturn)
                 reply = NSTerminateCancel;
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
             if ([[alert suppressionButton] state] == NSOnState) {
                 [[NSUserDefaults standardUserDefaults]
                             setBool:YES forKey:MMSuppressTerminationAlertKey];
             }
-#endif
 
             [alert release];
         }
@@ -769,6 +757,7 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         if (!screen)
             screen = [win screen];
 
+        BOOL willSwitchScreens = screen != [win screen];
         if (cascadeFrom) {
             // Do manual cascading instead of using
             // -[MMWindow cascadeTopLeftFromPoint:] since it is rather
@@ -795,7 +784,14 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
             ASLogNotice(@"Window not on screen, don't constrain position");
         }
 
-        [win setFrameTopLeftPoint:topLeft];
+        // setFrameTopLeftPoint will trigger a resize event if the window is
+        // moved across monitors; at this point such a resize would incorrectly
+        // constrain the window to the default vim dimensions, so a specialized
+        // method is used that will avoid that behavior.
+        if (willSwitchScreens)
+            [windowController moveWindowAcrossScreens:topLeft];
+        else
+            [win setFrameTopLeftPoint:topLeft];
     }
 
     if (1 == [vimControllers count]) {
@@ -1071,11 +1067,8 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     [panel setAllowsMultipleSelection:YES];
+    [panel setCanChooseDirectories:YES];
     [panel setAccessoryView:showHiddenFilesView()];
-#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6)
-    // NOTE: -[NSOpenPanel runModalForDirectory:file:types:] is deprecated on
-    // 10.7 but -[NSOpenPanel setDirectoryURL:] requires 10.6 so jump through
-    // the following hoops on 10.6+.
     dir = [dir stringByExpandingTildeInPath];
     if (dir) {
         NSURL *dirURL = [NSURL fileURLWithPath:dir isDirectory:YES];
@@ -1084,10 +1077,12 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     }
 
     NSInteger result = [panel runModal];
+
+#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10)
+    if (NSModalResponseOK == result) {
 #else
-    NSInteger result = [panel runModalForDirectory:dir file:nil types:nil];
-#endif
     if (NSOKButton == result) {
+#endif
         // NOTE: -[NSOpenPanel filenames] is deprecated on 10.7 so use
         // -[NSOpenPanel URLs] instead.  The downside is that we have to check
         // that each URL is really a path first.
@@ -1183,18 +1178,14 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     [NSApp makeWindowsPerform:@selector(performZoom:) inOrder:YES];
 }
 
-- (IBAction)atsuiButtonClicked:(id)sender
+- (IBAction)coreTextButtonClicked:(id)sender
 {
-    ASLogDebug(@"Toggle ATSUI renderer");
+    ASLogDebug(@"Toggle CoreText renderer");
     NSInteger renderer = MMRendererDefault;
     BOOL enable = ([sender state] == NSOnState);
 
     if (enable) {
-#if MM_ENABLE_ATSUI
-        renderer = MMRendererATSUI;
-#else
         renderer = MMRendererCoreText;
-#endif
     }
 
     // Update the user default MMRenderer and synchronize the change so that
@@ -1207,7 +1198,7 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
     ASLogInfo(@"Use renderer=%ld", renderer);
 
-    // This action is called when the user clicks the "use ATSUI renderer"
+    // This action is called when the user clicks the "use CoreText renderer"
     // button in the advanced preferences pane.
     [self rebuildPreloadCache];
 }
@@ -1686,12 +1677,17 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         while ((param = [enumerator nextObject])) {
             NSArray *arr = [param componentsSeparatedByString:@"="];
             if ([arr count] == 2) {
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_11
+                [dict setValue:[[arr lastObject] stringByRemovingPercentEncoding]
+                        forKey:[[arr objectAtIndex:0] stringByRemovingPercentEncoding]];
+#else
                 [dict setValue:[[arr lastObject]
                             stringByReplacingPercentEscapesUsingEncoding:
                                 NSUTF8StringEncoding]
                         forKey:[[arr objectAtIndex:0]
                             stringByReplacingPercentEscapesUsingEncoding:
                                 NSUTF8StringEncoding]];
+#endif
             }
         }
 
@@ -1980,13 +1976,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     }
 }
 
-
-// HACK: fileAttributesAtPath was deprecated in 10.5
-#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_5)
-#define MM_fileAttributes(fm,p) [fm attributesOfItemAtPath:p error:NULL]
-#else
-#define MM_fileAttributes(fm,p) [fm fileAttributesAtPath:p traverseLink:YES]
-#endif
 - (NSDate *)rcFilesModificationDate
 {
     // Check modification dates for ~/.vimrc and ~/.gvimrc and return the
@@ -1998,20 +1987,20 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
     NSFileManager *fm = [NSFileManager defaultManager];
 
     NSString *path = [@"~/.vimrc" stringByExpandingTildeInPath];
-    NSDictionary *attr = MM_fileAttributes(fm, path);
+    NSDictionary *attr = [fm attributesOfItemAtPath:path error:NULL];
     if (!attr) {
         path = [@"~/_vimrc" stringByExpandingTildeInPath];
-        attr = MM_fileAttributes(fm, path);
+        attr = [fm attributesOfItemAtPath:path error:NULL];
     }
     NSDate *modDate = [attr objectForKey:NSFileModificationDate];
     if (modDate)
         date = modDate;
 
     path = [@"~/.gvimrc" stringByExpandingTildeInPath];
-    attr = MM_fileAttributes(fm, path);
+    attr = [fm attributesOfItemAtPath:path error:NULL];
     if (!attr) {
         path = [@"~/_gvimrc" stringByExpandingTildeInPath];
-        attr = MM_fileAttributes(fm, path);
+        attr = [fm attributesOfItemAtPath:path error:NULL];
     }
     modDate = [attr objectForKey:NSFileModificationDate];
     if (modDate)
@@ -2019,7 +2008,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
     return date;
 }
-#undef MM_fileAttributes
 
 - (BOOL)openVimControllerWithArguments:(NSDictionary *)arguments
 {
@@ -2060,11 +2048,8 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
 - (void)startWatchingVimDir
 {
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
     if (fsEventStream)
         return;
-    if (NULL == FSEventStreamStart)
-        return; // FSEvent functions are weakly linked
 
     NSString *path = [@"~/.vim" stringByExpandingTildeInPath];
     NSArray *pathsToWatch = [NSArray arrayWithObject:path];
@@ -2079,15 +2064,10 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
     FSEventStreamStart(fsEventStream);
     ASLogDebug(@"Started FS event stream");
-#endif
 }
 
 - (void)stopWatchingVimDir
 {
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
-    if (NULL == FSEventStreamStop)
-        return; // FSEvent functions are weakly linked
-
     if (fsEventStream) {
         FSEventStreamStop(fsEventStream);
         FSEventStreamInvalidate(fsEventStream);
@@ -2095,8 +2075,6 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         fsEventStream = NULL;
         ASLogDebug(@"Stopped FS event stream");
     }
-#endif
-
 }
 
 - (void)handleFSEvent
@@ -2474,36 +2452,21 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
 
 - (void)addInputSourceChangedObserver
 {
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
-    // The TIS symbols are weakly linked.
-    if (NULL != TISCopyCurrentKeyboardInputSource) {
-        // We get here when compiled on >=10.5 and running on >=10.5.
-
-        id nc = [NSDistributedNotificationCenter defaultCenter];
-        NSString *notifyInputSourceChanged =
-            (NSString *)kTISNotifySelectedKeyboardInputSourceChanged;
-        [nc addObserver:self
-               selector:@selector(inputSourceChanged:)
-                   name:notifyInputSourceChanged
-                 object:nil];
-    }
-#endif
+    id nc = [NSDistributedNotificationCenter defaultCenter];
+    NSString *notifyInputSourceChanged =
+        (NSString *)kTISNotifySelectedKeyboardInputSourceChanged;
+    [nc addObserver:self
+           selector:@selector(inputSourceChanged:)
+               name:notifyInputSourceChanged
+             object:nil];
 }
 
 - (void)removeInputSourceChangedObserver
 {
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
-    // The TIS symbols are weakly linked.
-    if (NULL != TISCopyCurrentKeyboardInputSource) {
-        // We get here when compiled on >=10.5 and running on >=10.5.
-
-        id nc = [NSDistributedNotificationCenter defaultCenter];
-        [nc removeObserver:self];
-    }
-#endif
+    id nc = [NSDistributedNotificationCenter defaultCenter];
+    [nc removeObserver:self];
 }
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
 - (void)inputSourceChanged:(NSNotification *)notification
 {
     unsigned i, count = [vimControllers count];
@@ -2514,6 +2477,5 @@ fsEventCallback(ConstFSEventStreamRef streamRef,
         [tv checkImState];
     }
 }
-#endif
 
 @end // MMAppController (Private)

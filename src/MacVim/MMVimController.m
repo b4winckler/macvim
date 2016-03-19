@@ -70,6 +70,8 @@ static BOOL isUnsafeMessage(int msgid);
 }
 - (void)setTextFieldString:(NSString *)textFieldString;
 - (NSTextField *)textField;
+- (void)beginSheetModalForWindow:(NSWindow *)window
+                   modalDelegate:(id)delegate;
 @end
 
 
@@ -573,8 +575,10 @@ static BOOL isUnsafeMessage(int msgid);
         [windowController updateTabsWithData:data];
     } else if (ShowTabBarMsgID == msgid) {
         [windowController showTabBar:YES];
+        [self sendMessage:BackingPropertiesChangedMsgID data:nil];
     } else if (HideTabBarMsgID == msgid) {
         [windowController showTabBar:NO];
+        [self sendMessage:BackingPropertiesChangedMsgID data:nil];
     } else if (SetTextDimensionsMsgID == msgid || LiveResizeMsgID == msgid ||
             SetTextDimensionsReplyMsgID == msgid) {
         const void *bytes = [data bytes];
@@ -798,6 +802,10 @@ static BOOL isUnsafeMessage(int msgid);
         [[[windowController vimView] textView] setAntialias:YES];
     } else if (DisableAntialiasMsgID == msgid) {
         [[[windowController vimView] textView] setAntialias:NO];
+    } else if (EnableLigaturesMsgID == msgid) {
+        [[[windowController vimView] textView] setLigatures:YES];
+    } else if (DisableLigaturesMsgID == msgid) {
+        [[[windowController vimView] textView] setLigatures:NO];
     } else if (SetVimStateMsgID == msgid) {
         NSDictionary *dict = [NSDictionary dictionaryWithData:data];
         if (dict) {
@@ -876,6 +884,10 @@ static BOOL isUnsafeMessage(int msgid);
         if (filenames)
             [[NSDocumentController sharedDocumentController]
                                             noteNewRecentFilePaths:filenames];
+    } else if (SetBlurRadiusMsgID == msgid) {
+        const void *bytes = [data bytes];
+        int radius = *((int*)bytes);
+        [windowController setBlurRadius:radius];
 
     // IMPORTANT: When adding a new message, make sure to update
     // isUnsafeMessage() if necessary!
@@ -888,7 +900,11 @@ static BOOL isUnsafeMessage(int msgid);
                 context:(void *)context
 {
     NSString *path = nil;
+#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10)
+    if (code == NSModalResponseOK) {
+#else
     if (code == NSOKButton) {
+#endif
         NSURL *url = [panel URL];
         if ([url isFileURL])
             path = [url path];
@@ -1385,11 +1401,8 @@ static BOOL isUnsafeMessage(int msgid);
             dir = [vimState objectForKey:@"pwd"];
     }
 
-#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6)
-    // 10.6+ APIs uses URLs instead of paths
     dir = [dir stringByExpandingTildeInPath];
     NSURL *dirURL = dir ? [NSURL fileURLWithPath:dir isDirectory:YES] : nil;
-#endif
 
     if (saving) {
         NSSavePanel *panel = [NSSavePanel savePanel];
@@ -1400,10 +1413,6 @@ static BOOL isUnsafeMessage(int msgid);
         [panel setDelegate:self];
         if ([panel isExpanded])
             [panel setAccessoryView:showHiddenFilesView()];
-#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6)
-        // NOTE: -[NSSavePanel beginSheetForDirectory::::::] is deprecated on
-        // 10.6 but -[NSSavePanel setDirectoryURL:] requires 10.6 so jump
-        // through the following hoops on 10.6+.
         if (dirURL)
             [panel setDirectoryURL:dirURL];
 
@@ -1411,13 +1420,6 @@ static BOOL isUnsafeMessage(int msgid);
                       completionHandler:^(NSInteger result) {
             [self savePanelDidEnd:panel code:result context:nil];
         }];
-#else
-        [panel beginSheetForDirectory:dir file:nil
-                modalForWindow:[windowController window]
-                 modalDelegate:self
-                didEndSelector:@selector(savePanelDidEnd:code:context:)
-                   contextInfo:NULL];
-#endif
     } else {
         NSOpenPanel *panel = [NSOpenPanel openPanel];
         [panel setAllowsMultipleSelection:NO];
@@ -1428,10 +1430,6 @@ static BOOL isUnsafeMessage(int msgid);
             [panel setCanChooseFiles:NO];
         }
 
-#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6)
-        // NOTE: -[NSOpenPanel beginSheetForDirectory:::::::] is deprecated on
-        // 10.6 but -[NSOpenPanel setDirectoryURL:] requires 10.6 so jump
-        // through the following hoops on 10.6+.
         if (dirURL)
             [panel setDirectoryURL:dirURL];
 
@@ -1439,13 +1437,6 @@ static BOOL isUnsafeMessage(int msgid);
                       completionHandler:^(NSInteger result) {
             [self savePanelDidEnd:panel code:result context:nil];
         }];
-#else
-        [panel beginSheetForDirectory:dir file:nil types:nil
-                modalForWindow:[windowController window]
-                 modalDelegate:self
-                didEndSelector:@selector(savePanelDidEnd:code:context:)
-                   contextInfo:NULL];
-#endif
     }
 }
 
@@ -1516,9 +1507,7 @@ static BOOL isUnsafeMessage(int msgid);
     }
 
     [alert beginSheetModalForWindow:[windowController window]
-                      modalDelegate:self
-                     didEndSelector:@selector(alertDidEnd:code:context:)
-                        contextInfo:NULL];
+                      modalDelegate:self];
 
     [alert release];
 }
@@ -1585,13 +1574,19 @@ static BOOL isUnsafeMessage(int msgid);
 
 - (void)beginSheetModalForWindow:(NSWindow *)window
                    modalDelegate:(id)delegate
-                  didEndSelector:(SEL)didEndSelector
-                     contextInfo:(void *)contextInfo
 {
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+    [super beginSheetModalForWindow:window
+                  completionHandler:^(NSModalResponse code) {
+                      [delegate alertDidEnd:self code:code context:NULL];
+                  }];
+#else
     [super beginSheetModalForWindow:window
                       modalDelegate:delegate
-                     didEndSelector:didEndSelector
-                        contextInfo:contextInfo];
+                     didEndSelector:@selector(alertDidEnd:code:context:)
+                        contextInfo:NULL];
+#endif
 
     // HACK! Place the input text field at the bottom of the informative text
     // (which has been made a bit larger by adding newline characters).

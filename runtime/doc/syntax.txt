@@ -1,4 +1,4 @@
-*syntax.txt*	For Vim version 7.4.  Last change: 2014 Jun 27
+*syntax.txt*	For Vim version 7.4.  Last change: 2016 Feb 25
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -211,7 +211,8 @@ thing.  These are then linked to a highlight group that specifies the color.
 A syntax group name doesn't specify any color or attributes itself.
 
 The name for a highlight or syntax group must consist of ASCII letters, digits
-and the underscore.  As a regexp: "[a-zA-Z0-9_]*"
+and the underscore.  As a regexp: "[a-zA-Z0-9_]*".  However, Vim does not give
+an error when using other characters.
 
 To be able to allow each user to pick his favorite set of colors, there must
 be preferred names for highlight groups that are common for many languages.
@@ -421,18 +422,19 @@ and last line to be converted.  Example, using the last set Visual area: >
 							*:TOhtml*
 :[range]TOhtml		The ":TOhtml" command is defined in a standard plugin.
 			This command will source |2html.vim| for you. When a
-			range is given, set |g:html_start_line| and
-			|g:html_end_line| to the start and end of the range,
-			respectively. Default range is the entire buffer.
+			range is given, this command sets |g:html_start_line|
+			and |g:html_end_line| to the start and end of the
+			range, respectively. Default range is the entire
+			buffer.
 
-                        If the current window is part of a |diff|, unless
-                        |g:html_diff_one_file| is set, :TOhtml will convert
-                        all windows which are part of the diff in the current
-                        tab and place them side-by-side in a <table> element
-                        in the generated HTML. With |g:html_line_ids| you can
-                        jump to lines in specific windows with (for example)
-                        #W1L42 for line 42 in the first diffed window, or
-                        #W3L87 for line 87 in the third.
+			If the current window is part of a |diff|, unless
+			|g:html_diff_one_file| is set, :TOhtml will convert
+			all windows which are part of the diff in the current
+			tab and place them side-by-side in a <table> element
+			in the generated HTML. With |g:html_line_ids| you can
+			jump to lines in specific windows with (for example)
+			#W1L42 for line 42 in the first diffed window, or
+			#W3L87 for line 87 in the third.
 
 			Examples: >
 
@@ -501,7 +503,7 @@ inserted for that purpose if no line numbers are shown. This ID attribute
 takes the form of L123 for single-buffer HTML pages, or W2L123 for diff-view
 pages, and is used to jump to a specific line (in a specific window of a diff
 view). Javascript is inserted to open any closed dynamic folds
-(|g:html_dynamic_folds|) containing the specificed line before jumping. The
+(|g:html_dynamic_folds|) containing the specified line before jumping. The
 javascript also allows omitting the window ID in the url, and the leading L.
 For example: >
 
@@ -746,6 +748,22 @@ and UTF-32 instead, use: >
 Note that documents encoded in either UTF-32 or UTF-16 have known
 compatibility problems with some major browsers.
 
+								 *g:html_font*
+Default: "monospace"
+You can specify the font or fonts used in the converted document using
+g:html_font. If this option is set to a string, then the value will be
+surrounded with single quotes. If this option is set to a list then each list
+item is surrounded by single quotes and the list is joined with commas. Either
+way, "monospace" is added as the fallback generic family name and the entire
+result used as the font family (using CSS) or font face (if not using CSS).
+Examples: >
+
+   " font-family: 'Consolas', monospace;
+   :let g:html_font = "Consolas"
+
+   " font-family: 'DejaVu Sans Mono', 'Consolas', monospace;
+   :let g:html_font = ["DejaVu Sans Mono", "Consolas"]
+<
 			*convert-to-XML* *convert-to-XHTML* *g:html_use_xhtml*
 Default: 0.
 When 0, generate standard HTML 4.01 (strict when possible).
@@ -1063,7 +1081,8 @@ CPP						*cpp.vim* *ft-cpp-syntax*
 Most of things are same as |ft-c-syntax|.
 
 Variable		Highlight ~
-cpp_no_c11		don't highlight C++11 standard items
+cpp_no_cpp11		don't highlight C++11 standard items
+cpp_no_cpp14		don't highlight C++14 standard items
 
 
 CSH						*csh.vim* *ft-csh-syntax*
@@ -1126,6 +1145,16 @@ But actually almost none implements this standard fully.  Thus it will
 highlight all Unix ini files.  But you can force strict highlighting according
 to standard by placing this in your vimrc file: >
 	:let enforce_freedesktop_standard = 1
+
+
+DIFF							*diff.vim*
+
+The diff highlighting normally finds translated headers.  This can be slow if
+there are very long lines in the file.  To disable translations: >
+
+	:let diff_translations = 0
+
+Also see |diff-slow|.
 
 
 DIRCOLORS			       *dircolors.vim* *ft-dircolors-syntax*
@@ -1409,34 +1438,27 @@ form, then >
     :let fortran_fixed_source=1
 in your .vimrc prior to the :syntax on command.
 
-If the form of the source code depends upon the file extension, then it is
-most convenient to set fortran_free_source in a ftplugin file.  For more
-information on ftplugin files, see |ftplugin|.  For example, if all your
-fortran files with an .f90 extension are written in free source form and the
-rest in fixed source form, add the following code to your ftplugin file >
-    let s:extfname = expand("%:e")
-    if s:extfname ==? "f90"
-	let fortran_free_source=1
-	unlet! fortran_fixed_source
-    else
-	let fortran_fixed_source=1
-	unlet! fortran_free_source
-    endif
-Note that this will work only if the "filetype plugin indent on" command
-precedes the "syntax on" command in your .vimrc file.
+If the form of the source code depends, in a non-standard way, upon the file
+extension, then it is most convenient to set fortran_free_source in a ftplugin
+file.  For more information on ftplugin files, see |ftplugin|. Note that this
+will work only if the "filetype plugin indent on" command precedes the "syntax
+on" command in your .vimrc file.
 
 When you edit an existing fortran file, the syntax script will assume free
 source form if the fortran_free_source variable has been set, and assumes
 fixed source form if the fortran_fixed_source variable has been set.  If
 neither of these variables have been set, the syntax script attempts to
-determine which source form has been used by examining the first five columns
-of the first 250 lines of your file.  If no signs of free source form are
-detected, then the file is assumed to be in fixed source form.  The algorithm
-should work in the vast majority of cases.  In some cases, such as a file that
-begins with 250 or more full-line comments, the script may incorrectly decide
-that the fortran code is in fixed form.  If that happens, just add a
-non-comment statement beginning anywhere in the first five columns of the
-first twenty five lines, save (:w) and then reload (:e!) the file.
+determine which source form has been used by examining the file extension
+using conventions common to the ifort, gfortran, Cray, NAG, and PathScale
+compilers (.f, .for, .f77 for fixed-source, .f90, .f95, .f03, .f08 for
+free-source). If none of this works, then the script examines the first five
+columns of the first 500 lines of your file.  If no signs of free source form
+are detected, then the file is assumed to be in fixed source form.  The
+algorithm should work in the vast majority of cases.  In some cases, such as a
+file that begins with 500 or more full-line comments, the script may
+incorrectly decide that the fortran code is in fixed form.  If that happens,
+just add a non-comment statement beginning anywhere in the first five columns
+of the first twenty five lines, save (:w) and then reload (:e!) the file.
 
 Tabs in fortran files ~
 Tabs are not recognized by the Fortran standards.  Tabs are not a good idea in
@@ -2868,7 +2890,7 @@ You may wish to embed languages into sh.  I'll give an example courtesy of
 Lorance Stinson on how to do this with awk as an example. Put the following
 file into $HOME/.vim/after/syntax/sh/awkembed.vim: >
 
-    " AWK Embedding: {{{1
+    " AWK Embedding:
     " ==============
     " Shamelessly ripped from aspperl.vim by Aaron Hope.
     if exists("b:current_syntax")
@@ -2975,6 +2997,7 @@ TEX				*tex.vim* *ft-tex-syntax* *latex-syntax*
 	Tex: Taking Advantage of Conceal Mode		|tex-conceal|
 	Tex: Selective Conceal Mode			|g:tex_conceal|
 	Tex: Controlling iskeyword			|g:tex_isk|
+	Tex: Fine Subscript and Superscript Control	|tex-supersub|
 
 				*tex-folding* *g:tex_fold_enabled*
  Tex: Want Syntax Folding? ~
@@ -3068,6 +3091,7 @@ selectively to enable just some syntax highlighting: >
 <
 As an example, let g:tex_fast= "M" will allow math-associated highlighting
 but suppress all the other region-based syntax highlighting.
+(also see: |g:tex_conceal| and |tex-supersub|)
 
 					*tex-morecommands* *tex-package*
  Tex: Want To Highlight More Commands? ~
@@ -3169,6 +3193,28 @@ syntax highlighting script handles this with the following logic:
 	* If g:tex_isk exists, then it will be used for the local 'iskeyword'
 	* Else the local 'iskeyword' will be set to 48-57,a-z,A-Z,192-255
 
+			*tex-supersub* *g:tex_superscripts* *g:tex_subscripts*
+ Tex: Fine Subscript and Superscript Control~
+
+	See |tex-conceal| for how to enable concealed character replacement.
+
+	See |g:tex_conceal| for selectively concealing accents, bold/italic,
+	math, Greek, and superscripts/subscripts.
+
+	One may exert fine control over which superscripts and subscripts one
+	wants syntax-based concealment for (see |:syn-cchar|).  Since not all
+	fonts support all characters, one may override the
+	concealed-replacement lists; by default these lists are given by: >
+
+	    let g:tex_superscripts= "[0-9a-zA-W.,:;+-<>/()=]"
+	    let g:tex_subscripts= "[0-9aehijklmnoprstuvx,+-/().]"
+<
+	For example, I use Luxi Mono Bold; it doesn't support subscript
+	characters for "hklmnpst", so I put >
+		let g:tex_subscripts= "[0-9aeijoruvx,+-/().]"
+<	in ~/.vim/ftplugin/tex/tex.vim in order to avoid having inscrutable
+	utf-8 glyphs appear.
+
 
 TF						*tf.vim* *ft-tf-syntax*
 
@@ -3196,7 +3242,8 @@ improve screen updating rates (see |:syn-sync| for more on this). >
 The g:vimsyn_embed option allows users to select what, if any, types of
 embedded script highlighting they wish to have. >
 
-   g:vimsyn_embed == 0   : don't embed any scripts
+   g:vimsyn_embed == 0   : don't support any embedded scripts
+   g:vimsyn_embed =~ 'l' : support embedded lua
    g:vimsyn_embed =~ 'm' : support embedded mzscheme
    g:vimsyn_embed =~ 'p' : support embedded perl
    g:vimsyn_embed =~ 'P' : support embedded python
@@ -3214,6 +3261,7 @@ Some folding is now supported with syntax/vim.vim: >
    g:vimsyn_folding == 0 or doesn't exist: no syntax-based folding
    g:vimsyn_folding =~ 'a' : augroups
    g:vimsyn_folding =~ 'f' : fold functions
+   g:vimsyn_folding =~ 'l' : fold lua      script
    g:vimsyn_folding =~ 'm' : fold mzscheme script
    g:vimsyn_folding =~ 'p' : fold perl     script
    g:vimsyn_folding =~ 'P' : fold python   script
@@ -3286,6 +3334,39 @@ must not click outside of the pixel strings, but feel free to improve it.
 
 It will look much better with a font in a quadratic cell size, e.g. for X: >
 	:set guifont=-*-clean-medium-r-*-*-8-*-*-*-*-80-*
+
+
+YAML						*yaml.vim* *ft-yaml-syntax*
+
+					*g:yaml_schema* *b:yaml_schema*
+A YAML schema is a combination of a set of tags and a mechanism for resolving 
+non-specific tags. For user this means that YAML parser may, depending on 
+plain scalar contents, treat plain scalar (which can actually be only string 
+and nothing else) as a value of the other type: null, boolean, floating-point, 
+integer. `g:yaml_schema` option determines according to which schema values 
+will be highlighted specially. Supported schemas are
+
+Schema		Description ~
+failsafe	No additional highlighting.
+json		Supports JSON-style numbers, booleans and null.
+core		Supports more number, boolean and null styles.
+pyyaml		In addition to core schema supports highlighting timestamps, 
+		but there are some differences in what is recognized as 
+		numbers and many additional boolean values not present in core 
+		schema.
+
+Default schema is `core`.
+
+Note that schemas are not actually limited to plain scalars, but this is the 
+only difference between schemas defined in YAML specification and the only 
+difference defined in the syntax file.
+
+
+ZSH						    *zsh.vim* *ft-zsh-syntax*
+
+The syntax script for zsh allows for syntax-based folding: >
+
+	:let g:zsh_fold_enable = 1
 
 ==============================================================================
 5. Defining a syntax					*:syn-define* *E410*
@@ -3364,6 +3445,32 @@ SPELL CHECKING						*:syn-spell*
 
 	To activate spell checking the 'spell' option must be set.
 
+SYNTAX ISKEYWORD SETTING				*:syn-iskeyword*
+
+:sy[ntax] iskeyword [clear | {option}]
+	This defines the keyword characters.  It's like the 'iskeyword' option
+	for but only applies to syntax highlighting.
+
+	clear:		Syntax specific iskeyword setting is disabled and the
+			buffer-local 'iskeyword' setting is used.
+	{option}        Set the syntax 'iskeyword' option to a new value. 
+
+	Example: >
+  :syntax iskeyword @,48-57,192-255,$,_
+<
+	This would set the syntax specific iskeyword option to include all
+	alphabetic characters, plus the numeric characters, all accented
+	characters and also includes the "_" and the "$".
+
+	If no argument is given, the current value will be output.
+
+	Setting this option influences what |/\k| matches in syntax patterns
+	and also determines where |:syn-keyword| will be checked for a new
+	match.
+
+	It is recommended when writing syntax files, to use this command
+	to the correct value for the specific syntax language and not change
+	the 'iskeyword' option.
 
 DEFINING KEYWORDS					*:syn-keyword*
 
@@ -3384,7 +3491,7 @@ DEFINING KEYWORDS					*:syn-keyword*
   :syntax keyword   Type   contained int long char
   :syntax keyword   Type   int long contained char
   :syntax keyword   Type   int long char contained
-<								*E789*
+<								*E789* *E890*
 	When you have a keyword with an optional tail, like Ex commands in
 	Vim, you can put the optional characters inside [], to define all the
 	variations at once: >
@@ -3395,6 +3502,7 @@ DEFINING KEYWORDS					*:syn-keyword*
 	isn't, the keyword will never be recognized.
 	Multi-byte characters can also be used.  These do not have to be in
 	'iskeyword'.
+	See |:syn-iskeyword| for defining syntax specific iskeyword settings.
 
 	A keyword always has higher priority than a match or region, the
 	keyword is used if more than one item matches.	Keywords do not nest
@@ -3638,6 +3746,7 @@ Whether or not it is actually concealed depends on the value of the
 'conceallevel' option.  The 'concealcursor' option is used to decide whether
 concealable items in the current line are displayed unconcealed to be able to
 edit the line.
+Another way to conceal text with with |matchadd()|.
 
 concealends						*:syn-concealends*
 
@@ -3775,7 +3884,7 @@ The 'foldnestmax' option limits the nesting of syntax folds.
 
 
 			*:syn-contains* *E405* *E406* *E407* *E408* *E409*
-contains={groupname},..
+contains={group-name},..
 
 The "contains" argument is followed by a list of syntax group names.  These
 groups will be allowed to begin inside the item (they may extend past the
@@ -3828,13 +3937,13 @@ region where contained items do match.	Note that this may also limit the
 area that is highlighted
 
 
-containedin={groupname}...				*:syn-containedin*
+containedin={group-name}...				*:syn-containedin*
 
 The "containedin" argument is followed by a list of syntax group names.  The
 item will be allowed to begin inside these groups.  This works as if the
 containing item has a "contains=" argument that includes this item.
 
-The {groupname}... can be used just like for "contains", as explained above.
+The {group-name}... can be used just like for "contains", as explained above.
 
 This is useful when adding a syntax item afterwards.  An item can be told to
 be included inside an already existing item, without changing the definition
@@ -3850,7 +3959,7 @@ keywords never contain another item, thus adding them to "containedin" won't
 work.
 
 
-nextgroup={groupname},..				*:syn-nextgroup*
+nextgroup={group-name},..				*:syn-nextgroup*
 
 The "nextgroup" argument is followed by a list of syntax group names,
 separated by commas (just like with "contains", so you can also use patterns).
@@ -4084,7 +4193,7 @@ example, for instance, can be done like this: >
 
 As can be seen here, the \z actually does double duty.	In the start pattern,
 it marks the "\(\I\i*\)" sub-expression as external; in the end pattern, it
-changes the \1 back-reference into an external reference referring to the
+changes the \z1 back-reference into an external reference referring to the
 first external sub-expression in the start pattern.  External references can
 also be used in skip patterns: >
   :syn region foo start="start \(\I\i*\)" skip="not end \z1" end="end \z1"
@@ -4219,7 +4328,7 @@ If the "maxlines={N}" argument is given, the number of lines that are searched
 for a comment or syncing pattern is restricted to N lines backwards (after
 adding "minlines").  This is useful if you have few things to sync on and a
 slow machine.  Example: >
-   :syntax sync ccomment maxlines=500
+   :syntax sync maxlines=500 ccomment
 <
 						*:syn-sync-linebreaks*
 When using a pattern that matches multiple lines, a change in one line may
@@ -4613,6 +4722,8 @@ ctermbg={color-nr}				*highlight-ctermbg*
 	Note that for some color terminals these names may result in the wrong
 	colors!
 
+	You can also use "NONE" to remove the color.
+
 							*:hi-normal-cterm*
 	When setting the "ctermfg" or "ctermbg" colors for the Normal group,
 	these will become the colors used for the non-highlighted text.
@@ -4697,7 +4808,7 @@ guisp={color-name}					*highlight-guisp*
 	    Orange	Purple		Violet
 
 	In the Win32 and MacVim GUI versions, additional system colors are
-	available.  See |win32-colors| and |macvim-colors| respectively.
+	available.  See |win32-colors| and |macvim-colors|.
 
 	You can also specify a color by its Red, Green and Blue values.
 	The format is "#rrggbb", where
@@ -5041,6 +5152,7 @@ This will set the "w:current_syntax" variable to "foo".  The value of
 restoring "b:current_syntax", since the syntax files do set
 "b:current_syntax".  The value set by the syntax file is assigned to
 "w:current_syntax".
+Note: This resets the 'spell', 'spellcapcheck' and 'spellfile' options.
 
 Once a window has its own syntax, syntax commands executed from other windows
 on the same buffer (including :syntax clear) have no effect. Conversely,

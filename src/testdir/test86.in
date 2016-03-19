@@ -329,6 +329,8 @@ EOF
 :$put =string(l)
 :let d=pyeval('{"a": "b", "c": 1, "d": ["e"]}')
 :$put =sort(items(d))
+:let v:errmsg = ''
+:$put ='pyeval(\"None\") = ' . pyeval('None') . v:errmsg
 :if has('float')
 :   let f=pyeval('0.0')
 :   $put =string(f)
@@ -370,7 +372,9 @@ EOF
 :sleep 1
 :py t.running = False
 :py t.join()
-:py l[0] = t.t > 8  # check if the background thread is working
+:" Check if the background thread is working.  Count should be 10, but on a
+:" busy system (AppVeyor) it can be much lower.
+:py l[0] = t.t > 4
 :py del time
 :py del threading
 :py del t
@@ -1094,8 +1098,20 @@ cb.append(">> OutputSetattr")
 ee('del sys.stdout.softspace')
 number_test('sys.stdout.softspace = %s', unsigned=True)
 number_test('sys.stderr.softspace = %s', unsigned=True)
+ee('assert sys.stdout.isatty()==False')
+ee('assert sys.stdout.seekable()==False')
+ee('sys.stdout.close()')
+ee('sys.stdout.flush()')
+ee('assert sys.stderr.isatty()==False')
+ee('assert sys.stderr.seekable()==False')
+ee('sys.stderr.close()')
+ee('sys.stderr.flush()')
 ee('sys.stdout.attr = None')
 cb.append(">> OutputWrite")
+ee('assert sys.stdout.writable()==True')
+ee('assert sys.stdout.readable()==False')
+ee('assert sys.stderr.writable()==True')
+ee('assert sys.stderr.readable()==False')
 ee('sys.stdout.write(None)')
 cb.append(">> OutputWriteLines")
 ee('sys.stdout.writelines(None)')
@@ -1384,6 +1400,7 @@ EOF
 :debug silent! py test_keyboard_interrupt()
 :redir END
 :0 debuggreedy
+:call inputrestore()
 :silent $put =output
 :unlet output
 :py del test_keyboard_interrupt

@@ -29,6 +29,8 @@ SRC = \
 	blowfish.c \
 	buffer.c \
 	charset.c \
+	crypt.c \
+	crypt_zip.c \
 	diff.c \
 	digraph.c \
 	edit.c \
@@ -43,6 +45,7 @@ SRC = \
 	getchar.c \
 	hardcopy.c \
 	hashtab.c \
+	json.c \
 	main.c \
 	mark.c \
 	memfile.c \
@@ -75,6 +78,8 @@ SRC = \
 OBJ =	o/blowfish.o \
 	o/buffer.o \
 	o/charset.o \
+	o/crypt.o \
+	o/crypt_zip.o \
 	o/diff.o \
 	o/digraph.o \
 	o/edit.o \
@@ -89,6 +94,7 @@ OBJ =	o/blowfish.o \
 	o/getchar.o \
 	o/hardcopy.o \
 	o/hashtab.o \
+	o/json.o \
 	o/main.o \
 	o/mark.o \
 	o/memfile.o \
@@ -143,6 +149,10 @@ o/buffer.o:	buffer.c  $(SYMS)
 
 o/charset.o:	charset.c  $(SYMS)
 
+o/crypt.o:	crypt.c  $(SYMS)
+
+o/crypt_zip.o:	crypt_zip.c  $(SYMS)
+
 o/diff.o:	diff.c	$(SYMS)
 
 o/digraph.o:	digraph.c  $(SYMS)
@@ -170,6 +180,8 @@ o/getchar.o: getchar.c	$(SYMS)
 o/hardcopy.o: hardcopy.c	$(SYMS)
 
 o/hashtab.o: hashtab.c	$(SYMS)
+
+o/json.o:	json.c  $(SYMS)
 
 o/main.o: main.c $(SYMS)
 

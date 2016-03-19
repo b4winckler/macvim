@@ -1,15 +1,16 @@
 " Vim syntax file
-" Language:	Fortran 2008 (and earlier versions: 2003, 95, 90, and 77)
-" Version:	0.94
-" Last Change:	2012 June 18
-" Maintainer:	Ajit J. Thakkar (ajit AT unb.ca); <http://www.unb.ca/chem/ajit/>
+" Language:	Fortran 2008 (and older: Fortran 2003, 95, 90, and 77)
+" Version:	0.97
+" Last Change:	2016 Feb. 26
+" Maintainer:	Ajit J. Thakkar <ajit@unb.ca>; <http://www2.unb.ca/~ajit/>
 " Usage:	For instructions, do :help fortran-syntax from Vim
 " Credits:
-"  Version 0.1 was based on the fortran 77 syntax file by Mario Eusebio and
-"  Preben Guldberg. Useful suggestions were made by: Andrej Panjkov,
-"  Bram Moolenaar, Thomas Olsen, Michael Sternberg, Christian Reile,
+"  Version 0.1 (April 2000) was based on the fortran 77 syntax file by Mario Eusebio and
+"  Preben Guldberg. Since then, useful suggestions and contributions have been made,
+"  in chronological order, by:
+"  Andrej Panjkov, Bram Moolenaar, Thomas Olsen, Michael Sternberg, Christian Reile,
 "  Walter Dieudonné, Alexander Wagner, Roman Bertle, Charles Rendleman,
-"  Andrew Griffiths, Joe Krahn, and Hendrik Merx.
+"  Andrew Griffiths, Joe Krahn, Hendrik Merx, Matt Thompson, and Jan Hermann.
 
 if exists("b:current_syntax")
   finish
@@ -19,8 +20,8 @@ let s:cpo_save = &cpo
 set cpo&vim
 
 " Choose fortran_dialect using the priority:
-" source file directive > buffer-local value > global value > default
-" try using directive in first three lines of file
+" source file directive > buffer-local value > global value > file extension
+" first try using directive in first three lines of file
 let b:fortran_retype = getline(1)." ".getline(2)." ".getline(3)
 if b:fortran_retype =~? '\<fortran_dialect\s*=\s*F\>'
   let b:fortran_dialect = "F"
@@ -51,6 +52,12 @@ if !exists("b:fortran_fixed_source")
   elseif exists("fortran_fixed_source")
     " User guarantees fixed source form for all fortran files
     let b:fortran_fixed_source = 1
+  elseif expand("%:e") ==? "f\<90\|95\|03\|08\>"
+    " Free-form file extension defaults as in Intel ifort, gcc(gfortran), NAG, Pathscale, and Cray compilers
+    let b:fortran_fixed_source = 0
+  elseif expand("%:e") ==? "f\|f77\|for"
+    " Fixed-form file extension defaults
+    let b:fortran_fixed_source = 1
   else
     " Modern fortran still allows both free and fixed source form.
     " Assume fixed source form unless signs of free source form
@@ -67,8 +74,8 @@ if !exists("b:fortran_fixed_source")
     while s:ln <= s:lmax
       let s:test = strpart(getline(s:ln),0,5)
       if s:test !~ '^[Cc*]' && s:test !~ '^ *[!#]' && s:test =~ '[^ 0-9\t]' && s:test !~ '^[ 0-9]*\t'
-	let b:fortran_fixed_source = 0
-	break
+        let b:fortran_fixed_source = 0
+        break
       endif
       let s:ln = s:ln + 1
     endwhile
@@ -298,6 +305,41 @@ if b:fortran_dialect == "f08"
   syn keyword fortranIntrinsic        bge bgt ble blt dshiftl dshiftr findloc iall iany iparity image_index lcobound ucobound maskl maskr num_images parity popcnt poppar shifta shiftl shiftr this_image
   syn keyword fortranIO               newunit
   syn keyword fortranType             contiguous
+
+" CUDA fortran
+  syn match fortranTypeCUDA           "\<attributes\>"
+  syn keyword fortranTypeCUDA         host global device value
+  syn keyword fortranTypeCUDA         shared constant pinned texture
+  syn keyword fortranTypeCUDA         dim1 dim2 dim3 dim4
+  syn keyword fortranTypeCUDA         cudadeviceprop cuda_count_kind cuda_stream_kind
+  syn keyword fortranTypeCUDA         cudaEvent cudaFuncAttributes cudaArrayPtr
+  syn keyword fortranTypeCUDA         cudaSymbol cudaChannelFormatDesc cudaPitchedPtr
+  syn keyword fortranTypeCUDA         cudaExtent cudaMemcpy3DParms
+  syn keyword fortranTypeCUDA         cudaFuncCachePreferNone cudaFuncCachePreferShared
+  syn keyword fortranTypeCUDA         cudaFuncCachePreferL1 cudaLimitStackSize
+  syn keyword fortranTypeCUDA         cudaLimitPrintfSize cudaLimitMallocHeapSize
+  syn keyword fortranTypeCUDA         cudaSharedMemBankSizeDefault cudaSharedMemBankSizeFourByte cudaSharedMemBankSizeEightByte
+  syn keyword fortranTypeCUDA         cudaEventDefault cudaEventBlockingSync cudaEventDisableTiming
+  syn keyword fortranTypeCUDA         cudaMemcpyHostToDevice cudaMemcpyDeviceToHost
+  syn keyword fortranTypeCUDA         cudaMemcpyDeviceToDevice
+  syn keyword fortranTypeCUDA         cudaErrorNotReady cudaSuccess cudaErrorInvalidValue
+  syn keyword fortranTypeCUDA         c_devptr
+
+  syn match fortranStringCUDA         "blockidx%[xyz]"
+  syn match fortranStringCUDA         "blockdim%[xyz]"
+  syn match fortranStringCUDA         "griddim%[xyz]"
+  syn match fortranStringCUDA         "threadidx%[xyz]"
+
+  syn keyword fortranIntrinsicCUDA    warpsize syncthreads syncthreads_and syncthreads_count syncthreads_or threadfence threadfence_block threadfence_system gpu_time allthreads anythread ballot
+  syn keyword fortranIntrinsicCUDA    atomicadd atomicsub atomicmax atomicmin atomicand atomicor atomicxor atomicexch atomicinc atomicdec atomiccas sizeof __shfl __shfl_up __shfl_down __shfl_xor
+  syn keyword fortranIntrinsicCUDA    cudaChooseDevice cudaDeviceGetCacheConfig cudaDeviceGetLimit cudaDeviceGetSharedMemConfig cudaDeviceReset cudaDeviceSetCacheConfig cudaDeviceSetLimit cudaDeviceSetSharedMemConfig cudaDeviceSynchronize cudaGetDevice cudaGetDeviceCount cudaGetDeviceProperties cudaSetDevice cudaSetDeviceFlags cudaSetValidDevices
+  syn keyword fortranIntrinsicCUDA    cudaThreadExit cudaThreadSynchronize cudaGetLastError cudaGetErrorString cudaPeekAtLastError cudaStreamCreate cudaStreamDestroy cudaStreamQuery cudaStreamSynchronize cudaStreamWaitEvent cudaEventCreate cudaEventCreateWithFlags cudaEventDestroy cudaEventElapsedTime cudaEventQuery cudaEventRecord cudaEventSynchronize
+  syn keyword fortranIntrinsicCUDA    cudaFuncGetAttributes cudaFuncSetCacheConfig cudaFuncSetSharedMemConfig cudaSetDoubleForDevice cudaSetDoubleForHost cudaFree cudaFreeArray cudaFreeHost cudaGetSymbolAddress cudaGetSymbolSize
+  syn keyword fortranIntrinsicCUDA    cudaHostAlloc cudaHostGetDevicePointer cudaHostGetFlags cudaHostRegister cudaHostUnregister cudaMalloc cudaMallocArray cudaMallocHost cudaMallocPitch cudaMalloc3D cudaMalloc3DArray
+  syn keyword fortranIntrinsicCUDA    cudaMemcpy cudaMemcpyArraytoArray cudaMemcpyAsync cudaMemcpyFromArray cudaMemcpyFromSymbol cudaMemcpyFromSymbolAsync cudaMemcpyPeer cudaMemcpyPeerAsync cudaMemcpyToArray cudaMemcpyToSymbol cudaMemcpyToSymbolAsync cudaMemcpy2D cudaMemcpy2DArrayToArray cudaMemcpy2DAsync cudaMemcpy2DFromArray cudaMemcpy2DToArray cudaMemcpy3D cudaMemcpy3DAsync
+  syn keyword fortranIntrinsicCUDA    cudaMemGetInfo cudaMemset cudaMemset2D cudaMemset3D cudaDeviceCanAccessPeer cudaDeviceDisablePeerAccess cudaDeviceEnablePeerAccess cudaPointerGetAttributes cudaDriverGetVersion cudaRuntimeGetVersion
+
+  syn region none matchgroup=fortranType start="<<<" end=">>>" contains=ALLBUT,none
 endif
 
 syn cluster fortranCommentGroup contains=fortranTodo
@@ -366,7 +408,7 @@ if exists("fortran_fold")
     else
       syn region fortran77Loop transparent fold keepend start="\<do\s\+\z(\d\+\)" end="^\s*\z1\>" contains=ALLBUT,fortranUnitHeader,fortranStructure,fortranStorageClass,fortranType,fortranProgram,fortranModule,fortranSubroutine,fortranFunction,fortranBlockData
       syn region fortran90Loop transparent fold keepend extend start="\(\<end\s\+\)\@<!\<do\(\s\+\a\|\s*$\)" skip="^\s*[!#].*$" excludenl end="\<end\s*do\>" contains=ALLBUT,fortranUnitHeader,fortranStructure,fortranStorageClass,fortranType,fortranProgram,fortranModule,fortranSubroutine,fortranFunction,fortranBlockData
-      syn region fortranIfBlock transparent fold keepend extend start="\(\<e\(nd\|lse\)\s\+\)\@<!\<if\s*(.\+)\s*then\>" skip="^\s*[!#].*$" end="\<end\s*if\>" contains=ALLBUT,fortranUnitHeader,fortranStructure,fortranStorageClass,fortranType,fortranProgram,fortranModule,fortranSubroutine,fortranFunction,fortranBlockData
+      syn region fortranIfBlock transparent fold keepend extend start="\(\<e\(nd\|lse\)\s\+\)\@<!\<if\s*(\(.\|&\s*\n\)\+)\(\s\|&\s*\n\)*then\>" skip="^\s*[!#].*$" end="\<end\s*if\>" contains=ALLBUT,fortranUnitHeader,fortranStructure,fortranStorageClass,fortranType,fortranProgram,fortranModule,fortranSubroutine,fortranFunction,fortranBlockData
       syn region fortranCase transparent fold keepend extend start="\<select\s*case\>" skip="^\s*[!#].*$" end="\<end\s*select\>" contains=ALLBUT,fortranUnitHeader,fortranStructure,fortranStorageClass,fortranType,fortranProgram,fortranModule,fortranSubroutine,fortranFunction,fortranBlockData
     endif
   endif
@@ -452,6 +494,11 @@ else
   hi! def link fortranStringR	        fortranString
   hi! def link fortranConditionalR	fortranConditional
 endif
+
+" CUDA
+hi def link fortranIntrinsicCUDA        fortranIntrinsic
+hi def link fortranTypeCUDA             fortranType
+hi def link fortranStringCUDA           fortranString
 
 hi def link fortranFormatSpec	Identifier
 hi def link fortranFloat	Float

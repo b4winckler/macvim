@@ -18,13 +18,8 @@
  * the view is filled by the text view.
  */
 
-#import "Miscellaneous.h"   // Defines MM_ENABLE_ATSUI
-
-#if MM_ENABLE_ATSUI
-# import "MMAtsuiTextView.h"
-#else
-# import "MMCoreTextView.h"
-#endif
+#import "Miscellaneous.h"
+#import "MMCoreTextView.h"
 #import "MMTextView.h"
 #import "MMVimController.h"
 #import "MMVimView.h"
@@ -97,20 +92,11 @@ enum {
     NSInteger renderer = [ud integerForKey:MMRendererKey];
     ASLogInfo(@"Use renderer=%ld", renderer);
 
-#if MM_ENABLE_ATSUI
-    if (MMRendererATSUI == renderer) {
-        // HACK! 'textView' has type MMTextView, but MMAtsuiTextView is not
-        // derived from MMTextView.
-        textView = [[MMAtsuiTextView alloc] initWithFrame:frame];
-    }
-#else
     if (MMRendererCoreText == renderer) {
         // HACK! 'textView' has type MMTextView, but MMCoreTextView is not
         // derived from MMTextView.
         textView = (MMTextView *)[[MMCoreTextView alloc] initWithFrame:frame];
-    }
-#endif
-    else {
+    } else {
         // Use Cocoa text system for text rendering.
         textView = [[MMTextView alloc] initWithFrame:frame];
     }
@@ -129,8 +115,8 @@ enum {
 
     // Create the tab bar control (which is responsible for actually
     // drawing the tabline and tabs).
-    NSRect tabFrame = { { 0, frame.size.height - 22 },
-                        { frame.size.width, 22 } };
+    NSRect tabFrame = { { 0, frame.size.height - kPSMTabBarControlHeight },
+                        { frame.size.width, kPSMTabBarControlHeight } };
     tabBarControl = [[PSMTabBarControl alloc] initWithFrame:tabFrame];
 
     [tabView setDelegate:tabBarControl];
@@ -139,10 +125,18 @@ enum {
     [tabBarControl setDelegate:self];
     [tabBarControl setHidden:YES];
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+    CGFloat screenWidth = [[NSScreen mainScreen] frame].size.width;
+    [tabBarControl setStyleNamed:@"Yosemite"];
+    [tabBarControl setCellMinWidth:120];
+    [tabBarControl setCellMaxWidth:screenWidth];
+    [tabBarControl setCellOptimumWidth:screenWidth];
+#else
     [tabBarControl setCellMinWidth:[ud integerForKey:MMTabMinWidthKey]];
     [tabBarControl setCellMaxWidth:[ud integerForKey:MMTabMaxWidthKey]];
     [tabBarControl setCellOptimumWidth:
                                      [ud integerForKey:MMTabOptimumWidthKey]];
+#endif
 
     [tabBarControl setShowAddTabButton:[ud boolForKey:MMShowAddTabButtonKey]];
     [[tabBarControl addTabButton] setTarget:self];
@@ -175,7 +169,7 @@ enum {
 
     // HACK! The text storage is the principal owner of the text system, but we
     // keep only a reference to the text view, so release the text storage
-    // first (unless we are using the ATSUI renderer).
+    // first (unless we are using the CoreText renderer).
     if ([textView isKindOfClass:[MMTextView class]])
         [[textView textStorage] release];
 
@@ -199,7 +193,11 @@ enum {
             || !([[self window] styleMask] & NSTexturedBackgroundWindowMask))
         return;
 
+#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7)
+    int sw = [NSScroller scrollerWidthForControlSize:NSRegularControlSize scrollerStyle:NSScrollerStyleLegacy];
+#else
     int sw = [NSScroller scrollerWidth];
+#endif
 
     // add .5 to the pixel locations to put the lines on a pixel boundary.
     // the top and right edges of the rect will be outside of the bounds rect
@@ -392,7 +390,10 @@ enum {
     // which tab should be selected at all times.  However, the AppKit will
     // automatically select the first tab added to a tab view.
 
-    NSTabViewItem *tvi = [[NSTabViewItem alloc] initWithIdentifier:nil];
+    // The documentation claims initWithIdentifier can be given a nil identifier, but the API itself
+    // is decorated such that doing so produces a warning, so the tab count is used as identifier.
+    NSInteger identifier = [[self tabView] numberOfTabViewItems];
+    NSTabViewItem *tvi = [[NSTabViewItem alloc] initWithIdentifier:[NSNumber numberWithInt:identifier]];
 
     // NOTE: If this is the first tab it will be automatically selected.
     vimTaskSelectedTab = YES;
@@ -447,12 +448,8 @@ enum {
                     identifier:(int32_t)ident
 {
     MMScroller *scroller = [self scrollbarForIdentifier:ident index:NULL];
-#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_5)
     [scroller setDoubleValue:val];
     [scroller setKnobProportion:prop];
-#else
-    [scroller setFloatValue:val knobProportion:prop];
-#endif
     [scroller setEnabled:prop != 1.f];
 }
 
@@ -699,11 +696,16 @@ enum {
             continue;
 
         NSRect rect;
+#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7)
+        CGFloat scrollerWidth = [NSScroller scrollerWidthForControlSize:NSRegularControlSize scrollerStyle:NSScrollerStyleLegacy];
+#else
+        CGFloat scrollerWidth = [NSScroller scrollerWidth];
+#endif
         if ([scroller type] == MMScrollerTypeBottom) {
             rect = [textView rectForColumnsInRange:[scroller range]];
-            rect.size.height = [NSScroller scrollerWidth];
+            rect.size.height = scrollerWidth;
             if (leftSbVisible)
-                rect.origin.x += [NSScroller scrollerWidth];
+                rect.origin.x += scrollerWidth;
 
             // HACK!  Make sure the horizontal scrollbar covers the text view
             // all the way to the right, otherwise it looks ugly when the user
@@ -722,7 +724,7 @@ enum {
             if (NSMaxX(rect) > NSMaxX(textViewFrame))
                 rect.size.width -= NSMaxX(rect) - NSMaxX(textViewFrame);
             if (!rightSbVisible)
-                rect.size.width -= [NSScroller scrollerWidth];
+                rect.size.width -= scrollerWidth;
             if (rect.size.width < 0)
                 rect.size.width = 0;
         } else {
@@ -730,7 +732,7 @@ enum {
             // Adjust for the fact that text layout is flipped.
             rect.origin.y = NSMaxY(textViewFrame) - rect.origin.y
                     - rect.size.height;
-            rect.size.width = [NSScroller scrollerWidth];
+            rect.size.width = scrollerWidth;
             if ([scroller type] == MMScrollerTypeRight)
                 rect.origin.x = NSMaxX(textViewFrame);
 
@@ -752,9 +754,9 @@ enum {
             // Vertical scrollers must not cover the resize box in the
             // bottom-right corner of the window.
             if ([[self window] showsResizeIndicator]  // XXX: make this a flag
-                && rect.origin.y < [NSScroller scrollerWidth]) {
-                rect.size.height -= [NSScroller scrollerWidth] - rect.origin.y;
-                rect.origin.y = [NSScroller scrollerWidth];
+                && rect.origin.y < scrollerWidth) {
+                rect.size.height -= scrollerWidth - rect.origin.y;
+                rect.origin.y = scrollerWidth;
             }
 
             // Make sure scrollbar rect is bounded by the text view frame.
@@ -808,16 +810,21 @@ enum {
 - (NSSize)vimViewSizeForTextViewSize:(NSSize)textViewSize
 {
     NSSize size = textViewSize;
+#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7)
+    CGFloat scrollerWidth = [NSScroller scrollerWidthForControlSize:NSRegularControlSize scrollerStyle:NSScrollerStyleLegacy];
+#else
+    CGFloat scrollerWidth = [NSScroller scrollerWidth];
+#endif
 
     if (![[self tabBarControl] isHidden])
         size.height += [[self tabBarControl] frame].size.height;
 
     if ([self bottomScrollbarVisible])
-        size.height += [NSScroller scrollerWidth];
+        size.height += scrollerWidth;
     if ([self leftScrollbarVisible])
-        size.width += [NSScroller scrollerWidth];
+        size.width += scrollerWidth;
     if ([self rightScrollbarVisible])
-        size.width += [NSScroller scrollerWidth];
+        size.width += scrollerWidth;
 
     return size;
 }
@@ -825,20 +832,25 @@ enum {
 - (NSRect)textViewRectForVimViewSize:(NSSize)contentSize
 {
     NSRect rect = { {0, 0}, {contentSize.width, contentSize.height} };
+#if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7)
+    CGFloat scrollerWidth = [NSScroller scrollerWidthForControlSize:NSRegularControlSize scrollerStyle:NSScrollerStyleLegacy];
+#else
+    CGFloat scrollerWidth = [NSScroller scrollerWidth];
+#endif
 
     if (![[self tabBarControl] isHidden])
         rect.size.height -= [[self tabBarControl] frame].size.height;
 
     if ([self bottomScrollbarVisible]) {
-        rect.size.height -= [NSScroller scrollerWidth];
-        rect.origin.y += [NSScroller scrollerWidth];
+        rect.size.height -= scrollerWidth;
+        rect.origin.y += scrollerWidth;
     }
     if ([self leftScrollbarVisible]) {
-        rect.size.width -= [NSScroller scrollerWidth];
-        rect.origin.x += [NSScroller scrollerWidth];
+        rect.size.width -= scrollerWidth;
+        rect.origin.x += scrollerWidth;
     }
     if ([self rightScrollbarVisible])
-        rect.size.width -= [NSScroller scrollerWidth];
+        rect.size.width -= scrollerWidth;
 
     return rect;
 }

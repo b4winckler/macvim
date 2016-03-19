@@ -465,11 +465,29 @@ OutputWritelines(OutputObject *self, PyObject *seq)
 }
 
     static PyObject *
-OutputFlush(PyObject *self UNUSED)
+AlwaysNone(PyObject *self UNUSED)
 {
     /* do nothing */
     Py_INCREF(Py_None);
     return Py_None;
+}
+
+    static PyObject *
+AlwaysFalse(PyObject *self UNUSED)
+{
+    /* do nothing */
+    PyObject	*ret = Py_False;
+    Py_INCREF(ret);
+    return ret;
+}
+
+    static PyObject *
+AlwaysTrue(PyObject *self UNUSED)
+{
+    /* do nothing */
+    PyObject	*ret = Py_True;
+    Py_INCREF(ret);
+    return ret;
 }
 
 /***************/
@@ -478,7 +496,12 @@ static struct PyMethodDef OutputMethods[] = {
     /* name,	    function,				calling,	doc */
     {"write",	    (PyCFunction)OutputWrite,		METH_O,		""},
     {"writelines",  (PyCFunction)OutputWritelines,	METH_O,		""},
-    {"flush",	    (PyCFunction)OutputFlush,		METH_NOARGS,	""},
+    {"flush",	    (PyCFunction)AlwaysNone,		METH_NOARGS,	""},
+    {"close",	    (PyCFunction)AlwaysNone,		METH_NOARGS,	""},
+    {"isatty",	    (PyCFunction)AlwaysFalse,		METH_NOARGS,	""},
+    {"readable",    (PyCFunction)AlwaysFalse,		METH_NOARGS,	""},
+    {"seekable",    (PyCFunction)AlwaysFalse,		METH_NOARGS,	""},
+    {"writable",    (PyCFunction)AlwaysTrue,		METH_NOARGS,	""},
     {"__dir__",	    (PyCFunction)OutputDir,		METH_NOARGS,	""},
     { NULL,	    NULL,				0,		NULL}
 };
@@ -747,12 +770,14 @@ VimToPython(typval_T *our_tv, int depth, PyObject *lookup_dict)
     else if (our_tv->v_type == VAR_DICT)
     {
 
-	hashtab_T	*ht = &our_tv->vval.v_dict->dv_hashtab;
-	long_u	todo = ht->ht_used;
+	hashtab_T	*ht;
+	long_u		todo;
 	hashitem_T	*hi;
 	dictitem_T	*di;
+
 	if (our_tv->vval.v_dict == NULL)
 	    return NULL;
+	ht = &our_tv->vval.v_dict->dv_hashtab;
 
 	if (!(ret = PyDict_New()))
 	    return NULL;
@@ -763,6 +788,7 @@ VimToPython(typval_T *our_tv, int depth, PyObject *lookup_dict)
 	    return NULL;
 	}
 
+	todo = ht->ht_used;
 	for (hi = ht->ht_array; todo > 0; ++hi)
 	{
 	    if (!HASHITEM_EMPTY(hi))
@@ -783,6 +809,25 @@ VimToPython(typval_T *our_tv, int depth, PyObject *lookup_dict)
 		}
 	    }
 	}
+    }
+    else if (our_tv->v_type == VAR_SPECIAL)
+    {
+	if (our_tv->vval.v_number == VVAL_FALSE)
+	{
+	    ret = Py_False;
+	    Py_INCREF(ret);
+	}
+	else if (our_tv->vval.v_number == VVAL_TRUE)
+	{
+	    ret = Py_True;
+	    Py_INCREF(ret);
+	}
+	else
+	{
+	    Py_INCREF(Py_None);
+	    ret = Py_None;
+	}
+	return ret;
     }
     else
     {
@@ -1016,7 +1061,7 @@ VimForeachRTP(PyObject *self UNUSED, PyObject *callable)
     data.callable = callable;
     data.result = NULL;
 
-    do_in_runtimepath(NULL, FALSE, &map_rtp_callback, &data);
+    do_in_runtimepath(NULL, 0, &map_rtp_callback, &data);
 
     if (data.result == NULL)
     {
@@ -1105,7 +1150,7 @@ Vim_GetPaths(PyObject *self UNUSED)
     if (!(ret = PyList_New(0)))
 	return NULL;
 
-    do_in_runtimepath(NULL, FALSE, &map_finder_callback, ret);
+    do_in_runtimepath(NULL, 0, &map_finder_callback, ret);
 
     if (PyErr_Occurred())
     {
@@ -2899,7 +2944,7 @@ FunctionCall(FunctionObject *self, PyObject *argsObject, PyObject *kwargs)
     Python_Lock_Vim();
 
     VimTryStart();
-    error = func_call(name, &args, selfdict, &rettv);
+    error = func_call(name, &args, NULL, selfdict, &rettv);
 
     Python_Release_Vim();
     Py_END_ALLOW_THREADS
@@ -3172,6 +3217,7 @@ set_option_value_for(
 	    if (switch_win(&save_curwin, &save_curtab, (win_T *)from,
 			      win_find_tabpage((win_T *)from), FALSE) == FAIL)
 	    {
+		restore_win(save_curwin, save_curtab, TRUE);
 		if (VimTryEnd())
 		    return -1;
 		PyErr_SET_VIM(N_("problem while switching windows"));
@@ -4032,9 +4078,13 @@ switch_to_win_for_buf(
     win_T	*wp;
     tabpage_T	*tp;
 
-    if (find_win_for_buf(buf, &wp, &tp) == FAIL
-	    || switch_win(save_curwinp, save_curtabp, wp, tp, TRUE) == FAIL)
+    if (find_win_for_buf(buf, &wp, &tp) == FAIL)
 	switch_buffer(save_curbufp, buf);
+    else if (switch_win(save_curwinp, save_curtabp, wp, tp, TRUE) == FAIL)
+    {
+	restore_win(*save_curwinp, *save_curtabp, TRUE);
+	switch_buffer(save_curbufp, buf);
+    }
 }
 
     static void
@@ -4196,7 +4246,9 @@ SetBufferLineList(
 		    break;
 		}
 	    }
-	    if (buf == curbuf)
+	    if (buf == curbuf && (save_curwin != NULL || save_curbuf == NULL))
+		/* Using an existing window for the buffer, adjust the cursor
+		 * position. */
 		py_fix_cursor((linenr_T)lo, (linenr_T)hi, (linenr_T)-n);
 	    if (save_curbuf == NULL)
 		/* Only adjust marks if we managed to switch to a window that
@@ -5488,41 +5540,48 @@ run_eval(const char *cmd, typval_T *rettv
     }
     else
     {
-	if (ConvertFromPyObject(run_ret, rettv) == -1)
+	if (run_ret != Py_None && ConvertFromPyObject(run_ret, rettv) == -1)
 	    EMSG(_("E859: Failed to convert returned python object to vim value"));
 	Py_DECREF(run_ret);
     }
     PyErr_Clear();
 }
 
-    static void
+    static int
 set_ref_in_py(const int copyID)
 {
     pylinkedlist_T	*cur;
     dict_T	*dd;
     list_T	*ll;
+    int		abort = FALSE;
 
     if (lastdict != NULL)
-	for(cur = lastdict ; cur != NULL ; cur = cur->pll_prev)
+    {
+	for(cur = lastdict ; !abort && cur != NULL ; cur = cur->pll_prev)
 	{
 	    dd = ((DictionaryObject *) (cur->pll_obj))->dict;
 	    if (dd->dv_copyID != copyID)
 	    {
 		dd->dv_copyID = copyID;
-		set_ref_in_ht(&dd->dv_hashtab, copyID);
+		abort = abort || set_ref_in_ht(&dd->dv_hashtab, copyID, NULL);
 	    }
 	}
+    }
 
     if (lastlist != NULL)
-	for(cur = lastlist ; cur != NULL ; cur = cur->pll_prev)
+    {
+	for(cur = lastlist ; !abort && cur != NULL ; cur = cur->pll_prev)
 	{
 	    ll = ((ListObject *) (cur->pll_obj))->list;
 	    if (ll->lv_copyID != copyID)
 	    {
 		ll->lv_copyID = copyID;
-		set_ref_in_list(ll, copyID);
+		abort = abort || set_ref_in_list(ll, copyID, NULL);
 	    }
 	}
+    }
+
+    return abort;
 }
 
     static int
@@ -5772,11 +5831,10 @@ convert_dl(PyObject *obj, typval_T *tv,
 	}
 	/* As we are not using copy_tv which increments reference count we must
 	 * do it ourself. */
-	switch(tv->v_type)
-	{
-	    case VAR_DICT: ++tv->vval.v_dict->dv_refcount; break;
-	    case VAR_LIST: ++tv->vval.v_list->lv_refcount; break;
-	}
+	if (tv->v_type == VAR_DICT)
+	    ++tv->vval.v_dict->dv_refcount;
+	else if (tv->v_type == VAR_LIST)
+	    ++tv->vval.v_list->lv_refcount;
     }
     else
     {

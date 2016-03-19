@@ -1,7 +1,8 @@
 " Vim indent file
 " Language:	Rnoweb
 " Author:	Jakson Alves de Aquino <jalvesaq@gmail.com>
-" Last Change:	Wed Jul 09, 2014  07:28PM
+" Homepage:     https://github.com/jalvesaq/R-Vim-runtime
+" Last Change:	Tue Apr 07, 2015  04:38PM
 
 
 " Only load this indent file when no other was loaded.
@@ -23,7 +24,8 @@ if exists("*GetRnowebIndent")
 endif
 
 function GetRnowebIndent()
-  if getline(".") =~ "^<<.*>>=$"
+  let curline = getline(".")
+  if curline =~ '^<<.*>>=$' || curline =~ '^\s*@$'
     return 0
   endif
   if search("^<<", "bncW") > search("^@", "bncW")

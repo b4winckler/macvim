@@ -92,6 +92,8 @@ SRC = \
 	blowfish.c \
 	buffer.c \
 	charset.c \
+	crypt.c \
+	crypt_zip.c \
 	diff.c \
 	digraph.c \
 	edit.c \
@@ -106,6 +108,7 @@ SRC = \
 	getchar.c \
 	hardcopy.c \
 	hashtab.c \
+	json.c \
 	main.c \
 	mark.c \
 	memfile.c \
@@ -139,6 +142,8 @@ OBJ = \
 	blowfish.o \
 	buffer.o \
 	charset.o \
+	crypt.o \
+	crypt_zip.o \
 	diff.o \
 	digraph.o \
 	edit.o \
@@ -153,6 +158,7 @@ OBJ = \
 	getchar.o \
 	hardcopy.o \
 	hashtab.o \
+	json.o \
 	main.o \
 	mark.o \
 	memfile.o \
@@ -186,6 +192,8 @@ PRO = \
 	proto/blowfish.pro \
 	proto/buffer.pro \
 	proto/charset.pro \
+	proto/crypt.pro \
+	proto/crypt_zip.pro \
 	proto/diff.pro \
 	proto/digraph.pro \
 	proto/edit.pro \
@@ -200,6 +208,7 @@ PRO = \
 	proto/getchar.pro \
 	proto/hardcopy.pro \
 	proto/hashtab.pro \
+	proto/json.pro \
 	proto/main.pro \
 	proto/mark.pro \
 	proto/memfile.pro \
@@ -290,6 +299,10 @@ buffer.o:		buffer.c
 proto/buffer.pro:	buffer.c
 charset.o:		charset.c
 proto/charset.pro:	charset.c
+crypt.o:		crypt.c
+proto/crypt.pro:	crypt.c
+crypt_zip.o:		crypt_zip.c
+proto/crypt_zip.pro:	crypt_zip.c
 diff.o:			diff.c
 proto/diff.pro:		diff.c
 digraph.o:		digraph.c
@@ -318,6 +331,8 @@ hardcopy.o:		hardcopy.c
 proto/hardcopy.pro:	hardcopy.c
 hashtab.o:		hashtab.c
 proto/hashtab.pro:	hashtab.c
+json.o:			json.c
+proto/json.pro:		json.c
 main.o:			main.c
 proto/main.pro:		main.c
 mark.o:			mark.c

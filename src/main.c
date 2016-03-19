@@ -10,10 +10,6 @@
 #define EXTERN
 #include "vim.h"
 
-#ifdef SPAWNO
-# include <spawno.h>		/* special MS-DOS swapping library */
-#endif
-
 #ifdef __CYGWIN__
 # ifndef WIN32
 #  include <cygwin/version.h>
@@ -54,6 +50,7 @@ typedef struct
 
     int		want_full_screen;
     int		stdout_isatty;		/* is stdout a terminal? */
+    int		not_a_term;		/* no warning for missing term? */
     char_u	*term;			/* specified terminal name */
 #ifdef FEAT_CRYPT
     int		ask_for_key;		/* -x argument */
@@ -74,7 +71,8 @@ typedef struct
     char_u	*serverStrEnc;		/* encoding of serverStr */
     char_u	*servername;		/* allocated name for our server */
 #endif
-#if (!defined(UNIX) && !defined(__EMX__)) || defined(ARCHIE)
+#if !defined(UNIX) && !defined(__EMX__)
+# define EXPAND_FILENAMES
     int		literal;		/* don't expand file names */
 #endif
 #ifdef MSWIN
@@ -93,37 +91,37 @@ typedef struct
 #define EDIT_QF	    4	    /* start in quickfix mode */
 
 #if (defined(UNIX) || defined(VMS)) && !defined(NO_VIM_MAIN)
-static int file_owned __ARGS((char *fname));
+static int file_owned(char *fname);
 #endif
-static void mainerr __ARGS((int, char_u *));
+static void mainerr(int, char_u *);
 #ifndef NO_VIM_MAIN
-static void main_msg __ARGS((char *s));
-static void usage __ARGS((void));
-static int get_number_arg __ARGS((char_u *p, int *idx, int def));
+static void main_msg(char *s);
+static void usage(void);
+static int get_number_arg(char_u *p, int *idx, int def);
 # if defined(HAVE_LOCALE_H) || defined(X_LOCALE)
-static void init_locale __ARGS((void));
+static void init_locale(void);
 # endif
-static void parse_command_name __ARGS((mparm_T *parmp));
-static void early_arg_scan __ARGS((mparm_T *parmp));
-static void command_line_scan __ARGS((mparm_T *parmp));
-static void check_tty __ARGS((mparm_T *parmp));
-static void read_stdin __ARGS((void));
-static void create_windows __ARGS((mparm_T *parmp));
+static void parse_command_name(mparm_T *parmp);
+static void early_arg_scan(mparm_T *parmp);
+static void command_line_scan(mparm_T *parmp);
+static void check_tty(mparm_T *parmp);
+static void read_stdin(void);
+static void create_windows(mparm_T *parmp);
 # ifdef FEAT_WINDOWS
-static void edit_buffers __ARGS((mparm_T *parmp));
+static void edit_buffers(mparm_T *parmp, char_u *cwd);
 # endif
-static void exe_pre_commands __ARGS((mparm_T *parmp));
-static void exe_commands __ARGS((mparm_T *parmp));
-static void source_startup_scripts __ARGS((mparm_T *parmp));
-static void main_start_gui __ARGS((void));
+static void exe_pre_commands(mparm_T *parmp);
+static void exe_commands(mparm_T *parmp);
+static void source_startup_scripts(mparm_T *parmp);
+static void main_start_gui(void);
 # if defined(HAS_SWAP_EXISTS_ACTION)
-static void check_swap_exists_action __ARGS((void));
+static void check_swap_exists_action(void);
 # endif
 # if defined(FEAT_CLIENTSERVER) || defined(PROTO)
-static void exec_on_server __ARGS((mparm_T *parmp));
-static void prepare_server __ARGS((mparm_T *parmp));
-static void cmdsrv_main __ARGS((int *argc, char **argv, char_u *serverName_arg, char_u **serverStr));
-static char_u *serverMakeName __ARGS((char_u *arg, char *cmd));
+static void exec_on_server(mparm_T *parmp);
+static void prepare_server(mparm_T *parmp);
+static void cmdsrv_main(int *argc, char **argv, char_u *serverName_arg, char_u **serverStr);
+static char_u *serverMakeName(char_u *arg, char *cmd);
 # endif
 #endif
 
@@ -149,6 +147,9 @@ static char *(main_errors[]) =
 
 #ifndef PROTO		/* don't want a prototype for main() */
 #ifndef NO_VIM_MAIN	/* skip this for unittests */
+
+static char_u *start_dir = NULL;	/* current working dir on startup */
+
     int
 # ifdef VIMDLL
 _export
@@ -161,9 +162,7 @@ VimMain
 # else
 main
 # endif
-(argc, argv)
-    int		argc;
-    char	**argv;
+(int argc, char **argv)
 {
     char_u	*fname = NULL;		/* file name from command line */
     mparm_T	params;			/* various parameters passed between
@@ -184,6 +183,14 @@ main
      * NameBuff.  Thus emsg2() cannot be called!
      */
     mch_early_init();
+
+#if defined(WIN32) && defined(FEAT_MBYTE)
+    /*
+     * MingW expands command line arguments, which confuses our code to
+     * convert when 'encoding' changes.  Get the unexpanded arguments.
+     */
+    argc = get_cmd_argsW(&argv);
+#endif
 
     /* Many variables are in "params" so that we can pass them to invoked
      * functions without a lot of arguments.  "argc" and "argv" are also
@@ -405,18 +412,23 @@ main
 
     if (GARGCOUNT > 0)
     {
-#if (!defined(UNIX) && !defined(__EMX__)) || defined(ARCHIE)
+#ifdef EXPAND_FILENAMES
 	/*
 	 * Expand wildcards in file names.
 	 */
 	if (!params.literal)
 	{
+	    start_dir = alloc(MAXPATHL);
+	    if (start_dir != NULL)
+		mch_dirname(start_dir, MAXPATHL);
 	    /* Temporarily add '(' and ')' to 'isfname'.  These are valid
 	     * filename characters but are excluded from 'isfname' to make
 	     * "gf" work on a file name in parenthesis (e.g.: see vim.h). */
 	    do_cmdline_cmd((char_u *)":set isf+=(,)");
 	    alist_expand(NULL, 0);
 	    do_cmdline_cmd((char_u *)":set isf&");
+	    if (start_dir != NULL)
+		mch_chdir((char *)start_dir);
 	}
 #endif
 	fname = alist_name(&GARGLIST[0]);
@@ -442,6 +454,8 @@ main
 	 * If the cd fails, it doesn't matter.
 	 */
 	(void)vim_chdirfile(fname);
+	if (start_dir != NULL)
+	    mch_dirname(start_dir, MAXPATHL);
     }
 #endif
     TIME_MSG("expanding arguments");
@@ -496,14 +510,15 @@ main
 		expand_env((char_u *)"$HOME", NameBuff, MAXPATHL);
 		vim_chdir(NameBuff);
 	    }
+	    if (start_dir != NULL)
+		mch_dirname(start_dir, MAXPATHL);
 	}
     }
 #endif
 
     /*
      * mch_init() sets up the terminal (window) for use.  This must be
-     * done after resetting full_screen, otherwise it may move the cursor
-     * (MSDOS).
+     * done after resetting full_screen, otherwise it may move the cursor.
      * Note that we may use mch_exit() before mch_init()!
      */
     mch_init();
@@ -629,11 +644,14 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
     if (p_lpl)
     {
 # ifdef VMS	/* Somehow VMS doesn't handle the "**". */
-	source_runtime((char_u *)"plugin/*.vim", TRUE);
+	source_runtime((char_u *)"plugin/*.vim", DIP_ALL);
 # else
-	source_runtime((char_u *)"plugin/**/*.vim", TRUE);
+	source_runtime((char_u *)"plugin/**/*.vim", DIP_ALL);
 # endif
 	TIME_MSG("loading plugins");
+
+	ex_packloadall(NULL);
+	TIME_MSG("loading packages");
     }
 #endif
 
@@ -702,10 +720,6 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
 	if (!gui.in_use && params.evim_mode)
 	    mch_exit(1);
     }
-#endif
-
-#ifdef SPAWNO		/* special MSDOS swapping library */
-    init_SPAWNO("", SWAP_ANY);
 #endif
 
 #ifdef FEAT_VIMINFO
@@ -833,8 +847,11 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
 
     starttermcap();	    /* start termcap if not done by wait_return() */
     TIME_MSG("start termcap");
-#if defined(FEAT_TERMRESPONSE) && defined(FEAT_MBYTE)
+#if defined(FEAT_TERMRESPONSE)
+# if defined(FEAT_MBYTE)
     may_req_ambiguous_char_width();
+# endif
+    may_req_bg_color();
 #endif
 
 #ifdef FEAT_MOUSE
@@ -862,8 +879,8 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
 #ifdef FEAT_CRYPT
     if (params.ask_for_key)
     {
-	(void)blowfish_self_test();
-	(void)get_crypt_key(TRUE, TRUE);
+	crypt_check_current_method();
+	(void)crypt_get_key(TRUE, TRUE);
 	TIME_MSG("getting crypt key");
     }
 #endif
@@ -935,8 +952,9 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
      * If opened more than one window, start editing files in the other
      * windows.
      */
-    edit_buffers(&params);
+    edit_buffers(&params, start_dir);
 #endif
+    vim_free(start_dir);
 
 #ifdef FEAT_DIFF
     if (params.diff_mode)
@@ -1006,6 +1024,7 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
      * main loop. */
     {
 	int default_regname = 0;
+
 	adjust_clip_reg(&default_regname);
 	set_reg_var(default_regname);
     }
@@ -1095,16 +1114,17 @@ vim_main2(int argc UNUSED, char **argv UNUSED)
  * commands, return when entering Ex mode.  "noexmode" is TRUE then.
  */
     void
-main_loop(cmdwin, noexmode)
-    int		cmdwin;	    /* TRUE when working in the command-line window */
-    int		noexmode;   /* TRUE when return on entering Ex mode */
+main_loop(
+    int		cmdwin,	    /* TRUE when working in the command-line window */
+    int		noexmode)   /* TRUE when return on entering Ex mode */
 {
     oparg_T	oa;				/* operator arguments */
-    int		previous_got_int = FALSE;	/* "got_int" was TRUE */
+    volatile int previous_got_int = FALSE;	/* "got_int" was TRUE */
 #ifdef FEAT_CONCEAL
-    linenr_T	conceal_old_cursor_line = 0;
-    linenr_T	conceal_new_cursor_line = 0;
-    int		conceal_update_lines = FALSE;
+    /* these are static to avoid a compiler warning */
+    static linenr_T	conceal_old_cursor_line = 0;
+    static linenr_T	conceal_new_cursor_line = 0;
+    static int		conceal_update_lines = FALSE;
 #endif
 
 #if defined(FEAT_X11) && defined(FEAT_XCLIPBOARD)
@@ -1219,7 +1239,10 @@ main_loop(cmdwin, noexmode)
 			curwin->w_p_cole > 0
 # endif
 			)
-		 && !equalpos(last_cursormoved, curwin->w_cursor))
+# ifdef FEAT_AUTOCMD
+		 && !equalpos(last_cursormoved, curwin->w_cursor)
+# endif
+		 )
 	    {
 # ifdef FEAT_AUTOCMD
 		if (has_cursormoved())
@@ -1229,12 +1252,16 @@ main_loop(cmdwin, noexmode)
 # ifdef FEAT_CONCEAL
 		if (curwin->w_p_cole > 0)
 		{
+#  ifdef FEAT_AUTOCMD
 		    conceal_old_cursor_line = last_cursormoved.lnum;
+#  endif
 		    conceal_new_cursor_line = curwin->w_cursor.lnum;
 		    conceal_update_lines = TRUE;
 		}
 # endif
+# ifdef FEAT_AUTOCMD
 		last_cursormoved = curwin->w_cursor;
+# endif
 	    }
 #endif
 
@@ -1305,9 +1332,9 @@ main_loop(cmdwin, noexmode)
 		char_u *p;
 
 		/* msg_attr_keep() will set keep_msg to NULL, must free the
-		 * string here. */
+		 * string here. Don't reset keep_msg, msg_attr_keep() uses it
+		 * to check for duplicates. */
 		p = keep_msg;
-		keep_msg = NULL;
 		msg_attr(p, keep_msg_attr);
 		vim_free(p);
 	    }
@@ -1403,8 +1430,7 @@ main_loop(cmdwin, noexmode)
  * Exit, but leave behind swap files for modified buffers.
  */
     void
-getout_preserve_modified(exitval)
-    int		exitval;
+getout_preserve_modified(int exitval)
 {
 # if defined(SIGHUP) && defined(SIG_IGN)
     /* Ignore SIGHUP, because a dropped connection causes a read error, which
@@ -1423,8 +1449,7 @@ getout_preserve_modified(exitval)
 
 /* Exit properly */
     void
-getout(exitval)
-    int		exitval;
+getout(int exitval)
 {
 #ifdef FEAT_AUTOCMD
     buf_T	*buf;
@@ -1533,6 +1558,9 @@ getout(exitval)
 	windgoto((int)Rows - 1, 0);
 #endif
 
+#ifdef FEAT_JOB_CHANNEL
+    job_stop_on_exit();
+#endif
 #ifdef FEAT_LUA
     lua_end();
 #endif
@@ -1570,6 +1598,9 @@ getout(exitval)
     if (garbage_collect_at_exit)
 	garbage_collect();
 #endif
+#if defined(WIN32) && defined(FEAT_MBYTE)
+    free_cmd_argsW();
+#endif
 
     mch_exit(exitval);
 }
@@ -1579,10 +1610,10 @@ getout(exitval)
  * Get a (optional) count for a Vim argument.
  */
     static int
-get_number_arg(p, idx, def)
-    char_u	*p;	    /* pointer to argument */
-    int		*idx;	    /* index in argument, is incremented */
-    int		def;	    /* default value */
+get_number_arg(
+    char_u	*p,	    /* pointer to argument */
+    int		*idx,	    /* index in argument, is incremented */
+    int		def)	    /* default value */
 {
     if (vim_isdigit(p[*idx]))
     {
@@ -1598,7 +1629,7 @@ get_number_arg(p, idx, def)
  * Setup to use the current locale (for ctype() and many other things).
  */
     static void
-init_locale()
+init_locale(void)
 {
     setlocale(LC_ALL, "");
 
@@ -1625,10 +1656,10 @@ init_locale()
 
 #  ifdef DYNAMIC_GETTEXT
 	/* Initialize the gettext library */
-	dyn_libintl_init(NULL);
+	dyn_libintl_init();
 #  endif
-	/* expand_env() doesn't work yet, because chartab[] is not initialized
-	 * yet, call vim_getenv() directly */
+	/* expand_env() doesn't work yet, because g_chartab[] is not
+	 * initialized yet, call vim_getenv() directly */
 	p = vim_getenv((char_u *)"VIMRUNTIME", &mustfree);
 	if (p != NULL && *p != NUL)
 	{
@@ -1654,8 +1685,7 @@ init_locale()
  * by "im" use improved Ex mode.
  */
     static void
-parse_command_name(parmp)
-    mparm_T	*parmp;
+parse_command_name(mparm_T *parmp)
 {
     char_u	*initstr;
 
@@ -1745,8 +1775,7 @@ parse_command_name(parmp)
  * Also find the --server... arguments and --socketid and --windowid
  */
     static void
-early_arg_scan(parmp)
-    mparm_T	*parmp UNUSED;
+early_arg_scan(mparm_T *parmp UNUSED)
 {
 #if defined(FEAT_XCLIPBOARD) || defined(FEAT_CLIENTSERVER) \
 	|| !defined(FEAT_NETBEANS_INTG)
@@ -1837,8 +1866,7 @@ early_arg_scan(parmp)
  * Scan the command line arguments.
  */
     static void
-command_line_scan(parmp)
-    mparm_T	*parmp;
+command_line_scan(mparm_T *parmp)
 {
     int		argc = parmp->argc;
     char	**argv = parmp->argv;
@@ -1909,6 +1937,7 @@ command_line_scan(parmp)
 				/* "--version" give version message */
 				/* "--literal" take files literally */
 				/* "--nofork" don't fork */
+				/* "--not-a-term" don't warn for not a term */
 				/* "--noplugin[s]" skip plugins */
 				/* "--cmd <cmd>" execute cmd before vimrc */
 		if (STRICMP(argv[0] + argv_idx, "help") == 0)
@@ -1924,7 +1953,7 @@ command_line_scan(parmp)
 		}
 		else if (STRNICMP(argv[0] + argv_idx, "literal", 7) == 0)
 		{
-#if (!defined(UNIX) && !defined(__EMX__)) || defined(ARCHIE)
+#ifdef EXPAND_FILENAMES
 		    parmp->literal = TRUE;
 #endif
 		}
@@ -1936,6 +1965,8 @@ command_line_scan(parmp)
 		}
 		else if (STRNICMP(argv[0] + argv_idx, "noplugin", 8) == 0)
 		    p_lpl = FALSE;
+		else if (STRNICMP(argv[0] + argv_idx, "not-a-term", 10) == 0)
+		    parmp->not_a_term = TRUE;
 		else if (STRNICMP(argv[0] + argv_idx, "cmd", 3) == 0)
 		{
 		    want_argument = TRUE;
@@ -2507,7 +2538,7 @@ scripterror:
 #endif
 
 	    alist_add(&global_alist, p,
-#if (!defined(UNIX) && !defined(__EMX__)) || defined(ARCHIE)
+#ifdef EXPAND_FILENAMES
 		    parmp->literal ? 2 : 0	/* add buffer nr after exp. */
 #else
 		    2		/* add buffer number now and use curbuf */
@@ -2563,8 +2594,7 @@ scripterror:
  * When starting in Ex mode and commands come from a file, set Silent mode.
  */
     static void
-check_tty(parmp)
-    mparm_T	*parmp;
+check_tty(mparm_T *parmp)
 {
     int		input_isatty;		/* is active input a terminal? */
 
@@ -2579,7 +2609,7 @@ check_tty(parmp)
 	    /* don't want the delay when started from the desktop */
 	    && !gui.starting
 #endif
-	    )
+	    && !parmp->not_a_term)
     {
 #ifdef NBDEBUG
 	/*
@@ -2610,7 +2640,7 @@ check_tty(parmp)
  * Read text from stdin.
  */
     static void
-read_stdin()
+read_stdin(void)
 {
     int	    i;
 
@@ -2644,8 +2674,7 @@ read_stdin()
  * Also does recovery if "recoverymode" set.
  */
     static void
-create_windows(parmp)
-    mparm_T	*parmp UNUSED;
+create_windows(mparm_T *parmp UNUSED)
 {
 #ifdef FEAT_WINDOWS
     int		dorewind;
@@ -2798,8 +2827,9 @@ create_windows(parmp)
      * windows.  make_windows() has already opened the windows.
      */
     static void
-edit_buffers(parmp)
-    mparm_T	*parmp;
+edit_buffers(
+    mparm_T	*parmp,
+    char_u	*cwd)			/* current working dir */
 {
     int		arg_idx;		/* index in argument list */
     int		i;
@@ -2824,6 +2854,8 @@ edit_buffers(parmp)
     arg_idx = 1;
     for (i = 1; i < parmp->window_count; ++i)
     {
+	if (cwd != NULL)
+	    mch_chdir((char *)cwd);
 	/* When w_arg_idx is -1 remove the window (see create_windows()). */
 	if (curwin->w_arg_idx == -1)
 	{
@@ -2924,8 +2956,7 @@ edit_buffers(parmp)
  * Execute the commands from --cmd arguments "cmds[cnt]".
  */
     static void
-exe_pre_commands(parmp)
-    mparm_T	*parmp;
+exe_pre_commands(mparm_T *parmp)
 {
     char_u	**cmds = parmp->pre_commands;
     int		cnt = parmp->n_pre_commands;
@@ -2952,8 +2983,7 @@ exe_pre_commands(parmp)
  * Execute "+", "-c" and "-S" arguments.
  */
     static void
-exe_commands(parmp)
-    mparm_T	*parmp;
+exe_commands(mparm_T *parmp)
 {
     int		i;
 
@@ -2997,8 +3027,7 @@ exe_commands(parmp)
  * Source startup scripts.
  */
     static void
-source_startup_scripts(parmp)
-    mparm_T	*parmp;
+source_startup_scripts(mparm_T *parmp)
 {
     int		i;
 
@@ -3156,7 +3185,7 @@ source_startup_scripts(parmp)
  * Setup to start using the GUI.  Exit with an error when not available.
  */
     static void
-main_start_gui()
+main_start_gui(void)
 {
 #ifdef FEAT_GUI
     gui.starting = TRUE;	/* start GUI a bit later */
@@ -3174,9 +3203,9 @@ main_start_gui()
  * Returns FAIL if the environment variable was not executed, OK otherwise.
  */
     int
-process_env(env, is_viminit)
-    char_u	*env;
-    int		is_viminit; /* when TRUE, called for VIMINIT */
+process_env(
+    char_u	*env,
+    int		is_viminit) /* when TRUE, called for VIMINIT */
 {
     char_u	*initstr;
     char_u	*save_sourcing_name;
@@ -3215,8 +3244,7 @@ process_env(env, is_viminit)
  * Use both stat() and lstat() for extra security.
  */
     static int
-file_owned(fname)
-    char	*fname;
+file_owned(char *fname)
 {
     struct stat s;
 # ifdef UNIX
@@ -3237,9 +3265,9 @@ file_owned(fname)
  * Give an error message main_errors["n"] and exit.
  */
     static void
-mainerr(n, str)
-    int		n;	/* one of the ME_ defines */
-    char_u	*str;	/* extra argument or NULL */
+mainerr(
+    int		n,	/* one of the ME_ defines */
+    char_u	*str)	/* extra argument or NULL */
 {
 #if defined(UNIX) || defined(__EMX__) || defined(VMS)
     reset_signals();		/* kill us with CTRL-C here, if you like */
@@ -3260,8 +3288,7 @@ mainerr(n, str)
 }
 
     void
-mainerr_arg_missing(str)
-    char_u	*str;
+mainerr_arg_missing(char_u *str)
 {
     mainerr(ME_ARG_MISSING, str);
 }
@@ -3271,8 +3298,7 @@ mainerr_arg_missing(str)
  * print a message with three spaces prepended and '\n' appended.
  */
     static void
-main_msg(s)
-    char *s;
+main_msg(char *s)
 {
     mch_msg("   ");
     mch_msg(s);
@@ -3283,7 +3309,7 @@ main_msg(s)
  * Print messages for "vim -h" or "vim --help" and exit.
  */
     static void
-usage()
+usage(void)
 {
     int		i;
     static char	*(use[]) =
@@ -3316,7 +3342,7 @@ usage()
 
     mch_msg(_("\n\nArguments:\n"));
     main_msg(_("--\t\t\tOnly file names after this"));
-#if (!defined(UNIX) && !defined(__EMX__)) || defined(ARCHIE)
+#ifdef EXPAND_FILENAMES
     main_msg(_("--literal\t\tDon't expand wildcards"));
 #endif
 #ifdef FEAT_OLE
@@ -3367,6 +3393,7 @@ usage()
     main_msg(_("-F\t\t\tStart in Farsi mode"));
 #endif
     main_msg(_("-T <terminal>\tSet terminal type to <terminal>"));
+    main_msg(_("--not-a-term\t\tSkip warning for input/output not being a terminal"));
     main_msg(_("-u <vimrc>\t\tUse <vimrc> instead of any .vimrc"));
 #ifdef FEAT_GUI
     main_msg(_("-U <gvimrc>\t\tUse <gvimrc> instead of any .gvimrc"));
@@ -3479,7 +3506,7 @@ usage()
  * When "Recover" selected, recover the file.
  */
     static void
-check_swap_exists_action()
+check_swap_exists_action(void)
 {
     if (swap_exists_action == SEA_QUIT)
 	getout(1);
@@ -3490,7 +3517,7 @@ check_swap_exists_action()
 #endif
 
 #if defined(STARTUPTIME) || defined(PROTO)
-static void time_diff __ARGS((struct timeval *then, struct timeval *now));
+static void time_diff(struct timeval *then, struct timeval *now);
 
 static struct timeval	prev_timeval;
 
@@ -3513,8 +3540,7 @@ gettimeofday(struct timeval *tv, char *dummy)
  * set "*tv_rel" to the time elapsed so far.
  */
     void
-time_push(tv_rel, tv_start)
-    void	*tv_rel, *tv_start;
+time_push(void *tv_rel, void *tv_start)
 {
     *((struct timeval *)tv_rel) = prev_timeval;
     gettimeofday(&prev_timeval, NULL);
@@ -3537,8 +3563,8 @@ time_push(tv_rel, tv_start)
  * have struct timeval.
  */
     void
-time_pop(tp)
-    void	*tp;	/* actually (struct timeval *) */
+time_pop(
+    void	*tp)	/* actually (struct timeval *) */
 {
     prev_timeval.tv_usec -= ((struct timeval *)tp)->tv_usec;
     prev_timeval.tv_sec -= ((struct timeval *)tp)->tv_sec;
@@ -3550,9 +3576,7 @@ time_pop(tp)
 }
 
     static void
-time_diff(then, now)
-    struct timeval	*then;
-    struct timeval	*now;
+time_diff(struct timeval *then, struct timeval *now)
 {
     long	usec;
     long	msec;
@@ -3564,9 +3588,9 @@ time_diff(then, now)
 }
 
     void
-time_msg(mesg, tv_start)
-    char	*mesg;
-    void	*tv_start;  /* only for do_source: start time; actually
+time_msg(
+    char	*mesg,
+    void	*tv_start)  /* only for do_source: start time; actually
 			       (struct timeval *) */
 {
     static struct timeval	start;
@@ -3604,14 +3628,13 @@ time_msg(mesg, tv_start)
  * Common code for the X command server and the Win32 command server.
  */
 
-static char_u *build_drop_cmd __ARGS((int filec, char **filev, int tabs, int sendReply));
+static char_u *build_drop_cmd(int filec, char **filev, int tabs, int sendReply);
 
 /*
  * Do the client-server stuff, unless "--servername ''" was used.
  */
     static void
-exec_on_server(parmp)
-    mparm_T	*parmp;
+exec_on_server(mparm_T *parmp)
 {
     if (parmp->serverName_arg == NULL || *parmp->serverName_arg != NUL)
     {
@@ -3653,8 +3676,7 @@ exec_on_server(parmp)
  * Prepare for running as a Vim server.
  */
     static void
-prepare_server(parmp)
-    mparm_T	*parmp;
+prepare_server(mparm_T *parmp)
 {
 # if defined(FEAT_X11)
     /*
@@ -3696,11 +3718,11 @@ prepare_server(parmp)
 }
 
     static void
-cmdsrv_main(argc, argv, serverName_arg, serverStr)
-    int		*argc;
-    char	**argv;
-    char_u	*serverName_arg;
-    char_u	**serverStr;
+cmdsrv_main(
+    int		*argc,
+    char	**argv,
+    char_u	*serverName_arg,
+    char_u	**serverStr)
 {
     char_u	*res;
     int		i;
@@ -3980,16 +4002,17 @@ cmdsrv_main(argc, argv, serverName_arg, serverStr)
  * Build a ":drop" command to send to a Vim server.
  */
     static char_u *
-build_drop_cmd(filec, filev, tabs, sendReply)
-    int		filec;
-    char	**filev;
-    int		tabs;		/* Use ":tab drop" instead of ":drop". */
-    int		sendReply;
+build_drop_cmd(
+    int		filec,
+    char	**filev,
+    int		tabs,		/* Use ":tab drop" instead of ":drop". */
+    int		sendReply)
 {
     garray_T	ga;
     int		i;
     char_u	*inicmd = NULL;
     char_u	*p;
+    char_u	*cdp;
     char_u	*cwd;
 
     if (filec > 0 && filev[0][0] == '+')
@@ -4011,20 +4034,19 @@ build_drop_cmd(filec, filev, tabs, sendReply)
 	vim_free(cwd);
 	return NULL;
     }
-    p = vim_strsave_escaped_ext(cwd,
+    cdp = vim_strsave_escaped_ext(cwd,
 #ifdef BACKSLASH_IN_FILENAME
-		    "",  /* rem_backslash() will tell what chars to escape */
+		    (char_u *)"",  /* rem_backslash() will tell what chars to escape */
 #else
 		    PATH_ESC_CHARS,
 #endif
 		    '\\', TRUE);
     vim_free(cwd);
-    if (p == NULL)
+    if (cdp == NULL)
 	return NULL;
     ga_init2(&ga, 1, 100);
     ga_concat(&ga, (char_u *)"<C-\\><C-N>:cd ");
-    ga_concat(&ga, p);
-    vim_free(p);
+    ga_concat(&ga, cdp);
 
     /* Call inputsave() so that a prompt for an encryption key works. */
     ga_concat(&ga, (char_u *)"<CR>:if exists('*inputsave')|call inputsave()|endif|");
@@ -4060,8 +4082,21 @@ build_drop_cmd(filec, filev, tabs, sendReply)
 
     /* Switch back to the correct current directory (prior to temporary path
      * switch) unless 'autochdir' is set, in which case it will already be
-     * correct after the :drop command. */
-    ga_concat(&ga, (char_u *)":if !exists('+acd')||!&acd|cd -|endif<CR>");
+     * correct after the :drop command. With line breaks and spaces:
+     *  if !exists('+acd') || !&acd
+     *    if haslocaldir()
+     *	    cd -
+     *      lcd -
+     *    elseif getcwd() ==# 'current path'
+     *      cd -
+     *    endif
+     *  endif
+     */
+    ga_concat(&ga, (char_u *)":if !exists('+acd')||!&acd|if haslocaldir()|");
+    ga_concat(&ga, (char_u *)"cd -|lcd -|elseif getcwd() ==# '");
+    ga_concat(&ga, cdp);
+    ga_concat(&ga, (char_u *)"'|cd -|endif|endif<CR>");
+    vim_free(cdp);
 
     if (sendReply)
 	ga_concat(&ga, (char_u *)":call SetupRemoteReplies()<CR>");
@@ -4087,9 +4122,7 @@ build_drop_cmd(filec, filev, tabs, sendReply)
  * Return the name in allocated memory.  This doesn't include a serial number.
  */
     static char_u *
-serverMakeName(arg, cmd)
-    char_u	*arg;
-    char	*cmd;
+serverMakeName(char_u *arg, char *cmd)
 {
     char_u *p;
 
@@ -4111,8 +4144,7 @@ serverMakeName(arg, cmd)
  * Replace termcodes such as <CR> and insert as key presses if there is room.
  */
     void
-server_to_input_buf(str)
-    char_u	*str;
+server_to_input_buf(char_u *str)
 {
     char_u      *ptr = NULL;
     char_u      *cpo_save = p_cpo;
@@ -4153,8 +4185,7 @@ server_to_input_buf(str)
  * Evaluate an expression that the client sent to a string.
  */
     char_u *
-eval_client_expr_to_string(expr)
-    char_u *expr;
+eval_client_expr_to_string(char_u *expr)
 {
     char_u	*res;
     int		save_dbl = debug_break_level;
@@ -4194,10 +4225,10 @@ eval_client_expr_to_string(expr)
  * "*tofree" is set to the result when it needs to be freed later.
  */
     char_u *
-serverConvert(client_enc, data, tofree)
-    char_u *client_enc UNUSED;
-    char_u *data;
-    char_u **tofree;
+serverConvert(
+    char_u *client_enc UNUSED,
+    char_u *data,
+    char_u **tofree)
 {
     char_u	*res = data;
 
