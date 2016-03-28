@@ -1,4 +1,4 @@
-*editing.txt*   For Vim version 7.4.  Last change: 2014 Jul 19
+*editing.txt*   For Vim version 7.4.  Last change: 2016 Feb 16
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -78,7 +78,9 @@ g CTRL-G		Prints the current position of the cursor in five
 			than one position on the screen (<Tab> or special
 			character), both the "real" column and the screen
 			column are shown, separated with a dash.
-			See also 'ruler' option.  {not in Vi}
+			Also see the 'ruler' option and the |wordcount()|
+			function.
+			{not in Vi}
 
 							*v_g_CTRL-G*
 {Visual}g CTRL-G	Similar to "g CTRL-G", but Word, Character, Line, and
@@ -304,7 +306,8 @@ CTRL-^			Edit the alternate file.  Mostly the alternate file is
 			Mnemonic: "goto file".
 			Uses the 'isfname' option to find out which characters
 			are supposed to be in a file name.  Trailing
-			punctuation characters ".,:;!" are ignored.
+			punctuation characters ".,:;!" are ignored. Escaped
+			spaces "\ " are reduced to a single space.
 			Uses the 'path' option as a list of directory names to
 			look for the file.  See the 'path' option for details
 			about relative directories and wildcards.
@@ -400,36 +403,54 @@ Note there are some commands where this works slightly differently, see
 Example: >
 	:n **/*.txt
 Finds files:
-	ttt.txt
-	subdir/ttt.txt
-	a/b/c/d/ttt.txt
-When non-wildcard characters are used these are only matched in the first
-directory.  Example: >
-	:n /usr/inc**/*.h
+	aaa.txt ~
+	subdir/bbb.txt ~
+	a/b/c/d/ccc.txt ~
+When non-wildcard characters are used right before or after "**" these are
+only matched in the top directory.  They are not used for directories further
+down in the tree. For example: >
+	:n /usr/inc**/types.h
 Finds files:
-	/usr/include/types.h
-	/usr/include/sys/types.h
-	/usr/inc_old/types.h
+	/usr/include/types.h ~
+	/usr/include/sys/types.h ~
+	/usr/inc/old/types.h ~
+Note that the path with "/sys" is included because it does not need to match
+"/inc".  Thus it's like matching "/usr/inc*/*/*...", not
+"/usr/inc*/inc*/inc*".
+
 					*backtick-expansion* *`-expansion*
-On Unix and a few other systems you can also use backticks in the file name,
-for example: >
-	:e `find . -name ver\\*.c -print`
-The backslashes before the star are required to prevent "ver*.c" to be
-expanded by the shell before executing the find program.
+On Unix and a few other systems you can also use backticks for the file name
+argument, for example: >
+	:next `find . -name ver\\*.c -print`
+	:view `ls -t *.patch  \| head -n1`
+The backslashes before the star are required to prevent the shell from
+expanding "ver*.c" prior to execution of the find program.  The backslash
+before the shell pipe symbol "|" prevents Vim from parsing it as command
+termination.
 This also works for most other systems, with the restriction that the
 backticks must be around the whole item.  It is not possible to have text
 directly before the first or just after the last backtick.
 
 							*`=*
-You can have the backticks expanded as a Vim expression, instead of an
-external command, by using the syntax `={expr}` e.g.: >
+You can have the backticks expanded as a Vim expression, instead of as an
+external command, by putting an equal sign right after the first backtick,
+e.g.: >
 	:e `=tempname()`
 The expression can contain just about anything, thus this can also be used to
 avoid the special meaning of '"', '|', '%' and '#'.  However, 'wildignore'
 does apply like to other wildcards.
+
+Environment variables in the expression are expanded when evaluating the
+expression, thus this works: >
+	:e `=$HOME . '/.vimrc'`
+This does not work, $HOME is inside a string and used literally: >
+	:e `='$HOME' . '/.vimrc'`
+
 If the expression returns a string then names are to be separated with line
 breaks.  When the result is a |List| then each item is used as a name.  Line
 breaks also separate names.
+Note that such expressions are only supported in places where a filename is
+expected as an argument to an Ex-command.
 
 							*++opt* *[++opt]*
 The [++opt] argument can be used to force the value of 'fileformat',
@@ -609,7 +630,10 @@ list of the current window.
 			{not in Vi}
 
 :[count]arga[dd] {name} ..			*:arga* *:argadd* *E479*
-			Add the {name}s to the argument list.
+:[count]arga[dd]
+			Add the {name}s to the argument list.  When {name} is
+			omitted add the current buffer name to the argument
+			list.
 			If [count] is omitted, the {name}s are added just
 			after the current entry in the argument list.
 			Otherwise they are added after the [count]'th file.
@@ -619,7 +643,9 @@ list of the current window.
 				:argadd x	a b x c
 				:0argadd x	x a b c
 				:1argadd x	a x b c
-				:99argadd x	a b c x
+				:$argadd x	a b c x
+			And after the last one:
+				:+2argadd y	a b c x y
 			There is no check for duplicates, it is possible to
 			add a file to the argument list twice.
 			The currently edited file is not changed.
@@ -641,11 +667,19 @@ list of the current window.
 <			{not in Vi} {not available when compiled without the
 			|+listcmds| feature}
 
-:{range}argd[elete]	Delete the {range} files from the argument list.
+:[range]argd[elete]	Delete the {range} files from the argument list.
+			Example: >
+				:10,$argdel
+<			Deletes arguments 10 and further, keeping 1-9. >
+				:$argd
+<			Deletes just the last one. >
+				:argd
+				:.argd
+<			Deletes the current argument. >
+				:%argd
+<			Removes all the files from the arglist.
 			When the last number in the range is too high, up to
-			the last argument is deleted.  Example: >
-				:10,1000argdel
-<			Deletes arguments 10 and further, keeping 1-9.
+			the last argument is deleted.
 			{not in Vi} {not available when compiled without the
 			|+listcmds| feature}
 
@@ -820,8 +854,9 @@ current window.  The two windows then share this list, until one of them uses
 USING THE ARGUMENT LIST
 
 						*:argdo*
-:argdo[!] {cmd}		Execute {cmd} for each file in the argument list.
-			It works like doing this: >
+:[range]argdo[!] {cmd}	Execute {cmd} for each file in the argument list or
+			if [range] is specified only for arguments in that
+			range.  It works like doing this: >
 				:rewind
 				:{cmd}
 				:next
@@ -841,7 +876,8 @@ USING THE ARGUMENT LIST
 			each file.
 			{not in Vi} {not available when compiled without the
 			|+listcmds| feature}
-			Also see |:windo|, |:tabdo| and |:bufdo|.
+			Also see |:windo|, |:tabdo|, |:bufdo|, |:cdo|, |:ldo|,
+			|:cfdo| and |:lfdo|
 
 Example: >
 	:args *.c
@@ -980,7 +1016,7 @@ the newly written file (it might be there but contain bogus data).  In that
 case try recovery, because the swap file is synced to disk and might still be
 there. |:recover|
 
-The directories given with the 'backupdir' option is used to put the backup
+The directories given with the 'backupdir' option are used to put the backup
 file in.  (default: same directory as the written file).
 
 Whether the backup is a new file, which is a copy of the original file, or the
@@ -1077,9 +1113,12 @@ The names can be in upper- or lowercase.
 			the last file in the argument list has not been
 			edited.  See |:confirm| and 'confirm'.  {not in Vi}
 
-:q[uit]!		Quit without writing, also when visible buffers have
-			changes.  Does not exit when there are changed hidden
-			buffers.  Use ":qall!" to exit always.
+:q[uit]!		Quit without writing, also when the current buffer has
+			changes.  If this is the last window and there is a
+			modified hidden buffer, the current buffer is
+			abandoned and the first changed hidden buffer becomes
+			the current buffer.
+			Use ":qall!" to exit always.
 
 :cq[uit]		Quit always, without writing, and return an error
 			code.  See |:cq|.  Used for Manx's QuickFix mode (see
@@ -1346,7 +1385,7 @@ There are a few things to remember when editing binary files:
 - <Nul> characters are shown on the screen as ^@.  You can enter them with
   "CTRL-V CTRL-@" or "CTRL-V 000" {Vi cannot handle <Nul> characters in the
   file}
-- To insert a <NL> character in the file split up a line.  When writing the
+- To insert a <NL> character in the file split a line.  When writing the
   buffer to a file a <NL> will be written for the <EOL>.
 - Vim normally appends an <EOL> at the end of the file if there is none.
   Setting the 'binary' option prevents this.  If you want to add the final
@@ -1370,8 +1409,14 @@ lose your work.  The undo file can be disabled without much disadvantage. >
 
 Note: The text in memory is not encrypted.  A system administrator may be able
 to see your text while you are editing it.  When filtering text with
-":!filter" or using ":w !command" the text is not encrypted, this may reveal
-it to others.  The 'viminfo' file is not encrypted.
+":!filter" or using ":w !command" the text is also not encrypted, this may
+reveal it to others.  The 'viminfo' file is not encrypted.
+
+You could do this to edit very secret text: >
+	:set noundofile viminfo=
+	:noswapfile edit secrets.txt
+Keep in mind that without a swap file you risk losing your work in the event
+of a crash or a power failure.
 
 WARNING: If you make a typo when entering the key and then write the file and
 exit, the text will be lost!
@@ -1398,22 +1443,39 @@ To disable the encryption, reset the 'key' option to an empty value: >
 	:set key=
 
 You can use the 'cryptmethod' option to select the type of encryption, use one
-of these two: >
-	:setlocal cm=zip       " weak method, backwards compatible
-	:setlocal cm=blowfish  " strong method
+of these: >
+	:setlocal cm=zip        " weak method, backwards compatible
+	:setlocal cm=blowfish   " method with flaws
+	:setlocal cm=blowfish2  " medium strong method
+
 Do this before writing the file.  When reading an encrypted file it will be
 set automatically to the method used when that file was written.  You can
 change 'cryptmethod' before writing that file to change the method.
-To set the default method, used for new files, use one of these in your
-|vimrc| file: >
-	set cm=zip
-	set cm=blowfish
+
+To set the default method, used for new files, use this in your |vimrc| 
+file: >
+	set cm=blowfish2
+Using "blowfish2" is highly recommended.  Only use another method if you
+must use an older Vim version that does not support it.
+
 The message given for reading and writing a file will show "[crypted]" when
-using zip, "[blowfish]" when using blowfish.
+using zip, "[blowfish]" when using blowfish, etc.
 
 When writing an undo file, the same key and method will be used for the text
 in the undo file. |persistent-undo|.
 
+To test for blowfish support you can use these conditions: >
+	has('crypt-blowfish')
+	has('crypt-blowfish2')
+This works since Vim 7.4.1099 while blowfish support was added earlier.
+Thus the condition failing doesn't mean blowfish is not supported. You can
+test for blowfish with: >
+	v:version >= 703
+And for blowfish2 with: >
+	v:version > 704 || (v:version == 704 && has('patch401'))
+If you are sure Vim includes patch 7.4.237 a simpler check is: >
+	has('patch-7.4.401')
+<
 						*E817* *E818* *E819* *E820*
 When encryption does not work properly, you would be able to write your text
 to a file and never be able to read it back.  Therefore a test is performed to
@@ -1444,7 +1506,7 @@ lines to "/etc/magic", "/usr/share/misc/magic" or wherever your system has the
      0	string	VimCrypt~	Vim encrypted file
      >9	string	01	- "zip" cryptmethod
      >9	string	02	- "blowfish" cryptmethod
-
+     >9	string	03	- "blowfish2" cryptmethod
 
 Notes:
 - Encryption is not possible when doing conversion with 'charconvert'.
@@ -1468,6 +1530,10 @@ Notes:
 - Pkzip uses the same encryption as 'cryptmethod' "zip", and US Govt has no
   objection to its export.  Pkzip's public file APPNOTE.TXT describes this
   algorithm in detail.
+- The implementation of 'cryptmethod' "blowfish" has a flaw.  It is possible
+  to crack the first 64 bytes of a file and in some circumstances more of the
+  file. Use of it is not recommended, but it's still the strongest method
+  supported by Vim 7.3 and 7.4.  The "zip" method is even weaker.
 - Vim originates from the Netherlands.  That is where the sources come from.
   Thus the encryption code is not exported from the USA.
 

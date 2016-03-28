@@ -393,8 +393,7 @@ void MyNSDrawWindowBackground(NSRect rect)
         if ([cell closeButtonPressed]) closeButton = metalCloseButtonDown;
         
         closeButtonSize = [closeButton size];
-        [closeButton setFlipped:YES];
-        [closeButton drawAtPoint:closeButtonRect.origin fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0];
+        [closeButton drawInRect:closeButtonRect fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0 respectFlipped:YES hints:nil];
         
         // scoot label over
         labelPosition += closeButtonSize.width + kPSMTabBarCellPadding;

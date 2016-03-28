@@ -19,8 +19,6 @@ Vim(call):E737: 3
 {'c': 'ccc', '1': 99, 'b': [1, 2, function('strlen')], '3': 33, '-1': {'a': 1}}
 {'c': 'ccc', '1': 99, '3': 33, '-1': {'a': 1}}
 101101
-Vim(let):E706: d
-Vim(let):E706: l
 [1, 'as''d', {'a': 1}]
 [4]
 {'1': 99, '3': 33}
@@ -46,7 +44,7 @@ NONE 2999
 {'33': 999}
 len: 3
 again: 3
-Vim(call):E725: 
+xxx3
 g:dict.func-4
 a:function('3')
 Vim(let):E698: 
@@ -86,6 +84,72 @@ FFFFFFF
 FFpFFpp
 0000-000
 ppppppp
+Unletting:
+depth is 0
+0000-000
+ppppppp
+0000-000
+ppppppp
+0000-000
+ppppppp
+depth is 1
+1000-000
+ppFppFp
+0000-000
+ppppppp
+0000-000
+ppppppp
+depth is 2
+1100-100
+pFFpFFp
+0000-000
+ppppppp
+0000-000
+ppppppp
+depth is 3
+1110-110
+FFFFFFp
+0010-010
+FppFppp
+0000-000
+ppppppp
+depth is 4
+1111-111
+FFFFFFp
+0011-011
+FppFppp
+0000-000
+ppppppp
+Locks and commands or functions:
+No :unlet after lock on dict:
+Vim(unlet):E741: 
+{'a': 99, 'b': 100}
+:unlet after lock on dict item:
+did :unlet
+{'b': 100}
+filter() after lock on dict item:
+did filter()
+{'b': 100}
+map() after lock on dict:
+did map()
+{'a': 299, 'b': 300}
+No extend() after lock on dict item:
+Vim(put):E741: 
+{'a': 99, 'b': 100}
+No remove() of write-protected scope-level variable:
+Vim(put):E795: 
+No extend() of write-protected scope-level variable:
+Vim(put):E742: 
+No :unlet of variable in locked scope:
+Vim(unlet):E741: 
+No :let += of locked list variable:
+Vim(let):E741: 
+['a', 'b', 3]
+[1, 2, 3, 4]
+[1, 2, 3, 4]
+[1, 2, 3, 4]
+[1, 2, 3, 4]
+[1, 2, 3, 4]
 locked g:footest#x:-1
 exists g:footest#x:0
 g:footest#x: 1
@@ -124,6 +188,7 @@ caught a:000[3]
 {'a': {'b': 'B'}}
 Vim(call):E737: a
 {'a': {'b': 'B'}}
+[1, 2]
 Vim(foldopen):E490:
 
 

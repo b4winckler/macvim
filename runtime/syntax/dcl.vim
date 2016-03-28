@@ -1,9 +1,9 @@
 " Vim syntax file
 " Language:	DCL (Digital Command Language - vms)
-" Maintainer:	Dr. Charles E. Campbell, Jr. <NdrOchipS@PcampbellAfamily.Mbiz>
-" Last Change:	Sep 11, 2006
-" Version:	6
-" URL:	http://mysite.verizon.net/astronaut/vim/index.html#vimlinks_syntax
+" Maintainer:	Charles E. Campbell <NdrOchipS@PcampbellAfamily.Mbiz>
+" Last Change:	Jan 20, 2016
+" Version:	8
+" URL:	http://www.drchip.org/astronaut/vim/index.html#SYNTAX_DCL
 
 " For version 5.x: Clear all syntax items
 " For version 6.x: Quit when a syntax file was already loaded
@@ -13,10 +13,10 @@ elseif exists("b:current_syntax")
   finish
 endif
 
-if version < 600
-  set iskeyword=$,@,48-57,_
-else
+if !has("patch-7.4.1141")
   setlocal iskeyword=$,@,48-57,_
+else
+ syn iskeyword $,@,48-57,_
 endif
 
 syn case ignore

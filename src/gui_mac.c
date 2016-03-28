@@ -2607,8 +2607,7 @@ gui_mch_mousehide(int hide)
  * the menu that we should display
  */
     void
-gui_mac_handle_contextual_menu(event)
-    EventRecord *event;
+gui_mac_handle_contextual_menu(EventRecord *event)
 {
 /*
  *  Clone PopUp to use menu
@@ -3697,8 +3696,7 @@ gui_mch_set_font(GuiFont font)
  * If a font is not going to be used, free its structure.
  */
     void
-gui_mch_free_font(font)
-    GuiFont	font;
+gui_mch_free_font(GuiFont font)
 {
     /*
      * Free font when "font" is not 0.
@@ -6515,7 +6513,7 @@ im_get_status(void)
 static MenuRef contextMenu = NULL;
 enum
 {
-    kTabContextMenuId = 42,
+    kTabContextMenuId = 42
 };
 
 // the caller has to CFRelease() the returned string
@@ -6819,7 +6817,8 @@ initialise_tabline(void)
 
     // create tabline popup menu required by vim docs (see :he tabline-menu)
     CreateNewMenu(kTabContextMenuId, 0, &contextMenu);
-    AppendMenuItemTextWithCFString(contextMenu, CFSTR("Close"), 0,
+    if (first_tabpage->tp_next != NULL)
+	AppendMenuItemTextWithCFString(contextMenu, CFSTR("Close Tab"), 0,
 						    TABLINE_MENU_CLOSE, NULL);
     AppendMenuItemTextWithCFString(contextMenu, CFSTR("New Tab"), 0,
 						      TABLINE_MENU_NEW, NULL);
@@ -6896,8 +6895,7 @@ gui_mch_update_tabline(void)
  * Set the current tab to "nr".  First tab is 1.
  */
     void
-gui_mch_set_curtab(nr)
-    int		nr;
+gui_mch_set_curtab(int nr)
 {
     DataBrowserItemID item = nr;
     SetDataBrowserSelectedItems(dataBrowser, 1, &item, kDataBrowserItemsAssign);

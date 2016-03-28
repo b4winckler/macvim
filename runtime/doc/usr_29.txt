@@ -1,4 +1,4 @@
-*usr_29.txt*	For Vim version 7.4.  Last change: 2008 Jun 28
+*usr_29.txt*	For Vim version 7.4.  Last change: 2016 Feb 27
 
 		     VIM USER MANUAL - by Bram Moolenaar
 
@@ -255,7 +255,8 @@ function.
 
 RELATED ITEMS
 
-You can set 'ignorecase' to make case in tag names be ignored.
+To make case in tag names be ignored, you can set 'ignorecase' while leaving
+'tagcase' as "followic", or set 'tagcase' to "ignore".
 
 The 'tagbsearch' option tells if the tags file is sorted or not.  The default
 is to assume a sorted tags file, which makes a tags search a lot faster, but
@@ -263,9 +264,6 @@ doesn't work if the tags file isn't sorted.
 
 The 'taglength' option can be used to tell Vim the number of significant
 characters in a tag.
-
-When you use the SNiFF+ program, you can use the Vim interface to it |sniff|.
-SNiFF+ is a commercial program.
 
 Cscope is a free program.  It does not only find places where an identifier is
 declared, but also where it is used.  See |cscope|.

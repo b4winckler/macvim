@@ -1,7 +1,8 @@
 " Vim indent file
 " Language:	Rmd
 " Author:	Jakson Alves de Aquino <jalvesaq@gmail.com>
-" Last Change:	Wed Jul 09, 2014  07:33PM
+" Homepage:     https://github.com/jalvesaq/R-Vim-runtime
+" Last Change:	Tue Apr 07, 2015  04:38PM
 
 
 " Only load this indent file when no other was loaded.
@@ -33,10 +34,10 @@ function GetMdIndent()
 endfunction
 
 function GetRmdIndent()
-  if getline(".") =~ '^```{r .*}$' || getline(".") =~ '^```$'
+  if getline(".") =~ '^[ \t]*```{r .*}$' || getline(".") =~ '^[ \t]*```$'
     return 0
   endif
-  if search('^```{r', "bncW") > search('^```$', "bncW")
+  if search('^[ \t]*```{r', "bncW") > search('^[ \t]*```$', "bncW")
     return s:RIndent()
   else
     return GetMdIndent()

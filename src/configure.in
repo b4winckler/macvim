@@ -148,7 +148,7 @@ if test "`(uname) 2>/dev/null`" = Darwin; then
   AC_MSG_CHECKING(--with-developer-dir argument)
   AC_ARG_WITH(developer-dir, [  --with-developer-dir=PATH    use PATH as location for Xcode developer tools],
 	DEVELOPER_DIR="$withval"; AC_MSG_RESULT($DEVELOPER_DIR),
-        DEVELOPER_DIR=""; AC_MSG_RESULT(not present))
+        AC_MSG_RESULT(not present))
   
   if test "x$DEVELOPER_DIR" = "x"; then
     AC_PATH_PROG(XCODE_SELECT, xcode-select)
@@ -187,6 +187,11 @@ if test "`(uname) 2>/dev/null`" = Darwin; then
         MACSDK=""
         CFLAGS="$save_cflags"
         LDFLAGS="$save_ldflags" ])
+  else
+    if test -z "$MACOSX_DEPLOYMENT_TARGET"; then
+      macosx_deployment_target=`/usr/bin/sw_vers -productVersion|/usr/bin/sed -e 's/^\([[0-9]]*\.[[0-9]]*\).*/\1/'`
+      XCODEFLAGS="$XCODEFLAGS MACOSX_DEPLOYMENT_TARGET=$macosx_deployment_target"
+    fi
   fi
 
 
@@ -235,7 +240,7 @@ if test "`(uname) 2>/dev/null`" = Darwin; then
     CFLAGS=$SAVE_CFLAGS
 
     if test "x$CARBON" = "xyes" -o "x$COCOA" = "xyes"; then
-      if test -z "$with_x" -a "X$enable_gui" != Xmotif -a "X$enable_gui" != Xathena -a "X$enable_gui" != Xgtk2; then
+      if test -z "$with_x" -a "X$enable_gui" != Xmotif -a "X$enable_gui" != Xathena -a "X$enable_gui" != Xgtk2 -a "X$enable_gui" != Xgtk3; then
 	with_x=no
       fi
     fi
@@ -450,7 +455,7 @@ dnl Check user requested features.
 AC_MSG_CHECKING(--with-features argument)
 AC_ARG_WITH(features, [  --with-features=TYPE    tiny, small, normal, big or huge (default: normal)],
 	features="$withval"; AC_MSG_RESULT($features),
-	features="normal"; AC_MSG_RESULT(Defaulting to normal))
+	features="huge"; AC_MSG_RESULT(Defaulting to huge))
 
 dovimdiff=""
 dogvimdiff=""
@@ -504,6 +509,10 @@ AC_ARG_ENABLE(luainterp,
 AC_MSG_RESULT($enable_luainterp)
 
 if test "$enable_luainterp" = "yes" -o "$enable_luainterp" = "dynamic"; then
+  if test "x$features" = "xtiny" -o "x$features" = "xsmall"; then
+    AC_MSG_ERROR([cannot use Lua with tiny or small features])
+  fi
+
   dnl -- find the lua executable
   AC_SUBST(vi_cv_path_lua)
 
@@ -560,19 +569,19 @@ if test "$enable_luainterp" = "yes" -o "$enable_luainterp" = "dynamic"; then
     fi
     if test "x$vi_cv_with_luajit" != "xno" && test "X$vi_cv_version_luajit" != "X"; then
       AC_MSG_CHECKING(if lua.h can be found in $vi_cv_path_lua_pfx/include/luajit-$vi_cv_version_luajit)
-      if test -f $vi_cv_path_lua_pfx/include/luajit-$vi_cv_version_luajit/lua.h; then
+      if test -f "$vi_cv_path_lua_pfx/include/luajit-$vi_cv_version_luajit/lua.h"; then
 	AC_MSG_RESULT(yes)
 	LUA_INC=/luajit-$vi_cv_version_luajit
       fi
     fi
     if test "X$LUA_INC" = "X"; then
       AC_MSG_CHECKING(if lua.h can be found in $vi_cv_path_lua_pfx/include)
-      if test -f $vi_cv_path_lua_pfx/include/lua.h; then
+      if test -f "$vi_cv_path_lua_pfx/include/lua.h"; then
 	AC_MSG_RESULT(yes)
       else
 	AC_MSG_RESULT(no)
 	AC_MSG_CHECKING(if lua.h can be found in $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua)
-	if test -f $vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua/lua.h; then
+	if test -f "$vi_cv_path_lua_pfx/include/lua$vi_cv_version_lua/lua.h"; then
 	  AC_MSG_RESULT(yes)
 	  LUA_INC=/lua$vi_cv_version_lua
 	else
@@ -709,11 +718,13 @@ if test "$enable_mzschemeinterp" = "yes"; then
 
   if test "X$with_plthome" != "X"; then
        vi_cv_path_mzscheme_pfx="$with_plthome"
+       vi_cv_path_mzscheme="${vi_cv_path_mzscheme_pfx}/bin/mzscheme"
   else
     AC_MSG_CHECKING(PLTHOME environment var)
     if test "X$PLTHOME" != "X"; then
 	AC_MSG_RESULT("$PLTHOME")
 	vi_cv_path_mzscheme_pfx="$PLTHOME"
+	vi_cv_path_mzscheme="${vi_cv_path_mzscheme_pfx}/bin/mzscheme"
     else
 	AC_MSG_RESULT(not set)
 	dnl -- try to find MzScheme executable
@@ -745,39 +756,45 @@ if test "$enable_mzschemeinterp" = "yes"; then
     fi
   fi
 
-  SCHEME_INC=
   if test "X$vi_cv_path_mzscheme_pfx" != "X"; then
-    AC_MSG_CHECKING(if scheme.h can be found in $vi_cv_path_mzscheme_pfx/include)
-    if test -f $vi_cv_path_mzscheme_pfx/include/scheme.h; then
-      SCHEME_INC=${vi_cv_path_mzscheme_pfx}/include
-      AC_MSG_RESULT(yes)
+    AC_MSG_CHECKING(for racket include directory)
+    SCHEME_INC=`${vi_cv_path_mzscheme} -e '(require setup/dirs)(let ((p (find-include-dir))) (when (path? p) (display p)))'`
+    if test "X$SCHEME_INC" != "X"; then
+      AC_MSG_RESULT(${SCHEME_INC})
     else
-      AC_MSG_RESULT(no)
-      AC_MSG_CHECKING(if scheme.h can be found in $vi_cv_path_mzscheme_pfx/include/plt)
-      if test -f $vi_cv_path_mzscheme_pfx/include/plt/scheme.h; then
+      AC_MSG_RESULT(not found)
+      AC_MSG_CHECKING(if scheme.h can be found in $vi_cv_path_mzscheme_pfx/include)
+      if test -f "$vi_cv_path_mzscheme_pfx/include/scheme.h"; then
+	SCHEME_INC=${vi_cv_path_mzscheme_pfx}/include
 	AC_MSG_RESULT(yes)
-	SCHEME_INC=${vi_cv_path_mzscheme_pfx}/include/plt
       else
 	AC_MSG_RESULT(no)
-	AC_MSG_CHECKING(if scheme.h can be found in $vi_cv_path_mzscheme_pfx/include/racket)
-	if test -f $vi_cv_path_mzscheme_pfx/include/racket/scheme.h; then
+	AC_MSG_CHECKING(if scheme.h can be found in $vi_cv_path_mzscheme_pfx/include/plt)
+	if test -f "$vi_cv_path_mzscheme_pfx/include/plt/scheme.h"; then
 	  AC_MSG_RESULT(yes)
-	  SCHEME_INC=${vi_cv_path_mzscheme_pfx}/include/racket
+	  SCHEME_INC=${vi_cv_path_mzscheme_pfx}/include/plt
 	else
 	  AC_MSG_RESULT(no)
-	  AC_MSG_CHECKING(if scheme.h can be found in /usr/include/plt/)
-	  if test -f /usr/include/plt/scheme.h; then
+	  AC_MSG_CHECKING(if scheme.h can be found in $vi_cv_path_mzscheme_pfx/include/racket)
+	  if test -f "$vi_cv_path_mzscheme_pfx/include/racket/scheme.h"; then
 	    AC_MSG_RESULT(yes)
-	    SCHEME_INC=/usr/include/plt
+	    SCHEME_INC=${vi_cv_path_mzscheme_pfx}/include/racket
 	  else
 	    AC_MSG_RESULT(no)
-	    AC_MSG_CHECKING(if scheme.h can be found in /usr/include/racket/)
-	    if test -f /usr/include/racket/scheme.h; then
+	    AC_MSG_CHECKING(if scheme.h can be found in /usr/include/plt/)
+	    if test -f /usr/include/plt/scheme.h; then
 	      AC_MSG_RESULT(yes)
-	      SCHEME_INC=/usr/include/racket
+	      SCHEME_INC=/usr/include/plt
 	    else
 	      AC_MSG_RESULT(no)
-	      vi_cv_path_mzscheme_pfx=
+	      AC_MSG_CHECKING(if scheme.h can be found in /usr/include/racket/)
+	      if test -f /usr/include/racket/scheme.h; then
+		AC_MSG_RESULT(yes)
+		SCHEME_INC=/usr/include/racket
+	      else
+		AC_MSG_RESULT(no)
+		vi_cv_path_mzscheme_pfx=
+	      fi
 	    fi
 	  fi
 	fi
@@ -786,54 +803,95 @@ if test "$enable_mzschemeinterp" = "yes"; then
   fi
 
   if test "X$vi_cv_path_mzscheme_pfx" != "X"; then
-    if test "x$MACOSX" = "xyes"; then
-      MZSCHEME_LIBS="-framework Racket"
-      MZSCHEME_CFLAGS="-DMZ_PRECISE_GC"
-    elif test -f "${vi_cv_path_mzscheme_pfx}/lib/libmzscheme3m.a"; then
-      MZSCHEME_LIBS="${vi_cv_path_mzscheme_pfx}/lib/libmzscheme3m.a"
-      MZSCHEME_CFLAGS="-DMZ_PRECISE_GC"
-    elif test -f "${vi_cv_path_mzscheme_pfx}/lib/libracket3m.a"; then
-      MZSCHEME_LIBS="${vi_cv_path_mzscheme_pfx}/lib/libracket3m.a"
-      MZSCHEME_CFLAGS="-DMZ_PRECISE_GC"
-    elif test -f "${vi_cv_path_mzscheme_pfx}/lib/libracket.a"; then
-      MZSCHEME_LIBS="${vi_cv_path_mzscheme_pfx}/lib/libracket.a ${vi_cv_path_mzscheme_pfx}/lib/libmzgc.a"
-    elif test -f "${vi_cv_path_mzscheme_pfx}/lib/libmzscheme.a"; then
-      MZSCHEME_LIBS="${vi_cv_path_mzscheme_pfx}/lib/libmzscheme.a ${vi_cv_path_mzscheme_pfx}/lib/libmzgc.a"
+
+    AC_MSG_CHECKING(for racket lib directory)
+    SCHEME_LIB=`${vi_cv_path_mzscheme} -e '(require setup/dirs)(let ((p (find-lib-dir))) (when (path? p) (display p)))'`
+    if test "X$SCHEME_LIB" != "X"; then
+      AC_MSG_RESULT(${SCHEME_LIB})
     else
-      dnl Using shared objects
-      if test -f "${vi_cv_path_mzscheme_pfx}/lib/libmzscheme3m.so"; then
-        MZSCHEME_LIBS="-L${vi_cv_path_mzscheme_pfx}/lib -lmzscheme3m"
-	MZSCHEME_CFLAGS="-DMZ_PRECISE_GC"
-      elif test -f "${vi_cv_path_mzscheme_pfx}/lib/libracket3m.so"; then
-        MZSCHEME_LIBS="-L${vi_cv_path_mzscheme_pfx}/lib -lracket3m"
-	MZSCHEME_CFLAGS="-DMZ_PRECISE_GC"
-      elif test -f "${vi_cv_path_mzscheme_pfx}/lib/libracket.so"; then
-        MZSCHEME_LIBS="-L${vi_cv_path_mzscheme_pfx}/lib -lracket -lmzgc"
-      else
-        MZSCHEME_LIBS="-L${vi_cv_path_mzscheme_pfx}/lib -lmzscheme -lmzgc"
+      AC_MSG_RESULT(not found)
+    fi
+
+    for path in "${vi_cv_path_mzscheme_pfx}/lib" "${SCHEME_LIB}"; do
+      if test "X$path" != "X"; then
+	if test "x$MACOSX" = "xyes"; then
+	  MZSCHEME_LIBS="-framework Racket"
+	  MZSCHEME_CFLAGS="-DMZ_PRECISE_GC"
+	elif test -f "${path}/libmzscheme3m.a"; then
+	  MZSCHEME_LIBS="${path}/libmzscheme3m.a"
+	  MZSCHEME_CFLAGS="-DMZ_PRECISE_GC"
+	elif test -f "${path}/libracket3m.a"; then
+	  MZSCHEME_LIBS="${path}/libracket3m.a"
+	  MZSCHEME_CFLAGS="-DMZ_PRECISE_GC"
+	elif test -f "${path}/libracket.a"; then
+	  MZSCHEME_LIBS="${path}/libracket.a ${path}/libmzgc.a"
+	elif test -f "${path}/libmzscheme.a"; then
+	  MZSCHEME_LIBS="${path}/libmzscheme.a ${path}/libmzgc.a"
+	else
+	  dnl Using shared objects
+	  if test -f "${path}/libmzscheme3m.so"; then
+	    MZSCHEME_LIBS="-L${path} -lmzscheme3m"
+	    MZSCHEME_CFLAGS="-DMZ_PRECISE_GC"
+	  elif test -f "${path}/libracket3m.so"; then
+	    MZSCHEME_LIBS="-L${path} -lracket3m"
+	    MZSCHEME_CFLAGS="-DMZ_PRECISE_GC"
+	  elif test -f "${path}/libracket.so"; then
+	    MZSCHEME_LIBS="-L${path} -lracket -lmzgc"
+	  else
+	    dnl try next until last
+	    if test "$path" != "$SCHEME_LIB"; then
+	      continue
+	    fi
+	    MZSCHEME_LIBS="-L${path} -lmzscheme -lmzgc"
+	  fi
+	  if test "$GCC" = yes; then
+	    dnl Make Vim remember the path to the library.  For when it's not in
+	    dnl $LD_LIBRARY_PATH.
+	    MZSCHEME_LIBS="${MZSCHEME_LIBS} -Wl,-rpath -Wl,${path}"
+	  elif test "`(uname) 2>/dev/null`" = SunOS &&
+				   uname -r | grep '^5' >/dev/null; then
+	    MZSCHEME_LIBS="${MZSCHEME_LIBS} -R ${path}"
+	  fi
+	fi
       fi
-      if test "$GCC" = yes; then
-	dnl Make Vim remember the path to the library.  For when it's not in
-	dnl $LD_LIBRARY_PATH.
-	MZSCHEME_LIBS="${MZSCHEME_LIBS} -Wl,-rpath -Wl,${vi_cv_path_mzscheme_pfx}/lib"
-      elif test "`(uname) 2>/dev/null`" = SunOS &&
-			       uname -r | grep '^5' >/dev/null; then
-	MZSCHEME_LIBS="${MZSCHEME_LIBS} -R ${vi_cv_path_mzscheme_pfx}/lib"
+      if test "X$MZSCHEME_LIBS" != "X"; then
+	break
       fi
+    done
+
+    AC_MSG_CHECKING([if racket requires -pthread])
+    if test "X$SCHEME_LIB" != "X" && $FGREP -e -pthread "$SCHEME_LIB/buildinfo" >/dev/null ; then
+      AC_MSG_RESULT(yes)
+      MZSCHEME_LIBS="${MZSCHEME_LIBS} -pthread"
+      MZSCHEME_CFLAGS="${MZSCHEME_CFLAGS} -pthread"
+    else
+      AC_MSG_RESULT(no)
+    fi
+
+    AC_MSG_CHECKING(for racket config directory)
+    SCHEME_CONFIGDIR=`${vi_cv_path_mzscheme} -e '(require setup/dirs)(let ((p (find-config-dir))) (when (path? p) (display p)))'`
+    if test "X$SCHEME_CONFIGDIR" != "X"; then
+      MZSCHEME_CFLAGS="${MZSCHEME_CFLAGS} -DMZSCHEME_CONFIGDIR='\"${SCHEME_CONFIGDIR}\"'"
+      AC_MSG_RESULT(${SCHEME_CONFIGDIR})
+    else
+      AC_MSG_RESULT(not found)
     fi
 
     AC_MSG_CHECKING(for racket collects directory)
-    if test -d $vi_cv_path_mzscheme_pfx/lib/plt/collects; then
-      SCHEME_COLLECTS=$vi_cv_path_mzscheme_pfx/lib/plt/
-    else
-      if test -d $vi_cv_path_mzscheme_pfx/lib/racket/collects; then
-	SCHEME_COLLECTS=$vi_cv_path_mzscheme_pfx/lib/racket/
+    SCHEME_COLLECTS=`${vi_cv_path_mzscheme} -e '(require setup/dirs)(let ((p (find-collects-dir))) (when (path? p) (let-values (((base _1 _2) (split-path p))) (display base))))'`
+    if test "X$SCHEME_COLLECTS" = "X"; then
+      if test -d "$vi_cv_path_mzscheme_pfx/lib/plt/collects"; then
+	SCHEME_COLLECTS=$vi_cv_path_mzscheme_pfx/lib/plt/
       else
-	if test -d $vi_cv_path_mzscheme_pfx/share/racket/collects; then
-	  SCHEME_COLLECTS=$vi_cv_path_mzscheme_pfx/share/racket/
+	if test -d "$vi_cv_path_mzscheme_pfx/lib/racket/collects"; then
+	  SCHEME_COLLECTS=$vi_cv_path_mzscheme_pfx/lib/racket/
 	else
-	  if test -d $vi_cv_path_mzscheme_pfx/collects; then
-	    SCHEME_COLLECTS=$vi_cv_path_mzscheme_pfx/
+	  if test -d "$vi_cv_path_mzscheme_pfx/share/racket/collects"; then
+	    SCHEME_COLLECTS=$vi_cv_path_mzscheme_pfx/share/racket/
+	  else
+	    if test -d "$vi_cv_path_mzscheme_pfx/collects"; then
+	      SCHEME_COLLECTS=$vi_cv_path_mzscheme_pfx/
+	    fi
 	  fi
 	fi
       fi
@@ -865,7 +923,6 @@ if test "$enable_mzschemeinterp" = "yes"; then
     if test "X$MZSCHEME_EXTRA" != "X" ; then
       dnl need to generate bytecode for MzScheme base
       MZSCHEME_CFLAGS="${MZSCHEME_CFLAGS} -DINCLUDE_MZSCHEME_BASE"
-      MZSCHEME_MZC="${vi_cv_path_mzscheme_pfx}/bin/mzc"
       AC_MSG_RESULT(needed)
     else
       AC_MSG_RESULT(not needed)
@@ -916,6 +973,9 @@ AC_ARG_ENABLE(perlinterp,
 	[enable_perlinterp="no"])
 AC_MSG_RESULT($enable_perlinterp)
 if test "$enable_perlinterp" = "yes" -o "$enable_perlinterp" = "dynamic"; then
+  if test "x$features" = "xtiny" -o "x$features" = "xsmall"; then
+    AC_MSG_ERROR([cannot use Perl with tiny or small features])
+  fi
   AC_SUBST(vi_cv_path_perl)
   AC_PATH_PROG(vi_cv_path_perl, perl)
   if test "X$vi_cv_path_perl" != "X"; then
@@ -948,10 +1008,20 @@ if test "$enable_perlinterp" = "yes" -o "$enable_perlinterp" = "dynamic"; then
       vi_cv_perllib=`$vi_cv_path_perl -MConfig -e 'print $Config{privlibexp}'`
       vi_cv_perlsitelib=`$vi_cv_path_perl -MConfig -e 'print $Config{sitelibexp}'`
       AC_SUBST(vi_cv_perllib)
+      vi_cv_perl_extutils=unknown_perl_extutils_path
+      for extutils_rel_path in ExtUtils vendor_perl/ExtUtils; do
+	xsubpp_path="$vi_cv_perllib/$extutils_rel_path/xsubpp"
+	if test -f "$xsubpp_path"; then
+	  vi_cv_perl_xsubpp="$xsubpp_path"
+	fi
+      done
+      AC_SUBST(vi_cv_perl_xsubpp)
       AC_SUBST(vi_cv_perlsitelib)
       dnl Remove "-fno-something", it breaks using cproto.
+      dnl Remove "-fdebug-prefix-map", it isn't supported by clang.
       perlcppflags=`$vi_cv_path_perl -Mlib=$srcdir -MExtUtils::Embed \
-	      -e 'ccflags;perl_inc;print"\n"' | sed -e 's/-fno[[^ ]]*//'`
+	      -e 'ccflags;perl_inc;print"\n"' | sed -e 's/-fno[[^ ]]*//' \
+			-e 's/-fdebug-prefix-map[[^ ]]*//g'`
       dnl Remove "-lc", it breaks on FreeBSD when using "-pthread".
       perllibs=`cd $srcdir; $vi_cv_path_perl -MExtUtils::Embed -e 'ldopts' | \
 		sed -e '/Warning/d' -e '/Note (probably harmless)/d' \
@@ -1036,7 +1106,8 @@ if test "$enable_perlinterp" = "yes" -o "$enable_perlinterp" = "dynamic"; then
   if test "$enable_perlinterp" = "dynamic"; then
     if test "$perl_ok" = "yes" -a "X$libperl" != "X"; then
       AC_DEFINE(DYNAMIC_PERL)
-      PERL_CFLAGS="-DDYNAMIC_PERL_DLL=\\\"$libperl\\\" $PERL_CFLAGS"
+      AC_CACHE_VAL(vi_cv_dll_name_perl, [vi_cv_dll_name_perl="$libperl"])
+      PERL_CFLAGS="-DDYNAMIC_PERL_DLL=\\\"$vi_cv_dll_name_perl\\\" $PERL_CFLAGS"
     fi
   fi
 
@@ -1057,6 +1128,10 @@ AC_ARG_ENABLE(pythoninterp,
 	[enable_pythoninterp="no"])
 AC_MSG_RESULT($enable_pythoninterp)
 if test "$enable_pythoninterp" = "yes" -o "$enable_pythoninterp" = "dynamic"; then
+  if test "x$features" = "xtiny" -o "x$features" = "xsmall"; then
+    AC_MSG_ERROR([cannot use Python with tiny or small features])
+  fi
+
   dnl -- find the python executable
   AC_PATH_PROGS(vi_cv_path_python, python2 python)
   if test "X$vi_cv_path_python" != "X"; then
@@ -1138,6 +1213,9 @@ __:
 	@echo "python_LINKFORSHARED='$(LINKFORSHARED)'"
 	@echo "python_DLLLIBRARY='$(DLLLIBRARY)'"
 	@echo "python_INSTSONAME='$(INSTSONAME)'"
+	@echo "python_PYTHONFRAMEWORK='$(PYTHONFRAMEWORK)'"
+	@echo "python_PYTHONFRAMEWORKPREFIX='$(PYTHONFRAMEWORKPREFIX)'"
+	@echo "python_PYTHONFRAMEWORKINSTALLDIR='$(PYTHONFRAMEWORKINSTALLDIR)'"
 eof
 	    dnl -- delete the lines from make about Entering/Leaving directory
 	    eval "`cd ${PYTHON_CONFDIR} && make -f "${tmp_mkf}" __ | sed '/ directory /d'`"
@@ -1145,18 +1223,40 @@ eof
 	    if test "x$MACOSX" = "xyes" && ${vi_cv_path_python} -c \
 		"import sys; sys.exit(${vi_cv_var_python_version} < 2.3)"; then
 	      vi_cv_path_python_plibs="-framework Python"
+	      if test "x${vi_cv_path_python}" != "x/usr/bin/python" && test -n "${python_PYTHONFRAMEWORKPREFIX}"; then
+		  vi_cv_path_python_plibs="-F${python_PYTHONFRAMEWORKPREFIX} -framework Python"
+	      fi
 	    else
 	      if test "${vi_cv_var_python_version}" = "1.4"; then
 		  vi_cv_path_python_plibs="${PYTHON_CONFDIR}/libModules.a ${PYTHON_CONFDIR}/libPython.a ${PYTHON_CONFDIR}/libObjects.a ${PYTHON_CONFDIR}/libParser.a"
 	      else
 		  vi_cv_path_python_plibs="-L${PYTHON_CONFDIR} -lpython${vi_cv_var_python_version}"
 	      fi
+	      dnl -- Check if the path contained in python_LINKFORSHARED is
+	      dnl    usable for vim build. If not, make and try other
+	      dnl    candidates.
+	      if test -n "${python_LINKFORSHARED}" && test -n "${python_PYTHONFRAMEWORKPREFIX}"; then
+	        python_link_symbol=`echo ${python_LINKFORSHARED} | sed 's/\([[^ \t]][[^ \t]]*[[ \t]][[ \t]]*[[^ \t]][[^ \t]]*\)[[ \t]].*/\1/'`
+		python_link_path=`echo ${python_LINKFORSHARED} |   sed 's/\([[^ \t]][[^ \t]]*[[ \t]][[ \t]]*[[^ \t]][[^ \t]]*\)[[ \t]][[ \t]]*\(.*\)/\2/'`
+	        if test -n "${python_link_path}" && ! test -x "${python_link_path}"; then
+	          dnl -- The path looks relative. Guess the absolute one using
+		  dnl    the prefix and try that.
+	          python_link_path="${python_PYTHONFRAMEWORKPREFIX}/${python_link_path}"
+		  if test -n "${python_link_path}" && ! test -x "${python_link_path}"; then
+		    dnl -- A last resort.
+		    python_link_path="${python_PYTHONFRAMEWORKINSTALLDIR}/Versions/${vi_cv_var_python_version}/${python_PYTHONFRAMEWORK}"
+	            dnl -- No check is done. The last word is left to the
+	            dnl    "sanity" test on link flags that follows shortly.
+		  fi
+	          python_LINKFORSHARED="${python_link_symbol} ${python_link_path}"
+	        fi
+	      fi
 	      vi_cv_path_python_plibs="${vi_cv_path_python_plibs} ${python_BASEMODLIBS} ${python_LIBS} ${python_SYSLIBS} ${python_LINKFORSHARED}"
 	      dnl remove -ltermcap, it can conflict with an earlier -lncurses
 	      vi_cv_path_python_plibs=`echo $vi_cv_path_python_plibs | sed s/-ltermcap//`
 	    fi
 	])
-	AC_CACHE_VAL(vi_cv_dll_name_python,
+	AC_CACHE_CHECK(Python's dll name,vi_cv_dll_name_python,
 	[
 	  if test "X$python_DLLLIBRARY" != "X"; then
 	    vi_cv_dll_name_python="$python_DLLLIBRARY"
@@ -1269,6 +1369,10 @@ AC_ARG_ENABLE(python3interp,
 	[enable_python3interp="no"])
 AC_MSG_RESULT($enable_python3interp)
 if test "$enable_python3interp" = "yes" -o "$enable_python3interp" = "dynamic"; then
+  if test "x$features" = "xtiny" -o "x$features" = "xsmall"; then
+    AC_MSG_ERROR([cannot use Python with tiny or small features])
+  fi
+
   dnl -- find the python3 executable
   AC_PATH_PROGS(vi_cv_path_python3, python3 python)
   if test "X$vi_cv_path_python3" != "X"; then
@@ -1371,7 +1475,7 @@ eof
 	    vi_cv_path_python3_plibs=`echo $vi_cv_path_python3_plibs | sed s/-ltermcap//`
 	    vi_cv_path_python3_plibs=`echo $vi_cv_path_python3_plibs | sed s/-lffi//`
 	])
-	AC_CACHE_VAL(vi_cv_dll_name_python3,
+	AC_CACHE_CHECK(Python3's dll name,vi_cv_dll_name_python3,
 	[
 	  if test "X$python3_DLLLIBRARY" != "X"; then
 	    vi_cv_dll_name_python3="$python3_DLLLIBRARY"
@@ -1461,6 +1565,11 @@ AC_SUBST(PYTHON3_CFLAGS)
 AC_SUBST(PYTHON3_SRC)
 AC_SUBST(PYTHON3_OBJ)
 
+AC_ARG_WITH(properly-linked-python2-python3,
+      [  --with-properly-linked-python2-python3 Link with properly linked Python 2 and Python 3.],
+      [vi_cv_with_properly_linked_python2_python3="yes"],
+      [vi_cv_with_properly_linked_python2_python3="no"])
+
 dnl if python2.x and python3.x are enabled one can only link in code
 dnl with dlopen(), dlsym(), dlclose() 
 if test "$python_ok" = yes && test "$python3_ok" = yes; then
@@ -1469,9 +1578,10 @@ if test "$python_ok" = yes && test "$python3_ok" = yes; then
   AC_MSG_CHECKING(whether we can do without RTLD_GLOBAL for Python)
   cflags_save=$CFLAGS
   CFLAGS="$CFLAGS $PYTHON_CFLAGS"
-  ldflags_save=$LDFLAGS
+  libs_save=$LIBS
   dnl -ldl must go first to make this work on Archlinux (Roland Puntaier)
-  LDFLAGS="-ldl $LDFLAGS"
+  LIBS="-ldl $LIBS"
+  if test "x$MACOSX" != "xyes" || test "$vi_cv_with_properly_linked_python2_python3" = "yes"; then
   AC_RUN_IFELSE([AC_LANG_SOURCE([
     #include <dlfcn.h>
     /* If this program fails, then RTLD_GLOBAL is needed.
@@ -1483,7 +1593,7 @@ if test "$python_ok" = yes && test "$python3_ok" = yes; then
     int no_rtl_global_needed_for(char *python_instsoname, char *prefix)
     {
       int needed = 0;
-      void* pylib = dlopen(python_instsoname, RTLD_LAZY);
+      void* pylib = dlopen(python_instsoname, RTLD_LAZY|RTLD_LOCAL);
       if (pylib != 0)
       {
           void (*pfx)(char *home) = dlsym(pylib, "Py_SetPythonHome");
@@ -1509,14 +1619,14 @@ if test "$python_ok" = yes && test "$python3_ok" = yes; then
     [AC_MSG_RESULT(yes);AC_DEFINE(PY_NO_RTLD_GLOBAL)], [AC_MSG_RESULT(no)])
 
   CFLAGS=$cflags_save
-  LDFLAGS=$ldflags_save
+  LIBS=$libs_save
 
   AC_MSG_CHECKING(whether we can do without RTLD_GLOBAL for Python3)
   cflags_save=$CFLAGS
   CFLAGS="$CFLAGS $PYTHON3_CFLAGS"
-  ldflags_save=$LDFLAGS
+  libs_save=$LIBS
   dnl -ldl must go first to make this work on Archlinux (Roland Puntaier)
-  LDFLAGS="-ldl $LDFLAGS"
+  LIBS="-ldl $LIBS"
   AC_RUN_IFELSE([AC_LANG_SOURCE([
     #include <dlfcn.h>
     #include <wchar.h>
@@ -1529,7 +1639,7 @@ if test "$python_ok" = yes && test "$python3_ok" = yes; then
     int no_rtl_global_needed_for(char *python_instsoname, wchar_t *prefix)
     {
       int needed = 0;
-      void* pylib = dlopen(python_instsoname, RTLD_LAZY);
+      void* pylib = dlopen(python_instsoname, RTLD_LAZY|RTLD_LOCAL);
       if (pylib != 0)
       {
           void (*pfx)(wchar_t *home) = dlsym(pylib, "Py_SetPythonHome");
@@ -1553,9 +1663,10 @@ if test "$python_ok" = yes && test "$python3_ok" = yes; then
       return !not_needed;
     }])],
     [AC_MSG_RESULT(yes);AC_DEFINE(PY3_NO_RTLD_GLOBAL)], [AC_MSG_RESULT(no)])
+  fi
 
   CFLAGS=$cflags_save
-  LDFLAGS=$ldflags_save
+  LIBS=$libs_save
 
   PYTHON_SRC="if_python.c"
   PYTHON_OBJ="objects/if_python.o"
@@ -1613,11 +1724,11 @@ fi
 
 AC_MSG_CHECKING(--enable-tclinterp argument)
 AC_ARG_ENABLE(tclinterp,
-	[  --enable-tclinterp      Include Tcl interpreter.], ,
+	[  --enable-tclinterp[=OPTS]      Include Tcl interpreter. [default=no] [OPTS=no/yes/dynamic]], ,
 	[enable_tclinterp="no"])
 AC_MSG_RESULT($enable_tclinterp)
 
-if test "$enable_tclinterp" = "yes"; then
+if test "$enable_tclinterp" = "yes" -o "$enable_tclinterp" = "dynamic"; then
 
   dnl on FreeBSD tclsh is a silly script, look for tclsh8.[5420]
   AC_MSG_CHECKING(--with-tclsh argument)
@@ -1647,10 +1758,11 @@ if test "$enable_tclinterp" = "yes"; then
   fi
   if test "X$vi_cv_path_tcl" != "X"; then
     AC_MSG_CHECKING(Tcl version)
-    if echo 'exit [[expr [info tclversion] < 8.0]]' | $vi_cv_path_tcl - ; then
+    if echo 'exit [[expr [info tclversion] < 8.0]]' | "$vi_cv_path_tcl" - ; then
       tclver=`echo 'puts [[info tclversion]]' | $vi_cv_path_tcl -`
       AC_MSG_RESULT($tclver - OK);
       tclloc=`echo 'set l [[info library]];set i [[string last lib $l]];incr i -2;puts [[string range $l 0 $i]]' | $vi_cv_path_tcl -`
+      tcldll=`echo 'puts libtcl[[info tclversion]][[info sharedlibextension]]' | $vi_cv_path_tcl -`
 
       AC_MSG_CHECKING(for location of Tcl include)
       if test "x$MACOSX" != "xyes"; then
@@ -1681,11 +1793,15 @@ if test "$enable_tclinterp" = "yes"; then
 	  tclcnf="/System/Library/Frameworks/Tcl.framework"
 	fi
 	for try in $tclcnf; do
-	  if test -f $try/tclConfig.sh; then
+	  if test -f "$try/tclConfig.sh"; then
 	    AC_MSG_RESULT($try/tclConfig.sh)
-	    . $try/tclConfig.sh
+	    . "$try/tclConfig.sh"
 	    dnl use eval, because tcl 8.2 includes ${TCL_DBGX}
-	    TCL_LIBS=`eval echo "$TCL_LIB_SPEC $TCL_LIBS"`
+	    if test "$enable_tclinterp" = "dynamic"; then
+	      TCL_LIBS=`eval echo "$TCL_STUB_LIB_SPEC $TCL_LIBS"`
+	    else
+	      TCL_LIBS=`eval echo "$TCL_LIB_SPEC $TCL_LIBS"`
+	    fi
 	    dnl Use $TCL_DEFS for -D_THREAD_SAFE et al.  But only use the
 	    dnl "-D_ABC" items.  Watch out for -DFOO=long\ long.
 	    TCL_DEFS=`echo $TCL_DEFS | sed -e 's/\\\\ /\\\\X/g' | tr ' ' '\012' | sed -e '/^[[^-]]/d' -e '/^-[[^D]]/d' -e '/-D[[^_]]/d' -e 's/-D_/ -D_/' | tr '\012' ' ' | sed -e 's/\\\\X/\\\\ /g'`
@@ -1701,9 +1817,9 @@ if test "$enable_tclinterp" = "yes"; then
 	    for ver in "" $tclver ; do
 	      for try in $tcllib ; do
 		trylib=tcl$ver$ext
-		if test -f $try/lib$trylib ; then
+		if test -f "$try/lib$trylib" ; then
 		  AC_MSG_RESULT($try/lib$trylib)
-		  TCL_LIBS="-L$try -ltcl$ver -ldl -lm"
+		  TCL_LIBS="-L\"$try\" -ltcl$ver -ldl -lm"
 		  if test "`(uname) 2>/dev/null`" = SunOS &&
 					 uname -r | grep '^5' >/dev/null; then
 		    TCL_LIBS="$TCL_LIBS -R $try"
@@ -1730,6 +1846,12 @@ if test "$enable_tclinterp" = "yes"; then
       AC_MSG_RESULT(too old; need Tcl version 8.0 or later)
     fi
   fi
+  if test "$enable_tclinterp" = "dynamic"; then
+    if test "X$TCL_SRC" != "X" -a "X$tcldll" != "X"; then
+      AC_DEFINE(DYNAMIC_TCL)
+      TCL_CFLAGS="-DDYNAMIC_TCL_DLL=\\\"$tcldll\\\" -DDYNAMIC_TCL_VER=\\\"$tclver\\\" $TCL_CFLAGS"
+    fi
+  fi
   if test "$fail_if_missing" = "yes" -a -z "$TCL_SRC"; then
     AC_MSG_ERROR([could not configure Tcl])
   fi
@@ -1746,6 +1868,10 @@ AC_ARG_ENABLE(rubyinterp,
 	[enable_rubyinterp="no"])
 AC_MSG_RESULT($enable_rubyinterp)
 if test "$enable_rubyinterp" = "yes" -o "$enable_rubyinterp" = "dynamic"; then
+  if test "x$features" = "xtiny" -o "x$features" = "xsmall"; then
+    AC_MSG_ERROR([cannot use Ruby with tiny or small features])
+  fi
+
   AC_MSG_CHECKING(--with-ruby-command argument)
   AC_SUBST(vi_cv_path_ruby)
   AC_ARG_WITH(ruby-command, [  --with-ruby-command=RUBY  name of the Ruby command (default: ruby)],
@@ -1871,11 +1997,41 @@ AC_ARG_ENABLE(netbeans,
 	[  --disable-netbeans      Disable NetBeans integration support.],
 	, [enable_netbeans="yes"])
 if test "$enable_netbeans" = "yes"; then
-  AC_MSG_RESULT(no)
+  if test "x$features" = "xtiny" -o "x$features" = "xsmall"; then
+    AC_MSG_RESULT([cannot use NetBeans with tiny or small features])
+    enable_netbeans="no"
+  else
+    AC_MSG_RESULT(no)
+  fi
+else
+  AC_MSG_RESULT(yes)
+fi
+
+AC_MSG_CHECKING(--disable-channel argument)
+AC_ARG_ENABLE(channel,
+	[  --disable-channel      Disable process communication support.],
+	, [enable_channel="yes"])
+if test "$enable_channel" = "yes"; then
+  if test "x$features" = "xtiny" -o "x$features" = "xsmall"; then
+    AC_MSG_RESULT([cannot use channels with tiny or small features])
+    enable_channel="no"
+  else
+    AC_MSG_RESULT(no)
+  fi
+else
+  if test "$enable_netbeans" = "yes"; then
+    AC_MSG_RESULT([yes, netbeans also disabled])
+    enable_netbeans="no"
+  else
+    AC_MSG_RESULT(yes)
+  fi
+fi
+
+if test "$enable_channel" = "yes"; then
   dnl On Solaris we need the socket and nsl library.
   AC_CHECK_LIB(socket, socket)
   AC_CHECK_LIB(nsl, gethostbyname)
-  AC_MSG_CHECKING(whether compiling netbeans integration is possible)
+  AC_MSG_CHECKING(whether compiling with process communication is possible)
   AC_TRY_LINK([
 #include <stdio.h>
 #include <stdlib.h>
@@ -1901,9 +2057,7 @@ if test "$enable_netbeans" = "yes"; then
 		  (void)connect(1, (struct sockaddr *)&server, sizeof(server));
 	    ],
 	AC_MSG_RESULT(yes),
-	AC_MSG_RESULT(no); enable_netbeans="no")
-else
-  AC_MSG_RESULT(yes)
+	AC_MSG_RESULT(no); enable_netbeans="no"; enable_channel="no")
 fi
 if test "$enable_netbeans" = "yes"; then
   AC_DEFINE(FEAT_NETBEANS_INTG)
@@ -1912,18 +2066,12 @@ if test "$enable_netbeans" = "yes"; then
   NETBEANS_OBJ="objects/netbeans.o"
   AC_SUBST(NETBEANS_OBJ)
 fi
-
-AC_MSG_CHECKING(--enable-sniff argument)
-AC_ARG_ENABLE(sniff,
-	[  --enable-sniff          Include Sniff interface.], ,
-	[enable_sniff="no"])
-AC_MSG_RESULT($enable_sniff)
-if test "$enable_sniff" = "yes"; then
-  AC_DEFINE(FEAT_SNIFF)
-  SNIFF_SRC="if_sniff.c"
-  AC_SUBST(SNIFF_SRC)
-  SNIFF_OBJ="objects/if_sniff.o"
-  AC_SUBST(SNIFF_OBJ)
+if test "$enable_channel" = "yes"; then
+  AC_DEFINE(FEAT_JOB_CHANNEL)
+  CHANNEL_SRC="channel.c"
+  AC_SUBST(CHANNEL_SRC)
+  CHANNEL_OBJ="objects/channel.o"
+  AC_SUBST(CHANNEL_OBJ)
 fi
 
 AC_MSG_CHECKING(--enable-multibyte argument)
@@ -2090,7 +2238,7 @@ test "x$with_x" = xno -a "x$MACOSX" != "xyes" -a "x$QNX" != "xyes" && enable_gui
 
 AC_MSG_CHECKING(--enable-gui argument)
 AC_ARG_ENABLE(gui,
- [  --enable-gui[=OPTS]     X11 GUI [default=auto] [OPTS=auto/no/gtk2/gnome2/motif/athena/neXtaw/photon/carbon/macvim]], , enable_gui="auto")
+ [  --enable-gui[=OPTS]     X11 GUI [default=auto] [OPTS=auto/no/gtk2/gnome2/gtk3/motif/athena/neXtaw/photon/carbon/macvim]], , enable_gui="auto")
 
 dnl Canonicalize the --enable-gui= argument so that it can be easily compared.
 dnl Do not use character classes for portability with old tools.
@@ -2099,6 +2247,7 @@ enable_gui_canon=`echo "_$enable_gui" | \
 
 dnl Skip everything by default.
 SKIP_GTK2=YES
+SKIP_GTK3=YES
 SKIP_GNOME=YES
 SKIP_MOTIF=YES
 SKIP_ATHENA=YES
@@ -2155,6 +2304,8 @@ else
     gnome2)	AC_MSG_RESULT(GNOME 2.x GUI support)
 		SKIP_GNOME=
 		SKIP_GTK2=;;
+    gtk3)	AC_MSG_RESULT(GTK+ 3.x GUI support)
+		SKIP_GTK3=;;
     motif)	AC_MSG_RESULT(Motif GUI support)
 		SKIP_MOTIF=;;
     athena)	AC_MSG_RESULT(Athena GUI support)
@@ -2187,6 +2338,17 @@ if test "x$SKIP_GNOME" != "xYES" -a "$enable_gui_canon" != "gnome2"; then
   AC_MSG_RESULT($enable_gnome_check)
   if test "x$enable_gnome_check" = "xno"; then
     SKIP_GNOME=YES
+  fi
+fi
+
+if test "x$SKIP_GTK3" != "xYES" -a "$enable_gui_canon" != "gtk3"; then
+  AC_MSG_CHECKING(whether or not to look for GTK+ 3)
+  AC_ARG_ENABLE(gtk3-check,
+	[  --enable-gtk3-check     If auto-select GUI, check for GTK+ 3 [default=yes]],
+	, enable_gtk3_check="yes")
+  AC_MSG_RESULT($enable_gtk3_check)
+  if test "x$enable_gtk3_check" = "xno"; then
+    SKIP_GTK3=YES
   fi
 fi
 
@@ -2292,12 +2454,12 @@ AC_DEFUN(AM_PATH_GTK,
 [
   if test "X$GTK_CONFIG" != "Xno" -o "X$PKG_CONFIG" != "Xno"; then
   {
-    min_gtk_version=ifelse([$1], ,2.2.0,$1)
-    AC_MSG_CHECKING(for GTK - version >= $min_gtk_version)
     no_gtk=""
     if (test "X$SKIP_GTK2" != "XYES" -a "X$PKG_CONFIG" != "Xno") \
 	  && $PKG_CONFIG --exists gtk+-2.0; then
     {
+      min_gtk_version=ifelse([$1], ,2.2.0,$1)
+      AC_MSG_CHECKING(for GTK - version >= $min_gtk_version)
       dnl We should be using PKG_CHECK_MODULES() instead of this hack.
       dnl But I guess the dependency on pkgconfig.m4 is not wanted or
       dnl something like that.
@@ -2309,6 +2471,22 @@ AC_DEFUN(AM_PATH_GTK,
       gtk_minor_version=`$PKG_CONFIG --modversion gtk+-2.0 | \
 	     sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
       gtk_micro_version=`$PKG_CONFIG --modversion gtk+-2.0 | \
+	     sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+    }
+    elif (test "X$SKIP_GTK3" != "XYES" -a "X$PKG_CONFIG" != "Xno") \
+	  && $PKG_CONFIG --exists gtk+-3.0; then
+    {
+      min_gtk_version=ifelse([$1], ,3.0.0,$1)
+      AC_MSG_CHECKING(for GTK - version >= $min_gtk_version)
+
+      GTK_CFLAGS=`$PKG_CONFIG --cflags gtk+-3.0`
+      GTK_LIBDIR=`$PKG_CONFIG --libs-only-L gtk+-3.0`
+      GTK_LIBS=`$PKG_CONFIG --libs gtk+-3.0`
+      gtk_major_version=`$PKG_CONFIG --modversion gtk+-3.0 | \
+	     sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+      gtk_minor_version=`$PKG_CONFIG --modversion gtk+-3.0 | \
+	     sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+      gtk_micro_version=`$PKG_CONFIG --modversion gtk+-3.0 | \
 	     sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
     }
     else
@@ -2486,6 +2664,7 @@ if test -z "$SKIP_GTK2"; then
 		 GTK_LIBNAME="$GTK_LIBS"
 		GUI_INC_LOC="$GTK_CFLAGS"], )
     if test "x$GTK_CFLAGS" != "x"; then
+      SKIP_GTK3=YES
       SKIP_ATHENA=YES
       SKIP_NEXTAW=YES
       SKIP_MOTIF=YES
@@ -2513,6 +2692,77 @@ if test -z "$SKIP_GTK2"; then
     fi
   fi
 fi
+
+
+dnl ---------------------------------------------------------------------------
+dnl Check for GTK3.
+dnl ---------------------------------------------------------------------------
+if test -z "$SKIP_GTK3"; then
+
+  AC_MSG_CHECKING(--disable-gtktest argument)
+  AC_ARG_ENABLE(gtktest, [  --disable-gtktest       Do not try to compile and run a test GTK program],
+	, enable_gtktest=yes)
+  if test "x$enable_gtktest" = "xyes" ; then
+    AC_MSG_RESULT(gtk test enabled)
+  else
+    AC_MSG_RESULT(gtk test disabled)
+  fi
+
+  if test "X$PKG_CONFIG" = "X"; then
+    AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
+  fi
+
+  if test "x$PKG_CONFIG" != "xno"; then
+    AM_PATH_GTK(3.0.0,
+		[GUI_LIB_LOC="$GTK_LIBDIR"
+		 GTK_LIBNAME="$GTK_LIBS"
+		GUI_INC_LOC="$GTK_CFLAGS"], )
+    if test "x$GTK_CFLAGS" != "x"; then
+      SKIP_GTK2=YES
+      SKIP_GNOME=YES
+      SKIP_ATHENA=YES
+      SKIP_NEXTAW=YES
+      SKIP_MOTIF=YES
+      GUITYPE=GTK
+      AC_SUBST(GTK_LIBNAME)
+      AC_DEFINE(HAVE_GTK_MULTIHEAD)
+      AC_DEFINE(USE_GTK3)
+    fi
+  fi
+fi
+
+dnl Check the version of Gdk-Pixbuf.  If the version is 2.31 or later and
+dnl glib-compile-resources is found in PATH, use GResource.
+if test "x$GUITYPE" = "xGTK"; then
+  AC_MSG_CHECKING([version of Gdk-Pixbuf])
+  gdk_pixbuf_version=`$PKG_CONFIG --modversion gdk-pixbuf-2.0`
+  if test "x$gdk_pixbuf_version" != x ; then
+    gdk_pixbuf_version_minor=`echo $gdk_pixbuf_version | \
+      sed -e 's/[[0-9]][[0-9]]*\.\([[0-9]][[0-9]]*\)\.[[0-9]][[0-9]]*/\1/'`
+    if test "x$gdk_pixbuf_version_minor" != x -a \
+	$gdk_pixbuf_version_minor -ge 31 ; then
+      AC_MSG_RESULT([OK.])
+      AC_PATH_PROG(GLIB_COMPILE_RESOURCES,[glib-compile-resources],no)
+      AC_MSG_CHECKING([glib-compile-resources])
+      if test "x$GLIB_COMPILE_RESOURCES" = xno ; then
+	GLIB_COMPILE_RESOURCES=""
+	AC_MSG_RESULT([cannot be found in PATH.])
+      else
+	AC_MSG_RESULT([usable.])
+	AC_DEFINE(USE_GRESOURCE)
+	GRESOURCE_SRC="auto/gui_gtk_gresources.c"
+	GRESOURCE_OBJ="objects/gui_gtk_gresources.o"
+      fi
+    else
+      AC_MSG_RESULT([not usable.])
+    fi
+  else
+    AC_MSG_RESULT([cannot obtain from pkg_config.])
+  fi
+fi
+AC_SUBST(GLIB_COMPILE_RESOURCES)
+AC_SUBST(GRESOURCE_SRC)
+AC_SUBST(GRESOURCE_OBJ)
 
 dnl Check for Motif include files location.
 dnl The LAST one found is used, this makes the highest version to be used,
@@ -2702,7 +2952,8 @@ if test "$enable_xsmp" = "yes"; then
   CPPFLAGS=$cppflags_save
 fi
 
-if test -z "$SKIP_ATHENA" -o -z "$SKIP_NEXTAW" -o -z "$SKIP_MOTIF" -o -z "$SKIP_GTK2"; then
+
+if test -z "$SKIP_ATHENA" -o -z "$SKIP_NEXTAW" -o -z "$SKIP_MOTIF" -o -z "$SKIP_GTK2" -o -z "$SKIP_GTK3"; then
   dnl Check for X11/xpm.h and X11/Sunkeysym.h with the GUI include path
   cppflags_save=$CPPFLAGS
   CPPFLAGS="$CPPFLAGS $X_CFLAGS"
@@ -2805,9 +3056,9 @@ dnl end of GUI-checking
 dnl ---------------------------------------------------------------------------
 
 dnl Check for Cygwin, which needs an extra source file if not using X11
-AC_MSG_CHECKING(for CYGWIN environment)
+AC_MSG_CHECKING(for CYGWIN or MSYS environment)
 case `uname` in
-    CYGWIN*)    CYGWIN=yes; AC_MSG_RESULT(yes)
+    CYGWIN*|MSYS*)    CYGWIN=yes; AC_MSG_RESULT(yes)
                 AC_MSG_CHECKING(for CYGWIN clipboard support)
                 if test "x$with_x" = "xno" ; then
                   OS_EXTRA_SRC=winclip.c; OS_EXTRA_OBJ=objects/winclip.o
@@ -2889,7 +3140,7 @@ if test $ac_cv_header_sys_wait_h = no; then
 		AC_MSG_RESULT(no))
 fi
 
-AC_CHECK_HEADERS(stdarg.h stdint.h stdlib.h string.h \
+AC_CHECK_HEADERS(stdint.h stdlib.h string.h \
 	sys/select.h sys/utsname.h termcap.h fcntl.h \
 	sgtty.h sys/ioctl.h sys/time.h sys/types.h \
 	termio.h iconv.h inttypes.h langinfo.h math.h \
@@ -2969,6 +3220,7 @@ AC_HEADER_TIME
 AC_CHECK_TYPE(ino_t, long)
 AC_CHECK_TYPE(dev_t, unsigned)
 AC_C_BIGENDIAN(,,,)
+AC_C_INLINE
 
 AC_MSG_CHECKING(for rlim_t)
 if eval "test \"`echo '$''{'ac_cv_type_rlim_t'+set}'`\" = set"; then
@@ -3490,6 +3742,33 @@ AC_TRY_LINK([
 	AC_MSG_RESULT(yes); AC_DEFINE(HAVE_FLOAT_FUNCS),
 	AC_MSG_RESULT(no))
 
+dnl isinf() and isnan() need to include header files and may need -lm.
+AC_MSG_CHECKING([for isinf()])
+AC_TRY_LINK([
+#ifdef HAVE_MATH_H
+# include <math.h>
+#endif
+#if STDC_HEADERS
+# include <stdlib.h>
+# include <stddef.h>
+#endif
+], [int r = isinf(1.11); ],
+	AC_MSG_RESULT(yes); AC_DEFINE(HAVE_ISINF),
+	AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING([for isnan()])
+AC_TRY_LINK([
+#ifdef HAVE_MATH_H
+# include <math.h>
+#endif
+#if STDC_HEADERS
+# include <stdlib.h>
+# include <stddef.h>
+#endif
+], [int r = isnan(1.11); ],
+	AC_MSG_RESULT(yes); AC_DEFINE(HAVE_ISNAN),
+	AC_MSG_RESULT(no))
+
 dnl Link with -lposix1e for ACL stuff; if not found, try -lacl for SGI
 dnl when -lacl works, also try to use -lattr (required for Debian).
 dnl On Solaris, use the acl_get/set functions in libsec, if present.
@@ -3550,6 +3829,22 @@ struct acl *aclent;], [aclsize = sizeof(struct acl);
 	AC_MSG_RESULT(no))
 else
   AC_MSG_RESULT(yes)
+fi
+
+if test "x$GTK_CFLAGS" != "x"; then
+  dnl pango_shape_full() is new, fall back to pango_shape().
+  AC_MSG_CHECKING(for pango_shape_full)
+  ac_save_CFLAGS="$CFLAGS"
+  ac_save_LIBS="$LIBS"
+  CFLAGS="$CFLAGS $GTK_CFLAGS"
+  LIBS="$LIBS $GTK_LIBS"
+  AC_TRY_LINK(
+  [#include <gtk/gtk.h>],
+  [ pango_shape_full(NULL, 0, NULL, 0, NULL, NULL); ],
+	  AC_MSG_RESULT(yes); AC_DEFINE(HAVE_PANGO_SHAPE_FULL),
+	  AC_MSG_RESULT(no))
+  CFLAGS="$ac_save_CFLAGS"
+  LIBS="$ac_save_LIBS"
 fi
 
 AC_MSG_CHECKING(--disable-gpm argument)
@@ -3782,21 +4077,24 @@ fi
 dnl Check for multibyte locale functions
 dnl Find out if _Xsetlocale() is supported by libX11.
 dnl Check if X_LOCALE should be defined.
-
-if test "$enable_multibyte" = "yes"; then
+if test "x$with_x" = "xyes"; then
   cflags_save=$CFLAGS
-  ldflags_save=$LDFLAGS
-  if test "x$x_includes" != "xNONE" ; then
-    CFLAGS="$CFLAGS -I$x_includes"
-    LDFLAGS="$X_LIBS $LDFLAGS -lX11"
-    AC_MSG_CHECKING(whether X_LOCALE needed)
-    AC_TRY_COMPILE([#include <X11/Xlocale.h>],,
-	AC_TRY_LINK_FUNC([_Xsetlocale], [AC_MSG_RESULT(yes)
-		AC_DEFINE(X_LOCALE)], AC_MSG_RESULT(no)),
-	AC_MSG_RESULT(no))
-  fi
+  libs_save=$LIBS
+  LIBS="$LIBS $X_LIBS $GUI_LIB_LOC $GUI_X_LIBS $X_PRE_LIBS $X_LIB $X_EXTRA_LIBS"
+  CFLAGS="$CFLAGS $X_CFLAGS"
+
+  AC_MSG_CHECKING(whether X_LOCALE needed)
+  AC_TRY_COMPILE([#include <X11/Xlocale.h>],,
+      AC_TRY_LINK_FUNC([_Xsetlocale], [AC_MSG_RESULT(yes)
+	      AC_DEFINE(X_LOCALE)], AC_MSG_RESULT(no)),
+      AC_MSG_RESULT(no))
+
+  AC_MSG_CHECKING(whether Xutf8SetWMProperties() can be used)
+  AC_TRY_LINK_FUNC([Xutf8SetWMProperties], [AC_MSG_RESULT(yes)
+	      AC_DEFINE(HAVE_XUTF8SETWMPROPERTIES)], AC_MSG_RESULT(no))
+
   CFLAGS=$cflags_save
-  LDFLAGS=$ldflags_save
+  LIBS=$libs_save
 fi
 
 dnl Link with xpg4, it is said to make Korean locale working
@@ -3878,7 +4176,7 @@ if test "$enable_nls" = "yes"; then
     else
       AC_MSG_RESULT([msgfmt not found - disabled]);
     fi
-    if test $have_gettext = "yes"; then
+    if test $have_gettext = "yes" -a "x$features" != "xtiny" -a "x$features" != "xsmall"; then
       AC_DEFINE(HAVE_GETTEXT)
       MAKEMO=yes
       AC_SUBST(MAKEMO)

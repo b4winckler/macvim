@@ -17,11 +17,7 @@
 @class MMVimController;
 @class MMVimView;
 
-@interface MMWindowController : NSWindowController
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
-    // 10.6 has turned delegate messages into formal protocols
-    <NSWindowDelegate>
-#endif
+@interface MMWindowController : NSWindowController<NSWindowDelegate>
 {
     MMVimController     *vimController;
     MMVimView           *vimView;
@@ -45,6 +41,8 @@
     NSPoint             userTopLeft;
     NSPoint             defaultTopLeft;
     NSToolbar           *toolbar;
+    BOOL                resizingDueToMove;
+    int                 blurRadius;
 }
 
 - (id)initWithVimController:(MMVimController *)controller;
@@ -55,6 +53,7 @@
 - (void)cleanup;
 - (void)openWindow;
 - (BOOL)presentWindow:(id)unused;
+- (void)moveWindowAcrossScreens:(NSPoint)origin;
 - (void)updateTabsWithData:(NSData *)data;
 - (void)selectTabWithIndex:(int)idx;
 - (void)setTextDimensionsWithRows:(int)rows columns:(int)cols isLive:(BOOL)live
@@ -79,6 +78,8 @@
 - (void)adjustLinespace:(int)linespace;
 - (void)liveResizeWillStart;
 - (void)liveResizeDidEnd;
+
+- (void)setBlurRadius:(int)radius;
 
 - (void)enterFullScreen:(int)fuoptions backgroundColor:(NSColor *)back;
 - (void)leaveFullScreen;

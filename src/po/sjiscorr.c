@@ -7,9 +7,7 @@
 #include <string.h>
 
 	int
-main(argc, argv)
-	int	argc;
-	char	**argv;
+main(int argc, char **argv)
 {
 	char buffer[BUFSIZ];
 	char *p;
@@ -23,9 +21,8 @@ main(argc, argv)
 				fputs("charset=cp932", stdout);
 				p += 12;
 			}
-			else if (strncmp(p, "ja.po - Japanese message file", 29) == 0)
+			else if (strncmp(p, "# Original translations", 23) == 0)
 			{
-				fputs("ja.sjis.po - Japanese message file for Vim (version 6.x)\n", stdout);
 				fputs("# generated from ja.po, DO NOT EDIT", stdout);
 				while (p[1] != '\n')
 					++p;

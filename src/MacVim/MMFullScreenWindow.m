@@ -155,7 +155,7 @@ enum {
     [[target windowController] setWindow:self];
 
     oldTabBarStyle = [[view tabBarControl] styleName];
-    [[view tabBarControl] setStyleNamed:@"Unified"];
+    [[view tabBarControl] setStyleNamed:@"Metal"];
 
     // add text view
     oldPosition = [view frame].origin;

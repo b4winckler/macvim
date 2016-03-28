@@ -176,6 +176,20 @@ gui_macvim_after_fork_init()
     val = CFPreferencesGetAppIntegerValue((CFStringRef)MMRendererKey,
                                             kCFPreferencesCurrentApplication,
                                             &keyValid);
+    if (!keyValid) {
+        // If MMRendererKey is not valid in the defaults, it means MacVim uses
+        // the Core Text Renderer.
+        keyValid = YES;
+        val = MMRendererCoreText;
+    }
+    if (val != MMRendererDefault && val != MMRendererCoreText) {
+        // Migrate from the old value to the Core Text Renderer.
+        val = MMRendererCoreText;
+        CFPreferencesSetAppValue((CFStringRef)MMRendererKey,
+                                (CFPropertyListRef)[NSNumber numberWithInt:val],
+                                kCFPreferencesCurrentApplication);
+        CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication);
+    }
     if (keyValid) {
         ASLogInfo(@"Use renderer=%ld", val);
         use_gui_macvim_draw_string = (val != MMRendererCoreText);
@@ -1783,6 +1797,11 @@ gui_macvim_set_antialias(int antialias)
     [[MMBackend sharedInstance] setAntialias:antialias];
 }
 
+    void
+gui_macvim_set_ligatures(int ligatures)
+{
+    [[MMBackend sharedInstance] setLigatures:ligatures];
+}
 
     void
 gui_macvim_wait_for_startup()
@@ -2220,18 +2239,19 @@ static int vimModMaskToEventModifierFlags(int mods)
 
 
 
-// -- NetBeans Support ------------------------------------------------------
+// -- Channel Support ------------------------------------------------------
 
-#ifdef FEAT_NETBEANS_INTG
-
-/* Set NetBeans socket to CFRunLoop */
-    void
-gui_macvim_set_netbeans_socket(int socket)
+    void *
+gui_macvim_add_channel(channel_T *channel, int part)
 {
-    [[MMBackend sharedInstance] setNetbeansSocket:socket];
+    return [[MMBackend sharedInstance] addChannel:channel part:part];
 }
 
-#endif // FEAT_NETBEANS_INTG
+    void
+gui_macvim_remove_channel(void *cookie)
+{
+    [[MMBackend sharedInstance] removeChannel:cookie];
+}
 
 
 
@@ -2290,13 +2310,6 @@ gui_mch_destroy_sign(void *sign)
     [imgName release];
 }
 
-# ifdef FEAT_NETBEANS_INTG
-    void
-netbeans_draw_multisign_indicator(int row)
-{
-}
-# endif // FEAT_NETBEANS_INTG
-
 #endif // FEAT_SIGN_ICONS
 
 
@@ -2309,7 +2322,7 @@ netbeans_draw_multisign_indicator(int row)
 gui_mch_create_beval_area(target, mesg, mesgCB, clientData)
     void	*target;
     char_u	*mesg;
-    void	(*mesgCB)__ARGS((BalloonEval *, int));
+    void	(*mesgCB)(BalloonEval *, int);
     void	*clientData;
 {
     BalloonEval	*beval;
@@ -2359,3 +2372,9 @@ gui_mch_post_balloon(beval, mesg)
 }
 
 #endif // FEAT_BEVAL
+
+    void
+gui_macvim_set_blur(int radius)
+{
+    [[MMBackend sharedInstance] setBlurRadius:radius];
+}

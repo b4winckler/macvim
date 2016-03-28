@@ -228,6 +228,8 @@ def ee(expr, g=globals(), l=locals()):
                     cb.append(expr + ':' + repr((e.__class__, TypeError(msg))))
                 else:
                     cb.append(expr + ':' + repr((e.__class__, e)))
+            elif sys.version_info >= (3, 5) and e.__class__ is ValueError and str(e) == 'embedded null byte':
+                msg = cb.append(expr + ':' + repr((TypeError, TypeError('expected bytes with no null'))))
             else:
                 cb.append(expr + ':' + repr((e.__class__, e)))
         else:
@@ -264,13 +266,17 @@ EOF
 :let messages=[]
 :delfunction DictNew
 py3 <<EOF
+import sys
 d=vim.bindeval('{}')
 m=vim.bindeval('messages')
 def em(expr, g=globals(), l=locals()):
     try:
         exec(expr, g, l)
     except Exception as e:
-        m.extend([e.__class__.__name__])
+        if sys.version_info >= (3, 5) and e.__class__ is ValueError and str(e) == 'embedded null byte':
+            m.extend([TypeError.__name__])
+        else:
+            m.extend([e.__class__.__name__])
 
 em('d["abc1"]')
 em('d["abc1"]="\\0"')
@@ -326,6 +332,8 @@ EOF
 :$put =string(l)
 :let d=py3eval('{"a": "b", "c": 1, "d": ["e"]}')
 :$put =sort(items(d))
+:let v:errmsg = ''
+:$put ='py3eval(\"None\") = ' . py3eval('None') . v:errmsg
 :if has('float')
 :   let f=py3eval('0.0')
 :   $put =string(f)
@@ -367,7 +375,9 @@ EOF
 :sleep 1
 :py3 t.running = False
 :py3 t.join()
-:py3 l[0] = t.t > 8  # check if the background thread is working
+:" Check if the background thread is working.  Count should be 10, but on a
+:" busy system (AppVeyor) it can be much lower.
+:py3 l[0] = t.t > 4
 :py3 del time
 :py3 del threading
 :py3 del t
@@ -910,8 +920,19 @@ fnamemodify = vim.Function('fnamemodify')
 cb.append(str(fnamemodify('.', ':p:h:t')))
 cb.append(vim.eval('@%'))
 os.chdir('..')
-cb.append(str(fnamemodify('.', ':p:h:t')))
-cb.append(vim.eval('@%').replace(os.path.sep, '/'))
+path = fnamemodify('.', ':p:h:t')
+if path != b'src':
+  # Running tests from a shadow directory, so move up another level
+  # This will result in @% looking like shadow/testdir/test87.in, hence the
+  # slicing to remove the leading path and path separator
+  os.chdir('..')
+  cb.append(str(fnamemodify('.', ':p:h:t')))
+  cb.append(vim.eval('@%')[len(path)+1:].replace(os.path.sep, '/'))
+  os.chdir(path)
+else:
+  cb.append(str(fnamemodify('.', ':p:h:t')))
+  cb.append(vim.eval('@%').replace(os.path.sep, '/'))
+del path
 os.chdir('testdir')
 cb.append(str(fnamemodify('.', ':p:h:t')))
 cb.append(vim.eval('@%'))
@@ -1071,8 +1092,20 @@ cb.append(">> OutputSetattr")
 ee('del sys.stdout.softspace')
 number_test('sys.stdout.softspace = %s', unsigned=True)
 number_test('sys.stderr.softspace = %s', unsigned=True)
+ee('assert sys.stdout.isatty()==False')
+ee('assert sys.stdout.seekable()==False')
+ee('sys.stdout.close()')
+ee('sys.stdout.flush()')
+ee('assert sys.stderr.isatty()==False')
+ee('assert sys.stderr.seekable()==False')
+ee('sys.stderr.close()')
+ee('sys.stderr.flush()')
 ee('sys.stdout.attr = None')
 cb.append(">> OutputWrite")
+ee('assert sys.stdout.writable()==True')
+ee('assert sys.stdout.readable()==False')
+ee('assert sys.stderr.writable()==True')
+ee('assert sys.stderr.readable()==False')
 ee('sys.stdout.write(None)')
 cb.append(">> OutputWriteLines")
 ee('sys.stdout.writelines(None)')
@@ -1361,6 +1394,7 @@ EOF
 :debug silent! py3 test_keyboard_interrupt()
 :redir END
 :0 debuggreedy
+:call inputrestore()
 :silent $put =output
 :unlet output
 :py3 del test_keyboard_interrupt

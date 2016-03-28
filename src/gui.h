@@ -41,7 +41,7 @@
 # include <Events.h>
 # include <Menus.h>
 # if !(defined (TARGET_API_MAC_CARBON) && (TARGET_API_MAC_CARBON))
-#   include <Windows.h>
+#  include <Windows.h>
 # endif
 # include <Controls.h>
 /*# include <TextEdit.h>*/
@@ -151,13 +151,8 @@
 #define TEAR_LEN		(9)	/* length of above string */
 
 /* for the toolbar */
-#ifdef FEAT_GUI_W16
-# define TOOLBAR_BUTTON_HEIGHT	15
-# define TOOLBAR_BUTTON_WIDTH	16
-#else
-# define TOOLBAR_BUTTON_HEIGHT	18
-# define TOOLBAR_BUTTON_WIDTH	18
-#endif
+#define TOOLBAR_BUTTON_HEIGHT	18
+#define TOOLBAR_BUTTON_WIDTH	18
 #define TOOLBAR_BORDER_HEIGHT	12  /* room above+below buttons for MSWindows */
 
 #ifdef FEAT_GUI_MSWIN
@@ -372,7 +367,9 @@ typedef struct Gui
 #endif
 
 #ifdef FEAT_GUI_GTK
+# ifndef USE_GTK3
     int		visibility;	    /* Is shell partially/fully obscured? */
+# endif
     GdkCursor	*blank_pointer;	    /* Blank pointer */
 
     /* X Resources */
@@ -394,7 +391,12 @@ typedef struct Gui
     GdkColor	*fgcolor;	    /* GDK-styled foreground color */
     GdkColor	*bgcolor;	    /* GDK-styled background color */
     GdkColor	*spcolor;	    /* GDK-styled special color */
+# ifdef USE_GTK3
+    cairo_surface_t *surface;       /* drawarea surface */
+    gboolean	     by_signal;     /* cause of draw operation */
+# else
     GdkGC	*text_gc;	    /* cached GC for normal text */
+# endif
     PangoContext     *text_context; /* the context used for all text */
     PangoFont	     *ascii_font;   /* cached font for ASCII strings */
     PangoGlyphString *ascii_glyphs; /* cached code point -> glyph map */
