@@ -1,10 +1,10 @@
-*netbeans.txt*  For Vim version 7.4.  Last change: 2012 Jan 26
+*netbeans.txt*  For Vim version 8.0.  Last change: 2016 Jul 15
 
 
 		  VIM REFERENCE MANUAL    by Gordon Prieur et al.
 
 
-			*socket-interface* *netbeans* *netbeans-support*
+					*netbeans* *netbeans-support*
 
 Vim NetBeans Protocol: a socket interface for Vim integration into an IDE.
 
@@ -58,6 +58,8 @@ Current projects using the NetBeans protocol of Vim are:
 	http://www.freehackers.org/VimWrapper
 
 Check the specific project pages to see how to use Vim with these projects.
+
+An alternative is to use a channel, see |channel|.
 
 In the rest of this help page, we will use the term "Vim Controller" to
 describe the program controlling Vim through the NetBeans socket interface.
@@ -194,6 +196,8 @@ There are two different ways to run Vim in NetBeans mode:
 	+ an IDE may start Vim with the |-nb| command line argument
 	+ NetBeans can be started from within Vim with the |:nbstart| command
 
+Vim uses a 3 second timeout on trying to make the connection.
+
 							*netbeans-parameters*
 Three forms can be used to setup the NetBeans connection parameters.
 When started from the command line, the |-nb| command line argument may be:
@@ -306,7 +310,12 @@ bufID		Buffer number.  A message may be either for a specific buffer
 		or generic.  Generic messages use a bufID of zero.  NOTE: this
 		buffer ID is assigned by the IDE, it is not Vim's buffer
 		number.  The bufID must be a sequentially rising number,
-		starting at one.
+		starting at one.  When the 'switchbuf' option is set to
+		"usetab" and the "bufID" buffer is not found in the current
+		tab page, the netbeans commands and functions that set this
+		buffer as the current buffer will jump to the first open
+		window that contains this buffer in other tab pages instead of
+		replacing the buffer in the current window.
 
 seqno		The IDE uses a sequence number for Commands and Functions.  A
 		Reply must use the sequence number of the Function that it is
@@ -470,7 +479,7 @@ raise		Bring the editor to the foreground.
 		New in version 2.1.
 
 removeAnno serNum
-		Remove a previously place annotation for this buffer.
+		Remove a previously placed annotation for this buffer.
 		"serNum" is the same number used in addAnno.
 
 save		Save the buffer when it was modified.  The other side of the
@@ -818,9 +827,9 @@ REJECT		Not used.
 6.7 Protocol errors					*nb-protocol_errors*
 
 These errors occur when a message violates the protocol:
-*E627* *E628* *E629* *E630* *E631* *E632* *E633* *E634* *E635* *E636*
+*E627* *E628* *E629* *E632* *E633* *E634* *E635* *E636*
 *E637* *E638* *E639* *E640* *E641* *E642* *E643* *E644* *E645* *E646*
-*E647* *E648* *E649* *E650* *E651* *E652* *E653* *E654*
+*E647* *E648* *E649* *E650* *E651* *E652*
 
 
 ==============================================================================

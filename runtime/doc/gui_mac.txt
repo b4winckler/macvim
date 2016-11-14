@@ -1,4 +1,4 @@
-*gui_mac.txt*	For Vim version 7.4.  Last change: 2012 Jan 13
+*gui_mac.txt*	For Vim version 8.0.  Last change: 2012 Jan 13
 
 
 		  VIM REFERENCE MANUAL    by Bjorn Winckler
@@ -110,8 +110,9 @@ to your .gvimrc file to revert back to the default Vim tab label.
 
 							*macvim-options*
 These are the non-standard options that MacVim supports:
-	'antialias'	'fullscreen'		'fuoptions'
-	'macmeta'	'toolbariconsize'	'transparency'
+	'antialias'	'blurradius'	'fullscreen'
+	'fuoptions'	'macligatures'	'macmeta'	'macthinstrokes'
+	'toolbariconsize'	'transparency'
 
 							*macvim-commands*
 These are the non-standard commands that MacVim supports:
@@ -255,9 +256,11 @@ Here is a list of relevant dictionary entries:
 KEY				VALUE ~
 MMCellWidthMultiplier		width of a normal glyph in em units [float]
 MMDialogsTrackPwd		open/save dialogs track the Vim pwd [bool]
+MMFullScreenFadeTime		fade delay for non-native fullscreen [float]
 MMLoginShellArgument		login shell parameter [string]
 MMLoginShellCommand		which shell to use to launch Vim [string]
 MMNoFontSubstitution		disable automatic font substitution [bool]
+MMNoTitleBarWindow		hide title bar [bool]
 MMShowAddTabButton		enable "add tab" button on tabline [bool]
 MMTabMaxWidth			maximum width of a tab [int]
 MMTabMinWidth			minimum width of a tab [int]
@@ -268,6 +271,7 @@ MMTextInsetRight		text area offset in pixels [int]
 MMTextInsetTop			text area offset in pixels [int]
 MMTexturedWindow		use brushed metal window (Tiger only) [bool]
 MMTranslateCtrlClick		interpret ctrl-click as right-click [bool]
+MMUseMouseTime			use mousetime to detect multiple clicks [bool]
 MMVerticalSplit			files open in vertical splits [bool]
 MMZoomBoth			zoom button maximizes both directions [bool]
 

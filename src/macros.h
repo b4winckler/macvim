@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved	by Bram Moolenaar
  *
@@ -118,23 +118,26 @@
 # define ASCII_ISALNUM(c) (ASCII_ISALPHA(c) || VIM_ISDIGIT(c))
 #endif
 
-/* macro version of chartab().
- * Only works with values 0-255!
- * Doesn't work for UTF-8 mode with chars >= 0x80. */
-#define CHARSIZE(c)	(chartab[c] & CT_CELL_MASK)
+/* Returns empty string if it is NULL. */
+#define EMPTY_IF_NULL(x) ((x) ? (x) : (char_u *)"")
 
 #ifdef FEAT_LANGMAP
 /*
  * Adjust chars in a language according to 'langmap' option.
  * NOTE that there is no noticeable overhead if 'langmap' is not set.
  * When set the overhead for characters < 256 is small.
- * Don't apply 'langmap' if the character comes from the Stuff buffer.
+ * Don't apply 'langmap' if the character comes from the Stuff buffer or from
+ * a mapping and the langnoremap option was set.
  * The do-while is just to ignore a ';' after the macro.
  */
 # ifdef FEAT_MBYTE
 #  define LANGMAP_ADJUST(c, condition) \
     do { \
-	if (*p_langmap && (condition) && !KeyStuffed && (c) >= 0) \
+	if (*p_langmap \
+		&& (condition) \
+		&& (p_lrm || (!p_lrm && KeyTyped)) \
+		&& !KeyStuffed \
+		&& (c) >= 0) \
 	{ \
 	    if ((c) < 256) \
 		c = langmap_mapchar[c]; \
@@ -145,7 +148,11 @@
 # else
 #  define LANGMAP_ADJUST(c, condition) \
     do { \
-	if (*p_langmap && (condition) && !KeyStuffed && (c) >= 0 && (c) < 256) \
+	if (*p_langmap \
+		&& (condition) \
+		&& (p_lrm || (!p_lrm && KeyTyped)) \
+		&& !KeyStuffed \
+		&& (c) >= 0 && (c) < 256) \
 	    c = langmap_mapchar[c]; \
     } while (0)
 # endif
@@ -170,6 +177,7 @@
 # define mch_fstat(n, p)	fstat(vms_fixfilename(n), (p))
 	/* VMS does not have lstat() */
 # define mch_stat(n, p)		stat(vms_fixfilename(n), (p))
+# define mch_rmdir(n)		rmdir(vms_fixfilename(n))
 #else
 # ifndef WIN32
 #   define mch_access(n, p)	access((n), (p))
@@ -219,7 +227,7 @@
 #if defined(UNIX) || defined(VMS)  /* open in rw------- mode */
 # define mch_open_rw(n, f)	mch_open((n), (f), (mode_t)0600)
 #else
-# if defined(MSDOS) || defined(MSWIN) || defined(OS2)  /* open read/write */
+# if defined(MSWIN)  /* open read/write */
 #  define mch_open_rw(n, f)	mch_open((n), (f), S_IREAD | S_IWRITE)
 # else
 #  define mch_open_rw(n, f)	mch_open((n), (f), 0)
@@ -267,7 +275,7 @@
 /* Backup multi-byte pointer. Only use with "p" > "s" ! */
 # define mb_ptr_back(s, p)  p -= has_mbyte ? ((*mb_head_off)(s, p - 1) + 1) : 1
 /* get length of multi-byte char, not including composing chars */
-# define mb_cptr2len(p)	    (enc_utf8 ? utf_ptr2len(p) : (*mb_ptr2len)(p))
+# define MB_CPTR2LEN(p)	    (enc_utf8 ? utf_ptr2len(p) : (*mb_ptr2len)(p))
 
 # define MB_COPY_CHAR(f, t) if (has_mbyte) mb_copy_char(&f, &t); else *t++ = *f++
 # define MB_CHARLEN(p)	    (has_mbyte ? mb_charlen(p) : (int)STRLEN(p))
@@ -275,6 +283,7 @@
 # define PTR2CHAR(p)	    (has_mbyte ? mb_ptr2char(p) : (int)*(p))
 #else
 # define MB_PTR2LEN(p)		1
+# define MB_CPTR2LEN(p)		1
 # define mb_ptr_adv(p)		++p
 # define mb_cptr_adv(p)		++p
 # define mb_ptr_back(s, p)	--p
@@ -303,3 +312,61 @@
 #  endif
 # endif
 #endif
+
+#ifdef FEAT_DIFF
+# define PLINES_NOFILL(x) plines_nofill(x)
+#else
+# define PLINES_NOFILL(x) plines(x)
+#endif
+
+#if defined(FEAT_JOB_CHANNEL) || defined(FEAT_CLIENTSERVER)
+# define MESSAGE_QUEUE
+#endif
+
+#if defined(FEAT_EVAL) && defined(FEAT_FLOAT)
+# include <float.h>
+# if defined(HAVE_MATH_H)
+   /* for isnan() and isinf() */
+#  include <math.h>
+# endif
+# ifdef USING_FLOAT_STUFF
+#  if defined(WIN32)
+#   ifndef isnan
+#    define isnan(x) _isnan(x)
+     static __inline int isinf(double x) { return !_finite(x) && !_isnan(x); }
+#   endif
+#  else
+#   ifndef HAVE_ISNAN
+     static inline int isnan(double x) { return x != x; }
+#   endif
+#   ifndef HAVE_ISINF
+     static inline int isinf(double x) { return !isnan(x) && isnan(x - x); }
+#   endif
+#  endif
+#  if !defined(INFINITY)
+#   if defined(DBL_MAX)
+#    ifdef VMS
+#     define INFINITY DBL_MAX
+#    else
+#     define INFINITY (DBL_MAX+DBL_MAX)
+#    endif
+#   else
+#    define INFINITY (1.0 / 0.0)
+#   endif
+#  endif
+#  if !defined(NAN)
+#   define NAN (INFINITY-INFINITY)
+#  endif
+# endif
+#endif
+
+/*
+ * In a hashtab item "hi_key" points to "di_key" in a dictitem.
+ * This avoids adding a pointer to the hashtab item.
+ * DI2HIKEY() converts a dictitem pointer to a hashitem key pointer.
+ * HIKEY2DI() converts a hashitem key pointer to a dictitem pointer.
+ * HI2DI() converts a hashitem pointer to a dictitem pointer.
+ */
+# define DI2HIKEY(di) ((di)->di_key)
+# define HIKEY2DI(p)  ((dictitem_T *)(p - offsetof(dictitem_T, di_key)))
+# define HI2DI(hi)     HIKEY2DI((hi)->hi_key)

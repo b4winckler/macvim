@@ -1,9 +1,12 @@
 " Vim indent file
-" Language:	Fortran95 (and Fortran90, Fortran77, F and elf90)
-" Version:	0.40
-" Last Change:	2011 Dec. 28
-" Maintainer:	Ajit J. Thakkar <ajit@unb.ca>; <http://www.unb.ca/chem/ajit/>
-" Usage:	Do :help fortran-indent from Vim
+" Language:	Fortran 2008 (and older: Fortran 2003, 95, 90, and 77)
+" Version:	0.46
+" Last Change:	2016 Sep. 27
+" Maintainer:	Ajit J. Thakkar <ajit@unb.ca>; <http://www2.unb.ca/~ajit/>
+" Usage:	For instructions, do :help fortran-indent from Vim
+" Credits:
+"  Useful suggestions were made, in chronological order, by:
+"  Albert Oliver Serra, Takuya Fujiwara and Philipp Edelmann.
 
 " Only load this indent file when no other was loaded.
 if exists("b:did_indent")
@@ -25,7 +28,10 @@ if exists("b:fortran_indent_more") || exists("g:fortran_indent_more")
 endif
 
 " Determine whether this is a fixed or free format source file
-" if this hasn't been done yet
+" if this hasn't been done yet using the priority:
+" buffer-local value
+" > global value
+" > file extension as in Intel ifort, gcc (gfortran), NAG, Pathscale, and Cray compilers
 if !exists("b:fortran_fixed_source")
   if exists("fortran_free_source")
     " User guarantees free source form
@@ -33,13 +39,19 @@ if !exists("b:fortran_fixed_source")
   elseif exists("fortran_fixed_source")
     " User guarantees fixed source form
     let b:fortran_fixed_source = 1
+  elseif expand("%:e") ==? "f\<90\|95\|03\|08\>"
+    " Free-form file extension defaults as in Intel ifort, gcc(gfortran), NAG, Pathscale, and Cray compilers
+    let b:fortran_fixed_source = 0
+  elseif expand("%:e") ==? "f\|f77\|for"
+    " Fixed-form file extension defaults
+    let b:fortran_fixed_source = 1
   else
-    " f90 and f95 allow both fixed and free source form
-    " assume fixed source form unless signs of free source form
-    " are detected in the first five columns of the first 250 lines
+    " Modern fortran still allows both fixed and free source form
+    " Assume fixed source form unless signs of free source form
+    " are detected in the first five columns of the first s:lmax lines.
     " Detection becomes more accurate and time-consuming if more lines
     " are checked. Increase the limit below if you keep lots of comments at
-    " the very top of each file and you have a fast computer
+    " the very top of each file and you have a fast computer.
     let s:lmax = 500
     if ( s:lmax > line("$") )
       let s:lmax = line("$")
@@ -81,10 +93,10 @@ function FortranGetIndent(lnum)
   "Indent do loops only if they are all guaranteed to be of do/end do type
   if exists("b:fortran_do_enddo") || exists("g:fortran_do_enddo")
     if prevstat =~? '^\s*\(\d\+\s\)\=\s*\(\a\w*\s*:\)\=\s*do\>'
-      let ind = ind + &sw
+      let ind = ind + shiftwidth()
     endif
     if getline(v:lnum) =~? '^\s*\(\d\+\s\)\=\s*end\s*do\>'
-      let ind = ind - &sw
+      let ind = ind - shiftwidth()
     endif
   endif
 
@@ -94,14 +106,14 @@ function FortranGetIndent(lnum)
 	\ ||prevstat=~? '^\s*\(type\|interface\|associate\|enum\)\>'
 	\ ||prevstat=~?'^\s*\(\d\+\s\)\=\s*\(\a\w*\s*:\)\=\s*\(forall\|where\|block\)\>'
 	\ ||prevstat=~? '^\s*\(\d\+\s\)\=\s*\(\a\w*\s*:\)\=\s*if\>'
-     let ind = ind + &sw
+     let ind = ind + shiftwidth()
     " Remove unwanted indent after logical and arithmetic ifs
     if prevstat =~? '\<if\>' && prevstat !~? '\<then\>'
-      let ind = ind - &sw
+      let ind = ind - shiftwidth()
     endif
     " Remove unwanted indent after type( statements
     if prevstat =~? '^\s*type\s*('
-      let ind = ind - &sw
+      let ind = ind - shiftwidth()
     endif
   endif
 
@@ -110,40 +122,41 @@ function FortranGetIndent(lnum)
     let prefix='\(\(pure\|impure\|elemental\|recursive\)\s\+\)\{,2}'
     let type='\(\(integer\|real\|double\s\+precision\|complex\|logical'
           \.'\|character\|type\|class\)\s*\S*\s\+\)\='
-    if prevstat =~? '^\s*\(module\|contains\|program\)\>'
+    if prevstat =~? '^\s*\(contains\|submodule\|program\)\>'
+            \ ||prevstat =~? '^\s*'.'module\>\(\s*\procedure\)\@!'
             \ ||prevstat =~? '^\s*'.prefix.'subroutine\>'
             \ ||prevstat =~? '^\s*'.prefix.type.'function\>'
             \ ||prevstat =~? '^\s*'.type.prefix.'function\>'
-      let ind = ind + &sw
+      let ind = ind + shiftwidth()
     endif
     if getline(v:lnum) =~? '^\s*contains\>'
           \ ||getline(v:lnum)=~? '^\s*end\s*'
-          \ .'\(function\|subroutine\|module\|program\)\>'
-      let ind = ind - &sw
+          \ .'\(function\|subroutine\|module\|submodule\|program\)\>'
+      let ind = ind - shiftwidth()
     endif
   endif
 
   "Subtract a shiftwidth from else, else if, elsewhere, case, end if,
   " end where, end select, end forall, end interface, end associate,
-  " end enum, and end type statements
+  " end enum, end type, end block and end type statements
   if getline(v:lnum) =~? '^\s*\(\d\+\s\)\=\s*'
         \. '\(else\|else\s*if\|else\s*where\|case\|'
         \. 'end\s*\(if\|where\|select\|interface\|'
-        \. 'type\|forall\|associate\|enum\)\)\>'
-    let ind = ind - &sw
+        \. 'type\|forall\|associate\|enum\|block\)\)\>'
+    let ind = ind - shiftwidth()
     " Fix indent for case statement immediately after select
     if prevstat =~? '\<select\s\+\(case\|type\)\>'
-      let ind = ind + &sw
+      let ind = ind + shiftwidth()
     endif
   endif
 
   "First continuation line
   if prevstat =~ '&\s*$' && prev2stat !~ '&\s*$'
-    let ind = ind + &sw
+    let ind = ind + shiftwidth()
   endif
   "Line after last continuation line
-  if prevstat !~ '&\s*$' && prev2stat =~ '&\s*$'
-    let ind = ind - &sw
+  if prevstat !~ '&\s*$' && prev2stat =~ '&\s*$' && prevstat !~? '\<then\>'
+    let ind = ind - shiftwidth()
   endif
 
   return ind

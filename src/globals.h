@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved	by Bram Moolenaar
  *
@@ -19,7 +19,7 @@
  */
 EXTERN long	Rows			/* nr of rows in the screen */
 #ifdef DO_INIT
-# if defined(MSDOS) || defined(WIN3264) || defined(OS2)
+# if defined(WIN3264)
 			    = 25L
 # else
 			    = 24L
@@ -104,10 +104,6 @@ EXTERN int	cmdline_star INIT(= FALSE);	/* cmdline is crypted */
 EXTERN int	exec_from_reg INIT(= FALSE);	/* executing register */
 
 EXTERN int	screen_cleared INIT(= FALSE);	/* screen has been cleared */
-
-#ifdef FEAT_CRYPT
-EXTERN int      use_crypt_method INIT(= 0);
-#endif
 
 /*
  * When '$' is included in 'cpoptions' option set:
@@ -201,7 +197,7 @@ EXTERN int	need_maketitle INIT(= TRUE); /* call maketitle() soon */
 #endif
 
 EXTERN int	quit_more INIT(= FALSE);    /* 'q' hit at "--more--" msg */
-#if defined(UNIX) || defined(__EMX__) || defined(VMS) || defined(MACOS_X)
+#if defined(UNIX) || defined(VMS) || defined(MACOS_X)
 EXTERN int	newline_on_exit INIT(= FALSE);	/* did msg in altern. screen */
 EXTERN int	intr_char INIT(= 0);	    /* extra interrupt character */
 #endif
@@ -235,6 +231,7 @@ EXTERN int	ex_nesting_level INIT(= 0);	/* nesting level */
 EXTERN int	debug_break_level INIT(= -1);	/* break below this level */
 EXTERN int	debug_did_msg INIT(= FALSE);	/* did "debug mode" message */
 EXTERN int	debug_tick INIT(= 0);		/* breakpoint change count */
+EXTERN int	debug_backtrace_level INIT(= 0); /* breakpoint backtrace level */
 # ifdef FEAT_PROFILE
 EXTERN int	do_profiling INIT(= PROF_NONE);	/* PROF_ values */
 # endif
@@ -328,11 +325,9 @@ EXTERN int	garbage_collect_at_exit INIT(= FALSE);
 EXTERN scid_T	current_SID INIT(= 0);
 #endif
 
-#if defined(FEAT_EVAL) || defined(FEAT_SYN_HL)
 /* Magic number used for hashitem "hi_key" value indicating a deleted item.
  * Only the address is used. */
 EXTERN char_u	hash_removed;
-#endif
 
 
 EXTERN int	scroll_region INIT(= FALSE); /* term supports scroll region */
@@ -372,6 +367,10 @@ EXTERN char_u	*use_gvimrc INIT(= NULL);	/* "-U" cmdline argument */
 EXTERN int	cterm_normal_fg_color INIT(= 0);
 EXTERN int	cterm_normal_fg_bold INIT(= 0);
 EXTERN int	cterm_normal_bg_color INIT(= 0);
+#ifdef FEAT_TERMGUICOLORS
+EXTERN guicolor_T cterm_normal_fg_gui_color INIT(= INVALCOLOR);
+EXTERN guicolor_T cterm_normal_bg_gui_color INIT(= INVALCOLOR);
+#endif
 
 #ifdef FEAT_AUTOCMD
 EXTERN int	autocmd_busy INIT(= FALSE);	/* Is apply_autocmds() busy? */
@@ -385,7 +384,7 @@ EXTERN int	keep_filetype INIT(= FALSE);	/* value for did_filetype when
 
 /* When deleting the current buffer, another one must be loaded.  If we know
  * which one is preferred, au_new_curbuf is set to it */
-EXTERN buf_T	*au_new_curbuf INIT(= NULL);
+EXTERN bufref_T	au_new_curbuf INIT(= {NULL COMMA 0});
 
 /* When deleting a buffer/window and autocmd_busy is TRUE, do not free the
  * buffer/window. but link it in the list starting with
@@ -430,7 +429,7 @@ EXTERN int	gui_prev_topfill INIT(= 0);
 EXTERN int	drag_status_line INIT(= FALSE);	/* dragging the status line */
 EXTERN int	postponed_mouseshape INIT(= FALSE); /* postponed updating the
 						       mouse pointer shape */
-#  ifdef FEAT_VERTSPLIT
+#  ifdef FEAT_WINDOWS
 EXTERN int	drag_sep_line INIT(= FALSE);	/* dragging vert separator */
 #  endif
 # endif
@@ -533,6 +532,8 @@ EXTERN int	clip_autoselect_plus INIT(= FALSE);
 EXTERN int	clip_autoselectml INIT(= FALSE);
 EXTERN int	clip_html INIT(= FALSE);
 EXTERN regprog_T *clip_exclude_prog INIT(= NULL);
+EXTERN int	clip_did_set_selection INIT(= TRUE);
+EXTERN int	clip_unnamed_saved INIT(= 0);
 #endif
 
 /*
@@ -545,8 +546,13 @@ EXTERN regprog_T *clip_exclude_prog INIT(= NULL);
 EXTERN win_T	*firstwin;		/* first window */
 EXTERN win_T	*lastwin;		/* last window */
 EXTERN win_T	*prevwin INIT(= NULL);	/* previous window */
+# define ONE_WINDOW (firstwin == lastwin)
 # define W_NEXT(wp) ((wp)->w_next)
 # define FOR_ALL_WINDOWS(wp) for (wp = firstwin; wp != NULL; wp = wp->w_next)
+# define FOR_ALL_TABPAGES(tp) for (tp = first_tabpage; tp != NULL; tp = tp->tp_next)
+# define FOR_ALL_WINDOWS_IN_TAB(tp, wp) \
+    for ((wp) = ((tp) == NULL || (tp) == curtab) \
+	    ? firstwin : (tp)->tp_firstwin; (wp); (wp) = (wp)->w_next)
 /*
  * When using this macro "break" only breaks out of the inner loop. Use "goto"
  * to break out of the tabpage loop.
@@ -558,8 +564,11 @@ EXTERN win_T	*prevwin INIT(= NULL);	/* previous window */
 #else
 # define firstwin curwin
 # define lastwin curwin
+# define ONE_WINDOW 1
 # define W_NEXT(wp) NULL
 # define FOR_ALL_WINDOWS(wp) wp = curwin;
+# define FOR_ALL_TABPAGES(tp) for (;FALSE;)
+# define FOR_ALL_WINDOWS_IN_TAB(tp, wp) wp = curwin;
 # define FOR_ALL_TAB_WINDOWS(tp, wp) wp = curwin;
 #endif
 
@@ -593,6 +602,8 @@ EXTERN int	    redraw_tabline INIT(= FALSE);  /* need to redraw tabline */
 EXTERN buf_T	*firstbuf INIT(= NULL);	/* first buffer */
 EXTERN buf_T	*lastbuf INIT(= NULL);	/* last buffer */
 EXTERN buf_T	*curbuf INIT(= NULL);	/* currently active buffer */
+
+#define FOR_ALL_BUFFERS(buf) for (buf = firstbuf; buf != NULL; buf = buf->b_next)
 
 /* Flag that is set when switching off 'swapfile'.  It means that all blocks
  * are to be loaded into memory.  Shouldn't be global... */
@@ -632,6 +643,13 @@ EXTERN int	exiting INIT(= FALSE);
 EXTERN int	really_exiting INIT(= FALSE);
 				/* TRUE when we are sure to exit, e.g., after
 				 * a deadly signal */
+#if defined(FEAT_AUTOCHDIR)
+EXTERN int	test_autochdir INIT(= FALSE);
+#endif
+#if defined(EXITFREE)
+EXTERN int	entered_free_all_mem INIT(= FALSE);
+				/* TRUE when in or after free_all_mem() */
+#endif
 /* volatile because it is used in signal handler deathtrap(). */
 EXTERN volatile int full_screen INIT(= FALSE);
 				/* TRUE when doing full-screen output
@@ -846,19 +864,19 @@ EXTERN vimconv_T output_conv;			/* type of output conversion */
  * The value is set in mb_init();
  */
 /* length of char in bytes, including following composing chars */
-EXTERN int (*mb_ptr2len) __ARGS((char_u *p)) INIT(= latin_ptr2len);
+EXTERN int (*mb_ptr2len)(char_u *p) INIT(= latin_ptr2len);
 /* idem, with limit on string length */
-EXTERN int (*mb_ptr2len_len) __ARGS((char_u *p, int size)) INIT(= latin_ptr2len_len);
+EXTERN int (*mb_ptr2len_len)(char_u *p, int size) INIT(= latin_ptr2len_len);
 /* byte length of char */
-EXTERN int (*mb_char2len) __ARGS((int c)) INIT(= latin_char2len);
+EXTERN int (*mb_char2len)(int c) INIT(= latin_char2len);
 /* convert char to bytes, return the length */
-EXTERN int (*mb_char2bytes) __ARGS((int c, char_u *buf)) INIT(= latin_char2bytes);
-EXTERN int (*mb_ptr2cells) __ARGS((char_u *p)) INIT(= latin_ptr2cells);
-EXTERN int (*mb_ptr2cells_len) __ARGS((char_u *p, int size)) INIT(= latin_ptr2cells_len);
-EXTERN int (*mb_char2cells) __ARGS((int c)) INIT(= latin_char2cells);
-EXTERN int (*mb_off2cells) __ARGS((unsigned off, unsigned max_off)) INIT(= latin_off2cells);
-EXTERN int (*mb_ptr2char) __ARGS((char_u *p)) INIT(= latin_ptr2char);
-EXTERN int (*mb_head_off) __ARGS((char_u *base, char_u *p)) INIT(= latin_head_off);
+EXTERN int (*mb_char2bytes)(int c, char_u *buf) INIT(= latin_char2bytes);
+EXTERN int (*mb_ptr2cells)(char_u *p) INIT(= latin_ptr2cells);
+EXTERN int (*mb_ptr2cells_len)(char_u *p, int size) INIT(= latin_ptr2cells_len);
+EXTERN int (*mb_char2cells)(int c) INIT(= latin_char2cells);
+EXTERN int (*mb_off2cells)(unsigned off, unsigned max_off) INIT(= latin_off2cells);
+EXTERN int (*mb_ptr2char)(char_u *p) INIT(= latin_ptr2char);
+EXTERN int (*mb_head_off)(char_u *base, char_u *p) INIT(= latin_head_off);
 
 # if defined(USE_ICONV) && defined(DYNAMIC_ICONV)
 /* Pointers to functions and variables to be loaded at runtime */
@@ -951,9 +969,6 @@ EXTERN int	ctrl_x_mode INIT(= 0);	/* Which Ctrl-X mode are we in? */
 #endif
 
 EXTERN int	no_abbr INIT(= TRUE);	/* TRUE when no abbreviations loaded */
-#ifdef MSDOS
-EXTERN int	beep_count INIT(= 0);	/* nr of beeps since last char typed */
-#endif
 
 #ifdef USE_EXE_NAME
 EXTERN char_u	*exe_name;		/* the name of the executable */
@@ -962,13 +977,14 @@ EXTERN char_u	*exe_name;		/* the name of the executable */
 #ifdef USE_ON_FLY_SCROLL
 EXTERN int	dont_scroll INIT(= FALSE);/* don't use scrollbars when TRUE */
 #endif
-EXTERN int	mapped_ctrl_c INIT(= FALSE); /* CTRL-C is mapped */
+EXTERN int	mapped_ctrl_c INIT(= FALSE); /* modes where CTRL-C is mapped */
 EXTERN int	ctrl_c_interrupts INIT(= TRUE);	/* CTRL-C sets got_int */
 
 EXTERN cmdmod_T	cmdmod;			/* Ex command modifiers */
 
 EXTERN int	msg_silent INIT(= 0);	/* don't print messages */
 EXTERN int	emsg_silent INIT(= 0);	/* don't print error messages */
+EXTERN int	emsg_noredir INIT(= 0);	/* don't redirect error messages */
 EXTERN int	cmd_silent INIT(= FALSE); /* don't echo the command line */
 
 #if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG) \
@@ -998,10 +1014,8 @@ EXTERN typebuf_T typebuf		/* typeahead buffer */
 		    = {NULL, NULL, 0, 0, 0, 0, 0, 0, 0}
 #endif
 		    ;
-#ifdef FEAT_EX_EXTRA
 EXTERN int	ex_normal_busy INIT(= 0); /* recursiveness of ex_normal() */
 EXTERN int	ex_normal_lock INIT(= 0); /* forbid use of ex_normal() */
-#endif
 #ifdef FEAT_EVAL
 EXTERN int	ignore_script INIT(= FALSE);  /* ignore script input */
 #endif
@@ -1014,9 +1028,6 @@ EXTERN int	vgetc_im_active;	/* Input Method was active for last
 					   character obtained from vgetc() */
 #endif
 EXTERN int	maptick INIT(= 0);	/* tick for each non-mapped char */
-
-EXTERN char_u	chartab[256];		/* table used in charset.c; See
-					   init_chartab() for explanation */
 
 EXTERN int	must_redraw INIT(= 0);	    /* type of redraw necessary */
 EXTERN int	skip_redraw INIT(= FALSE);  /* skip redraw once */
@@ -1109,6 +1120,7 @@ EXTERN FILE *redir_fd INIT(= NULL);	/* message redirection file */
 #ifdef FEAT_EVAL
 EXTERN int  redir_reg INIT(= 0);	/* message redirection register */
 EXTERN int  redir_vname INIT(= 0);	/* message redirection variable */
+EXTERN int  redir_execute INIT(= 0);	/* execute() redirection */
 #endif
 
 #ifdef FEAT_LANGMAP
@@ -1167,11 +1179,12 @@ EXTERN int	lcs_eol INIT(= '$');
 EXTERN int	lcs_ext INIT(= NUL);
 EXTERN int	lcs_prec INIT(= NUL);
 EXTERN int	lcs_nbsp INIT(= NUL);
+EXTERN int	lcs_space INIT(= NUL);
 EXTERN int	lcs_tab1 INIT(= NUL);
 EXTERN int	lcs_tab2 INIT(= NUL);
 EXTERN int	lcs_trail INIT(= NUL);
 #ifdef FEAT_CONCEAL
-EXTERN int	lcs_conceal INIT(= '-');
+EXTERN int	lcs_conceal INIT(= ' ');
 #endif
 
 #if defined(FEAT_WINDOWS) || defined(FEAT_WILDMENU) || defined(FEAT_STL_OPT) \
@@ -1184,6 +1197,10 @@ EXTERN int	fill_stlnc INIT(= ' ');
 EXTERN int	fill_vert INIT(= ' ');
 EXTERN int	fill_fold INIT(= '-');
 EXTERN int	fill_diff INIT(= '-');
+#endif
+
+#ifdef FEAT_FOLDING
+EXTERN int	disable_fold_update INIT(= 0);
 #endif
 
 /* Whether 'keymodel' contains "stopsel" and "startsel". */
@@ -1340,18 +1357,12 @@ EXTERN int      clientWindow INIT(= 0);
 #if defined(UNIX) || defined(VMS)
 EXTERN int	term_is_xterm INIT(= FALSE);	/* xterm-like 'term' */
 #endif
-#if defined(UNIX)
-EXTERN int	xterm_conflict_mouse INIT(= FALSE);
-#endif
 
 #ifdef BACKSLASH_IN_FILENAME
 EXTERN char	psepc INIT(= '\\');	/* normal path separator character */
 EXTERN char	psepcN INIT(= '/');	/* abnormal path separator character */
-EXTERN char	pseps[2]		/* normal path separator string */
-# ifdef DO_INIT
-			= {'\\', 0}
-# endif
-			;
+/* normal path separator string */
+EXTERN char	pseps[2] INIT(= {'\\' COMMA 0});
 #endif
 
 #ifdef FEAT_VIRTUALEDIT
@@ -1433,6 +1444,7 @@ EXTERN char_u e_font[]		INIT(= N_("E235: Unknown font: %s"));
 EXTERN char_u e_fontwidth[]	INIT(= N_("E236: Font \"%s\" is not fixed-width"));
 #endif
 EXTERN char_u e_internal[]	INIT(= N_("E473: Internal error"));
+EXTERN char_u e_intern2[]	INIT(= N_("E685: Internal error: %s"));
 EXTERN char_u e_interr[]	INIT(= N_("Interrupted"));
 EXTERN char_u e_invaddr[]	INIT(= N_("E14: Invalid address"));
 EXTERN char_u e_invarg[]	INIT(= N_("E474: Invalid argument"));
@@ -1504,7 +1516,7 @@ EXTERN char_u e_notread[]	INIT(= N_("E485: Can't read file %s"));
 EXTERN char_u e_nowrtmsg[]	INIT(= N_("E37: No write since last change (add ! to override)"));
 EXTERN char_u e_nowrtmsg_nobang[]   INIT(= N_("E37: No write since last change"));
 EXTERN char_u e_null[]		INIT(= N_("E38: Null argument"));
-#ifdef FEAT_DIGRAPHS
+#if defined(FEAT_DIGRAPHS) || defined(FEAT_TIMERS)
 EXTERN char_u e_number_exp[]	INIT(= N_("E39: Number expected"));
 #endif
 #ifdef FEAT_QUICKFIX
@@ -1533,6 +1545,13 @@ EXTERN char_u e_readonly[]	INIT(= N_("E45: 'readonly' option is set (add ! to ov
 #ifdef FEAT_EVAL
 EXTERN char_u e_readonlyvar[]	INIT(= N_("E46: Cannot change read-only variable \"%s\""));
 EXTERN char_u e_readonlysbx[]	INIT(= N_("E794: Cannot set variable in the sandbox: \"%s\""));
+EXTERN char_u e_emptykey[]	INIT(= N_("E713: Cannot use empty key for Dictionary"));
+EXTERN char_u e_dictreq[]	INIT(= N_("E715: Dictionary required"));
+EXTERN char_u e_listidx[]	INIT(= N_("E684: list index out of range: %ld"));
+EXTERN char_u e_toomanyarg[]	INIT(= N_("E118: Too many arguments for function: %s"));
+EXTERN char_u e_dictkey[]	INIT(= N_("E716: Key not present in Dictionary: %s"));
+EXTERN char_u e_listreq[]	INIT(= N_("E714: List required"));
+EXTERN char_u e_listdictarg[]	INIT(= N_("E712: Argument of %s must be a List or Dictionary"));
 #endif
 #ifdef FEAT_QUICKFIX
 EXTERN char_u e_readerrf[]	INIT(= N_("E47: Error while reading errorfile"));
@@ -1542,7 +1561,7 @@ EXTERN char_u e_sandbox[]	INIT(= N_("E48: Not allowed in sandbox"));
 #endif
 EXTERN char_u e_secure[]	INIT(= N_("E523: Not allowed here"));
 #if defined(AMIGA) || defined(MACOS) || defined(MSWIN)  \
-	|| defined(UNIX) || defined(VMS) || defined(OS2)
+	|| defined(UNIX) || defined(VMS)
 EXTERN char_u e_screenmode[]	INIT(= N_("E359: Screen mode setting not supported"));
 #endif
 EXTERN char_u e_scroll[]	INIT(= N_("E49: Invalid scroll size"));
@@ -1561,9 +1580,7 @@ EXTERN char_u e_umark[]		INIT(= N_("E78: Unknown mark"));
 EXTERN char_u e_wildexpand[]	INIT(= N_("E79: Cannot expand wildcards"));
 #ifdef FEAT_WINDOWS
 EXTERN char_u e_winheight[]	INIT(= N_("E591: 'winheight' cannot be smaller than 'winminheight'"));
-# ifdef FEAT_VERTSPLIT
 EXTERN char_u e_winwidth[]	INIT(= N_("E592: 'winwidth' cannot be smaller than 'winminwidth'"));
-# endif
 #endif
 EXTERN char_u e_write[]		INIT(= N_("E80: Error while writing"));
 EXTERN char_u e_zerocount[]	INIT(= N_("Zero count"));
@@ -1577,13 +1594,11 @@ EXTERN char_u e_invexprmsg[]	INIT(= N_("E449: Invalid expression received"));
 EXTERN char_u e_guarded[]	INIT(= N_("E463: Region is guarded, cannot modify"));
 EXTERN char_u e_nbreadonly[]	INIT(= N_("E744: NetBeans does not allow changes in read-only files"));
 #endif
-EXTERN char_u e_intern2[]	INIT(= N_("E685: Internal error: %s"));
 EXTERN char_u e_maxmempat[]	INIT(= N_("E363: pattern uses more memory than 'maxmempattern'"));
 EXTERN char_u e_emptybuf[]	INIT(= N_("E749: empty buffer"));
+EXTERN char_u e_nobufnr[]	INIT(= N_("E86: Buffer %ld does not exist"));
 
-#ifdef FEAT_EX_EXTRA
 EXTERN char_u e_invalpat[]	INIT(= N_("E682: Invalid search pattern or delimiter"));
-#endif
 EXTERN char_u e_bufloaded[]	INIT(= N_("E139: File is loaded in another buffer"));
 #if defined(FEAT_SYN_HL) || \
 	(defined(FEAT_INS_EXPAND) && defined(FEAT_COMPL_FUNC))
@@ -1592,6 +1607,7 @@ EXTERN char_u e_notset[]	INIT(= N_("E764: Option '%s' is not set"));
 #ifndef FEAT_CLIPBOARD
 EXTERN char_u e_invalidreg[]    INIT(= N_("E850: Invalid register name"));
 #endif
+EXTERN char_u e_dirnotf[]	INIT(= N_("E919: Directory not found in '%s': \"%s\""));
 
 #ifdef MACOS_X_UNIX
 EXTERN short disallow_gui	INIT(= FALSE);
@@ -1612,7 +1628,7 @@ EXTERN int xsmp_icefd INIT(= -1);   /* The actual connection */
 #endif
 
 /* For undo we need to know the lowest time possible. */
-EXTERN time_t starttime;
+EXTERN time_T starttime;
 
 #ifdef STARTUPTIME
 EXTERN FILE *time_fd INIT(= NULL);  /* where to write startup timing */
@@ -1625,6 +1641,33 @@ EXTERN FILE *time_fd INIT(= NULL);  /* where to write startup timing */
  */
 EXTERN int ignored;
 EXTERN char *ignoredp;
+
+#ifdef FEAT_EVAL
+/* set by alloc_fail(): ID */
+EXTERN alloc_id_T  alloc_fail_id INIT(= aid_none);
+/* set by alloc_fail(), when zero alloc() returns NULL */
+EXTERN int  alloc_fail_countdown INIT(= -1);
+/* set by alloc_fail(), number of times alloc() returns NULL */
+EXTERN int  alloc_fail_repeat INIT(= 0);
+
+EXTERN int  disable_char_avail_for_testing INIT(= 0);
+
+EXTERN int  in_free_unref_items INIT(= FALSE);
+#endif
+
+#ifdef FEAT_TIMERS
+EXTERN int  did_add_timer INIT(= FALSE);
+#endif
+
+#ifdef FEAT_EVAL
+EXTERN time_T time_for_testing INIT(= 0);
+
+/* Abort conversion to string after a recursion error. */
+EXTERN int  did_echo_string_emsg INIT(= FALSE);
+
+/* Used for checking if local variables or arguments used in a lambda. */
+EXTERN int *eval_lavars_used INIT(= NULL);
+#endif
 
 /*
  * Optional Farsi support.  Include it here, so EXTERN and INIT are defined.

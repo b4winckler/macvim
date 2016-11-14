@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved	by Bram Moolenaar
  *
@@ -66,6 +66,7 @@ enum SpecialKey
     KS_CSF,	/* set foreground color */
     KS_CSB,	/* set background color */
     KS_XS,	/* standout not erased by overwriting (hpterm) */
+    KS_XN,	/* newline glitch */
     KS_MB,	/* blink mode */
     KS_CAF,	/* set foreground color (ANSI) */
     KS_CAB,	/* set background color (ANSI) */
@@ -78,16 +79,20 @@ enum SpecialKey
     KS_CWP,	/* set window position in pixels */
     KS_CWS,	/* set window size in characters */
     KS_CRV,	/* request version string */
+    KS_RBG,	/* request background color */
     KS_CSI,	/* start insert mode (bar cursor) */
     KS_CEI,	/* end insert mode (block cursor) */
-#ifdef FEAT_VERTSPLIT
+    KS_CSR,	/* start replace mode (underline cursor) */
+#ifdef FEAT_WINDOWS
     KS_CSV,	/* scroll region vertical */
 #endif
     KS_OP,	/* original color pair */
-    KS_U7	/* request cursor position */
+    KS_U7,	/* request cursor position */
+    KS_8F,	/* set foreground color (RGB) */
+    KS_8B	/* set background color (RGB) */
 };
 
-#define KS_LAST	    KS_U7
+#define KS_LAST	    KS_8B
 
 /*
  * the terminal capabilities are stored in this array
@@ -144,6 +149,7 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define T_CSF	(term_str(KS_CSF))	/* set foreground color */
 #define T_CSB	(term_str(KS_CSB))	/* set background color */
 #define T_XS	(term_str(KS_XS))	/* standout not erased by overwriting */
+#define T_XN	(term_str(KS_XN))	/* newline glitch */
 #define T_MB	(term_str(KS_MB))	/* blink mode */
 #define T_CAF	(term_str(KS_CAF))	/* set foreground color (ANSI) */
 #define T_CAB	(term_str(KS_CAB))	/* set background color (ANSI) */
@@ -157,9 +163,13 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define T_CWS	(term_str(KS_CWS))	/* window size */
 #define T_CSI	(term_str(KS_CSI))	/* start insert mode */
 #define T_CEI	(term_str(KS_CEI))	/* end insert mode */
+#define T_CSR	(term_str(KS_CSR))	/* start replace mode */
 #define T_CRV	(term_str(KS_CRV))	/* request version string */
+#define T_RBG	(term_str(KS_RBG))	/* request background RGB */
 #define T_OP	(term_str(KS_OP))	/* original color pair */
 #define T_U7	(term_str(KS_U7))	/* request cursor position */
+#define T_8F	(term_str(KS_8F))	/* set foreground color (RGB) */
+#define T_8B	(term_str(KS_8B))	/* set background color (RGB) */
 
 #define TMODE_COOK  0	/* terminal mode for external cmds and Ex mode */
 #define TMODE_SLEEP 1	/* terminal mode for sleeping (cooked but no echo) */

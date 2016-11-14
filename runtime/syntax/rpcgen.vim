@@ -1,24 +1,16 @@
 " Vim syntax file
 " Language:	rpcgen
-" Maintainer:	Dr. Charles E. Campbell, Jr. <NdrOchipS@PcampbellAfamily.Mbiz>
-" Last Change:	Sep 06, 2005
-" Version:	8
-" URL:	http://mysite.verizon.net/astronaut/vim/index.html#vimlinks_syntax
+" Maintainer:	Charles E. Campbell <NdrOchipS@PcampbellAfamily.Mbiz>
+" Last Change:	Aug 31, 2016
+" Version:	12
+" URL:	http://www.drchip.org/astronaut/vim/index.html#SYNTAX_RPCGEN
 
-" For version 5.x: Clear all syntax items
-" For version 6.x: Quit when a syntax file was already loaded
-if version < 600
-  syntax clear
-elseif exists("b:current_syntax")
+if exists("b:current_syntax")
   finish
 endif
 
 " Read the C syntax to start with
-if version < 600
-  source <sfile>:p:h/c.vim
-else
-  runtime! syntax/c.vim
-endif
+runtime! syntax/c.vim
 
 syn keyword rpcProgram	program				skipnl skipwhite nextgroup=rpcProgName
 syn match   rpcProgName	contained	"\<\i\I*\>"	skipnl skipwhite nextgroup=rpcProgZone
@@ -32,30 +24,21 @@ syn match   rpcProgNmbrErr contained	"=\s*0x[^23]\x*"ms=s+1
 syn match   rpcPassThru			"^\s*%.*$"
 
 " Define the default highlighting.
-" For version 5.7 and earlier: only when not done already
-" For version 5.8 and later: only when an item doesn't have highlighting yet
-if version >= 508 || !exists("did_rpcgen_syntax_inits")
-  if version < 508
-    let did_rpcgen_syntax_inits = 1
-    command -nargs=+ HiLink hi link <args>
-  else
-    command -nargs=+ HiLink hi def link <args>
-  endif
+if !exists("skip_rpcgen_syntax_inits")
 
-  HiLink rpcProgName	rpcName
-  HiLink rpcProgram	rpcStatement
-  HiLink rpcVersName	rpcName
-  HiLink rpcVersion	rpcStatement
+  hi def link rpcProgName	rpcName
+  hi def link rpcProgram	rpcStatement
+  hi def link rpcVersName	rpcName
+  hi def link rpcVersion	rpcStatement
 
-  HiLink rpcDecl	cType
-  HiLink rpcPassThru	cComment
+  hi def link rpcDecl	cType
+  hi def link rpcPassThru	cComment
 
-  HiLink rpcName	Special
-  HiLink rpcProcNmbr	Delimiter
-  HiLink rpcProgNmbrErr	Error
-  HiLink rpcStatement	Statement
+  hi def link rpcName	Special
+  hi def link rpcProcNmbr	Delimiter
+  hi def link rpcProgNmbrErr	Error
+  hi def link rpcStatement	Statement
 
-  delcommand HiLink
 endif
 
 let b:current_syntax = "rpcgen"

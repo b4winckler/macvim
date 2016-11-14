@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved		by Bram Moolenaar
  *				GUI/Motif support by Robert Webb
@@ -71,16 +71,16 @@
 # define DFLT_MENU_FG_COLOR	"black"
 # define DFLT_SCROLL_BG_COLOR	"gray60"
 # define DFLT_SCROLL_FG_COLOR	"gray77"
-# define DFLT_TOOLTIP_BG_COLOR	"#ffffffff9191"
-# define DFLT_TOOLTIP_FG_COLOR	"#000000000000"
+# define DFLT_TOOLTIP_BG_COLOR	"#ffff91"
+# define DFLT_TOOLTIP_FG_COLOR	"#000000"
 #else
 /* use the default (CDE) colors */
 # define DFLT_MENU_BG_COLOR	""
 # define DFLT_MENU_FG_COLOR	""
 # define DFLT_SCROLL_BG_COLOR	""
 # define DFLT_SCROLL_FG_COLOR	""
-# define DFLT_TOOLTIP_BG_COLOR	"#ffffffff9191"
-# define DFLT_TOOLTIP_FG_COLOR	"#000000000000"
+# define DFLT_TOOLTIP_BG_COLOR	"#ffff91"
+# define DFLT_TOOLTIP_FG_COLOR	"#000000"
 #endif
 
 Widget vimShell = (Widget)0;
@@ -123,9 +123,9 @@ static XFontSet current_fontset = NULL;
 		XDrawImageString16(dpy, win, gc, x, y, (XChar2b *)str, n); \
 	} while (0)
 
-static int check_fontset_sanity __ARGS((XFontSet fs));
-static int fontset_width __ARGS((XFontSet fs));
-static int fontset_ascent __ARGS((XFontSet fs));
+static int check_fontset_sanity(XFontSet fs);
+static int fontset_width(XFontSet fs);
+static int fontset_ascent(XFontSet fs);
 #endif
 
 static guicolor_T	prev_fg_color = INVALCOLOR;
@@ -136,26 +136,22 @@ static guicolor_T	prev_sp_color = INVALCOLOR;
 static XButtonPressedEvent last_mouse_event;
 #endif
 
-static int find_closest_color __ARGS((Colormap colormap, XColor *colorPtr));
-static void gui_x11_timer_cb __ARGS((XtPointer timed_out, XtIntervalId *interval_id));
-static void gui_x11_visibility_cb __ARGS((Widget w, XtPointer dud, XEvent *event, Boolean *dum));
-static void gui_x11_expose_cb __ARGS((Widget w, XtPointer dud, XEvent *event, Boolean *dum));
-static void gui_x11_resize_window_cb __ARGS((Widget w, XtPointer dud, XEvent *event, Boolean *dum));
-static void gui_x11_focus_change_cb __ARGS((Widget w, XtPointer data, XEvent *event, Boolean *dum));
-static void gui_x11_enter_cb __ARGS((Widget w, XtPointer data, XEvent *event, Boolean *dum));
-static void gui_x11_leave_cb __ARGS((Widget w, XtPointer data, XEvent *event, Boolean *dum));
-static void gui_x11_mouse_cb __ARGS((Widget w, XtPointer data, XEvent *event, Boolean *dum));
-#ifdef FEAT_SNIFF
-static void gui_x11_sniff_request_cb __ARGS((XtPointer closure, int *source, XtInputId *id));
-#endif
-static void gui_x11_check_copy_area __ARGS((void));
+static void gui_x11_timer_cb(XtPointer timed_out, XtIntervalId *interval_id);
+static void gui_x11_visibility_cb(Widget w, XtPointer dud, XEvent *event, Boolean *dum);
+static void gui_x11_expose_cb(Widget w, XtPointer dud, XEvent *event, Boolean *dum);
+static void gui_x11_resize_window_cb(Widget w, XtPointer dud, XEvent *event, Boolean *dum);
+static void gui_x11_focus_change_cb(Widget w, XtPointer data, XEvent *event, Boolean *dum);
+static void gui_x11_enter_cb(Widget w, XtPointer data, XEvent *event, Boolean *dum);
+static void gui_x11_leave_cb(Widget w, XtPointer data, XEvent *event, Boolean *dum);
+static void gui_x11_mouse_cb(Widget w, XtPointer data, XEvent *event, Boolean *dum);
+static void gui_x11_check_copy_area(void);
 #ifdef FEAT_CLIENTSERVER
-static void gui_x11_send_event_handler __ARGS((Widget, XtPointer, XEvent *, Boolean *));
+static void gui_x11_send_event_handler(Widget, XtPointer, XEvent *, Boolean *);
 #endif
-static void gui_x11_wm_protocol_handler __ARGS((Widget, XtPointer, XEvent *, Boolean *));
-static void gui_x11_blink_cb __ARGS((XtPointer timed_out, XtIntervalId *interval_id));
-static Cursor gui_x11_create_blank_mouse __ARGS((void));
-static void draw_curl __ARGS((int row, int col, int cells));
+static void gui_x11_wm_protocol_handler(Widget, XtPointer, XEvent *, Boolean *);
+static void gui_x11_blink_cb(XtPointer timed_out, XtIntervalId *interval_id);
+static Cursor gui_x11_create_blank_mouse(void);
+static void draw_curl(int row, int col, int cells);
 
 
 /*
@@ -571,19 +567,19 @@ static char **gui_argv = NULL;
  */
 
     static void
-gui_x11_timer_cb(timed_out, interval_id)
-    XtPointer	    timed_out;
-    XtIntervalId    *interval_id UNUSED;
+gui_x11_timer_cb(
+    XtPointer	    timed_out,
+    XtIntervalId    *interval_id UNUSED)
 {
     *((int *)timed_out) = TRUE;
 }
 
     static void
-gui_x11_visibility_cb(w, dud, event, dum)
-    Widget	w UNUSED;
-    XtPointer	dud UNUSED;
-    XEvent	*event;
-    Boolean	*dum UNUSED;
+gui_x11_visibility_cb(
+    Widget	w UNUSED,
+    XtPointer	dud UNUSED,
+    XEvent	*event,
+    Boolean	*dum UNUSED)
 {
     if (event->type != VisibilityNotify)
 	return;
@@ -602,11 +598,11 @@ gui_x11_visibility_cb(w, dud, event, dum)
 }
 
     static void
-gui_x11_expose_cb(w, dud, event, dum)
-    Widget	w UNUSED;
-    XtPointer	dud UNUSED;
-    XEvent	*event;
-    Boolean	*dum UNUSED;
+gui_x11_expose_cb(
+    Widget	w UNUSED,
+    XtPointer	dud UNUSED,
+    XEvent	*event,
+    Boolean	*dum UNUSED)
 {
     XExposeEvent	*gevent;
     int			new_x;
@@ -678,11 +674,11 @@ shellRectangle(Widget shell, XRectangle *r)
 #endif
 
     static void
-gui_x11_resize_window_cb(w, dud, event, dum)
-    Widget	w UNUSED;
-    XtPointer	dud UNUSED;
-    XEvent	*event;
-    Boolean	*dum UNUSED;
+gui_x11_resize_window_cb(
+    Widget	w UNUSED,
+    XtPointer	dud UNUSED,
+    XEvent	*event,
+    Boolean	*dum UNUSED)
 {
     static int lastWidth, lastHeight;
 
@@ -724,31 +720,31 @@ gui_x11_resize_window_cb(w, dud, event, dum)
 }
 
     static void
-gui_x11_focus_change_cb(w, data, event, dum)
-    Widget	w UNUSED;
-    XtPointer	data UNUSED;
-    XEvent	*event;
-    Boolean	*dum UNUSED;
+gui_x11_focus_change_cb(
+    Widget	w UNUSED,
+    XtPointer	data UNUSED,
+    XEvent	*event,
+    Boolean	*dum UNUSED)
 {
     gui_focus_change(event->type == FocusIn);
 }
 
     static void
-gui_x11_enter_cb(w, data, event, dum)
-    Widget	w UNUSED;
-    XtPointer	data UNUSED;
-    XEvent	*event UNUSED;
-    Boolean	*dum UNUSED;
+gui_x11_enter_cb(
+    Widget	w UNUSED,
+    XtPointer	data UNUSED,
+    XEvent	*event UNUSED,
+    Boolean	*dum UNUSED)
 {
     gui_focus_change(TRUE);
 }
 
     static void
-gui_x11_leave_cb(w, data, event, dum)
-    Widget	w UNUSED;
-    XtPointer	data UNUSED;
-    XEvent	*event UNUSED;
-    Boolean	*dum UNUSED;
+gui_x11_leave_cb(
+    Widget	w UNUSED,
+    XtPointer	data UNUSED,
+    XEvent	*event UNUSED,
+    Boolean	*dum UNUSED)
 {
     gui_focus_change(FALSE);
 }
@@ -760,11 +756,11 @@ gui_x11_leave_cb(w, data, event, dum)
 #endif
 
     void
-gui_x11_key_hit_cb(w, dud, event, dum)
-    Widget	w UNUSED;
-    XtPointer	dud UNUSED;
-    XEvent	*event;
-    Boolean	*dum UNUSED;
+gui_x11_key_hit_cb(
+    Widget	w UNUSED,
+    XtPointer	dud UNUSED,
+    XEvent	*event,
+    Boolean	*dum UNUSED)
 {
     XKeyPressedEvent	*ev_press;
 #ifdef FEAT_XIM
@@ -1071,11 +1067,11 @@ theend:
 }
 
     static void
-gui_x11_mouse_cb(w, dud, event, dum)
-    Widget	w UNUSED;
-    XtPointer	dud UNUSED;
-    XEvent	*event;
-    Boolean	*dum UNUSED;
+gui_x11_mouse_cb(
+    Widget	w UNUSED,
+    XtPointer	dud UNUSED,
+    XEvent	*event,
+    Boolean	*dum UNUSED)
 {
     static XtIntervalId timer = (XtIntervalId)0;
     static int	timed_out = TRUE;
@@ -1127,11 +1123,16 @@ gui_x11_mouse_cb(w, dud, event, dum)
 			gui_x11_timer_cb, &timed_out);
 	    switch (event->xbutton.button)
 	    {
+		/* keep in sync with gui_gtk_x11.c */
 		case Button1:	button = MOUSE_LEFT;	break;
 		case Button2:	button = MOUSE_MIDDLE;	break;
 		case Button3:	button = MOUSE_RIGHT;	break;
 		case Button4:	button = MOUSE_4;	break;
 		case Button5:	button = MOUSE_5;	break;
+		case 6:		button = MOUSE_7;	break;
+		case 7:		button = MOUSE_6;	break;
+		case 8:		button = MOUSE_X1;	break;
+		case 9:		button = MOUSE_X2;	break;
 		default:
 		    return;	/* Unknown button */
 	    }
@@ -1158,20 +1159,6 @@ gui_x11_mouse_cb(w, dud, event, dum)
     gui_send_mouse_event(button, x, y, repeated_click, vim_modifiers);
 }
 
-#ifdef FEAT_SNIFF
-/* ARGSUSED */
-    static void
-gui_x11_sniff_request_cb(closure, source, id)
-    XtPointer	closure UNUSED;
-    int		*source UNUSED;
-    XtInputId	*id UNUSED;
-{
-    static char_u bytes[3] = {CSI, (int)KS_EXTRA, (int)KE_SNIFF};
-
-    add_to_input_buf(bytes, 3);
-}
-#endif
-
 /*
  * End of call-back routines
  */
@@ -1182,9 +1169,7 @@ gui_x11_sniff_request_cb(closure, source, id)
  * when vim is started, whether or not the GUI has been started.
  */
     void
-gui_mch_prepare(argc, argv)
-    int	    *argc;
-    char    **argv;
+gui_mch_prepare(int *argc, char **argv)
 {
     int	    arg;
     int	    i;
@@ -1280,7 +1265,7 @@ gui_mch_prepare(argc, argv)
  * Return OK or FAIL.
  */
     int
-gui_mch_init_check()
+gui_mch_init_check(void)
 {
 #ifdef FEAT_XIM
     XtSetLanguageProc(NULL, NULL, NULL);
@@ -1307,13 +1292,13 @@ gui_mch_init_check()
  */
 static XtInputId _xsmp_xtinputid;
 
-static void local_xsmp_handle_requests __ARGS((XtPointer c, int *s, XtInputId *i));
+static void local_xsmp_handle_requests(XtPointer c, int *s, XtInputId *i);
 
     static void
-local_xsmp_handle_requests(c, s, i)
-    XtPointer	c UNUSED;
-    int		*s UNUSED;
-    XtInputId	*i UNUSED;
+local_xsmp_handle_requests(
+    XtPointer	c UNUSED,
+    int		*s UNUSED,
+    XtInputId	*i UNUSED)
 {
     if (xsmp_handle_requests() == FAIL)
 	XtRemoveInput(_xsmp_xtinputid);
@@ -1326,7 +1311,7 @@ local_xsmp_handle_requests(c, s, i)
  * Returns OK for success, FAIL when the GUI can't be started.
  */
     int
-gui_mch_init()
+gui_mch_init(void)
 {
     XtGCMask	gc_mask;
     XGCValues	gc_vals;
@@ -1570,7 +1555,7 @@ gui_mch_init()
  * Called when starting the GUI fails after calling gui_mch_init().
  */
     void
-gui_mch_uninit()
+gui_mch_uninit(void)
 {
     gui_x11_destroy_widgets();
     XtCloseDisplay(gui.dpy);
@@ -1584,7 +1569,7 @@ gui_mch_uninit()
  * Called when the foreground or background color has been changed.
  */
     void
-gui_mch_new_colors()
+gui_mch_new_colors(void)
 {
     long_u	gc_mask;
     XGCValues	gc_vals;
@@ -1614,7 +1599,7 @@ gui_mch_new_colors()
  * Open the GUI window which was created by a call to gui_mch_init().
  */
     int
-gui_mch_open()
+gui_mch_open(void)
 {
     /* Actually open the window */
     XtRealizeWidget(vimShell);
@@ -1695,7 +1680,7 @@ gui_mch_open()
  * Convert the tooltip fontset name to an XFontSet.
  */
     void
-gui_init_tooltip_font()
+gui_init_tooltip_font(void)
 {
     XrmValue from, to;
 
@@ -1714,7 +1699,7 @@ gui_init_tooltip_font()
 #if defined(FEAT_MENU) || defined(PROTO)
 /* Convert the menu font/fontset name to an XFontStruct/XFontset */
     void
-gui_init_menu_font()
+gui_init_menu_font(void)
 {
     XrmValue from, to;
 
@@ -1743,8 +1728,7 @@ gui_init_menu_font()
 #endif
 
     void
-gui_mch_exit(rc)
-    int		rc UNUSED;
+gui_mch_exit(int rc UNUSED)
 {
 #if 0
     /* Lesstif gives an error message here, and so does Solaris.  The man page
@@ -1759,8 +1743,7 @@ gui_mch_exit(rc)
  * Get the position of the top left corner of the window.
  */
     int
-gui_mch_get_winpos(x, y)
-    int		*x, *y;
+gui_mch_get_winpos(int *x, int *y)
 {
     Dimension	xpos, ypos;
 
@@ -1778,8 +1761,7 @@ gui_mch_get_winpos(x, y)
  * coordinates.
  */
     void
-gui_mch_set_winpos(x, y)
-    int		x, y;
+gui_mch_set_winpos(int x, int y)
 {
     XtVaSetValues(vimShell,
 	XtNx,	x,
@@ -1788,15 +1770,14 @@ gui_mch_set_winpos(x, y)
 }
 
     void
-gui_mch_set_shellsize(width, height, min_width, min_height,
-		    base_width, base_height, direction)
-    int		width;
-    int		height;
-    int		min_width;
-    int		min_height;
-    int		base_width;
-    int		base_height;
-    int		direction UNUSED;
+gui_mch_set_shellsize(
+    int		width,
+    int		height,
+    int		min_width,
+    int		min_height,
+    int		base_width,
+    int		base_height,
+    int		direction UNUSED)
 {
 #ifdef FEAT_XIM
     height += xim_get_status_area_height(),
@@ -1820,9 +1801,9 @@ gui_mch_set_shellsize(width, height, min_width, min_height,
  * Is there no way in X to find out how wide the borders really are?
  */
     void
-gui_mch_get_screen_dimensions(screen_w, screen_h)
-    int	    *screen_w;
-    int	    *screen_h;
+gui_mch_get_screen_dimensions(
+    int	    *screen_w,
+    int	    *screen_h)
 {
     *screen_w = DisplayWidth(gui.dpy, DefaultScreen(gui.dpy)) - 10;
     *screen_h = DisplayHeight(gui.dpy, DefaultScreen(gui.dpy)) - p_ghr;
@@ -1835,9 +1816,9 @@ gui_mch_get_screen_dimensions(screen_w, screen_h)
  * Return FAIL if the font could not be loaded, OK otherwise.
  */
     int
-gui_mch_init_font(font_name, do_fontset)
-    char_u	*font_name;
-    int		do_fontset UNUSED;
+gui_mch_init_font(
+    char_u	*font_name,
+    int		do_fontset UNUSED)
 {
     XFontStruct	*font = NULL;
 
@@ -1965,9 +1946,7 @@ gui_mch_init_font(font_name, do_fontset)
  * Get a font structure for highlighting.
  */
     GuiFont
-gui_mch_get_font(name, giveErrorIfMissing)
-    char_u	*name;
-    int		giveErrorIfMissing;
+gui_mch_get_font(char_u *name, int giveErrorIfMissing)
 {
     XFontStruct	*font;
 
@@ -2016,9 +1995,7 @@ gui_mch_get_font(name, giveErrorIfMissing)
  * Don't know how to get the actual name, thus use the provided name.
  */
     char_u *
-gui_mch_get_fontname(font, name)
-    GuiFont font UNUSED;
-    char_u  *name;
+gui_mch_get_fontname(GuiFont font UNUSED, char_u *name)
 {
     if (name == NULL)
 	return NULL;
@@ -2030,7 +2007,7 @@ gui_mch_get_fontname(font, name)
  * Adjust gui.char_height (after 'linespace' was changed).
  */
     int
-gui_mch_adjust_charheight()
+gui_mch_adjust_charheight(void)
 {
 #ifdef FEAT_XFONTSET
     if (gui.fontset != NOFONTSET)
@@ -2054,8 +2031,7 @@ gui_mch_adjust_charheight()
  * Set the current text font.
  */
     void
-gui_mch_set_font(font)
-    GuiFont	font;
+gui_mch_set_font(GuiFont font)
 {
     static Font	prev_font = (Font)-1;
     Font	fid = ((XFontStruct *)font)->fid;
@@ -2078,8 +2054,7 @@ gui_mch_set_font(font)
  * Adjust the ascent, in case it's different.
  */
     void
-gui_mch_set_fontset(fontset)
-    GuiFontset	fontset;
+gui_mch_set_fontset(GuiFontset fontset)
 {
     current_fontset = (XFontSet)fontset;
     gui.char_ascent = fontset_ascent(current_fontset) + p_linespace / 2;
@@ -2090,8 +2065,7 @@ gui_mch_set_fontset(fontset)
  * If a font is not going to be used, free its structure.
  */
     void
-gui_mch_free_font(font)
-    GuiFont	font;
+gui_mch_free_font(GuiFont font)
 {
     if (font != NOFONT)
 	XFreeFont(gui.dpy, (XFontStruct *)font);
@@ -2102,8 +2076,7 @@ gui_mch_free_font(font)
  * If a fontset is not going to be used, free its structure.
  */
     void
-gui_mch_free_fontset(fontset)
-    GuiFontset	fontset;
+gui_mch_free_fontset(GuiFontset fontset)
 {
     if (fontset != NOFONTSET)
 	XFreeFontSet(gui.dpy, (XFontSet)fontset);
@@ -2114,10 +2087,10 @@ gui_mch_free_fontset(fontset)
  * Return a reference to the fontset, or NOFONTSET when failing.
  */
     GuiFontset
-gui_mch_get_fontset(name, giveErrorIfMissing, fixed_width)
-    char_u	*name;
-    int		giveErrorIfMissing;
-    int		fixed_width;
+gui_mch_get_fontset(
+    char_u	*name,
+    int		giveErrorIfMissing,
+    int		fixed_width)
 {
     XFontSet	fontset;
     char	**missing, *def_str;
@@ -2160,8 +2133,7 @@ gui_mch_get_fontset(name, giveErrorIfMissing, fixed_width)
  * Check if fontset "fs" is fixed width.
  */
     static int
-check_fontset_sanity(fs)
-    XFontSet fs;
+check_fontset_sanity(XFontSet fs)
 {
     XFontStruct	**xfs;
     char	**font_name;
@@ -2211,15 +2183,14 @@ check_fontset_sanity(fs)
 }
 
     static int
-fontset_width(fs)
-    XFontSet fs;
+fontset_width(XFontSet fs)
 {
-    return XmbTextEscapement(fs, "Vim", 3) / 3;
+ return XmbTextEscapement(fs, "Vim", 3) / 3;
 }
 
     int
-fontset_height(fs)
-    XFontSet fs;
+fontset_height(
+    XFontSet fs)
 {
     XFontSetExtents *extents;
 
@@ -2234,8 +2205,7 @@ fontset_height(fs)
  * characters in all fonts of the fontset.
  */
     int
-fontset_height2(fs)
-    XFontSet fs;
+fontset_height2(XFontSet fs)
 {
     XFontSetExtents *extents;
 
@@ -2246,8 +2216,7 @@ fontset_height2(fs)
 
 /* NOT USED YET
     static int
-fontset_descent(fs)
-    XFontSet fs;
+fontset_descent(XFontSet fs)
 {
     XFontSetExtents *extents;
 
@@ -2257,8 +2226,7 @@ fontset_descent(fs)
 */
 
     static int
-fontset_ascent(fs)
-    XFontSet fs;
+fontset_ascent(XFontSet fs)
 {
     XFontSetExtents *extents;
 
@@ -2273,182 +2241,40 @@ fontset_ascent(fs)
  * Return INVALCOLOR for error.
  */
     guicolor_T
-gui_mch_get_color(reqname)
-    char_u *reqname;
+gui_mch_get_color(char_u *name)
 {
-    int		i;
-    char_u	*name = reqname;
+    guicolor_T  requested;
+    XColor      available;
     Colormap	colormap;
-    XColor      color;
-    static char *(vimnames[][2]) =
-    {
-	/* A number of colors that some X11 systems don't have */
-	{"LightRed",	"#FFBBBB"},
-	{"LightGreen",	"#88FF88"},
-	{"LightMagenta","#FFBBFF"},
-	{"DarkCyan",	"#008888"},
-	{"DarkBlue",	"#0000BB"},
-	{"DarkRed",	"#BB0000"},
-	{"DarkMagenta",	"#BB00BB"},
-	{"DarkGrey",	"#BBBBBB"},
-	{"DarkYellow",	"#BBBB00"},
-	{"Gray10",	"#1A1A1A"},
-	{"Grey10",	"#1A1A1A"},
-	{"Gray20",	"#333333"},
-	{"Grey20",	"#333333"},
-	{"Gray30",	"#4D4D4D"},
-	{"Grey30",	"#4D4D4D"},
-	{"Gray40",	"#666666"},
-	{"Grey40",	"#666666"},
-	{"Gray50",	"#7F7F7F"},
-	{"Grey50",	"#7F7F7F"},
-	{"Gray60",	"#999999"},
-	{"Grey60",	"#999999"},
-	{"Gray70",	"#B3B3B3"},
-	{"Grey70",	"#B3B3B3"},
-	{"Gray80",	"#CCCCCC"},
-	{"Grey80",	"#CCCCCC"},
-	{"Gray90",	"#E5E5E5"},
-	{"Grey90",	"#E5E5E5"},
-	{NULL, NULL}
-    };
+#define COLORSPECBUFSIZE 8 /* space enough to hold "#RRGGBB" */
+    char        spec[COLORSPECBUFSIZE];
 
     /* can't do this when GUI not running */
-    if (!gui.in_use || *reqname == NUL)
+    if (!gui.in_use || name == NULL || *name == NUL)
 	return INVALCOLOR;
 
-    colormap = DefaultColormap(gui.dpy, XDefaultScreen(gui.dpy));
+    requested = gui_get_color_cmn(name);
+    if (requested == INVALCOLOR)
+	return INVALCOLOR;
 
-    /* Do this twice if the name isn't recognized. */
-    while (name != NULL)
-    {
-	i = XParseColor(gui.dpy, colormap, (char *)name, &color);
-
-#if defined(HAVE_LOCALE_H) || defined(X_LOCALE)
-	if (i == 0)
-	{
-	    char *old;
-
-	    /* The X11 system is trying to resolve named colors only by names
-	     * corresponding to the current locale language.  But Vim scripts
-	     * usually contain the English color names.  Therefore we have to
-	     * try a second time here with the native "C" locale set.
-	     * Hopefully, restoring the old locale this way works on all
-	     * systems...
-	     */
-	    old = setlocale(LC_ALL, NULL);
-	    if (old != NULL && STRCMP(old, "C") != 0)
-	    {
-		old = (char *)vim_strsave((char_u *)old);
-		setlocale(LC_ALL, "C");
-		i = XParseColor(gui.dpy, colormap, (char *)name, &color);
-		setlocale(LC_ALL, old);
-		vim_free(old);
-	    }
-	}
-#endif
-	if (i != 0 && (XAllocColor(gui.dpy, colormap, &color) != 0
-		    || find_closest_color(colormap, &color) == OK))
-	    return (guicolor_T)color.pixel;
-
-	/* check for a few builtin names */
-	for (i = 0; ; ++i)
-	{
-	    if (vimnames[i][0] == NULL)
-	    {
-		name = NULL;
-		break;
-	    }
-	    if (STRICMP(name, vimnames[i][0]) == 0)
-	    {
-		name = (char_u *)vimnames[i][1];
-		break;
-	    }
-	}
-    }
+    vim_snprintf(spec, COLORSPECBUFSIZE, "#%.2x%.2x%.2x",
+	    (requested & 0xff0000) >> 16,
+	    (requested & 0xff00) >> 8,
+	    requested & 0xff);
+#undef COLORSPECBUFSIZE
+    colormap = DefaultColormap(gui.dpy, DefaultScreen(gui.dpy));
+    if (XParseColor(gui.dpy, colormap, (char *)spec, &available) != 0
+	    && XAllocColor(gui.dpy, colormap, &available) != 0)
+	return (guicolor_T)available.pixel;
 
     return INVALCOLOR;
-}
-
-/*
- * Find closest color for "colorPtr" in "colormap".  set "colorPtr" to the
- * resulting color.
- * Based on a similar function in TCL.
- * Return FAIL if not able to find or allocate a color.
- */
-    static int
-find_closest_color(colormap, colorPtr)
-    Colormap	colormap;
-    XColor	*colorPtr;
-{
-    double	tmp, distance, closestDistance;
-    int		i, closest, numFound, cmap_size;
-    XColor	*colortable;
-    XVisualInfo	template, *visInfoPtr;
-
-    template.visualid = XVisualIDFromVisual(DefaultVisual(gui.dpy,
-						    XDefaultScreen(gui.dpy)));
-    visInfoPtr = XGetVisualInfo(gui.dpy, (long)VisualIDMask,
-							&template, &numFound);
-    if (numFound < 1)
-	/* FindClosestColor couldn't lookup visual */
-	return FAIL;
-
-    cmap_size = visInfoPtr->colormap_size;
-    XFree((char *)visInfoPtr);
-    colortable = (XColor *)alloc((unsigned)(cmap_size * sizeof(XColor)));
-    if (!colortable)
-	return FAIL;  /* out of memory */
-
-    for (i = 0; i  < cmap_size; i++)
-	colortable[i].pixel = (unsigned long)i;
-    XQueryColors (gui.dpy, colormap, colortable, cmap_size);
-
-    /*
-     * Find the color that best approximates the desired one, then
-     * try to allocate that color.  If that fails, it must mean that
-     * the color was read-write (so we can't use it, since it's owner
-     * might change it) or else it was already freed.  Try again,
-     * over and over again, until something succeeds.
-     */
-    closestDistance = 1e30;
-    closest = 0;
-    for (i = 0; i < cmap_size; i++)
-    {
-	/*
-	 * Use Euclidean distance in RGB space, weighted by Y (of YIQ)
-	 * as the objective function;  this accounts for differences
-	 * in the color sensitivity of the eye.
-	 */
-	tmp = .30 * (((int)colorPtr->red) - (int)colortable[i].red);
-	distance = tmp * tmp;
-	tmp = .61 * (((int)colorPtr->green) - (int)colortable[i].green);
-	distance += tmp * tmp;
-	tmp = .11 * (((int)colorPtr->blue) - (int)colortable[i].blue);
-	distance += tmp * tmp;
-	if (distance < closestDistance)
-	{
-	    closest = i;
-	    closestDistance = distance;
-	}
-    }
-
-    if (XAllocColor(gui.dpy, colormap, &colortable[closest]) != 0)
-    {
-	gui.color_approx = TRUE;
-	*colorPtr = colortable[closest];
-    }
-
-    vim_free(colortable);
-    return OK;
 }
 
 /*
  * Set the current text foreground color.
  */
     void
-gui_mch_set_fg_color(color)
-    guicolor_T	color;
+gui_mch_set_fg_color(guicolor_T color)
 {
     if (color != prev_fg_color)
     {
@@ -2461,8 +2287,7 @@ gui_mch_set_fg_color(color)
  * Set the current text background color.
  */
     void
-gui_mch_set_bg_color(color)
-    guicolor_T	color;
+gui_mch_set_bg_color(guicolor_T color)
 {
     if (color != prev_bg_color)
     {
@@ -2475,8 +2300,7 @@ gui_mch_set_bg_color(color)
  * Set the current text special color.
  */
     void
-gui_mch_set_sp_color(color)
-    guicolor_T	color;
+gui_mch_set_sp_color(guicolor_T color)
 {
     prev_sp_color = color;
 }
@@ -2485,7 +2309,7 @@ gui_mch_set_sp_color(color)
  * create a mouse pointer that is blank
  */
     static Cursor
-gui_x11_create_blank_mouse()
+gui_x11_create_blank_mouse(void)
 {
     Pixmap blank_pixmap = XCreatePixmap(gui.dpy, gui.wid, 1, 1, 1);
     GC gc = XCreateGC(gui.dpy, blank_pixmap, (unsigned long)0, (XGCValues*)0);
@@ -2499,10 +2323,7 @@ gui_x11_create_blank_mouse()
  * Draw a curled line at the bottom of the character cell.
  */
     static void
-draw_curl(row, col, cells)
-    int row;
-    int col;
-    int cells;
+draw_curl(int row, int col, int cells)
 {
     int			i;
     int			offset;
@@ -2519,12 +2340,12 @@ draw_curl(row, col, cells)
 }
 
     void
-gui_mch_draw_string(row, col, s, len, flags)
-    int		row;
-    int		col;
-    char_u	*s;
-    int		len;
-    int		flags;
+gui_mch_draw_string(
+    int		row,
+    int		col,
+    char_u	*s,
+    int		len,
+    int		flags)
 {
     int			cells = len;
 #ifdef FEAT_MBYTE
@@ -2686,8 +2507,7 @@ gui_mch_draw_string(row, col, s, len, flags)
  * Return OK if the key with the termcap name "name" is supported.
  */
     int
-gui_mch_haskey(name)
-    char_u  *name;
+gui_mch_haskey(char_u *name)
 {
     int i;
 
@@ -2702,9 +2522,7 @@ gui_mch_haskey(name)
  * Return the text window-id and display.  Only required for X-based GUI's
  */
     int
-gui_get_x11_windis(win, dis)
-    Window  *win;
-    Display **dis;
+gui_get_x11_windis(Window *win, Display **dis)
 {
     *win = XtWindow(vimShell);
     *dis = gui.dpy;
@@ -2712,14 +2530,13 @@ gui_get_x11_windis(win, dis)
 }
 
     void
-gui_mch_beep()
+gui_mch_beep(void)
 {
     XBell(gui.dpy, 0);
 }
 
     void
-gui_mch_flash(msec)
-    int		msec;
+gui_mch_flash(int msec)
 {
     /* Do a visual beep by reversing the foreground and background colors */
     XFillRectangle(gui.dpy, gui.wid, gui.invert_gc, 0, 0,
@@ -2736,11 +2553,11 @@ gui_mch_flash(msec)
  * Invert a rectangle from row r, column c, for nr rows and nc columns.
  */
     void
-gui_mch_invert_rectangle(r, c, nr, nc)
-    int	    r;
-    int	    c;
-    int	    nr;
-    int	    nc;
+gui_mch_invert_rectangle(
+    int	    r,
+    int	    c,
+    int	    nr,
+    int	    nc)
 {
     XFillRectangle(gui.dpy, gui.wid, gui.invert_gc,
 	FILL_X(c), FILL_Y(r), (nc) * gui.char_width, (nr) * gui.char_height);
@@ -2750,7 +2567,7 @@ gui_mch_invert_rectangle(r, c, nr, nc)
  * Iconify the GUI window.
  */
     void
-gui_mch_iconify()
+gui_mch_iconify(void)
 {
     XIconifyWindow(gui.dpy, XtWindow(vimShell), DefaultScreen(gui.dpy));
 }
@@ -2760,7 +2577,7 @@ gui_mch_iconify()
  * Bring the Vim window to the foreground.
  */
     void
-gui_mch_set_foreground()
+gui_mch_set_foreground(void)
 {
     XMapRaised(gui.dpy, XtWindow(vimShell));
 }
@@ -2770,8 +2587,7 @@ gui_mch_set_foreground()
  * Draw a cursor without focus.
  */
     void
-gui_mch_draw_hollow_cursor(color)
-    guicolor_T color;
+gui_mch_draw_hollow_cursor(guicolor_T color)
 {
     int		w = 1;
 
@@ -2789,10 +2605,7 @@ gui_mch_draw_hollow_cursor(color)
  * color "color".
  */
     void
-gui_mch_draw_part_cursor(w, h, color)
-    int		w;
-    int		h;
-    guicolor_T	color;
+gui_mch_draw_part_cursor(int w, int h, guicolor_T color)
 {
     gui_mch_set_fg_color(color);
 
@@ -2813,7 +2626,7 @@ gui_mch_draw_part_cursor(w, h, color)
  * immediately.
  */
     void
-gui_mch_update()
+gui_mch_update(void)
 {
     XtInputMask mask, desired;
 
@@ -2838,10 +2651,10 @@ gui_mch_update()
  * or FAIL otherwise.
  */
     int
-gui_mch_wait_for_chars(wtime)
-    long    wtime;
+gui_mch_wait_for_chars(long wtime)
 {
-    int		    focus;
+    int	    focus;
+    int	    retval = FAIL;
 
     /*
      * Make this static, in case gui_x11_timer_cb is called after leaving
@@ -2850,27 +2663,8 @@ gui_mch_wait_for_chars(wtime)
     static int	    timed_out;
     XtIntervalId    timer = (XtIntervalId)0;
     XtInputMask	    desired;
-#ifdef FEAT_SNIFF
-    static int	    sniff_on = 0;
-    static XtInputId sniff_input_id = 0;
-#endif
 
     timed_out = FALSE;
-
-#ifdef FEAT_SNIFF
-    if (sniff_on && !want_sniff_request)
-    {
-	if (sniff_input_id)
-	    XtRemoveInput(sniff_input_id);
-	sniff_on = 0;
-    }
-    else if (!sniff_on && want_sniff_request)
-    {
-	sniff_input_id = XtAppAddInput(app_context, fd_from_sniff,
-		     (XtPointer)XtInputReadMask, gui_x11_sniff_request_cb, 0);
-	sniff_on = 1;
-    }
-#endif
 
     if (wtime > 0)
 	timer = XtAppAddTimeOut(app_context, (long_u)wtime, gui_x11_timer_cb,
@@ -2895,9 +2689,16 @@ gui_mch_wait_for_chars(wtime)
 	    focus = gui.in_focus;
 	}
 
-#if defined(FEAT_NETBEANS_INTG)
-	/* Process any queued netbeans messages. */
-	netbeans_parse_messages();
+#ifdef MESSAGE_QUEUE
+# ifdef FEAT_TIMERS
+	did_add_timer = FALSE;
+# endif
+	parse_queued_messages();
+# ifdef FEAT_TIMERS
+	if (did_add_timer)
+	    /* Need to recompute the waiting time. */
+	    break;
+# endif
 #endif
 
 	/*
@@ -2912,12 +2713,15 @@ gui_mch_wait_for_chars(wtime)
 
 	if (input_available())
 	{
-	    if (timer != (XtIntervalId)0 && !timed_out)
-		XtRemoveTimeOut(timer);
-	    return OK;
+	    retval = OK;
+	    break;
 	}
     }
-    return FAIL;
+
+    if (timer != (XtIntervalId)0 && !timed_out)
+	XtRemoveTimeOut(timer);
+
+    return retval;
 }
 
 /*
@@ -2926,7 +2730,7 @@ gui_mch_wait_for_chars(wtime)
 
 /* Flush any output to the screen */
     void
-gui_mch_flush()
+gui_mch_flush(void)
 {
     XFlush(gui.dpy);
 }
@@ -2936,11 +2740,11 @@ gui_mch_flush()
  * (row2, col2) inclusive.
  */
     void
-gui_mch_clear_block(row1, col1, row2, col2)
-    int		row1;
-    int		col1;
-    int		row2;
-    int		col2;
+gui_mch_clear_block(
+    int		row1,
+    int		col1,
+    int		row2,
+    int		col2)
 {
     int		x;
 
@@ -2954,7 +2758,7 @@ gui_mch_clear_block(row1, col1, row2, col2)
 }
 
     void
-gui_mch_clear_all()
+gui_mch_clear_all(void)
 {
     XClearArea(gui.dpy, gui.wid, 0, 0, 0, 0, False);
 }
@@ -2964,9 +2768,7 @@ gui_mch_clear_all()
  * text further down within the scroll region.
  */
     void
-gui_mch_delete_lines(row, num_lines)
-    int	    row;
-    int	    num_lines;
+gui_mch_delete_lines(int row, int num_lines)
 {
     if (gui.visibility == VisibilityFullyObscured)
 	return;	    /* Can't see the window */
@@ -2991,9 +2793,7 @@ gui_mch_delete_lines(row, num_lines)
  * following text within the scroll region.
  */
     void
-gui_mch_insert_lines(row, num_lines)
-    int	    row;
-    int	    num_lines;
+gui_mch_insert_lines(int row, int num_lines)
 {
     if (gui.visibility == VisibilityFullyObscured)
 	return;	    /* Can't see the window */
@@ -3016,7 +2816,7 @@ gui_mch_insert_lines(row, num_lines)
  * Update the region revealed by scrolling up/down.
  */
     static void
-gui_x11_check_copy_area()
+gui_x11_check_copy_area(void)
 {
     XEvent		    event;
     XGraphicsExposeEvent    *gevent;
@@ -3048,29 +2848,26 @@ gui_x11_check_copy_area()
  */
 
     void
-clip_mch_lose_selection(cbd)
-    VimClipboard	*cbd;
+clip_mch_lose_selection(VimClipboard *cbd)
 {
     clip_x11_lose_selection(vimShell, cbd);
 }
 
     int
-clip_mch_own_selection(cbd)
-    VimClipboard	*cbd;
+clip_mch_own_selection(VimClipboard *cbd)
 {
     return clip_x11_own_selection(vimShell, cbd);
 }
 
     void
-clip_mch_request_selection(cbd)
-    VimClipboard	*cbd;
+clip_mch_request_selection(VimClipboard *cbd)
 {
-    clip_x11_request_selection(vimShell, gui.dpy, cbd);
+ clip_x11_request_selection(vimShell, gui.dpy, cbd);
 }
 
     void
-clip_mch_set_selection(cbd)
-    VimClipboard	*cbd;
+clip_mch_set_selection(
+    VimClipboard	*cbd)
 {
     clip_x11_set_selection(cbd);
 }
@@ -3084,9 +2881,7 @@ clip_mch_set_selection(cbd)
  * Make a menu either grey or not grey.
  */
     void
-gui_mch_menu_grey(menu, grey)
-    vimmenu_T	*menu;
-    int		grey;
+gui_mch_menu_grey(vimmenu_T *menu, int grey)
 {
     if (menu->id != (Widget)0)
     {
@@ -3106,9 +2901,7 @@ gui_mch_menu_grey(menu, grey)
  * Make menu item hidden or not hidden
  */
     void
-gui_mch_menu_hidden(menu, hidden)
-    vimmenu_T	*menu;
-    int		hidden;
+gui_mch_menu_hidden(vimmenu_T *menu, int hidden)
 {
     if (menu->id != (Widget)0)
     {
@@ -3123,16 +2916,16 @@ gui_mch_menu_hidden(menu, hidden)
  * This is called after setting all the menus to grey/hidden or not.
  */
     void
-gui_mch_draw_menubar()
+gui_mch_draw_menubar(void)
 {
     /* Nothing to do in X */
 }
 
     void
-gui_x11_menu_cb(w, client_data, call_data)
-    Widget	w UNUSED;
-    XtPointer	client_data;
-    XtPointer	call_data UNUSED;
+gui_x11_menu_cb(
+    Widget	w UNUSED,
+    XtPointer	client_data,
+    XtPointer	call_data UNUSED)
 {
     gui_menu_cb((vimmenu_T *)client_data);
 }
@@ -3146,11 +2939,11 @@ gui_x11_menu_cb(w, client_data, call_data)
  * Should put up a requester!
  */
     static void
-gui_x11_wm_protocol_handler(w, client_data, event, dum)
-    Widget	w UNUSED;
-    XtPointer	client_data UNUSED;
-    XEvent	*event;
-    Boolean	*dum UNUSED;
+gui_x11_wm_protocol_handler(
+    Widget	w UNUSED,
+    XtPointer	client_data UNUSED,
+    XEvent	*event,
+    Boolean	*dum UNUSED)
 {
     /*
      * Only deal with Client messages.
@@ -3188,18 +2981,18 @@ gui_x11_wm_protocol_handler(w, client_data, event, dum)
  * Function called when property changed. Check for incoming commands
  */
     static void
-gui_x11_send_event_handler(w, client_data, event, dum)
-    Widget	w UNUSED;
-    XtPointer	client_data UNUSED;
-    XEvent	*event;
-    Boolean	*dum UNUSED;
+gui_x11_send_event_handler(
+    Widget	w UNUSED,
+    XtPointer	client_data UNUSED,
+    XEvent	*event,
+    Boolean	*dum UNUSED)
 {
     XPropertyEvent *e = (XPropertyEvent *) event;
 
     if (e->type == PropertyNotify && e->window == commWindow
 	    && e->atom == commProperty &&  e->state == PropertyNewValue)
     {
-	serverEventProc(gui.dpy, event);
+	serverEventProc(gui.dpy, event, 0);
     }
 }
 #endif
@@ -3223,9 +3016,20 @@ static long_u		blink_ontime = 400;
 static long_u		blink_offtime = 250;
 static XtIntervalId	blink_timer = (XtIntervalId)0;
 
+    int
+gui_mch_is_blinking(void)
+{
+    return blink_state != BLINK_NONE;
+}
+
+    int
+gui_mch_is_blink_off(void)
+{
+    return blink_state == BLINK_OFF;
+}
+
     void
-gui_mch_set_blinking(waittime, on, off)
-    long    waittime, on, off;
+gui_mch_set_blinking(long waittime, long on, long off)
 {
     blink_waittime = waittime;
     blink_ontime = on;
@@ -3236,7 +3040,7 @@ gui_mch_set_blinking(waittime, on, off)
  * Stop the cursor blinking.  Show the cursor if it wasn't shown.
  */
     void
-gui_mch_stop_blink()
+gui_mch_stop_blink(void)
 {
     if (blink_timer != (XtIntervalId)0)
     {
@@ -3253,7 +3057,7 @@ gui_mch_stop_blink()
  * waiting time and shows the cursor.
  */
     void
-gui_mch_start_blink()
+gui_mch_start_blink(void)
 {
     if (blink_timer != (XtIntervalId)0)
 	XtRemoveTimeOut(blink_timer);
@@ -3268,9 +3072,9 @@ gui_mch_start_blink()
 }
 
     static void
-gui_x11_blink_cb(timed_out, interval_id)
-    XtPointer	    timed_out UNUSED;
-    XtIntervalId    *interval_id UNUSED;
+gui_x11_blink_cb(
+    XtPointer	    timed_out UNUSED,
+    XtIntervalId    *interval_id UNUSED)
 {
     if (blink_state == BLINK_ON)
     {
@@ -3291,9 +3095,8 @@ gui_x11_blink_cb(timed_out, interval_id)
 /*
  * Return the RGB value of a pixel as a long.
  */
-    long_u
-gui_mch_get_rgb(pixel)
-    guicolor_T	pixel;
+    guicolor_T
+gui_mch_get_rgb(guicolor_T pixel)
 {
     XColor	xc;
     Colormap	colormap;
@@ -3302,17 +3105,15 @@ gui_mch_get_rgb(pixel)
     xc.pixel = pixel;
     XQueryColor(gui.dpy, colormap, &xc);
 
-    return ((xc.red & 0xff00) << 8) + (xc.green & 0xff00)
-						   + ((unsigned)xc.blue >> 8);
+    return (guicolor_T)(((xc.red & 0xff00) << 8) + (xc.green & 0xff00)
+						   + ((unsigned)xc.blue >> 8));
 }
 
 /*
  * Add the callback functions.
  */
     void
-gui_x11_callbacks(textArea, vimForm)
-    Widget textArea;
-    Widget vimForm;
+gui_x11_callbacks(Widget textArea, Widget vimForm)
 {
     XtAddEventHandler(textArea, VisibilityChangeMask, FALSE,
 	gui_x11_visibility_cb, (XtPointer)0);
@@ -3375,9 +3176,7 @@ gui_mch_getmouse(int *x, int *y)
 }
 
     void
-gui_mch_setmouse(x, y)
-    int		x;
-    int		y;
+gui_mch_setmouse(int x, int y)
 {
     if (gui.wid)
 	XWarpPointer(gui.dpy, (Window)0, gui.wid, 0, 0, 0, 0, x, y);
@@ -3385,7 +3184,7 @@ gui_mch_setmouse(x, y)
 
 #if (defined(FEAT_GUI_MOTIF) && defined(FEAT_MENU)) || defined(PROTO)
     XButtonPressedEvent *
-gui_x11_get_last_mouse_event()
+gui_x11_get_last_mouse_event(void)
 {
     return &last_mouse_event;
 }
@@ -3398,10 +3197,7 @@ gui_x11_get_last_mouse_event()
 # define SIGN_WIDTH (gui.char_width * 2)
 
     void
-gui_mch_drawsign(row, col, typenr)
-    int		row;
-    int		col;
-    int		typenr;
+gui_mch_drawsign(int row, int col, int typenr)
 {
     XImage	*sign;
 
@@ -3417,8 +3213,7 @@ gui_mch_drawsign(row, col, typenr)
 }
 
     void *
-gui_mch_register_sign(signfile)
-    char_u	    *signfile;
+gui_mch_register_sign(char_u *signfile)
 {
     XpmAttributes   attrs;
     XImage	    *sign = NULL;
@@ -3458,8 +3253,7 @@ gui_mch_register_sign(signfile)
 }
 
     void
-gui_mch_destroy_sign(sign)
-    void *sign;
+gui_mch_destroy_sign(void *sign)
 {
     XDestroyImage((XImage*)sign);
 }
@@ -3476,8 +3270,8 @@ static int last_shape = 0;
  * Use the blank mouse pointer or not.
  */
     void
-gui_mch_mousehide(hide)
-    int		hide;	/* TRUE = use blank ptr, FALSE = use parent ptr */
+gui_mch_mousehide(
+    int		hide)	/* TRUE = use blank ptr, FALSE = use parent ptr */
 {
     if (gui.pointer_hidden != hide)
     {
@@ -3519,8 +3313,7 @@ static int mshape_ids[] =
 };
 
     void
-mch_set_mouse_shape(shape)
-    int	shape;
+mch_set_mouse_shape(int shape)
 {
     int	    id;
 
@@ -3556,8 +3349,7 @@ mch_set_mouse_shape(shape)
  * passing a normal menu item here.  Can't explain that, but better avoid it.
  */
     void
-gui_mch_menu_set_tip(menu)
-    vimmenu_T	*menu;
+gui_mch_menu_set_tip(vimmenu_T *menu)
 {
     if (menu->id != NULL && menu->parent != NULL
 				       && menu_is_toolbar(menu->parent->name))

@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved		by Bram Moolenaar
  * VMS port			by Henk Elbers
@@ -12,7 +12,7 @@
 #include	"vim.h"
 
 /* define _generic_64 for use in time functions */
-#ifndef VAX
+#if !defined(VAX) && !defined(PROTO)
 #   include <gen64def.h>
 #else
 /* based on Alpha's gen64def.h; the file is absent on VAX */
@@ -77,8 +77,8 @@ static char *Fspec_Rms;		       /* rms file spec, passed implicitly between rout
 
 
 
-static TT_MODE	get_tty __ARGS((void));
-static void	set_tty __ARGS((int row, int col));
+static TT_MODE	get_tty(void);
+static void	set_tty(int row, int col);
 
 #define EXPL_ALLOC_INC 64
 
@@ -483,7 +483,8 @@ mch_expand_wildcards(int num_pat, char_u **pat, int *num_file, char_u ***file, i
 		continue;
 
 	    /* Skip files that are not executable if we check for that. */
-	    if (!dir && (flags & EW_EXEC) && !mch_can_exe(vms_fmatch[i], NULL))
+	    if (!dir && (flags & EW_EXEC)
+		 && !mch_can_exe(vms_fmatch[i], NULL, !(flags & EW_SHELLCMD)))
 		continue;
 
 	    /* allocate memory for pointers */
@@ -722,10 +723,11 @@ struct typeahead_st {
  * "msec" == -1 will block until a character is available.
  */
     int
-RealWaitForChar(fd, msec, check_for_gpm)
-    int		fd UNUSED; /* always read from iochan */
-    long	msec;
-    int		*check_for_gpm UNUSED;
+RealWaitForChar(
+    int		fd UNUSED, /* always read from iochan */
+    long	msec,
+    int		*check_for_gpm UNUSED,
+    int		*interrupted)
 {
     int status;
     struct _generic_64 time_curr;

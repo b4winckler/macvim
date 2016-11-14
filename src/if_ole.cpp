@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved		by Bram Moolenaar
  *
@@ -33,6 +33,12 @@ extern "C" {
 extern HWND s_hwnd;
 extern HWND vim_parent_hwnd;
 }
+
+#if (defined(_MSC_VER) && (_MSC_VER >= 1700)) || (__cplusplus >= 201103L)
+# define FINAL final
+#else
+# define FINAL
+#endif
 
 #if (defined(_MSC_VER) && _MSC_VER < 1300) || !defined(MAXULONG_PTR)
 /* Work around old versions of basetsd.h which wrongly declares
@@ -93,10 +99,10 @@ static CVim *app = 0;
  * ----------
  */
 
-class CVim : public IVim
+class CVim FINAL : public IVim
 {
 public:
-    ~CVim();
+    virtual ~CVim();
     static CVim *Create(int *pbDoRestart);
 
     // IUnknown members
@@ -428,10 +434,11 @@ CVim::Eval(BSTR expr, BSTR *result)
  * ----------
  */
 
-class CVimCF : public IClassFactory
+class CVimCF FINAL : public IClassFactory
 {
 public:
     static CVimCF *Create();
+    virtual ~CVimCF() {};
 
     STDMETHOD(QueryInterface)(REFIID riid, void ** ppv);
     STDMETHOD_(unsigned long, AddRef)(void);

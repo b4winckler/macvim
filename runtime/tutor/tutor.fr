@@ -190,7 +190,7 @@ NOTE : En avançant dans ce cours, n'essayez pas de mémoriser, apprenez par
 
   5. Pour insérer ou ajouter du texte tapez :
          i   tapez le texte à insérer avant le curseur   <Échap>
-         A   tapez le texte à ajouter après le curseur   <Échap>
+         A   tapez le texte à ajouter en fin de ligne    <Échap>
 
 NOTE : Appuyer  <Échap>  vous place en mode Normal ou annule une commande
        partiellement tapée dont vous ne voulez plus.
@@ -1029,10 +1029,10 @@ NOTE : Le complètement fonctionne pour de nombreuses commandes. Essayez
   des Mines du Colorado et reprend des idées fournies par Charles Smith,
   Université d'État du Colorado. E-mail : bware@mines.colorado.edu.
 
-  Modifié pour Vim par Bram Moolenar.
+  Modifié pour Vim par Bram Moolenaar.
   Traduit en français par Adrien Beau, en avril 2001.
   Dernières mises à jour par Dominique Pellé.
 
   E-mail :      dominique.pelle@gmail.com
-  Last Change : 2013 May 10
+  Last Change : 2016 Jul 02
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

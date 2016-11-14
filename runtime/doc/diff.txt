@@ -1,12 +1,12 @@
-*diff.txt*      For Vim version 7.4.  Last change: 2014 May 20
+*diff.txt*      For Vim version 8.0.  Last change: 2016 Aug 24
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
 
 
 				*diff* *vimdiff* *gvimdiff* *diff-mode*
-This file describes the |+diff| feature: Showing differences between two,
-three or four versions of the same file.
+This file describes the |+diff| feature: Showing differences between two to
+eight versions of the same file.
 
 The basics are explained in section |08.7| of the user manual.
 
@@ -117,7 +117,7 @@ To make these commands use a vertical split, prepend |:vertical|.  Examples: >
 If you always prefer a vertical split include "vertical" in 'diffopt'.
 
 							*E96*
-There can be up to four buffers with 'diff' set.
+There can be up to eight buffers with 'diff' set.
 
 Since the option values are remembered with the buffer, you can edit another
 file for a moment and come back to the same file and be in diff mode again.
@@ -132,8 +132,9 @@ file for a moment and come back to the same file and be in diff mode again.
 		if the current window does not have 'diff' set then no options
 		in it are changed.
 
-The ":diffoff" command resets the relevant options to the values they had when
-using |:diffsplit|, |:diffpatch| , |:diffthis|. or starting Vim in diff mode.
+The `:diffoff` command resets the relevant options to the values they had when
+using `:diffsplit`, `:diffpatch` , `:diffthis`. or starting Vim in diff mode.
+When using `:diffoff` twice the last saved values are restored.
 Otherwise they are set to their default value:
 
 	'diff'		off
@@ -181,8 +182,8 @@ hidden buffers.  You can use ":hide" to close a window without unloading the
 buffer.  If you don't want a buffer to remain used for the diff do ":set
 nodiff" before hiding it.
 
-							*:diffu* *:diffupdate*
-:diffu[pdate][!]		Update the diff highlighting and folds.
+							*:dif* *:diffupdate*
+:dif[fupdate][!]		Update the diff highlighting and folds.
 
 Vim attempts to keep the differences updated when you make changes to the
 text.  This mostly takes care of inserted and deleted lines.  Changes within a
@@ -266,13 +267,17 @@ that the buffers will be equal within the specified range.
 		See below for [range].
 
 							*do*
-do		Same as ":diffget" without argument or range.  The "o" stands
-		for "obtain" ("dg" can't be used, it could be the start of
-		"dgg"!). Note: this doesn't work in Visual mode.
+[count]do	Same as ":diffget" without range.  The "o" stands for "obtain"
+		("dg" can't be used, it could be the start of "dgg"!). Note:
+		this doesn't work in Visual mode.
+		If you give a [count], it is used as the [bufspec] argument
+		for ":diffget".
 
 							*dp*
-dp		Same as ":diffput" without argument or range.
-		Note: this doesn't work in Visual mode.
+[count]dp	Same as ":diffput" without range.  Note: this doesn't work in
+		Visual mode.
+		If you give a [count], it is used as the [bufspec] argument
+		for ":diffput".
 
 
 When no [range] is given, the diff at the cursor position or just above it is
@@ -309,6 +314,19 @@ name or a part of a buffer name.  Examples:
 5. Diff options						*diff-options*
 
 Also see |'diffopt'| and the "diff" item of |'fillchars'|.
+
+					    *diff-slow* *diff_translations*
+For very long lines, the diff syntax highlighting might be slow, especially
+since it tries to match all different kind of localisations. To disable
+localisations and speed up the syntax highlighting, set the global variable
+g:diff_translations to zero: >
+
+    let g:diff_translations = 0
+<
+After setting this variable, Reload the syntax script: >
+
+    set syntax=diff
+<
 
 
 FINDING THE DIFFERENCES					*diff-diffexpr*

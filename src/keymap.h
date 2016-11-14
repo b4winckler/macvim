@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved	by Bram Moolenaar
  *
@@ -210,8 +210,6 @@ enum key_extra
 
     , KE_TAB		/* unshifted TAB key */
     , KE_S_TAB_OLD	/* shifted TAB key (no longer used) */
-
-    , KE_SNIFF		/* SNiFF+ input waiting */
 
     , KE_XF1		/* extra vt100 function keys for xterm */
     , KE_XF2
@@ -455,8 +453,6 @@ enum key_extra
 
 #define K_IGNORE	TERMCAP2KEY(KS_EXTRA, KE_IGNORE)
 #define K_NOP		TERMCAP2KEY(KS_EXTRA, KE_NOP)
-
-#define K_SNIFF		TERMCAP2KEY(KS_EXTRA, KE_SNIFF)
 
 #define K_MOUSEDOWN	TERMCAP2KEY(KS_EXTRA, KE_MOUSEDOWN)
 #define K_MOUSEUP	TERMCAP2KEY(KS_EXTRA, KE_MOUSEUP)

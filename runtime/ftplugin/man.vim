@@ -1,7 +1,7 @@
 " Vim filetype plugin file
 " Language:	man
 " Maintainer:	SungHyun Nam <goweol@gmail.com>
-" Last Change:	2013 Jul 17
+" Last Change: 	2016 Jun 20
 
 " To make the ":Man" command available before editing a manual page, source
 " this script from your startup vimrc file.
@@ -33,6 +33,11 @@ if &filetype == "man"
 
     nnoremap <buffer> <c-]> :call <SID>PreGetPage(v:count)<CR>
     nnoremap <buffer> <c-t> :call <SID>PopPage()<CR>
+    nnoremap <buffer> <silent> q :q<CR>
+  endif
+
+  if exists('g:ft_man_folding_enable') && (g:ft_man_folding_enable == 1)
+    setlocal foldmethod=indent foldnestmax=1 foldenable
   endif
 
   let b:undo_ftplugin = "setlocal iskeyword<"
@@ -63,7 +68,9 @@ endtry
 func <SID>PreGetPage(cnt)
   if a:cnt == 0
     let old_isk = &iskeyword
-    setl iskeyword+=(,)
+    if &ft == 'man'
+      setl iskeyword+=(,)
+    endif
     let str = expand("<cword>")
     let &l:iskeyword = old_isk
     let page = substitute(str, '(*\(\k\+\).*', '\1', '')
@@ -143,7 +150,17 @@ func <SID>GetPage(...)
       endwhile
     endif
     if &filetype != "man"
-      new
+      if exists("g:ft_man_open_mode")
+        if g:ft_man_open_mode == "vert"
+          vnew
+        elseif g:ft_man_open_mode == "tab"
+          tabnew
+        else
+          new
+        endif
+      else
+        new
+      endif
       setl nonu fdc=0
     endif
   endif
@@ -153,19 +170,27 @@ func <SID>GetPage(...)
 
   setl ma nonu nornu nofen
   silent exec "norm 1GdG"
-  let $MANWIDTH = winwidth(0)
+  let unsetwidth = 0
+  if empty($MANWIDTH)
+    let $MANWIDTH = winwidth(0)
+    let unsetwidth = 1
+  endif
   silent exec "r!/usr/bin/man ".s:GetCmdArg(sect, page)." | col -b"
+  if unsetwidth
+    let $MANWIDTH = ''
+  endif
   " Remove blank lines from top and bottom.
   while getline(1) =~ '^\s*$'
-    silent norm ggdd
+    silent keepj norm ggdd
   endwhile
   while getline('$') =~ '^\s*$'
-    silent norm Gdd
+    silent keepj norm Gdd
   endwhile
   1
   setl ft=man nomod
   setl bufhidden=hide
   setl nobuflisted
+  setl noma
 endfunc
 
 func <SID>PopPage()
@@ -186,4 +211,4 @@ endfunc
 
 endif
 
-" vim: set sw=2:
+" vim: set sw=2 ts=8 noet:

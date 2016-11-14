@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved	by Bram Moolenaar
  *
@@ -14,7 +14,7 @@
 #include "vim.h"
 #include "version.h"
 
-static void	cmd_source __ARGS((char_u *fname, exarg_T *eap));
+static void	cmd_source(char_u *fname, exarg_T *eap);
 
 #ifdef FEAT_EVAL
 /* Growarray to store info about already sourced scripts.
@@ -68,14 +68,17 @@ typedef struct sn_prl_S
 #if defined(FEAT_EVAL) || defined(PROTO)
 static int debug_greedy = FALSE;	/* batch mode debugging: don't save
 					   and restore typeahead. */
+static int get_maxbacktrace_level(void);
+static void do_setdebugtracelevel(char_u *arg);
+static void do_checkbacktracelevel(void);
+static void do_showbacktrace(char_u *cmd);
 
 /*
  * do_debug(): Debug mode.
  * Repeatedly get Ex commands, until told to continue normal execution.
  */
     void
-do_debug(cmd)
-    char_u	*cmd;
+do_debug(char_u *cmd)
 {
     int		save_msg_scroll = msg_scroll;
     int		save_State = State;
@@ -87,9 +90,7 @@ do_debug(cmd)
     tasave_T	typeaheadbuf;
     int		typeahead_saved = FALSE;
     int		save_ignore_script = 0;
-# ifdef FEAT_EX_EXTRA
     int		save_ex_normal_busy;
-# endif
     int		n;
     char_u	*cmdline = NULL;
     char_u	*p;
@@ -101,6 +102,10 @@ do_debug(cmd)
 #define CMD_FINISH	4
 #define CMD_QUIT	5
 #define CMD_INTERRUPT	6
+#define CMD_BACKTRACE	7
+#define CMD_FRAME	8
+#define CMD_UP		9
+#define CMD_DOWN	10
 
 #ifdef ALWAYS_USE_GUI
     /* Can't do this when there is no terminal for input/output. */
@@ -126,9 +131,6 @@ do_debug(cmd)
     redir_off = TRUE;		/* don't redirect debug commands */
 
     State = NORMAL;
-#ifdef FEAT_SNIFF
-    want_sniff_request = 0;    /* No K_SNIFF wanted */
-#endif
 
     if (!debug_did_msg)
 	MSG(_("Entering Debug mode.  Type \"cont\" to continue."));
@@ -146,18 +148,14 @@ do_debug(cmd)
     {
 	msg_scroll = TRUE;
 	need_wait_return = FALSE;
-#ifdef FEAT_SNIFF
-	ProcessSniffRequests();
-#endif
+
 	/* Save the current typeahead buffer and replace it with an empty one.
 	 * This makes sure we get input from the user here and don't interfere
 	 * with the commands being executed.  Reset "ex_normal_busy" to avoid
 	 * the side effects of using ":normal". Save the stuff buffer and make
 	 * it empty. Set ignore_script to avoid reading from script input. */
-# ifdef FEAT_EX_EXTRA
 	save_ex_normal_busy = ex_normal_busy;
 	ex_normal_busy = 0;
-# endif
 	if (!debug_greedy)
 	{
 	    save_typeahead(&typeaheadbuf);
@@ -166,6 +164,7 @@ do_debug(cmd)
 	    ignore_script = TRUE;
 	}
 
+	vim_free(cmdline);
 	cmdline = getcmdline_prompt('>', NULL, 0, EXPAND_NOTHING, NULL);
 
 	if (typeahead_saved)
@@ -173,11 +172,10 @@ do_debug(cmd)
 	    restore_typeahead(&typeaheadbuf);
 	    ignore_script = save_ignore_script;
 	}
-# ifdef FEAT_EX_EXTRA
 	ex_normal_busy = save_ex_normal_busy;
-# endif
 
 	cmdline_row = msg_row;
+	msg_starthere();
 	if (cmdline != NULL)
 	{
 	    /* If this is a debug command, set "last_cmd".
@@ -197,14 +195,39 @@ do_debug(cmd)
 		    case 's': last_cmd = CMD_STEP;
 			      tail = "tep";
 			      break;
-		    case 'f': last_cmd = CMD_FINISH;
-			      tail = "inish";
+		    case 'f':
+			      last_cmd = 0;
+			      if (p[1] == 'r')
+			      {
+				  last_cmd = CMD_FRAME;
+				  tail = "rame";
+			      }
+			      else
+			      {
+				  last_cmd = CMD_FINISH;
+				  tail = "inish";
+			      }
 			      break;
 		    case 'q': last_cmd = CMD_QUIT;
 			      tail = "uit";
 			      break;
 		    case 'i': last_cmd = CMD_INTERRUPT;
 			      tail = "nterrupt";
+			      break;
+		    case 'b': last_cmd = CMD_BACKTRACE;
+			      if (p[1] == 't')
+				  tail = "t";
+			      else
+				  tail = "acktrace";
+			      break;
+		    case 'w': last_cmd = CMD_BACKTRACE;
+			      tail = "here";
+			      break;
+		    case 'u': last_cmd = CMD_UP;
+			      tail = "p";
+			      break;
+		    case 'd': last_cmd = CMD_DOWN;
+			      tail = "own";
 			      break;
 		    default: last_cmd = 0;
 		}
@@ -217,7 +240,7 @@ do_debug(cmd)
 			++p;
 			++tail;
 		    }
-		    if (ASCII_ISALPHA(*p))
+		    if (ASCII_ISALPHA(*p) && last_cmd != CMD_FRAME)
 			last_cmd = 0;
 		}
 	    }
@@ -250,7 +273,31 @@ do_debug(cmd)
 			/* Do not repeat ">interrupt" cmd, continue stepping. */
 			last_cmd = CMD_STEP;
 			break;
+		    case CMD_BACKTRACE:
+			do_showbacktrace(cmd);
+			continue;
+		    case CMD_FRAME:
+			if (*p == NUL)
+			{
+			    do_showbacktrace(cmd);
+			}
+			else
+			{
+			    p = skipwhite(p);
+			    do_setdebugtracelevel(p);
+			}
+			continue;
+		    case CMD_UP:
+			debug_backtrace_level++;
+			do_checkbacktracelevel();
+			continue;
+		    case CMD_DOWN:
+			debug_backtrace_level--;
+			do_checkbacktracelevel();
+			continue;
 		}
+		/* Going out reset backtrace_level */
+		debug_backtrace_level = 0;
 		break;
 	    }
 
@@ -260,8 +307,6 @@ do_debug(cmd)
 	    (void)do_cmdline(cmdline, getexline, NULL,
 						DOCMD_VERBOSE|DOCMD_EXCRESET);
 	    debug_break_level = n;
-
-	    vim_free(cmdline);
 	}
 	lines_left = Rows - 1;
     }
@@ -285,12 +330,96 @@ do_debug(cmd)
     debug_did_msg = TRUE;
 }
 
+    static int
+get_maxbacktrace_level(void)
+{
+    char	*p, *q;
+    int		maxbacktrace = 0;
+
+    if (sourcing_name != NULL)
+    {
+	p = (char *)sourcing_name;
+	while ((q = strstr(p, "..")) != NULL)
+	{
+	    p = q + 2;
+	    maxbacktrace++;
+	}
+    }
+    return maxbacktrace;
+}
+
+    static void
+do_setdebugtracelevel(char_u *arg)
+{
+    int level;
+
+    level = atoi((char *)arg);
+    if (*arg == '+' || level < 0)
+	debug_backtrace_level += level;
+    else
+	debug_backtrace_level = level;
+
+    do_checkbacktracelevel();
+}
+
+    static void
+do_checkbacktracelevel(void)
+{
+    if (debug_backtrace_level < 0)
+    {
+	debug_backtrace_level = 0;
+	MSG(_("frame is zero"));
+    }
+    else
+    {
+	int max = get_maxbacktrace_level();
+
+	if (debug_backtrace_level > max)
+	{
+	    debug_backtrace_level = max;
+	    smsg((char_u *)_("frame at highest level: %d"), max);
+	}
+    }
+}
+
+    static void
+do_showbacktrace(char_u *cmd)
+{
+    char    *cur;
+    char    *next;
+    int	    i = 0;
+    int	    max = get_maxbacktrace_level();
+
+    if (sourcing_name != NULL)
+    {
+	cur = (char *)sourcing_name;
+	while (!got_int)
+	{
+	    next = strstr(cur, "..");
+	    if (next != NULL)
+		*next = NUL;
+	    if (i == max - debug_backtrace_level)
+		smsg((char_u *)"->%d %s", max - i, cur);
+	    else
+		smsg((char_u *)"  %d %s", max - i, cur);
+	    ++i;
+	    if (next == NULL)
+		break;
+	    *next = '.';
+	    cur = next + 2;
+	}
+    }
+    if (sourcing_lnum != 0)
+       smsg((char_u *)_("line %ld: %s"), (long)sourcing_lnum, cmd);
+    else
+       smsg((char_u *)_("cmd: %s"), cmd);
+}
+
 /*
  * ":debug".
  */
     void
-ex_debug(eap)
-    exarg_T	*eap;
+ex_debug(exarg_T *eap)
 {
     int		debug_break_level_save = debug_break_level;
 
@@ -320,8 +449,7 @@ static char_u	*debug_skipped_name;
  * Called from do_one_cmd() before executing a command.
  */
     void
-dbg_check_breakpoint(eap)
-    exarg_T	*eap;
+dbg_check_breakpoint(exarg_T *eap)
 {
     char_u	*p;
 
@@ -368,8 +496,7 @@ dbg_check_breakpoint(eap)
  * set.  Return TRUE when the debug mode is entered this time.
  */
     int
-dbg_check_skipped(eap)
-    exarg_T	*eap;
+dbg_check_skipped(exarg_T *eap)
 {
     int		prev_got_int;
 
@@ -418,8 +545,8 @@ static garray_T prof_ga = {0, 0, sizeof(struct debuggy), 4, NULL};
 #define DBG_FUNC	1
 #define DBG_FILE	2
 
-static int dbg_parsearg __ARGS((char_u *arg, garray_T *gap));
-static linenr_T debuggy_find __ARGS((int file,char_u *fname, linenr_T after, garray_T *gap, int *fp));
+static int dbg_parsearg(char_u *arg, garray_T *gap);
+static linenr_T debuggy_find(int file,char_u *fname, linenr_T after, garray_T *gap, int *fp);
 
 /*
  * Parse the arguments of ":profile", ":breakadd" or ":breakdel" and put them
@@ -428,9 +555,9 @@ static linenr_T debuggy_find __ARGS((int file,char_u *fname, linenr_T after, gar
  * Returns FAIL for failure.
  */
     static int
-dbg_parsearg(arg, gap)
-    char_u	*arg;
-    garray_T	*gap;	    /* either &dbg_breakp or &prof_ga */
+dbg_parsearg(
+    char_u	*arg,
+    garray_T	*gap)	    /* either &dbg_breakp or &prof_ga */
 {
     char_u	*p = arg;
     char_u	*q;
@@ -525,8 +652,7 @@ dbg_parsearg(arg, gap)
  * ":breakadd".
  */
     void
-ex_breakadd(eap)
-    exarg_T	*eap;
+ex_breakadd(exarg_T *eap)
 {
     struct debuggy *bp;
     char_u	*pat;
@@ -571,8 +697,7 @@ ex_breakadd(eap)
  * ":debuggreedy".
  */
     void
-ex_debuggreedy(eap)
-    exarg_T	*eap;
+ex_debuggreedy(exarg_T *eap)
 {
     if (eap->addr_count == 0 || eap->line2 != 0)
 	debug_greedy = TRUE;
@@ -584,8 +709,7 @@ ex_debuggreedy(eap)
  * ":breakdel" and ":profdel".
  */
     void
-ex_breakdel(eap)
-    exarg_T	*eap;
+ex_breakdel(exarg_T *eap)
 {
     struct debuggy *bp, *bpi;
     int		nr;
@@ -675,8 +799,7 @@ ex_breakdel(eap)
  * ":breaklist".
  */
     void
-ex_breaklist(eap)
-    exarg_T	*eap UNUSED;
+ex_breaklist(exarg_T *eap UNUSED)
 {
     struct debuggy *bp;
     int		i;
@@ -702,10 +825,10 @@ ex_breaklist(eap)
  * Returns line number at which to break; zero when no matching breakpoint.
  */
     linenr_T
-dbg_find_breakpoint(file, fname, after)
-    int		file;	    /* TRUE for a file, FALSE for a function */
-    char_u	*fname;	    /* file or function name */
-    linenr_T	after;	    /* after this line number */
+dbg_find_breakpoint(
+    int		file,	    /* TRUE for a file, FALSE for a function */
+    char_u	*fname,	    /* file or function name */
+    linenr_T	after)	    /* after this line number */
 {
     return debuggy_find(file, fname, after, &dbg_breakp, NULL);
 }
@@ -715,10 +838,10 @@ dbg_find_breakpoint(file, fname, after)
  * Return TRUE if profiling is on for a function or sourced file.
  */
     int
-has_profiling(file, fname, fp)
-    int		file;	    /* TRUE for a file, FALSE for a function */
-    char_u	*fname;	    /* file or function name */
-    int		*fp;	    /* return: forceit */
+has_profiling(
+    int		file,	    /* TRUE for a file, FALSE for a function */
+    char_u	*fname,	    /* file or function name */
+    int		*fp)	    /* return: forceit */
 {
     return (debuggy_find(file, fname, (linenr_T)0, &prof_ga, fp)
 							      != (linenr_T)0);
@@ -729,17 +852,16 @@ has_profiling(file, fname, fp)
  * Common code for dbg_find_breakpoint() and has_profiling().
  */
     static linenr_T
-debuggy_find(file, fname, after, gap, fp)
-    int		file;	    /* TRUE for a file, FALSE for a function */
-    char_u	*fname;	    /* file or function name */
-    linenr_T	after;	    /* after this line number */
-    garray_T	*gap;	    /* either &dbg_breakp or &prof_ga */
-    int		*fp;	    /* if not NULL: return forceit */
+debuggy_find(
+    int		file,	    /* TRUE for a file, FALSE for a function */
+    char_u	*fname,	    /* file or function name */
+    linenr_T	after,	    /* after this line number */
+    garray_T	*gap,	    /* either &dbg_breakp or &prof_ga */
+    int		*fp)	    /* if not NULL: return forceit */
 {
     struct debuggy *bp;
     int		i;
     linenr_T	lnum = 0;
-    regmatch_T	regmatch;
     char_u	*name = fname;
     int		prev_got_int;
 
@@ -771,8 +893,6 @@ debuggy_find(file, fname, after, gap, fp)
 #endif
 		(bp->dbg_lnum > after && (lnum == 0 || bp->dbg_lnum < lnum)))))
 	{
-	    regmatch.regprog = bp->dbg_prog;
-	    regmatch.rm_ic = FALSE;
 	    /*
 	     * Save the value of got_int and reset it.  We don't want a
 	     * previous interruption cancel matching, only hitting CTRL-C
@@ -780,7 +900,7 @@ debuggy_find(file, fname, after, gap, fp)
 	     */
 	    prev_got_int = got_int;
 	    got_int = FALSE;
-	    if (vim_regexec(&regmatch, name, (colnr_T)0))
+	    if (vim_regexec_prog(&bp->dbg_prog, FALSE, name, (colnr_T)0))
 	    {
 		lnum = bp->dbg_lnum;
 		if (fp != NULL)
@@ -799,9 +919,7 @@ debuggy_find(file, fname, after, gap, fp)
  * Called when a breakpoint was encountered.
  */
     void
-dbg_breakpoint(name, lnum)
-    char_u	*name;
-    linenr_T	lnum;
+dbg_breakpoint(char_u *name, linenr_T lnum)
 {
     /* We need to check if this line is actually executed in do_one_cmd() */
     debug_breakpoint_name = name;
@@ -814,8 +932,7 @@ dbg_breakpoint(name, lnum)
  * Store the current time in "tm".
  */
     void
-profile_start(tm)
-    proftime_T *tm;
+profile_start(proftime_T *tm)
 {
 # ifdef WIN3264
     QueryPerformanceCounter(tm);
@@ -828,8 +945,7 @@ profile_start(tm)
  * Compute the elapsed time from "tm" till now and store in "tm".
  */
     void
-profile_end(tm)
-    proftime_T *tm;
+profile_end(proftime_T *tm)
 {
     proftime_T now;
 
@@ -852,8 +968,7 @@ profile_end(tm)
  * Subtract the time "tm2" from "tm".
  */
     void
-profile_sub(tm, tm2)
-    proftime_T *tm, *tm2;
+profile_sub(proftime_T *tm, proftime_T *tm2)
 {
 # ifdef WIN3264
     tm->QuadPart -= tm2->QuadPart;
@@ -873,8 +988,7 @@ profile_sub(tm, tm2)
  * Uses a static buffer!
  */
     char *
-profile_msg(tm)
-    proftime_T *tm;
+profile_msg(proftime_T *tm)
 {
     static char buf[50];
 
@@ -889,13 +1003,29 @@ profile_msg(tm)
     return buf;
 }
 
+# if defined(FEAT_FLOAT) || defined(PROTO)
+/*
+ * Return a float that represents the time in "tm".
+ */
+    float_T
+profile_float(proftime_T *tm)
+{
+#  ifdef WIN3264
+    LARGE_INTEGER   fr;
+
+    QueryPerformanceFrequency(&fr);
+    return (float_T)tm->QuadPart / (float_T)fr.QuadPart;
+#  else
+    return (float_T)tm->tv_sec + (float_T)tm->tv_usec / 1000000.0;
+#  endif
+}
+# endif
+
 /*
  * Put the time "msec" past now in "tm".
  */
     void
-profile_setlimit(msec, tm)
-    long	msec;
-    proftime_T	*tm;
+profile_setlimit(long msec, proftime_T *tm)
 {
     if (msec <= 0)   /* no limit */
 	profile_zero(tm);
@@ -922,8 +1052,7 @@ profile_setlimit(msec, tm)
  * Return TRUE if the current time is past "tm".
  */
     int
-profile_passed_limit(tm)
-    proftime_T	*tm;
+profile_passed_limit(proftime_T *tm)
 {
     proftime_T	now;
 
@@ -945,8 +1074,7 @@ profile_passed_limit(tm)
  * Set the time in "tm" to zero.
  */
     void
-profile_zero(tm)
-    proftime_T *tm;
+profile_zero(proftime_T *tm)
 {
 # ifdef WIN3264
     tm->QuadPart = 0;
@@ -958,6 +1086,313 @@ profile_zero(tm)
 
 # endif  /* FEAT_PROFILE || FEAT_RELTIME */
 
+# if defined(FEAT_TIMERS) || defined(PROTO)
+static timer_T	*first_timer = NULL;
+static long	last_timer_id = 0;
+
+# ifdef WIN3264
+#  define GET_TIMEDIFF(timer, now) \
+	(long)(((double)(timer->tr_due.QuadPart - now.QuadPart) \
+					   / (double)fr.QuadPart) * 1000)
+# else
+#  define GET_TIMEDIFF(timer, now) \
+	(timer->tr_due.tv_sec - now.tv_sec) * 1000 \
+			   + (timer->tr_due.tv_usec - now.tv_usec) / 1000
+# endif
+
+/*
+ * Insert a timer in the list of timers.
+ */
+    static void
+insert_timer(timer_T *timer)
+{
+    timer->tr_next = first_timer;
+    timer->tr_prev = NULL;
+    if (first_timer != NULL)
+	first_timer->tr_prev = timer;
+    first_timer = timer;
+    did_add_timer = TRUE;
+}
+
+/*
+ * Take a timer out of the list of timers.
+ */
+    static void
+remove_timer(timer_T *timer)
+{
+    if (timer->tr_prev == NULL)
+	first_timer = timer->tr_next;
+    else
+	timer->tr_prev->tr_next = timer->tr_next;
+    if (timer->tr_next != NULL)
+	timer->tr_next->tr_prev = timer->tr_prev;
+}
+
+    static void
+free_timer(timer_T *timer)
+{
+    free_callback(timer->tr_callback, timer->tr_partial);
+    vim_free(timer);
+}
+
+/*
+ * Create a timer and return it.  NULL if out of memory.
+ * Caller should set the callback.
+ */
+    timer_T *
+create_timer(long msec, int repeat)
+{
+    timer_T	*timer = (timer_T *)alloc_clear(sizeof(timer_T));
+    long	prev_id = last_timer_id;
+
+    if (timer == NULL)
+	return NULL;
+    if (++last_timer_id <= prev_id)
+	/* Overflow!  Might cause duplicates... */
+	last_timer_id = 0;
+    timer->tr_id = last_timer_id;
+    insert_timer(timer);
+    if (repeat != 0)
+	timer->tr_repeat = repeat - 1;
+    timer->tr_interval = msec;
+
+    profile_setlimit(msec, &timer->tr_due);
+    return timer;
+}
+
+/*
+ * Invoke the callback of "timer".
+ */
+    static void
+timer_callback(timer_T *timer)
+{
+    typval_T	rettv;
+    int		dummy;
+    typval_T	argv[2];
+
+    argv[0].v_type = VAR_NUMBER;
+    argv[0].vval.v_number = (varnumber_T)timer->tr_id;
+    argv[1].v_type = VAR_UNKNOWN;
+
+    call_func(timer->tr_callback, (int)STRLEN(timer->tr_callback),
+			&rettv, 1, argv, NULL, 0L, 0L, &dummy, TRUE,
+			timer->tr_partial, NULL);
+    clear_tv(&rettv);
+}
+
+/*
+ * Call timers that are due.
+ * Return the time in msec until the next timer is due.
+ */
+    long
+check_due_timer(void)
+{
+    timer_T	*timer;
+    timer_T	*timer_next;
+    long	this_due;
+    long	next_due = -1;
+    proftime_T	now;
+    int		did_one = FALSE;
+    long	current_id = last_timer_id;
+# ifdef WIN3264
+    LARGE_INTEGER   fr;
+
+    QueryPerformanceFrequency(&fr);
+# endif
+    profile_start(&now);
+    for (timer = first_timer; timer != NULL && !got_int; timer = timer_next)
+    {
+	timer_next = timer->tr_next;
+
+	if (timer->tr_id == -1 || timer->tr_firing || timer->tr_paused)
+	    continue;
+	this_due = GET_TIMEDIFF(timer, now);
+	if (this_due <= 1)
+	{
+	    timer->tr_firing = TRUE;
+	    timer_callback(timer);
+	    timer->tr_firing = FALSE;
+	    timer_next = timer->tr_next;
+	    did_one = TRUE;
+
+	    /* Only fire the timer again if it repeats and stop_timer() wasn't
+	     * called while inside the callback (tr_id == -1). */
+	    if (timer->tr_repeat != 0 && timer->tr_id != -1)
+	    {
+		profile_setlimit(timer->tr_interval, &timer->tr_due);
+		this_due = GET_TIMEDIFF(timer, now);
+		if (this_due < 1)
+		    this_due = 1;
+		if (timer->tr_repeat > 0)
+		    --timer->tr_repeat;
+	    }
+	    else
+	    {
+		this_due = -1;
+		remove_timer(timer);
+		free_timer(timer);
+	    }
+	}
+	if (this_due > 0 && (next_due == -1 || next_due > this_due))
+	    next_due = this_due;
+    }
+
+    if (did_one)
+	redraw_after_callback();
+
+    return current_id != last_timer_id ? 1 : next_due;
+}
+
+/*
+ * Find a timer by ID.  Returns NULL if not found;
+ */
+    timer_T *
+find_timer(long id)
+{
+    timer_T *timer;
+
+    if (id >= 0)
+    {
+	for (timer = first_timer; timer != NULL; timer = timer->tr_next)
+	    if (timer->tr_id == id)
+		return timer;
+    }
+    return NULL;
+}
+
+
+/*
+ * Stop a timer and delete it.
+ */
+    void
+stop_timer(timer_T *timer)
+{
+    if (timer->tr_firing)
+	/* Free the timer after the callback returns. */
+	timer->tr_id = -1;
+    else
+    {
+	remove_timer(timer);
+	free_timer(timer);
+    }
+}
+
+    void
+stop_all_timers(void)
+{
+    timer_T *timer;
+    timer_T *timer_next;
+
+    for (timer = first_timer; timer != NULL; timer = timer_next)
+    {
+	timer_next = timer->tr_next;
+	stop_timer(timer);
+    }
+}
+
+    void
+add_timer_info(typval_T *rettv, timer_T *timer)
+{
+    list_T	*list = rettv->vval.v_list;
+    dict_T	*dict = dict_alloc();
+    dictitem_T	*di;
+    long	remaining;
+    proftime_T	now;
+# ifdef WIN3264
+    LARGE_INTEGER   fr;
+#endif
+
+    if (dict == NULL)
+	return;
+    list_append_dict(list, dict);
+
+    dict_add_nr_str(dict, "id", timer->tr_id, NULL);
+    dict_add_nr_str(dict, "time", (long)timer->tr_interval, NULL);
+
+    profile_start(&now);
+# ifdef WIN3264
+    QueryPerformanceFrequency(&fr);
+# endif
+    remaining = GET_TIMEDIFF(timer, now);
+    dict_add_nr_str(dict, "remaining", (long)remaining, NULL);
+
+    dict_add_nr_str(dict, "repeat",
+	       (long)(timer->tr_repeat < 0 ? -1 : timer->tr_repeat + 1), NULL);
+    dict_add_nr_str(dict, "paused", (long)(timer->tr_paused), NULL);
+
+    di = dictitem_alloc((char_u *)"callback");
+    if (di != NULL)
+    {
+	if (dict_add(dict, di) == FAIL)
+	    vim_free(di);
+	else if (timer->tr_partial != NULL)
+	{
+	    di->di_tv.v_type = VAR_PARTIAL;
+	    di->di_tv.vval.v_partial = timer->tr_partial;
+	    ++timer->tr_partial->pt_refcount;
+	}
+	else
+	{
+	    di->di_tv.v_type = VAR_FUNC;
+	    di->di_tv.vval.v_string = vim_strsave(timer->tr_callback);
+	}
+	di->di_tv.v_lock = 0;
+    }
+}
+
+    void
+add_timer_info_all(typval_T *rettv)
+{
+    timer_T *timer;
+
+    for (timer = first_timer; timer != NULL; timer = timer->tr_next)
+	if (timer->tr_id != -1)
+	    add_timer_info(rettv, timer);
+}
+
+/*
+ * Mark references in partials of timers.
+ */
+    int
+set_ref_in_timer(int copyID)
+{
+    int		abort = FALSE;
+    timer_T	*timer;
+    typval_T	tv;
+
+    for (timer = first_timer; timer != NULL; timer = timer->tr_next)
+    {
+	if (timer->tr_partial != NULL)
+	{
+	    tv.v_type = VAR_PARTIAL;
+	    tv.vval.v_partial = timer->tr_partial;
+	}
+	else
+	{
+	    tv.v_type = VAR_FUNC;
+	    tv.vval.v_string = timer->tr_callback;
+	}
+	abort = abort || set_ref_in_item(&tv, copyID, NULL, NULL);
+    }
+    return abort;
+}
+
+#  if defined(EXITFREE) || defined(PROTO)
+    void
+timer_free_all()
+{
+    timer_T *timer;
+
+    while (first_timer != NULL)
+    {
+	timer = first_timer;
+	remove_timer(timer);
+	free_timer(timer);
+    }
+}
+#  endif
+# endif
+
 #if defined(FEAT_SYN_HL) && defined(FEAT_RELTIME) && defined(FEAT_FLOAT)
 # if defined(HAVE_MATH_H)
 #  include <math.h>
@@ -967,10 +1402,7 @@ profile_zero(tm)
  * Divide the time "tm" by "count" and store in "tm2".
  */
     void
-profile_divide(tm, count, tm2)
-    proftime_T  *tm;
-    proftime_T  *tm2;
-    int		count;
+profile_divide(proftime_T *tm, int count, proftime_T *tm2)
 {
     if (count == 0)
 	profile_zero(tm2);
@@ -992,16 +1424,15 @@ profile_divide(tm, count, tm2)
 /*
  * Functions for profiling.
  */
-static void script_do_profile __ARGS((scriptitem_T *si));
-static void script_dump_profile __ARGS((FILE *fd));
+static void script_do_profile(scriptitem_T *si);
+static void script_dump_profile(FILE *fd);
 static proftime_T prof_wait_time;
 
 /*
  * Add the time "tm2" to "tm".
  */
     void
-profile_add(tm, tm2)
-    proftime_T *tm, *tm2;
+profile_add(proftime_T *tm, proftime_T *tm2)
 {
 # ifdef WIN3264
     tm->QuadPart += tm2->QuadPart;
@@ -1020,8 +1451,7 @@ profile_add(tm, tm2)
  * Add the "self" time from the total time and the children's time.
  */
     void
-profile_self(self, total, children)
-    proftime_T *self, *total, *children;
+profile_self(proftime_T *self, proftime_T *total, proftime_T *children)
 {
     /* Check that the result won't be negative.  Can happen with recursive
      * calls. */
@@ -1042,8 +1472,7 @@ profile_self(self, total, children)
  * Get the current waittime.
  */
     void
-profile_get_wait(tm)
-    proftime_T *tm;
+profile_get_wait(proftime_T *tm)
 {
     *tm = prof_wait_time;
 }
@@ -1052,8 +1481,7 @@ profile_get_wait(tm)
  * Subtract the passed waittime since "tm" from "tma".
  */
     void
-profile_sub_wait(tm, tma)
-    proftime_T *tm, *tma;
+profile_sub_wait(proftime_T *tm, proftime_T *tma)
 {
     proftime_T tm3 = prof_wait_time;
 
@@ -1065,8 +1493,7 @@ profile_sub_wait(tm, tma)
  * Return TRUE if "tm1" and "tm2" are equal.
  */
     int
-profile_equal(tm1, tm2)
-    proftime_T *tm1, *tm2;
+profile_equal(proftime_T *tm1, proftime_T *tm2)
 {
 # ifdef WIN3264
     return (tm1->QuadPart == tm2->QuadPart);
@@ -1079,8 +1506,7 @@ profile_equal(tm1, tm2)
  * Return <0, 0 or >0 if "tm1" < "tm2", "tm1" == "tm2" or "tm1" > "tm2"
  */
     int
-profile_cmp(tm1, tm2)
-    const proftime_T *tm1, *tm2;
+profile_cmp(const proftime_T *tm1, const proftime_T *tm2)
 {
 # ifdef WIN3264
     return (int)(tm2->QuadPart - tm1->QuadPart);
@@ -1098,8 +1524,7 @@ static proftime_T pause_time;
  * ":profile cmd args"
  */
     void
-ex_profile(eap)
-    exarg_T	*eap;
+ex_profile(exarg_T *eap)
 {
     char_u	*e;
     int		len;
@@ -1111,7 +1536,7 @@ ex_profile(eap)
     if (len == 5 && STRNCMP(eap->arg, "start", 5) == 0 && *e != NUL)
     {
 	vim_free(profile_fname);
-	profile_fname = vim_strsave(e);
+	profile_fname = expand_env_save_opt(e, TRUE);
 	do_profiling = PROF_YES;
 	profile_zero(&prof_wait_time);
 	set_vim_var_nr(VV_PROFILING, 1L);
@@ -1167,9 +1592,7 @@ static char *pexpand_cmds[] = {
  * specific expansion.
  */
     char_u *
-get_profile_name(xp, idx)
-    expand_T	*xp UNUSED;
-    int		idx;
+get_profile_name(expand_T *xp UNUSED, int idx)
 {
     switch (pexpand_what)
     {
@@ -1185,9 +1608,7 @@ get_profile_name(xp, idx)
  * Handle command line completion for :profile command.
  */
     void
-set_context_in_profile_cmd(xp, arg)
-    expand_T	*xp;
-    char_u	*arg;
+set_context_in_profile_cmd(expand_T *xp, char_u *arg)
 {
     char_u	*end_subcmd;
 
@@ -1215,7 +1636,7 @@ set_context_in_profile_cmd(xp, arg)
  * Dump the profiling info.
  */
     void
-profile_dump()
+profile_dump(void)
 {
     FILE	*fd;
 
@@ -1237,8 +1658,7 @@ profile_dump()
  * Start profiling script "fp".
  */
     static void
-script_do_profile(si)
-    scriptitem_T    *si;
+script_do_profile(scriptitem_T *si)
 {
     si->sn_pr_count = 0;
     profile_zero(&si->sn_pr_total);
@@ -1254,8 +1674,8 @@ script_do_profile(si)
  * save time when starting to invoke another script or function.
  */
     void
-script_prof_save(tm)
-    proftime_T	*tm;	    /* place to store wait time */
+script_prof_save(
+    proftime_T	*tm)	    /* place to store wait time */
 {
     scriptitem_T    *si;
 
@@ -1272,8 +1692,7 @@ script_prof_save(tm)
  * Count time spent in children after invoking another script or function.
  */
     void
-script_prof_restore(tm)
-    proftime_T	*tm;
+script_prof_restore(proftime_T *tm)
 {
     scriptitem_T    *si;
 
@@ -1296,7 +1715,7 @@ static proftime_T inchar_time;
  * Called when starting to wait for the user to type a character.
  */
     void
-prof_inchar_enter()
+prof_inchar_enter(void)
 {
     profile_start(&inchar_time);
 }
@@ -1305,7 +1724,7 @@ prof_inchar_enter()
  * Called when finished waiting for the user to type a character.
  */
     void
-prof_inchar_exit()
+prof_inchar_exit(void)
 {
     profile_end(&inchar_time);
     profile_add(&prof_wait_time, &inchar_time);
@@ -1315,8 +1734,7 @@ prof_inchar_exit()
  * Dump the profiling results for all scripts in file "fd".
  */
     static void
-script_dump_profile(fd)
-    FILE    *fd;
+script_dump_profile(FILE *fd)
 {
     int		    id;
     scriptitem_T    *si;
@@ -1374,7 +1792,7 @@ script_dump_profile(fd)
  * profiled.
  */
     int
-prof_def_func()
+prof_def_func(void)
 {
     if (current_SID > 0)
 	return SCRIPT_ITEM(current_SID).sn_pr_force;
@@ -1391,11 +1809,10 @@ prof_def_func()
  * return FAIL for failure, OK otherwise
  */
     int
-autowrite(buf, forceit)
-    buf_T	*buf;
-    int		forceit;
+autowrite(buf_T *buf, int forceit)
 {
     int		r;
+    bufref_T	bufref;
 
     if (!(p_aw || p_awa) || !p_write
 #ifdef FEAT_QUICKFIX
@@ -1404,11 +1821,12 @@ autowrite(buf, forceit)
 #endif
 	    || (!forceit && buf->b_p_ro) || buf->b_ffname == NULL)
 	return FAIL;
+    set_bufref(&bufref, buf);
     r = buf_write_all(buf, forceit);
 
     /* Writing may succeed but the buffer still changed, e.g., when there is a
      * conversion error.  We do want to return FAIL then. */
-    if (buf_valid(buf) && bufIsChanged(buf))
+    if (bufref_valid(&bufref) && bufIsChanged(buf))
 	r = FAIL;
     return r;
 }
@@ -1417,19 +1835,24 @@ autowrite(buf, forceit)
  * flush all buffers, except the ones that are readonly
  */
     void
-autowrite_all()
+autowrite_all(void)
 {
     buf_T	*buf;
 
     if (!(p_aw || p_awa) || !p_write)
 	return;
-    for (buf = firstbuf; buf; buf = buf->b_next)
+    FOR_ALL_BUFFERS(buf)
 	if (bufIsChanged(buf) && !buf->b_p_ro)
 	{
+#ifdef FEAT_AUTOCMD
+	    bufref_T	bufref;
+
+	    set_bufref(&bufref, buf);
+#endif
 	    (void)buf_write_all(buf, FALSE);
 #ifdef FEAT_AUTOCMD
 	    /* an autocommand may have deleted the buffer */
-	    if (!buf_valid(buf))
+	    if (!bufref_valid(&bufref))
 		buf = firstbuf;
 #endif
 	}
@@ -1440,11 +1863,14 @@ autowrite_all()
  * For flags use the CCGD_ values.
  */
     int
-check_changed(buf, flags)
-    buf_T	*buf;
-    int		flags;
+check_changed(buf_T *buf, int flags)
 {
-    int forceit = (flags & CCGD_FORCEIT);
+    int		forceit = (flags & CCGD_FORCEIT);
+#ifdef FEAT_AUTOCMD
+    bufref_T	bufref;
+
+    set_bufref(&bufref, buf);
+#endif
 
     if (       !forceit
 	    && bufIsChanged(buf)
@@ -1458,7 +1884,7 @@ check_changed(buf, flags)
 	    int		count = 0;
 
 	    if (flags & CCGD_ALLBUF)
-		for (buf2 = firstbuf; buf2 != NULL; buf2 = buf2->b_next)
+		FOR_ALL_BUFFERS(buf2)
 		    if (bufIsChanged(buf2)
 				     && (buf2->b_ffname != NULL
 # ifdef FEAT_BROWSE
@@ -1467,13 +1893,13 @@ check_changed(buf, flags)
 					))
 			++count;
 # ifdef FEAT_AUTOCMD
-	    if (!buf_valid(buf))
+	    if (!bufref_valid(&bufref))
 		/* Autocommand deleted buffer, oops!  It's not changed now. */
 		return FALSE;
 # endif
 	    dialog_changed(buf, count > 1);
 # ifdef FEAT_AUTOCMD
-	    if (!buf_valid(buf))
+	    if (!bufref_valid(&bufref))
 		/* Autocommand deleted buffer, oops!  It's not changed now. */
 		return FALSE;
 # endif
@@ -1496,8 +1922,7 @@ check_changed(buf, flags)
  * When wanting to write a file without a file name, ask the user for a name.
  */
     void
-browse_save_fname(buf)
-    buf_T	*buf;
+browse_save_fname(buf_T *buf)
 {
     if (buf->b_fname == NULL)
     {
@@ -1577,9 +2002,9 @@ vim_dialog_save_all_changes(buf)
  * Must check 'write' option first!
  */
     void
-dialog_changed(buf, checkall)
-    buf_T	*buf;
-    int		checkall;	/* may abandon all changed buffers */
+dialog_changed(
+    buf_T	*buf,
+    int		checkall)	/* may abandon all changed buffers */
 {
     char_u	buff[DIALOG_MSG_SIZE];
     int		ret;
@@ -1636,7 +2061,7 @@ dialog_changed(buf, checkall)
 	 * Skip readonly buffers, these need to be confirmed
 	 * individually.
 	 */
-	for (buf2 = firstbuf; buf2 != NULL; buf2 = buf2->b_next)
+	FOR_ALL_BUFFERS(buf2)
 	{
 	    if (bufIsChanged(buf2)
 		    && (buf2->b_ffname != NULL
@@ -1646,6 +2071,11 @@ dialog_changed(buf, checkall)
 			)
 		    && !buf2->b_p_ro)
 	    {
+#ifdef FEAT_AUTOCMD
+		bufref_T bufref;
+
+		set_bufref(&bufref, buf2);
+#endif
 #ifdef FEAT_BROWSE
 		/* May get file name, when there is none */
 		browse_save_fname(buf2);
@@ -1656,7 +2086,7 @@ dialog_changed(buf, checkall)
 		    (void)buf_write_all(buf2, FALSE);
 #ifdef FEAT_AUTOCMD
 		/* an autocommand may have deleted the buffer */
-		if (!buf_valid(buf2))
+		if (!bufref_valid(&bufref))
 		    buf2 = firstbuf;
 #endif
 	    }
@@ -1667,7 +2097,7 @@ dialog_changed(buf, checkall)
 	/*
 	 * mark all buffers as unchanged
 	 */
-	for (buf2 = firstbuf; buf2 != NULL; buf2 = buf2->b_next)
+	FOR_ALL_BUFFERS(buf2)
 	    unchanged(buf2, TRUE);
     }
 }
@@ -1678,9 +2108,7 @@ dialog_changed(buf, checkall)
  * hidden, autowriting it or unloading it.
  */
     int
-can_abandon(buf, forceit)
-    buf_T	*buf;
-    int		forceit;
+can_abandon(buf_T *buf, int forceit)
 {
     return (	   P_HID(buf)
 		|| !bufIsChanged(buf)
@@ -1689,16 +2117,13 @@ can_abandon(buf, forceit)
 		|| forceit);
 }
 
-static void add_bufnum __ARGS((int *bufnrs, int *bufnump, int nr));
+static void add_bufnum(int *bufnrs, int *bufnump, int nr);
 
 /*
  * Add a buffer number to "bufnrs", unless it's already there.
  */
     static void
-add_bufnum(bufnrs, bufnump, nr)
-    int	    *bufnrs;
-    int	    *bufnump;
-    int	    nr;
+add_bufnum(int *bufnrs, int *bufnump, int nr)
 {
     int i;
 
@@ -1712,10 +2137,13 @@ add_bufnum(bufnrs, bufnump, nr)
 /*
  * Return TRUE if any buffer was changed and cannot be abandoned.
  * That changed buffer becomes the current buffer.
+ * When "unload" is true the current buffer is unloaded instead of making it
+ * hidden.  This is used for ":q!".
  */
     int
-check_changed_any(hidden)
-    int		hidden;		/* Only check hidden buffers */
+check_changed_any(
+    int		hidden,		/* Only check hidden buffers */
+    int		unload)
 {
     int		ret = FALSE;
     buf_T	*buf;
@@ -1729,7 +2157,7 @@ check_changed_any(hidden)
     win_T	*wp;
 #endif
 
-    for (buf = firstbuf; buf != NULL; buf = buf->b_next)
+    FOR_ALL_BUFFERS(buf)
 	++bufcount;
 
     if (bufcount == 0)
@@ -1748,13 +2176,13 @@ check_changed_any(hidden)
 	    add_bufnum(bufnrs, &bufnum, wp->w_buffer->b_fnum);
 
     /* buf in other tab */
-    for (tp = first_tabpage; tp != NULL; tp = tp->tp_next)
+    FOR_ALL_TABPAGES(tp)
 	if (tp != curtab)
 	    for (wp = tp->tp_firstwin; wp != NULL; wp = wp->w_next)
 		add_bufnum(bufnrs, &bufnum, wp->w_buffer->b_fnum);
 #endif
     /* any other buf */
-    for (buf = firstbuf; buf != NULL; buf = buf->b_next)
+    FOR_ALL_BUFFERS(buf)
 	add_bufnum(bufnrs, &bufnum, buf->b_fnum);
 
     for (i = 0; i < bufnum; ++i)
@@ -1764,11 +2192,14 @@ check_changed_any(hidden)
 	    continue;
 	if ((!hidden || buf->b_nwindows == 0) && bufIsChanged(buf))
 	{
+	    bufref_T bufref;
+
+	    set_bufref(&bufref, buf);
 	    /* Try auto-writing the buffer.  If this fails but the buffer no
 	    * longer exists it's not changed, that's OK. */
 	    if (check_changed(buf, (p_awa ? CCGD_AW : 0)
 				 | CCGD_MULTWIN
-				 | CCGD_ALLBUF) && buf_valid(buf))
+				 | CCGD_ALLBUF) && bufref_valid(&bufref))
 		break;	    /* didn't save - still changes */
 	}
     }
@@ -1811,10 +2242,15 @@ check_changed_any(hidden)
 	FOR_ALL_TAB_WINDOWS(tp, wp)
 	    if (wp->w_buffer == buf)
 	    {
+# ifdef FEAT_AUTOCMD
+		bufref_T bufref;
+
+		set_bufref(&bufref, buf);
+# endif
 		goto_tabpage_win(tp, wp);
 # ifdef FEAT_AUTOCMD
 		/* Paranoia: did autocms wipe out the buffer with changes? */
-		if (!buf_valid(buf))
+		if (!bufref_valid(&bufref))
 		{
 		    goto theend;
 		}
@@ -1826,7 +2262,7 @@ buf_found:
 
     /* Open the changed buffer in the current window. */
     if (buf != curbuf)
-	set_curbuf(buf, DOBUF_GOTO);
+	set_curbuf(buf, unload ? DOBUF_UNLOAD : DOBUF_GOTO);
 
 theend:
     vim_free(bufnrs);
@@ -1838,7 +2274,7 @@ theend:
  * give error message for FAIL
  */
     int
-check_fname()
+check_fname(void)
 {
     if (curbuf->b_ffname == NULL)
     {
@@ -1854,9 +2290,7 @@ check_fname()
  * return FAIL for failure, OK otherwise
  */
     int
-buf_write_all(buf, forceit)
-    buf_T	*buf;
-    int		forceit;
+buf_write_all(buf_T *buf, int forceit)
 {
     int	    retval;
 #ifdef FEAT_AUTOCMD
@@ -1880,12 +2314,12 @@ buf_write_all(buf, forceit)
  * Code to handle the argument list.
  */
 
-static char_u	*do_one_arg __ARGS((char_u *str));
-static int	do_arglist __ARGS((char_u *str, int what, int after));
-static void	alist_check_arg_idx __ARGS((void));
-static int	editing_arg_idx __ARGS((win_T *win));
+static char_u	*do_one_arg(char_u *str);
+static int	do_arglist(char_u *str, int what, int after);
+static void	alist_check_arg_idx(void);
+static int	editing_arg_idx(win_T *win);
 #ifdef FEAT_LISTCMDS
-static int	alist_add_list __ARGS((int count, char_u **files, int after));
+static int	alist_add_list(int count, char_u **files, int after);
 #endif
 #define AL_SET	1
 #define AL_ADD	2
@@ -1897,8 +2331,7 @@ static int	alist_add_list __ARGS((int count, char_u **files, int after));
  * Return a pointer to the start of the next argument.
  */
     static char_u *
-do_one_arg(str)
-    char_u *str;
+do_one_arg(char_u *str)
 {
     char_u	*p;
     int		inbacktick;
@@ -1934,9 +2367,7 @@ do_one_arg(str)
  * growarray "gap".
  */
     int
-get_arglist(gap, str)
-    garray_T	*gap;
-    char_u	*str;
+get_arglist(garray_T *gap, char_u *str)
 {
     ga_init2(gap, (int)sizeof(char_u *), 20);
     while (*str != NUL)
@@ -1961,11 +2392,11 @@ get_arglist(gap, str)
  * Return FAIL or OK.
  */
     int
-get_arglist_exp(str, fcountp, fnamesp, wig)
-    char_u	*str;
-    int		*fcountp;
-    char_u	***fnamesp;
-    int		wig;
+get_arglist_exp(
+    char_u	*str,
+    int		*fcountp,
+    char_u	***fnamesp,
+    int		wig)
 {
     garray_T	ga;
     int		i;
@@ -1989,8 +2420,7 @@ get_arglist_exp(str, fcountp, fnamesp, wig)
  * Redefine the argument list.
  */
     void
-set_arglist(str)
-    char_u	*str;
+set_arglist(char_u *str)
 {
     do_arglist(str, AL_SET, 0);
 }
@@ -2004,10 +2434,10 @@ set_arglist(str)
  * Return FAIL for failure, OK otherwise.
  */
     static int
-do_arglist(str, what, after)
-    char_u	*str;
-    int		what UNUSED;
-    int		after UNUSED;		/* 0 means before first one */
+do_arglist(
+    char_u	*str,
+    int		what,
+    int		after UNUSED)		/* 0 means before first one */
 {
     garray_T	new_ga;
     int		exp_count;
@@ -2017,6 +2447,16 @@ do_arglist(str, what, after)
     char_u	*p;
     int		match;
 #endif
+
+    /*
+     * Set default argument for ":argadd" command.
+     */
+    if (what == AL_ADD && *str == NUL)
+    {
+	if (curbuf->b_ffname == NULL)
+	    return FAIL;
+	str = curbuf->b_fname;
+    }
 
     /*
      * Collect all file name arguments in "new_ga".
@@ -2076,9 +2516,7 @@ do_arglist(str, what, after)
 	i = expand_wildcards(new_ga.ga_len, (char_u **)new_ga.ga_data,
 		&exp_count, &exp_files, EW_DIR|EW_FILE|EW_ADDSLASH|EW_NOTFOUND);
 	ga_clear(&new_ga);
-	if (i == FAIL)
-	    return FAIL;
-	if (exp_count == 0)
+	if (i == FAIL || exp_count == 0)
 	{
 	    EMSG(_(e_nomatch));
 	    return FAIL;
@@ -2104,7 +2542,7 @@ do_arglist(str, what, after)
  * Check the validity of the arg_idx for each other window.
  */
     static void
-alist_check_arg_idx()
+alist_check_arg_idx(void)
 {
 #ifdef FEAT_WINDOWS
     win_T	*win;
@@ -2123,8 +2561,7 @@ alist_check_arg_idx()
  * index.
  */
     static int
-editing_arg_idx(win)
-    win_T	*win;
+editing_arg_idx(win_T *win)
 {
     return !(win->w_arg_idx >= WARGCOUNT(win)
 		|| (win->w_buffer->b_fnum
@@ -2139,8 +2576,7 @@ editing_arg_idx(win)
  * Check if window "win" is editing the w_arg_idx file in its argument list.
  */
     void
-check_arg_idx(win)
-    win_T	*win;
+check_arg_idx(win_T *win)
 {
     if (WARGCOUNT(win) > 1 && !editing_arg_idx(win))
     {
@@ -2178,8 +2614,7 @@ check_arg_idx(win)
  * ":args", ":argslocal" and ":argsglobal".
  */
     void
-ex_args(eap)
-    exarg_T	*eap;
+ex_args(exarg_T *eap)
 {
     int		i;
 
@@ -2255,8 +2690,7 @@ ex_args(eap)
  * ":previous", ":sprevious", ":Next" and ":sNext".
  */
     void
-ex_previous(eap)
-    exarg_T	*eap;
+ex_previous(exarg_T *eap)
 {
     /* If past the last one already, go to the last one. */
     if (curwin->w_arg_idx - (int)eap->line2 >= ARGCOUNT)
@@ -2269,8 +2703,7 @@ ex_previous(eap)
  * ":rewind", ":first", ":sfirst" and ":srewind".
  */
     void
-ex_rewind(eap)
-    exarg_T	*eap;
+ex_rewind(exarg_T *eap)
 {
     do_argfile(eap, 0);
 }
@@ -2279,8 +2712,7 @@ ex_rewind(eap)
  * ":last" and ":slast".
  */
     void
-ex_last(eap)
-    exarg_T	*eap;
+ex_last(exarg_T *eap)
 {
     do_argfile(eap, ARGCOUNT - 1);
 }
@@ -2289,8 +2721,7 @@ ex_last(eap)
  * ":argument" and ":sargument".
  */
     void
-ex_argument(eap)
-    exarg_T	*eap;
+ex_argument(exarg_T *eap)
 {
     int		i;
 
@@ -2305,9 +2736,7 @@ ex_argument(eap)
  * Edit file "argn" of the argument lists.
  */
     void
-do_argfile(eap, argn)
-    exarg_T	*eap;
-    int		argn;
+do_argfile(exarg_T *eap, int argn)
 {
     int		other;
     char_u	*p;
@@ -2385,8 +2814,7 @@ do_argfile(eap, argn)
  * ":next", and commands that behave like it.
  */
     void
-ex_next(eap)
-    exarg_T	*eap;
+ex_next(exarg_T *eap)
 {
     int		i;
 
@@ -2412,13 +2840,12 @@ ex_next(eap)
     }
 }
 
-#ifdef FEAT_LISTCMDS
+#if defined(FEAT_LISTCMDS) || defined(PROTO)
 /*
  * ":argedit"
  */
     void
-ex_argedit(eap)
-    exarg_T	*eap;
+ex_argedit(exarg_T *eap)
 {
     int		fnum;
     int		i;
@@ -2454,8 +2881,7 @@ ex_argedit(eap)
  * ":argadd"
  */
     void
-ex_argadd(eap)
-    exarg_T	*eap;
+ex_argadd(exarg_T *eap)
 {
     do_arglist(eap->arg, AL_ADD,
 	       eap->addr_count > 0 ? (int)eap->line2 : curwin->w_arg_idx + 1);
@@ -2468,8 +2894,7 @@ ex_argadd(eap)
  * ":argdelete"
  */
     void
-ex_argdelete(eap)
-    exarg_T	*eap;
+ex_argdelete(exarg_T *eap)
 {
     int		i;
     int		n;
@@ -2493,6 +2918,10 @@ ex_argdelete(eap)
 		curwin->w_arg_idx -= n;
 	    else if (curwin->w_arg_idx > eap->line1)
 		curwin->w_arg_idx = eap->line1;
+	    if (ARGCOUNT == 0)
+		curwin->w_arg_idx = 0;
+	    else if (curwin->w_arg_idx >= ARGCOUNT)
+		curwin->w_arg_idx = ARGCOUNT - 1;
 	}
     }
     else if (*eap->arg == NUL)
@@ -2505,26 +2934,38 @@ ex_argdelete(eap)
 }
 
 /*
- * ":argdo", ":windo", ":bufdo", ":tabdo"
+ * ":argdo", ":windo", ":bufdo", ":tabdo", ":cdo", ":ldo", ":cfdo" and ":lfdo"
  */
     void
-ex_listdo(eap)
-    exarg_T	*eap;
+ex_listdo(exarg_T *eap)
 {
     int		i;
 #ifdef FEAT_WINDOWS
     win_T	*wp;
     tabpage_T	*tp;
 #endif
-    buf_T	*buf;
+    buf_T	*buf = curbuf;
     int		next_fnum = 0;
 #if defined(FEAT_AUTOCMD) && defined(FEAT_SYN_HL)
     char_u	*save_ei = NULL;
 #endif
     char_u	*p_shm_save;
+#ifdef FEAT_QUICKFIX
+    int		qf_size = 0;
+    int		qf_idx;
+#endif
 
 #ifndef FEAT_WINDOWS
     if (eap->cmdidx == CMD_windo)
+    {
+	ex_ni(eap);
+	return;
+    }
+#endif
+
+#ifndef FEAT_QUICKFIX
+    if (eap->cmdidx == CMD_cdo || eap->cmdidx == CMD_ldo ||
+	    eap->cmdidx == CMD_cfdo || eap->cmdidx == CMD_lfdo)
     {
 	ex_ni(eap);
 	return;
@@ -2537,6 +2978,9 @@ ex_listdo(eap)
 	 * great speed improvement. */
 	save_ei = au_event_disable(",Syntax");
 #endif
+#ifdef FEAT_CLIPBOARD
+    start_global_changes();
+#endif
 
     if (eap->cmdidx == CMD_windo
 	    || eap->cmdidx == CMD_tabdo
@@ -2545,20 +2989,68 @@ ex_listdo(eap)
 				    | (eap->forceit ? CCGD_FORCEIT : 0)
 				    | CCGD_EXCMD))
     {
-	/* start at the first argument/window/buffer */
 	i = 0;
+	/* start at the eap->line1 argument/window/buffer */
 #ifdef FEAT_WINDOWS
 	wp = firstwin;
 	tp = first_tabpage;
 #endif
+	switch (eap->cmdidx)
+	{
+#ifdef FEAT_WINDOWS
+	    case CMD_windo:
+		for ( ; wp != NULL && i + 1 < eap->line1; wp = wp->w_next)
+		    i++;
+		break;
+	    case CMD_tabdo:
+		for( ; tp != NULL && i + 1 < eap->line1; tp = tp->tp_next)
+		    i++;
+		break;
+#endif
+	    case CMD_argdo:
+		i = eap->line1 - 1;
+		break;
+	    default:
+		break;
+	}
 	/* set pcmark now */
 	if (eap->cmdidx == CMD_bufdo)
-	    goto_buffer(eap, DOBUF_FIRST, FORWARD, 0);
+	{
+	    /* Advance to the first listed buffer after "eap->line1". */
+	    for (buf = firstbuf; buf != NULL && (buf->b_fnum < eap->line1
+					  || !buf->b_p_bl); buf = buf->b_next)
+		if (buf->b_fnum > eap->line2)
+		{
+		    buf = NULL;
+		    break;
+		}
+	    if (buf != NULL)
+		goto_buffer(eap, DOBUF_FIRST, FORWARD, buf->b_fnum);
+	}
+#ifdef FEAT_QUICKFIX
+	else if (eap->cmdidx == CMD_cdo || eap->cmdidx == CMD_ldo
+		|| eap->cmdidx == CMD_cfdo || eap->cmdidx == CMD_lfdo)
+	{
+	    qf_size = qf_get_size(eap);
+	    if (qf_size <= 0 || eap->line1 > qf_size)
+		buf = NULL;
+	    else
+	    {
+		ex_cc(eap);
+
+		buf = curbuf;
+		i = eap->line1 - 1;
+		if (eap->addr_count <= 0)
+		    /* default is all the quickfix/location list entries */
+		    eap->line2 = qf_size;
+	    }
+	}
+#endif
 	else
 	    setpcmark();
 	listcmd_busy = TRUE;	    /* avoids setting pcmark below */
 
-	while (!got_int)
+	while (!got_int && buf != NULL)
 	{
 	    if (eap->cmdidx == CMD_argdo)
 	    {
@@ -2579,7 +3071,6 @@ ex_listdo(eap)
 		}
 		if (curwin->w_arg_idx != i)
 		    break;
-		++i;
 	    }
 #ifdef FEAT_WINDOWS
 	    else if (eap->cmdidx == CMD_windo)
@@ -2614,6 +3105,8 @@ ex_listdo(eap)
 		    }
 	    }
 
+	    ++i;
+
 	    /* execute the command */
 	    do_cmdline(eap->arg, eap->getline, eap->cookie,
 						DOCMD_VERBOSE + DOCMD_NOWAIT);
@@ -2621,10 +3114,10 @@ ex_listdo(eap)
 	    if (eap->cmdidx == CMD_bufdo)
 	    {
 		/* Done? */
-		if (next_fnum < 0)
+		if (next_fnum < 0 || next_fnum > eap->line2)
 		    break;
 		/* Check if the buffer still exists. */
-		for (buf = firstbuf; buf != NULL; buf = buf->b_next)
+		FOR_ALL_BUFFERS(buf)
 		    if (buf->b_fnum == next_fnum)
 			break;
 		if (buf == NULL)
@@ -2638,10 +3131,27 @@ ex_listdo(eap)
 		set_option_value((char_u *)"shm", 0L, p_shm_save, 0);
 		vim_free(p_shm_save);
 
-		/* If autocommands took us elsewhere, quit here */
+		/* If autocommands took us elsewhere, quit here. */
 		if (curbuf->b_fnum != next_fnum)
 		    break;
 	    }
+
+#ifdef FEAT_QUICKFIX
+	    if (eap->cmdidx == CMD_cdo || eap->cmdidx == CMD_ldo
+		    || eap->cmdidx == CMD_cfdo || eap->cmdidx == CMD_lfdo)
+	    {
+		if (i >= qf_size || i >= eap->line2)
+		    break;
+
+		qf_idx = qf_get_cur_idx(eap);
+
+		ex_cnext(eap);
+
+		/* If jumping to the next quickfix entry fails, quit here */
+		if (qf_get_cur_idx(eap) == qf_idx)
+		    break;
+	    }
+#endif
 
 	    if (eap->cmdidx == CMD_windo)
 	    {
@@ -2652,6 +3162,14 @@ ex_listdo(eap)
 		    do_check_scrollbind(TRUE);
 #endif
 	    }
+
+#ifdef FEAT_WINDOWS
+	    if (eap->cmdidx == CMD_windo || eap->cmdidx == CMD_tabdo)
+		if (i+1 > eap->line2)
+		    break;
+#endif
+	    if (eap->cmdidx == CMD_argdo && i >= eap->line2)
+		break;
 	}
 	listcmd_busy = FALSE;
     }
@@ -2664,6 +3182,9 @@ ex_listdo(eap)
 					       curbuf->b_fname, TRUE, curbuf);
     }
 #endif
+#ifdef FEAT_CLIPBOARD
+    end_global_changes();
+#endif
 }
 
 /*
@@ -2673,12 +3194,13 @@ ex_listdo(eap)
  * Returns index of first added argument.  Returns -1 when failed (out of mem).
  */
     static int
-alist_add_list(count, files, after)
-    int		count;
-    char_u	**files;
-    int		after;	    /* where to add: 0 = before first one */
+alist_add_list(
+    int		count,
+    char_u	**files,
+    int		after)	    /* where to add: 0 = before first one */
 {
     int		i;
+    int		old_argcount = ARGCOUNT;
 
     if (ga_grow(&ALIST(curwin)->al_ga, count) == OK)
     {
@@ -2695,8 +3217,8 @@ alist_add_list(count, files, after)
 	    ARGLIST[after + i].ae_fnum = buflist_add(files[i], BLN_LISTED);
 	}
 	ALIST(curwin)->al_ga.ga_len += count;
-	if (curwin->w_arg_idx >= after)
-	    ++curwin->w_arg_idx;
+	if (old_argcount > 0 && curwin->w_arg_idx >= after)
+	    curwin->w_arg_idx += count;
 	return after;
     }
 
@@ -2712,8 +3234,7 @@ alist_add_list(count, files, after)
  * ":compiler[!] {name}"
  */
     void
-ex_compiler(eap)
-    exarg_T	*eap;
+ex_compiler(exarg_T *eap)
 {
     char_u	*buf;
     char_u	*old_cur_comp = NULL;
@@ -2754,7 +3275,7 @@ ex_compiler(eap)
 	    do_unlet((char_u *)"b:current_compiler", TRUE);
 
 	    sprintf((char *)buf, "compiler/%s.vim", eap->arg);
-	    if (source_runtime(buf, TRUE) == FAIL)
+	    if (source_runtime(buf, DIP_ALL) == FAIL)
 		EMSG2(_("E666: compiler not supported: %s"), eap->arg);
 	    vim_free(buf);
 
@@ -2783,21 +3304,42 @@ ex_compiler(eap)
 #endif
 
 /*
- * ":runtime {name}"
+ * ":runtime [what] {name}"
  */
     void
-ex_runtime(eap)
-    exarg_T	*eap;
+ex_runtime(exarg_T *eap)
 {
-    source_runtime(eap->arg, eap->forceit);
+    char_u  *arg = eap->arg;
+    char_u  *p = skiptowhite(arg);
+    int	    len = (int)(p - arg);
+    int	    flags = eap->forceit ? DIP_ALL : 0;
+
+    if (STRNCMP(arg, "START", len) == 0)
+    {
+	flags += DIP_START + DIP_NORTP;
+	arg = skipwhite(arg + len);
+    }
+    else if (STRNCMP(arg, "OPT", len) == 0)
+    {
+	flags += DIP_OPT + DIP_NORTP;
+	arg = skipwhite(arg + len);
+    }
+    else if (STRNCMP(arg, "PACK", len) == 0)
+    {
+	flags += DIP_START + DIP_OPT + DIP_NORTP;
+	arg = skipwhite(arg + len);
+    }
+    else if (STRNCMP(arg, "ALL", len) == 0)
+    {
+	flags += DIP_START + DIP_OPT;
+	arg = skipwhite(arg + len);
+    }
+
+    source_runtime(arg, flags);
 }
 
-static void source_callback __ARGS((char_u *fname, void *cookie));
-
     static void
-source_callback(fname, cookie)
-    char_u	*fname;
-    void	*cookie UNUSED;
+source_callback(char_u *fname, void *cookie UNUSED)
 {
     (void)do_source(fname, FALSE, DOSO_NONE);
 }
@@ -2805,34 +3347,33 @@ source_callback(fname, cookie)
 /*
  * Source the file "name" from all directories in 'runtimepath'.
  * "name" can contain wildcards.
- * When "all" is TRUE, source all files, otherwise only the first one.
+ * When "flags" has DIP_ALL: source all files, otherwise only the first one.
+ *
  * return FAIL when no file could be sourced, OK otherwise.
  */
     int
-source_runtime(name, all)
-    char_u	*name;
-    int		all;
+source_runtime(char_u *name, int flags)
 {
-    return do_in_runtimepath(name, all, source_callback, NULL);
+    return do_in_runtimepath(name, flags, source_callback, NULL);
 }
 
 /*
- * Find "name" in 'runtimepath'.  When found, invoke the callback function for
- * it: callback(fname, "cookie")
- * When "all" is TRUE repeat for all matches, otherwise only the first one is
- * used.
- * Returns OK when at least one match found, FAIL otherwise.
+ * Find the file "name" in all directories in "path" and invoke
+ * "callback(fname, cookie)".
+ * "name" can contain wildcards.
+ * When "flags" has DIP_ALL: source all files, otherwise only the first one.
+ * When "flags" has DIP_DIR: find directories instead of files.
+ * When "flags" has DIP_ERR: give an error message if there is no match.
  *
- * If "name" is NULL calls callback for each entry in runtimepath. Cookie is 
- * passed by reference in this case, setting it to NULL indicates that callback 
- * has done its job.
+ * return FAIL when no file could be sourced, OK otherwise.
  */
     int
-do_in_runtimepath(name, all, callback, cookie)
-    char_u	*name;
-    int		all;
-    void	(*callback)__ARGS((char_u *fname, void *ck));
-    void	*cookie;
+do_in_path(
+    char_u	*path,
+    char_u	*name,
+    int		flags,
+    void	(*callback)(char_u *fname, void *ck),
+    void	*cookie)
 {
     char_u	*rtp;
     char_u	*np;
@@ -2853,7 +3394,7 @@ do_in_runtimepath(name, all, callback, cookie)
 
     /* Make a copy of 'runtimepath'.  Invoking the callback may change the
      * value. */
-    rtp_copy = vim_strsave(p_rtp);
+    rtp_copy = vim_strsave(path);
     buf = alloc(MAXPATHL);
     if (buf != NULL && rtp_copy != NULL)
     {
@@ -2861,30 +3402,45 @@ do_in_runtimepath(name, all, callback, cookie)
 	{
 	    verbose_enter();
 	    smsg((char_u *)_("Searching for \"%s\" in \"%s\""),
-						 (char *)name, (char *)p_rtp);
+						 (char *)name, (char *)path);
 	    verbose_leave();
 	}
 
 	/* Loop over all entries in 'runtimepath'. */
 	rtp = rtp_copy;
-	while (*rtp != NUL && (all || !did_one))
+	while (*rtp != NUL && ((flags & DIP_ALL) || !did_one))
 	{
+	    size_t buflen;
+
 	    /* Copy the path from 'runtimepath' to buf[]. */
 	    copy_option_part(&rtp, buf, MAXPATHL, ",");
+	    buflen = STRLEN(buf);
+
+	    /* Skip after or non-after directories. */
+	    if (flags & (DIP_NOAFTER | DIP_AFTER))
+	    {
+		int is_after = buflen >= 5
+				     && STRCMP(buf + buflen - 5, "after") == 0;
+
+		if ((is_after && (flags & DIP_NOAFTER))
+			|| (!is_after && (flags & DIP_AFTER)))
+		    continue;
+	    }
+
 	    if (name == NULL)
 	    {
 		(*callback)(buf, (void *) &cookie);
 		if (!did_one)
 		    did_one = (cookie == NULL);
 	    }
-	    else if (STRLEN(buf) + STRLEN(name) + 2 < MAXPATHL)
+	    else if (buflen + STRLEN(name) + 2 < MAXPATHL)
 	    {
 		add_pathsep(buf);
 		tail = buf + STRLEN(buf);
 
 		/* Loop over all patterns in "name" */
 		np = name;
-		while (*np != NUL && (all || !did_one))
+		while (*np != NUL && ((flags & DIP_ALL) || !did_one))
 		{
 		    /* Append the pattern from "name" to buf[]. */
 		    copy_option_part(&np, tail, (int)(MAXPATHL - (tail - buf)),
@@ -2899,13 +3455,13 @@ do_in_runtimepath(name, all, callback, cookie)
 
 		    /* Expand wildcards, invoke the callback for each match. */
 		    if (gen_expand_wildcards(1, &buf, &num_files, &files,
-							       EW_FILE) == OK)
+				  (flags & DIP_DIR) ? EW_DIR : EW_FILE) == OK)
 		    {
 			for (i = 0; i < num_files; ++i)
 			{
 			    (*callback)(files[i], cookie);
 			    did_one = TRUE;
-			    if (!all)
+			    if (!(flags & DIP_ALL))
 				break;
 			}
 			FreeWild(num_files, files);
@@ -2916,11 +3472,18 @@ do_in_runtimepath(name, all, callback, cookie)
     }
     vim_free(buf);
     vim_free(rtp_copy);
-    if (p_verbose > 0 && !did_one && name != NULL)
+    if (!did_one && name != NULL)
     {
-	verbose_enter();
-	smsg((char_u *)_("not found in 'runtimepath': \"%s\""), name);
-	verbose_leave();
+	char *basepath = path == p_rtp ? "runtimepath" : "packpath";
+
+	if (flags & DIP_ERR)
+	    EMSG3(_(e_dirnotf), basepath, name);
+	else if (p_verbose > 0)
+	{
+	    verbose_enter();
+	    smsg((char_u *)_("not found in '%s': \"%s\""), basepath, name);
+	    verbose_leave();
+	}
     }
 
 #ifdef AMIGA
@@ -2930,13 +3493,256 @@ do_in_runtimepath(name, all, callback, cookie)
     return did_one ? OK : FAIL;
 }
 
+/*
+ * Find "name" in 'runtimepath'.  When found, invoke the callback function for
+ * it: callback(fname, "cookie")
+ * When "flags" has DIP_ALL repeat for all matches, otherwise only the first
+ * one is used.
+ * Returns OK when at least one match found, FAIL otherwise.
+ *
+ * If "name" is NULL calls callback for each entry in runtimepath. Cookie is
+ * passed by reference in this case, setting it to NULL indicates that callback
+ * has done its job.
+ */
+    int
+do_in_runtimepath(
+    char_u	*name,
+    int		flags,
+    void	(*callback)(char_u *fname, void *ck),
+    void	*cookie)
+{
+    int		done = FAIL;
+    char_u	*s;
+    int		len;
+    char	*start_dir = "pack/*/start/*/%s";
+    char	*opt_dir = "pack/*/opt/*/%s";
+
+    if ((flags & DIP_NORTP) == 0)
+	done = do_in_path(p_rtp, name, flags, callback, cookie);
+
+    if ((done == FAIL || (flags & DIP_ALL)) && (flags & DIP_START))
+    {
+	len = (int)(STRLEN(start_dir) + STRLEN(name));
+	s = alloc(len);
+	if (s == NULL)
+	    return FAIL;
+	vim_snprintf((char *)s, len, start_dir, name);
+	done = do_in_path(p_pp, s, flags, callback, cookie);
+	vim_free(s);
+    }
+
+    if ((done == FAIL || (flags & DIP_ALL)) && (flags & DIP_OPT))
+    {
+	len = (int)(STRLEN(opt_dir) + STRLEN(name));
+	s = alloc(len);
+	if (s == NULL)
+	    return FAIL;
+	vim_snprintf((char *)s, len, opt_dir, name);
+	done = do_in_path(p_pp, s, flags, callback, cookie);
+	vim_free(s);
+    }
+
+    return done;
+}
+
+/*
+ * Expand wildcards in "pat" and invoke do_source() for each match.
+ */
+    static void
+source_all_matches(char_u *pat)
+{
+    int	    num_files;
+    char_u  **files;
+    int	    i;
+
+    if (gen_expand_wildcards(1, &pat, &num_files, &files, EW_FILE) == OK)
+    {
+	for (i = 0; i < num_files; ++i)
+	    (void)do_source(files[i], FALSE, DOSO_NONE);
+	FreeWild(num_files, files);
+    }
+}
+
+/* used for "cookie" of add_pack_plugin() */
+static int APP_ADD_DIR;
+static int APP_LOAD;
+static int APP_BOTH;
+
+    static void
+add_pack_plugin(char_u *fname, void *cookie)
+{
+    char_u  *p4, *p3, *p2, *p1, *p;
+    char_u  *insp;
+    int	    c;
+    char_u  *new_rtp;
+    int	    keep;
+    size_t  oldlen;
+    size_t  addlen;
+    char_u  *afterdir;
+    size_t  afterlen = 0;
+    char_u  *ffname = fix_fname(fname);
+    size_t  fname_len;
+
+    if (ffname == NULL)
+	return;
+    if (cookie != &APP_LOAD && strstr((char *)p_rtp, (char *)ffname) == NULL)
+    {
+	/* directory is not yet in 'runtimepath', add it */
+	p4 = p3 = p2 = p1 = get_past_head(ffname);
+	for (p = p1; *p; mb_ptr_adv(p))
+	    if (vim_ispathsep_nocolon(*p))
+	    {
+		p4 = p3; p3 = p2; p2 = p1; p1 = p;
+	    }
+
+	/* now we have:
+	 * rtp/pack/name/start/name
+	 *    p4   p3   p2    p1
+	 *
+	 * find the part up to "pack" in 'runtimepath' */
+	c = *p4;
+	*p4 = NUL;
+
+	/* Find "ffname" in "p_rtp", ignoring '/' vs '\' differences. */
+	fname_len = STRLEN(ffname);
+	insp = p_rtp;
+	for (;;)
+	{
+	    if (vim_fnamencmp(insp, ffname, fname_len) == 0)
+		break;
+	    insp = vim_strchr(insp, ',');
+	    if (insp == NULL)
+		break;
+	    ++insp;
+	}
+
+	if (insp == NULL)
+	    /* not found, append at the end */
+	    insp = p_rtp + STRLEN(p_rtp);
+	else
+	{
+	    /* append after the matching directory. */
+	    insp += STRLEN(ffname);
+	    while (*insp != NUL && *insp != ',')
+		++insp;
+	}
+	*p4 = c;
+
+	/* check if rtp/pack/name/start/name/after exists */
+	afterdir = concat_fnames(ffname, (char_u *)"after", TRUE);
+	if (afterdir != NULL && mch_isdir(afterdir))
+	    afterlen = STRLEN(afterdir) + 1; /* add one for comma */
+
+	oldlen = STRLEN(p_rtp);
+	addlen = STRLEN(ffname) + 1; /* add one for comma */
+	new_rtp = alloc((int)(oldlen + addlen + afterlen + 1)); /* add one for NUL */
+	if (new_rtp == NULL)
+	    goto theend;
+	keep = (int)(insp - p_rtp);
+	mch_memmove(new_rtp, p_rtp, keep);
+	new_rtp[keep] = ',';
+	mch_memmove(new_rtp + keep + 1, ffname, addlen);
+	if (p_rtp[keep] != NUL)
+	    mch_memmove(new_rtp + keep + addlen, p_rtp + keep,
+							   oldlen - keep + 1);
+	if (afterlen > 0)
+	{
+	    STRCAT(new_rtp, ",");
+	    STRCAT(new_rtp, afterdir);
+	}
+	set_option_value((char_u *)"rtp", 0L, new_rtp, 0);
+	vim_free(new_rtp);
+	vim_free(afterdir);
+    }
+
+    if (cookie != &APP_ADD_DIR)
+    {
+	static char *plugpat = "%s/plugin/**/*.vim";
+	static char *ftpat = "%s/ftdetect/*.vim";
+	int	    len;
+	char_u	    *pat;
+
+	len = (int)STRLEN(ffname) + (int)STRLEN(ftpat);
+	pat = alloc(len);
+	if (pat == NULL)
+	    goto theend;
+	vim_snprintf((char *)pat, len, plugpat, ffname);
+	source_all_matches(pat);
+
+#ifdef FEAT_AUTOCMD
+	{
+	    char_u *cmd = vim_strsave((char_u *)"g:did_load_filetypes");
+
+	    /* If runtime/filetype.vim wasn't loaded yet, the scripts will be
+	     * found when it loads. */
+	    if (cmd != NULL && eval_to_number(cmd) > 0)
+	    {
+		do_cmdline_cmd((char_u *)"augroup filetypedetect");
+		vim_snprintf((char *)pat, len, ftpat, ffname);
+		source_all_matches(pat);
+		do_cmdline_cmd((char_u *)"augroup END");
+	    }
+	    vim_free(cmd);
+	}
+#endif
+	vim_free(pat);
+    }
+
+theend:
+    vim_free(ffname);
+}
+
+static int did_source_packages = FALSE;
+
+/*
+ * ":packloadall"
+ * Find plugins in the package directories and source them.
+ * "eap" is NULL when invoked during startup.
+ */
+    void
+ex_packloadall(exarg_T *eap)
+{
+    if (!did_source_packages || (eap != NULL && eap->forceit))
+    {
+	did_source_packages = TRUE;
+
+	/* First do a round to add all directories to 'runtimepath', then load
+	 * the plugins. This allows for plugins to use an autoload directory
+	 * of another plugin. */
+	do_in_path(p_pp, (char_u *)"pack/*/start/*", DIP_ALL + DIP_DIR,
+					       add_pack_plugin, &APP_ADD_DIR);
+	do_in_path(p_pp, (char_u *)"pack/*/start/*", DIP_ALL + DIP_DIR,
+						  add_pack_plugin, &APP_LOAD);
+    }
+}
+
+/*
+ * ":packadd[!] {name}"
+ */
+    void
+ex_packadd(exarg_T *eap)
+{
+    static char *plugpat = "pack/*/opt/%s";
+    int		len;
+    char	*pat;
+
+    len = (int)STRLEN(plugpat) + (int)STRLEN(eap->arg);
+    pat = (char *)alloc(len);
+    if (pat == NULL)
+	return;
+    vim_snprintf(pat, len, plugpat, eap->arg);
+    do_in_path(p_pp, (char_u *)pat, DIP_ALL + DIP_DIR + DIP_ERR,
+		    add_pack_plugin, eap->forceit ? &APP_ADD_DIR : &APP_BOTH);
+    vim_free(pat);
+}
+
 #if defined(FEAT_EVAL) && defined(FEAT_AUTOCMD)
 /*
  * ":options"
  */
     void
-ex_options(eap)
-    exarg_T	*eap UNUSED;
+ex_options(
+    exarg_T	*eap UNUSED)
 {
     cmd_source((char_u *)SYS_OPTWIN_FILE, NULL);
 }
@@ -2946,8 +3752,7 @@ ex_options(eap)
  * ":source {fname}"
  */
     void
-ex_source(eap)
-    exarg_T	*eap;
+ex_source(exarg_T *eap)
 {
 #ifdef FEAT_BROWSE
     if (cmdmod.browse)
@@ -2968,9 +3773,7 @@ ex_source(eap)
 }
 
     static void
-cmd_source(fname, eap)
-    char_u	*fname;
-    exarg_T	*eap;
+cmd_source(char_u *fname, exarg_T *eap)
 {
     if (*fname == NUL)
 	EMSG(_(e_argreq));
@@ -3029,8 +3832,7 @@ struct source_cookie
  * Return the address holding the next breakpoint line for a source cookie.
  */
     linenr_T *
-source_breakpoint(cookie)
-    void *cookie;
+source_breakpoint(void *cookie)
 {
     return &((struct source_cookie *)cookie)->breakpoint;
 }
@@ -3039,8 +3841,7 @@ source_breakpoint(cookie)
  * Return the address holding the debug tick for a source cookie.
  */
     int *
-source_dbg_tick(cookie)
-    void *cookie;
+source_dbg_tick(void *cookie)
 {
     return &((struct source_cookie *)cookie)->dbg_tick;
 }
@@ -3049,26 +3850,24 @@ source_dbg_tick(cookie)
  * Return the nesting level for a source cookie.
  */
     int
-source_level(cookie)
-    void *cookie;
+source_level(void *cookie)
 {
     return ((struct source_cookie *)cookie)->level;
 }
 #endif
 
-static char_u *get_one_sourceline __ARGS((struct source_cookie *sp));
+static char_u *get_one_sourceline(struct source_cookie *sp);
 
 #if (defined(WIN32) && defined(FEAT_CSCOPE)) || defined(HAVE_FD_CLOEXEC)
 # define USE_FOPEN_NOINH
-static FILE *fopen_noinh_readbin __ARGS((char *filename));
+static FILE *fopen_noinh_readbin(char *filename);
 
 /*
  * Special function to open a file without handle inheritance.
  * When possible the handle is closed on exec().
  */
     static FILE *
-fopen_noinh_readbin(filename)
-    char    *filename;
+fopen_noinh_readbin(char *filename)
 {
 # ifdef WIN32
     int	fd_tmp = mch_open(filename, O_RDONLY | O_BINARY | O_NOINHERIT, 0);
@@ -3083,7 +3882,7 @@ fopen_noinh_readbin(filename)
     {
 	int fdflags = fcntl(fd_tmp, F_GETFD);
 	if (fdflags >= 0 && (fdflags & FD_CLOEXEC) == 0)
-	    fcntl(fd_tmp, F_SETFD, fdflags | FD_CLOEXEC);
+	    (void)fcntl(fd_tmp, F_SETFD, fdflags | FD_CLOEXEC);
     }
 # endif
 
@@ -3100,10 +3899,10 @@ fopen_noinh_readbin(filename)
  * return FAIL if file could not be opened, OK otherwise
  */
     int
-do_source(fname, check_other, is_vimrc)
-    char_u	*fname;
-    int		check_other;	    /* check for .vimrc and _vimrc */
-    int		is_vimrc;	    /* DOSO_ value */
+do_source(
+    char_u	*fname,
+    int		check_other,	    /* check for .vimrc and _vimrc */
+    int		is_vimrc)	    /* DOSO_ value */
 {
     struct source_cookie    cookie;
     char_u		    *save_sourcing_name;
@@ -3119,7 +3918,7 @@ do_source(fname, check_other, is_vimrc)
     int			    save_debug_break_level = debug_break_level;
     scriptitem_T	    *si = NULL;
 # ifdef UNIX
-    struct stat		    st;
+    stat_T		    st;
     int			    stat_ok;
 # endif
 #endif
@@ -3460,8 +4259,7 @@ theend:
  * ":scriptnames"
  */
     void
-ex_scriptnames(eap)
-    exarg_T	*eap UNUSED;
+ex_scriptnames(exarg_T *eap UNUSED)
 {
     int i;
 
@@ -3479,7 +4277,7 @@ ex_scriptnames(eap)
  * Fix slashes in the list of script names for 'shellslash'.
  */
     void
-scriptnames_slash_adjust()
+scriptnames_slash_adjust(void)
 {
     int i;
 
@@ -3493,8 +4291,7 @@ scriptnames_slash_adjust()
  * Get a pointer to a script name.  Used for ":verbose set".
  */
     char_u *
-get_scriptname(id)
-    scid_T	id;
+get_scriptname(scid_T id)
 {
     if (id == SID_MODELINE)
 	return (char_u *)_("modeline");
@@ -3511,7 +4308,7 @@ get_scriptname(id)
 
 # if defined(EXITFREE) || defined(PROTO)
     void
-free_scriptnames()
+free_scriptnames(void)
 {
     int			i;
 
@@ -3533,10 +4330,7 @@ free_scriptnames()
  * Codewarrior Pro 2.
  */
     char *
-fgets_cr(s, n, stream)
-    char	*s;
-    int		n;
-    FILE	*stream;
+fgets_cr(char *s, int n, FILE *stream)
 {
     return fgets(s, n, stream);
 }
@@ -3548,10 +4342,7 @@ fgets_cr(s, n, stream)
  * At least CodeWarrior 9 needed this code.
  */
     char *
-fgets_cr(s, n, stream)
-    char	*s;
-    int		n;
-    FILE	*stream;
+fgets_cr(char *s, int n, FILE *stream)
 {
     int	c = 0;
     int char_read = 0;
@@ -3590,10 +4381,7 @@ fgets_cr(s, n, stream)
  * Return NULL for end-of-file or some error.
  */
     char_u *
-getsourceline(c, cookie, indent)
-    int		c UNUSED;
-    void	*cookie;
-    int		indent UNUSED;
+getsourceline(int c UNUSED, void *cookie, int indent UNUSED)
 {
     struct source_cookie *sp = (struct source_cookie *)cookie;
     char_u		*line;
@@ -3704,8 +4492,7 @@ getsourceline(c, cookie, indent)
 }
 
     static char_u *
-get_one_sourceline(sp)
-    struct source_cookie    *sp;
+get_one_sourceline(struct source_cookie *sp)
 {
     garray_T		ga;
     int			len;
@@ -3861,7 +4648,7 @@ get_one_sourceline(sp)
  * until later and we need to store the time now.
  */
     void
-script_line_start()
+script_line_start(void)
 {
     scriptitem_T    *si;
     sn_prl_T	    *pp;
@@ -3873,7 +4660,7 @@ script_line_start()
     {
 	/* Grow the array before starting the timer, so that the time spent
 	 * here isn't counted. */
-	ga_grow(&si->sn_prl_ga, (int)(sourcing_lnum - si->sn_prl_ga.ga_len));
+	(void)ga_grow(&si->sn_prl_ga, (int)(sourcing_lnum - si->sn_prl_ga.ga_len));
 	si->sn_prl_idx = sourcing_lnum - 1;
 	while (si->sn_prl_ga.ga_len <= si->sn_prl_idx
 		&& si->sn_prl_ga.ga_len < si->sn_prl_ga.ga_maxlen)
@@ -3896,7 +4683,7 @@ script_line_start()
  * Called when actually executing a function line.
  */
     void
-script_line_exec()
+script_line_exec(void)
 {
     scriptitem_T    *si;
 
@@ -3911,7 +4698,7 @@ script_line_exec()
  * Called when done with a function line.
  */
     void
-script_line_end()
+script_line_end(void)
 {
     scriptitem_T    *si;
     sn_prl_T	    *pp;
@@ -3942,8 +4729,7 @@ script_line_end()
  * Without the multi-byte feature it's simply ignored.
  */
     void
-ex_scriptencoding(eap)
-    exarg_T	*eap UNUSED;
+ex_scriptencoding(exarg_T *eap UNUSED)
 {
 #ifdef FEAT_MBYTE
     struct source_cookie	*sp;
@@ -3978,8 +4764,7 @@ ex_scriptencoding(eap)
  * ":finish": Mark a sourced file as finished.
  */
     void
-ex_finish(eap)
-    exarg_T	*eap;
+ex_finish(exarg_T *eap)
 {
     if (getline_equal(eap->getline, eap->cookie, getsourceline))
 	do_finish(eap, FALSE);
@@ -3993,9 +4778,7 @@ ex_finish(eap)
  * an extra do_cmdline().  "reanimate" is used in the latter case.
  */
     void
-do_finish(eap, reanimate)
-    exarg_T	*eap;
-    int		reanimate;
+do_finish(exarg_T *eap, int reanimate)
 {
     int		idx;
 
@@ -4027,9 +4810,9 @@ do_finish(eap, reanimate)
  * Return FALSE when not sourcing a file.
  */
     int
-source_finished(fgetline, cookie)
-    char_u	*(*fgetline) __ARGS((int, void *, int));
-    void	*cookie;
+source_finished(
+    char_u	*(*fgetline)(int, void *, int),
+    void	*cookie)
 {
     return (getline_equal(fgetline, cookie, getsourceline)
 	    && ((struct source_cookie *)getline_cookie(
@@ -4042,8 +4825,7 @@ source_finished(fgetline, cookie)
  * ":checktime [buffer]"
  */
     void
-ex_checktime(eap)
-    exarg_T	*eap;
+ex_checktime(exarg_T *eap)
 {
     buf_T	*buf;
     int		save_no_check_timestamps = no_check_timestamps;
@@ -4064,17 +4846,15 @@ ex_checktime(eap)
 #if (defined(HAVE_LOCALE_H) || defined(X_LOCALE)) \
 	&& (defined(FEAT_EVAL) || defined(FEAT_MULTI_LANG))
 # define HAVE_GET_LOCALE_VAL
-static char *get_locale_val __ARGS((int what));
+static char_u *get_locale_val(int what);
 
-    static char *
-get_locale_val(what)
-    int		what;
+    static char_u *
+get_locale_val(int what)
 {
-    char	*loc;
+    char_u	*loc;
 
-    /* Obtain the locale value from the libraries.  For DJGPP this is
-     * redefined and it doesn't use the arguments. */
-    loc = setlocale(what, NULL);
+    /* Obtain the locale value from the libraries. */
+    loc = (char_u *)setlocale(what, NULL);
 
 # ifdef WIN32
     if (loc != NULL)
@@ -4138,7 +4918,7 @@ gettext_lang(char_u *name)
 
     for (i = 0; mtable[i] != NULL; i += 2)
 	if (STRNICMP(mtable[i], name, STRLEN(mtable[i])) == 0)
-	    return mtable[i + 1];
+	    return (char_u *)mtable[i + 1];
     return name;
 }
 #endif
@@ -4149,19 +4929,19 @@ gettext_lang(char_u *name)
  * 'helplang'.  May return NULL or an empty string.
  */
     char_u *
-get_mess_lang()
+get_mess_lang(void)
 {
     char_u *p;
 
 # ifdef HAVE_GET_LOCALE_VAL
 #  if defined(LC_MESSAGES)
-    p = (char_u *)get_locale_val(LC_MESSAGES);
+    p = get_locale_val(LC_MESSAGES);
 #  else
     /* This is necessary for Win32, where LC_MESSAGES is not defined and $LANG
      * may be set to the LCID number.  LC_COLLATE is the best guess, LC_TIME
      * and LC_MONETARY may be set differently for a Japanese working in the
      * US. */
-    p = (char_u *)get_locale_val(LC_COLLATE);
+    p = get_locale_val(LC_COLLATE);
 #  endif
 # else
     p = mch_getenv((char_u *)"LC_ALL");
@@ -4185,13 +4965,13 @@ get_mess_lang()
 	|| ((defined(HAVE_LOCALE_H) || defined(X_LOCALE)) \
 		&& (defined(FEAT_GETTEXT) || defined(FEAT_MBYTE)) \
 		&& !defined(LC_MESSAGES))
-static char_u *get_mess_env __ARGS((void));
+static char_u *get_mess_env(void);
 
 /*
  * Get the language used for messages from the environment.
  */
     static char_u *
-get_mess_env()
+get_mess_env(void)
 {
     char_u	*p;
 
@@ -4206,7 +4986,7 @@ get_mess_env()
 		p = NULL;		/* ignore something like "1043" */
 # ifdef HAVE_GET_LOCALE_VAL
 	    if (p == NULL || *p == NUL)
-		p = (char_u *)get_locale_val(LC_CTYPE);
+		p = get_locale_val(LC_CTYPE);
 # endif
 	}
     }
@@ -4221,12 +5001,12 @@ get_mess_env()
  * Also do "v:lc_time"and "v:ctype".
  */
     void
-set_lang_var()
+set_lang_var(void)
 {
     char_u	*loc;
 
 # ifdef HAVE_GET_LOCALE_VAL
-    loc = (char_u *)get_locale_val(LC_CTYPE);
+    loc = get_locale_val(LC_CTYPE);
 # else
     /* setlocale() not supported: use the default value */
     loc = (char_u *)"C";
@@ -4236,14 +5016,14 @@ set_lang_var()
     /* When LC_MESSAGES isn't defined use the value from $LC_MESSAGES, fall
      * back to LC_CTYPE if it's empty. */
 # if defined(HAVE_GET_LOCALE_VAL) && defined(LC_MESSAGES)
-    loc = (char_u *)get_locale_val(LC_MESSAGES);
+    loc = get_locale_val(LC_MESSAGES);
 # else
     loc = get_mess_env();
 # endif
     set_vim_var_string(VV_LANG, loc, -1);
 
 # ifdef HAVE_GET_LOCALE_VAL
-    loc = (char_u *)get_locale_val(LC_TIME);
+    loc = get_locale_val(LC_TIME);
 # endif
     set_vim_var_string(VV_LC_TIME, loc, -1);
 }
@@ -4255,8 +5035,7 @@ set_lang_var()
  * ":language":  Set the language (locale).
  */
     void
-ex_language(eap)
-    exarg_T	*eap;
+ex_language(exarg_T *eap)
 {
     char	*loc;
     char_u	*p;
@@ -4387,14 +5166,14 @@ ex_language(eap)
 static char_u	**locales = NULL;	/* Array of all available locales */
 static int	did_init_locales = FALSE;
 
-static void init_locales __ARGS((void));
-static char_u **find_locales __ARGS((void));
+static void init_locales(void);
+static char_u **find_locales(void);
 
 /*
  * Lazy initialization of all available locales.
  */
     static void
-init_locales()
+init_locales(void)
 {
     if (!did_init_locales)
     {
@@ -4406,7 +5185,7 @@ init_locales()
 /* Return an array of strings for all available locales + NULL for the
  * last element.  Return NULL in case of error. */
     static char_u **
-find_locales()
+find_locales(void)
 {
     garray_T	locales_ga;
     char_u	*loc;
@@ -4446,7 +5225,7 @@ find_locales()
 
 #  if defined(EXITFREE) || defined(PROTO)
     void
-free_locales()
+free_locales(void)
 {
     int			i;
     if (locales != NULL)
@@ -4464,9 +5243,7 @@ free_locales()
  * ":language" command.
  */
     char_u *
-get_lang_arg(xp, idx)
-    expand_T	*xp UNUSED;
-    int		idx;
+get_lang_arg(expand_T *xp UNUSED, int idx)
 {
     if (idx == 0)
 	return (char_u *)"messages";
@@ -4485,9 +5262,7 @@ get_lang_arg(xp, idx)
  * Function given to ExpandGeneric() to obtain the available locales.
  */
     char_u *
-get_locales(xp, idx)
-    expand_T	*xp UNUSED;
-    int		idx;
+get_locales(expand_T *xp UNUSED, int idx)
 {
     init_locales();
     if (locales == NULL)

@@ -2,7 +2,7 @@
 " Language:	Diff (context or unified)
 " Maintainer:	Bram Moolenaar <Bram@vim.org>
 "               Translations by Jakson Alves de Aquino.
-" Last Change:	2013 Oct 06
+" Last Change:	2016 Apr 02
 
 " Quit when a (custom) syntax file was already loaded
 if exists("b:current_syntax")
@@ -17,6 +17,9 @@ syn match diffBDiffer	"^Binary files .* and .* differ$"
 syn match diffIsA	"^File .* is a .* while file .* is a .*"
 syn match diffNoEOL	"^\\ No newline at end of file .*"
 syn match diffCommon	"^Common subdirectories: .*"
+
+" Disable the translations by setting diff_translations to zero.
+if !exists("diff_translations") || diff_translations
 
 " ca
 syn match diffOnly	"^Només a .*"
@@ -120,13 +123,17 @@ syn match diffNoEOL	"^\\ Non hai un salto de liña na fin da liña"
 syn match diffCommon	"^Subdirectorios comúns: .* e .*"
 
 " he
-syn match diffOnly	"^.*-ב קר אצמנ .*"
-syn match diffIdentical	"^םיהז םניה .*-ו .* םיצבקה$"
-syn match diffDiffer	"^הזמ הז םינוש `.*'-ו `.*' םיצבקה$"
-syn match diffBDiffer	"^הזמ הז םינוש `.*'-ו `.*' םיירניב םיצבק$"
-syn match diffIsA	"^.* .*-ל .* .* תוושהל ןתינ אל$"
-syn match diffNoEOL	"^\\ ץבוקה ףוסב השדח-הרוש ות רסח"
-syn match diffCommon	"^.*-ו .* :תוהז תויקית-תת$"
+" ^.* are expansive patterns for long lines, so disabled unless we can match
+" some specific hebrew chars
+if search('\%u05d5\|\%u05d1', 'nw', '', 100)
+  syn match diffOnly	"^.*-ב קר אצמנ .*"
+  syn match diffIdentical	"^םיהז םניה .*-ו .* םיצבקה$"
+  syn match diffDiffer	"^הזמ הז םינוש `.*'-ו `.*' םיצבקה$"
+  syn match diffBDiffer	"^הזמ הז םינוש `.*'-ו `.*' םיירניב םיצבק$"
+  syn match diffIsA	"^.* .*-ל .* .* תוושהל ןתינ אל$"
+  syn match diffNoEOL	"^\\ ץבוקה ףוסב השד.-הרוש ות רס."
+  syn match diffCommon	"^.*-ו .* :תוהז תויקית-תת$"
+endif
 
 " hr
 syn match diffOnly	"^Samo u .*"
@@ -320,6 +327,8 @@ syn match diffIsA	"^檔案 .* 是.*而檔案 .* 是.*"
 syn match diffNoEOL	"^\\ 檔案末沒有 newline 字元"
 syn match diffCommon	"^.* 和 .* 有共同的副目錄$"
 
+endif
+
 
 syn match diffRemoved	"^-.*"
 syn match diffRemoved	"^<.*"
@@ -333,7 +342,7 @@ syn match diffLine	"^\<\d\+\>.*"
 syn match diffLine	"^\*\*\*\*.*"
 syn match diffLine	"^---$"
 
-"Some versions of diff have lines like "#c#" and "#d#" (where # is a number)
+" Some versions of diff have lines like "#c#" and "#d#" (where # is a number)
 syn match diffLine	"^\d\+\(,\d\+\)\=[cda]\d\+\>.*"
 
 syn match diffFile	"^diff\>.*"
@@ -343,12 +352,16 @@ syn match diffFile	"^==== .*"
 syn match diffOldFile	"^\*\*\* .*"
 syn match diffNewFile	"^--- .*"
 
+" Used by git
+syn match diffIndexLine	"^index \x\x\x\x.*"
+
 syn match diffComment	"^#.*"
 
 " Define the default highlighting.
 " Only used when an item doesn't have highlighting yet
 hi def link diffOldFile		diffFile
 hi def link diffNewFile		diffFile
+hi def link diffIndexLine	PreProc
 hi def link diffFile		Type
 hi def link diffOnly		Constant
 hi def link diffIdentical	Constant

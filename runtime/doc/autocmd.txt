@@ -1,4 +1,4 @@
-*autocmd.txt*   For Vim version 7.4.  Last change: 2014 May 02
+*autocmd.txt*   For Vim version 8.0.  Last change: 2016 Sep 27
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -52,9 +52,6 @@ effects.  Be careful not to destroy your text.
 ==============================================================================
 2. Defining autocommands				*autocmd-define*
 
-Note: The ":autocmd" command cannot be followed by another command, since any
-'|' is considered part of the command.
-
 							*:au* *:autocmd*
 :au[tocmd] [group] {event} {pat} [nested] {cmd}
 			Add {cmd} to the list of commands that Vim will
@@ -67,6 +64,12 @@ Note: The ":autocmd" command cannot be followed by another command, since any
 The special pattern <buffer> or <buffer=N> defines a buffer-local autocommand.
 See |autocmd-buflocal|.
 
+Note: The ":autocmd" command can only be followed by another command when the
+'|' appears before {cmd}.  This works: >
+	:augroup mine | au! BufRead | augroup END
+But this sees "augroup" as part of the defined command: >
+	:augroup mine | au BufRead * set tw=70 | augroup END
+
 Note that special characters (e.g., "%", "<cword>") in the ":autocmd"
 arguments are not expanded when the autocommand is defined.  These will be
 expanded when the Event is recognized, and the {cmd} is executed.  The only
@@ -76,11 +79,15 @@ exception is that "<sfile>" is expanded when the autocmd is defined.  Example:
 
 Here Vim expands <sfile> to the name of the file containing this line.
 
-When your .vimrc file is sourced twice, the autocommands will appear twice.
-To avoid this, put this command in your .vimrc file, before defining
-autocommands: >
+`:autocmd` adds to the list of autocommands regardless of whether they are
+already present.  When your .vimrc file is sourced twice, the autocommands
+will appear twice.  To avoid this, define your autocommands in a group, so
+that you can easily clear them: >
 
-	:autocmd!	" Remove ALL autocommands for the current group.
+	augroup vimrc
+	  autocmd!	" Remove all vimrc autocommands
+	  au BufNewFile,BufRead *.html so <sfile>:h/html.vim
+	augroup END
 
 If you don't want to remove all autocommands, you can instead use a variable
 to ensure that Vim includes the autocommands only once: >
@@ -127,8 +134,13 @@ prompt.  When one command outputs two messages this can happen anyway.
 
 :au[tocmd]! [group] {event}
 			Remove ALL autocommands for {event}.
+			Warning: You should not do this without a group for
+			|BufRead| and other common events, it can break
+			plugins, syntax highlighting, etc.
 
 :au[tocmd]! [group]	Remove ALL autocommands.
+			Warning: You should normally not do this without a
+			group, it breaks plugins, syntax highlighting, etc.
 
 When the [group] argument is not given, Vim uses the current group (as defined
 with ":augroup"); otherwise, Vim uses the group defined with [group].
@@ -259,6 +271,7 @@ Name			triggered by ~
 |Syntax|		when the 'syntax' option has been set
 |EncodingChanged|	after the 'encoding' option has been changed
 |TermChanged|		after the value of 'term' has changed
+|OptionSet|		after setting any option
 
 	Startup and exit
 |VimEnter|		after doing all the startup stuff
@@ -278,6 +291,7 @@ Name			triggered by ~
 |ShellCmdPost|		after executing a shell command
 |ShellFilterPost|	after filtering with a shell command
 
+|CmdUndefined|		a user command is used but it isn't defined
 |FuncUndefined|		a user function is used but it isn't defined
 |SpellFileMissing|	a spell file is used but it can't be found
 |SourcePre|		before sourcing a Vim script
@@ -291,6 +305,9 @@ Name			triggered by ~
 |CursorMoved|		the cursor was moved in Normal mode
 |CursorMovedI|		the cursor was moved in Insert mode
 
+|WinNew|		after creating a new window
+|TabNew|		after creating a new tab page
+|TabClosed|		after closing a tab page
 |WinEnter|		after entering another window
 |WinLeave|		before leaving a window
 |TabEnter|		after entering another tab page
@@ -411,8 +428,8 @@ BufUnload			Before unloading a buffer.  This is when the
 				NOTE: When this autocommand is executed, the
 				current buffer "%" may be different from the
 				buffer being unloaded "<afile>".
-				Don't change to another buffer, it will cause
-				problems.
+				Don't change to another buffer or window, it
+				will cause problems!
 				When exiting and v:dying is 2 or more this
 				event is not triggered.
 							*BufWinEnter*
@@ -465,6 +482,16 @@ BufWriteCmd			Before writing the whole buffer to a file.
 							*BufWritePost*
 BufWritePost			After writing the whole buffer to a file
 				(should undo the commands for BufWritePre).
+							*CmdUndefined*
+CmdUndefined			When a user command is used but it isn't
+				defined.  Useful for defining a command only
+				when it's used.  The pattern is matched
+				against the command name.  Both <amatch> and
+				<afile> are set to the name of the command.
+				NOTE: Autocompletion won't work until the
+				command is defined.  An alternative is to
+				always define the user command and have it
+				invoke an autoloaded function.  See |autoload|.
 							*CmdwinEnter*
 CmdwinEnter			After entering the command-line window.
 				Useful for setting options specifically for
@@ -494,6 +521,8 @@ ColorScheme			After loading a color scheme. |:colorscheme|
 CompleteDone			After Insert mode completion is done.  Either
 				when something was completed or abandoning
 				completion. |ins-completion|
+				The |v:completed_item| variable contains
+				information about the completed item.
 
 							*CursorHold*
 CursorHold			When the user doesn't press a key for the time
@@ -508,6 +537,11 @@ CursorHold			When the user doesn't press a key for the time
 				operator.
 				While recording the CursorHold event is not
 				triggered. |q|
+							*<CursorHold>*
+				Internally the autocommand is triggered by the
+				<CursorHold> key. In an expression mapping
+				|getchar()| may see this character.
+
 				Note: Interactive commands cannot be used for
 				this event.  There is no hit-enter prompt,
 				the screen is updated directly (when needed).
@@ -520,6 +554,9 @@ CursorHold			When the user doesn't press a key for the time
 				versions}
 							*CursorHoldI*
 CursorHoldI			Just like CursorHold, but in Insert mode.
+				Not triggered when waiting for another key,
+				e.g. after CTRL-V, and not when in CTRL-X mode
+				|insert_expand|.
 
 							*CursorMoved*
 CursorMoved			After the cursor was moved in Normal or Visual
@@ -670,6 +707,8 @@ FuncUndefined			When a user function is used but it isn't
 				when it's used.  The pattern is matched
 				against the function name.  Both <amatch> and
 				<afile> are set to the name of the function.
+				NOTE: When writing Vim scripts a better
+				alternative is to use an autoloaded function.
 				See |autoload-functions|.
 							*GUIEnter*
 GUIEnter			After starting the GUI successfully, and after
@@ -724,6 +763,29 @@ MenuPopup			Just before showing the popup menu (under the
 					o	Operator-pending
 					i	Insert
 					c	Command line
+							*OptionSet*
+OptionSet			After setting an option.  The pattern is
+				matched against the long option name.
+				The |v:option_old| variable indicates the
+				old option value, |v:option_new| variable
+				indicates the newly set value, the
+				|v:option_type| variable indicates whether
+				it's global or local scoped and |<amatch>|
+				indicates what option has been set.
+
+				Is not triggered on startup and for the 'key'
+				option for obvious reasons.
+
+				Usage example: Check for the existence of the
+				directory in the 'backupdir' and 'undodir'
+				options, create the directory if it doesn't
+				exist yet.
+
+				Note: It's a bad idea to reset an option
+				during this autocommand, this may break a
+				plugin. You can always use `:noa` to prevent
+				triggering this autocommand.
+
 							*QuickFixCmdPre*
 QuickFixCmdPre			Before a quickfix command is run (|:make|,
 				|:lmake|, |:grep|, |:lgrep|, |:grepadd|,
@@ -731,7 +793,9 @@ QuickFixCmdPre			Before a quickfix command is run (|:make|,
 				|:vimgrepadd|, |:lvimgrepadd|, |:cscope|,
 				|:cfile|, |:cgetfile|, |:caddfile|, |:lfile|,
 				|:lgetfile|, |:laddfile|, |:helpgrep|,
-				|:lhelpgrep|).
+				|:lhelpgrep|, |:cexpr|, |:cgetexpr|,
+				|:caddexpr|, |:cbuffer|, |:cgetbuffer|,
+				|:caddbuffer|).
 				The pattern is matched against the command
 				being run.  When |:grep| is used but 'grepprg'
 				is set to "internal" it still matches "grep".
@@ -827,6 +891,8 @@ Syntax				When the 'syntax' option has been set.  The
 				where this option was set, and <amatch> for
 				the new value of 'syntax'.
 				See |:syn-on|.
+							*TabClosed*
+TabClosed			After closing a tab page.
 							*TabEnter*
 TabEnter			Just after entering a tab page. |tab-page|
 				After triggering the WinEnter and before
@@ -835,6 +901,10 @@ TabEnter			Just after entering a tab page. |tab-page|
 TabLeave			Just before leaving a tab page. |tab-page|
 				A WinLeave event will have been triggered
 				first.
+							*TabNew*
+TabNew				When a tab page was created. |tab-page|
+				A WinEnter event will have been triggered
+				first, TabEnter follows.
 							*TermChanged*
 TermChanged			After the value of 'term' has changed.  Useful
 				for re-loading the syntax file to update the
@@ -874,7 +944,15 @@ VimEnter			After doing all the startup stuff, including
 				loading .vimrc files, executing the "-c cmd"
 				arguments, creating all windows and loading
 				the buffers in them.
-							*VimLeave*
+				Just before this event is triggered the
+				|v:vim_did_enter| variable is set, so that you
+				can do: >
+				   if v:vim_did_enter
+				     call s:init()
+				   else
+ 	  			     au VimEnter * call s:init()
+				   endif
+<							*VimLeave*
 VimLeave			Before exiting Vim, just after writing the
 				.viminfo file.  Executed only once, like
 				VimLeavePre.
@@ -912,8 +990,20 @@ WinLeave			Before leaving a window.  If the window to be
 				WinLeave autocommands (but not for ":new").
 				Not used for ":qa" or ":q" when exiting Vim.
 
+							*WinNew*
+WinNew				When a new window was created.  Not done for
+				the first window, when Vim has just started.
+				Before a WinEnter event.
+
 ==============================================================================
 6. Patterns					*autocmd-patterns* *{pat}*
+
+The {pat} argument can be a comma separated list.  This works as if the
+command was given with each pattern separately.  Thus this command: >
+	:autocmd BufRead *.txt,*.info set et
+Is equivalent to: >
+	:autocmd BufRead *.txt set et
+	:autocmd BufRead *.info set et
 
 The file pattern {pat} is tested for a match against the file name in one of
 two ways:
@@ -986,6 +1076,9 @@ Note that for all systems the '/' character is used for path separator (even
 MS-DOS and OS/2).  This was done because the backslash is difficult to use
 in a pattern and to make the autocommands portable across different systems.
 
+It is possible to use |pattern| items, but they may not work as expected,
+because of the translation done for the above.
+
 							*autocmd-changes*
 Matching with the pattern is done when an event is triggered.  Changing the
 buffer name in one of the autocommands, or even deleting the buffer, does not
@@ -1021,7 +1114,7 @@ Instead of a pattern buffer-local autocommands use one of these forms:
 Examples: >
     :au CursorHold <buffer>  echo 'hold'
     :au CursorHold <buffer=33>  echo 'hold'
-    :au CursorHold <buffer=abuf>  echo 'hold'
+    :au BufNewFile * au CursorHold <buffer=abuf>  echo 'hold'
 
 All the commands for autocommands also work with buffer-local autocommands,
 simply use the special string instead of the pattern.  Examples: >
@@ -1080,11 +1173,16 @@ name!
 :aug[roup] {name}		Define the autocmd group name for the
 				following ":autocmd" commands.  The name "end"
 				or "END" selects the default group.
+				To avoid confusion, the name should be
+				different from existing {event} names, as this
+				most likely will not do what you intended.
 
-						*:augroup-delete* *E367*
+					*:augroup-delete* *E367* *W19* *E936*
 :aug[roup]! {name}		Delete the autocmd group {name}.  Don't use
 				this if there is still an autocommand using
-				this group!  This is not checked.
+				this group!  You will get a warning if doing
+				it anyway. when the group is the current group
+				you will get error E936.
 
 To enter autocommands for a specific group, use this method:
 1. Select the group with ":augroup {name}".
@@ -1139,6 +1237,8 @@ option will not cause any commands to be executed.
 			argument is present. You probably want to use
 			<nomodeline> for events that are not used when loading
 			a buffer, such as |User|.
+			Processing modelines is also skipped when no
+			matching autocommands were executed.
 
 						*:doautoa* *:doautoall*
 :doautoa[ll] [<nomodeline>] [group] {event} [fname]

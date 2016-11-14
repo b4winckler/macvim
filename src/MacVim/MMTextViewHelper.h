@@ -10,10 +10,8 @@
 
 #import <Cocoa/Cocoa.h>
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED > MAC_OS_X_VERSION_10_4)
 // Need Carbon for TIS...() functions
 #import <Carbon/Carbon.h>
-#endif
 
 
 #define BLUE(argb)      ((argb & 0xff)/255.0f)
@@ -35,6 +33,10 @@
     BOOL                interpretKeyEventsSwallowedKey;
     NSEvent             *currentEvent;
     NSMutableDictionary *signImages;
+    BOOL                useMouseTime;
+    NSDate              *mouseDownTime;
+    CGFloat             scrollingDeltaX;
+    CGFloat             scrollingDeltaY;
 
     // Input Manager
     NSRange             imRange;
@@ -45,10 +47,8 @@
     int                 preEditColumn;
     BOOL                imControl;
     BOOL                imState;
-#if (MAC_OS_X_VERSION_MAX_ALLOWED > MAC_OS_X_VERSION_10_4)
     TISInputSourceRef   lastImSource;
     TISInputSourceRef   asciiImSource;
-#endif
 }
 
 - (id)init;
@@ -59,15 +59,12 @@
 - (void)keyDown:(NSEvent *)event;
 - (void)insertText:(id)string;
 - (void)doCommandBySelector:(SEL)selector;
-- (BOOL)performKeyEquivalent:(NSEvent *)event;
 - (void)scrollWheel:(NSEvent *)event;
 - (void)mouseDown:(NSEvent *)event;
 - (void)mouseUp:(NSEvent *)event;
 - (void)mouseDragged:(NSEvent *)event;
 - (void)mouseMoved:(NSEvent *)event;
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 - (void)swipeWithEvent:(NSEvent *)event;
-#endif
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender;
 - (NSDragOperation)draggingEntered:(id <NSDraggingInfo>)sender;
 - (NSDragOperation)draggingUpdated:(id <NSDraggingInfo>)sender;
@@ -94,8 +91,6 @@
 - (void)setImControl:(BOOL)enable;
 - (void)activateIm:(BOOL)enable;
 - (BOOL)useInlineIm;
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
 - (void)checkImState;
-#endif
 
 @end

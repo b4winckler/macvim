@@ -1,6 +1,6 @@
 " Vim autoload file for editing compressed files.
 " Maintainer: Bram Moolenaar <Bram@vim.org>
-" Last Change: 2008 Jul 04
+" Last Change: 2016 Sep 28
 
 " These functions are used by the gzip plugin.
 
@@ -63,6 +63,9 @@ fun gzip#read(cmd)
   " set 'modifiable'
   let ma_save = &ma
   setlocal ma
+  " set 'write'
+  let write_save = &write
+  set write
   " Reset 'foldenable', otherwise line numbers get adjusted.
   if has("folding")
     let fen_save = &fen
@@ -120,11 +123,14 @@ fun gzip#read(cmd)
     silent! exe "bwipe " . tmp_esc
     silent! exe "bwipe " . tmpe_esc
   endif
+  " Store the OK flag, so that we can use it when writing.
+  let b:uncompressOk = ok
 
   " Restore saved option values.
   let &pm = pm_save
   let &cpo = cpo_save
   let &l:ma = ma_save
+  let &write = write_save
   if has("folding")
     let &l:fen = fen_save
   endif
@@ -146,8 +152,10 @@ endfun
 
 " After writing compressed file: Compress written file with "cmd"
 fun gzip#write(cmd)
+  if exists('b:uncompressOk') && !b:uncompressOk
+    echomsg "Not compressing file because uncompress failed; reset b:uncompressOk to compress anyway"
   " don't do anything if the cmd is not supported
-  if s:check(a:cmd)
+  elseif s:check(a:cmd)
     " Rename the file before compressing it.
     let nm = resolve(expand("<afile>"))
     let nmt = s:tempname(nm)

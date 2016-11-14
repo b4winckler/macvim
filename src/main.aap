@@ -22,11 +22,11 @@
     # A U T O C O N F
     #
 
-    # Run autoconf when configure.in has been changed since it was last run.
+    # Run autoconf when configure.ac has been changed since it was last run.
     # This is skipped when the signatures in "mysign" are up-to-date.  When
     # there is no autoconf program skip this (the signature is often the only
     # thing that's outdated)
-    auto/configure {signfile = mysign} : configure.in
+    auto/configure {signfile = mysign} : configure.ac
         @if not program_path("autoconf"):
             :print Can't find autoconf, using existing configure script.
         @else:
@@ -69,7 +69,7 @@
                     --with-mac-arch=$arch
                     --cache-file=auto/config.cache
 
-    # Configure arguments: create an empty "config.arg" file when its missing
+    # Configure arguments: create an empty "config.arg" file when it's missing
     config.arg:
         :touch {exist} config.arg
 
@@ -347,7 +347,6 @@ Source =
         $PYTHON_SRC
         $TCL_SRC
         $RUBY_SRC
-        $SNIFF_SRC
         $WORKSHOP_SRC
 
 Objects =

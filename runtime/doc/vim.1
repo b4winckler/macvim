@@ -135,7 +135,7 @@ For the first file the cursor will be positioned on line "num".
 If "num" is missing, the cursor will be positioned on the last line.
 .TP
 +/{pat}
-For the first file the cursor will be positioned on the
+For the first file the cursor will be positioned in the line with the
 first occurrence of {pat}.
 See ":help search\-pattern" for the available search patterns.
 .TP
@@ -321,7 +321,7 @@ When N is omitted, open one tab page for each file.
 \-R
 Read-only mode.
 The 'readonly' option will be set.
-You can still edit the buffer, but will be prevented from accidently
+You can still edit the buffer, but will be prevented from accidentally
 overwriting a file.
 If you do want to overwrite a file, add an exclamation mark to the Ex command,
 as in ":w!".

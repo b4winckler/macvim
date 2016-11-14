@@ -43,6 +43,15 @@
 # undef _DEBUG
 #endif
 
+#ifdef HAVE_STRFTIME
+# undef HAVE_STRFTIME
+#endif
+#ifdef HAVE_STRING_H
+# undef HAVE_STRING_H
+#endif
+#ifdef HAVE_PUTENV
+# undef HAVE_PUTENV
+#endif
 #ifdef HAVE_STDARG_H
 # undef HAVE_STDARG_H	/* Python's config.h defines it as well. */
 #endif
@@ -736,7 +745,7 @@ python_runtime_link_init(char *libname, int verbose)
     int
 python_enabled(int verbose)
 {
-    return python_runtime_link_init(DYNAMIC_PYTHON_DLL, verbose) == OK;
+    return python_runtime_link_init((char *)p_pydll, verbose) == OK;
 }
 
 /*
@@ -865,7 +874,7 @@ Python_RestoreThread(void)
 #endif
 
     void
-python_end()
+python_end(void)
 {
     static int recurse = 0;
 
@@ -903,7 +912,7 @@ python_end()
 
 #if (defined(DYNAMIC_PYTHON) && defined(FEAT_PYTHON3)) || defined(PROTO)
     int
-python_loaded()
+python_loaded(void)
 {
     return (hinstPython != 0);
 }
@@ -927,7 +936,10 @@ Python_Init(void)
 #endif
 
 #ifdef PYTHON_HOME
-	Py_SetPythonHome(PYTHON_HOME);
+# ifdef DYNAMIC_PYTHON
+	if (mch_getenv((char_u *)"PYTHONHOME") == NULL)
+# endif
+	    Py_SetPythonHome(PYTHON_HOME);
 #endif
 
 	init_structs();
@@ -1187,7 +1199,10 @@ OutputGetattr(PyObject *self, char *name)
 	return PyInt_FromLong(((OutputObject *)(self))->softspace);
     else if (strcmp(name, "__members__") == 0)
 	return ObjectDir(NULL, OutputAttrs);
-
+    else if (strcmp(name, "errors") == 0)
+	return PyString_FromString("strict");
+    else if (strcmp(name, "encoding") == 0)
+	return PyString_FromString(ENC_OPT);
     return Py_FindMethod(OutputMethods, self, name);
 }
 
@@ -1531,12 +1546,12 @@ ListGetattr(PyObject *self, char *name)
     static PyObject *
 FunctionGetattr(PyObject *self, char *name)
 {
-    FunctionObject	*this = (FunctionObject *)(self);
+    PyObject	*r;
 
-    if (strcmp(name, "name") == 0)
-	return PyString_FromString((char *)(this->name));
-    else if (strcmp(name, "__members__") == 0)
-	return ObjectDir(NULL, FunctionAttrs);
+    r = FunctionAttr((FunctionObject *)(self), name);
+
+    if (r || PyErr_Occurred())
+	return r;
     else
 	return Py_FindMethod(FunctionMethods, self, name);
 }
@@ -1553,9 +1568,17 @@ do_pyeval (char_u *str, typval_T *rettv)
 	case VAR_DICT: ++rettv->vval.v_dict->dv_refcount; break;
 	case VAR_LIST: ++rettv->vval.v_list->lv_refcount; break;
 	case VAR_FUNC: func_ref(rettv->vval.v_string);    break;
+	case VAR_PARTIAL: ++rettv->vval.v_partial->pt_refcount; break;
 	case VAR_UNKNOWN:
 	    rettv->v_type = VAR_NUMBER;
 	    rettv->vval.v_number = 0;
+	    break;
+	case VAR_NUMBER:
+	case VAR_STRING:
+	case VAR_FLOAT:
+	case VAR_SPECIAL:
+	case VAR_JOB:
+	case VAR_CHANNEL:
 	    break;
     }
 }
@@ -1571,8 +1594,8 @@ Py_GetProgramName(void)
 }
 #endif /* Python 1.4 */
 
-    void
+    int
 set_ref_in_python (int copyID)
 {
-    set_ref_in_py(copyID);
+    return set_ref_in_py(copyID);
 }

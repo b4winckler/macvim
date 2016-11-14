@@ -1,4 +1,4 @@
-*index.txt*     For Vim version 7.4.  Last change: 2014 Mar 25
+*index.txt*     For Vim version 8.0.  Last change: 2016 Sep 27
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -49,6 +49,7 @@ tag		char		action in Insert mode	~
 |i_CTRL-G_k|	CTRL-G k	line up, to column where inserting started
 |i_CTRL-G_k|	CTRL-G <Up>	line up, to column where inserting started
 |i_CTRL-G_u|	CTRL-G u	start new undoable edit
+|i_CTRL-G_U|	CTRL-G U	don't break undo with next cursor movement
 |i_<BS>|	<BS>		delete character before the cursor
 |i_digraph|	{char1}<BS>{char2}
 				enter digraph (only when 'digraph' option set)
@@ -702,12 +703,16 @@ tag		char	      note action in Normal mode	~
 |g'|		g'{mark}	1  like |'| but without changing the jumplist
 |g`|		g`{mark}	1  like |`| but without changing the jumplist
 |gstar|		g*		1  like "*", but without using "\<" and "\>"
+|g+|		g+		   go to newer text state N times
+|g,|		g,		1  go to N newer position in change list
+|g-|		g-		   go to older text state N times
 |g0|		g0		1  when 'wrap' off go to leftmost character of
 				   the current line that is on the screen;
 				   when 'wrap' on go to the leftmost character
 				   of the current screen line
 |g8|		g8		   print hex value of bytes used in UTF-8
 				   character under the cursor
+|g;|		g;		1  go to N older position in change list
 |g<|		g<		   display previous command output
 |g?|		g?		2  Rot13 encoding operator
 |g?g?|		g??		2  Rot13 encode current line
@@ -736,6 +741,7 @@ tag		char	      note action in Normal mode	~
 				   the screen; when 'wrap' on go to the
 				   leftmost non-white character of the current
 				   screen line
+|g_|		g_		1  cursor to the last CHAR N - 1 lines lower
 |ga|		ga		   print ascii value of character under the
 				   cursor
 |gd|		gd		1  go to definition of word under the cursor
@@ -854,6 +860,7 @@ tag		command	      note action in Visual mode	~
 ------------------------------------------------------------------------------
 |v_CTRL-\_CTRL-N| CTRL-\ CTRL-N	   stop Visual mode
 |v_CTRL-\_CTRL-G| CTRL-\ CTRL-G	   go to mode specified with 'insertmode'
+|v_CTRL-A|	CTRL-A		2  add N to number in highlighted text
 |v_CTRL-C|	CTRL-C		   stop Visual mode
 |v_CTRL-G|	CTRL-G		   toggle between Visual mode and Select mode
 |v_<BS>|	<BS>		2  Select mode: delete highlighted area
@@ -862,6 +869,7 @@ tag		command	      note action in Visual mode	~
 				   command
 |v_CTRL-V|	CTRL-V		   make Visual mode blockwise or stop Visual
 				   mode
+|v_CTRL-X|	CTRL-X		2  subtract N from number in highlighted text
 |v_<Esc>|	<Esc>		   stop Visual mode
 |v_CTRL-]|	CTRL-]		   jump to highlighted tag
 |v_!|		!{filter}	2  filter the highlighted lines through the
@@ -918,6 +926,8 @@ tag		command	      note action in Visual mode	~
 |v_a}|		a}		   same as aB
 |v_c|		c		2  delete highlighted area and start insert
 |v_d|		d		2  delete highlighted area
+|v_g_CTRL-A|	g CTRL-A	2  add N to number in highlighted text
+|v_g_CTRL-X|	g CTRL-X	2  subtract N from number in highlighted text
 |v_gJ|		gJ		2  join the highlighted lines without
 				   inserting spaces
 |v_gq|		gq		2  format the highlighted lines
@@ -974,7 +984,7 @@ tag		command	      action in Command-line editing mode	~
 |c_CTRL-E|	CTRL-E		cursor to end of command-line
 |'cedit'|	CTRL-F		default value for 'cedit': opens the
 				command-line window; otherwise not used
-		CTRL-G		not used
+|c_CTRL-G|	CTRL-G		next match when 'incsearch' is active
 |c_<BS>|	<BS>		delete the character in front of the cursor
 |c_digraph|	{char1} <BS> {char2}
 				enter digraph when 'digraph' is on
@@ -992,7 +1002,7 @@ tag		command	      action in Command-line editing mode	~
 |c_CTRL-L|	CTRL-L		do completion on the pattern in front of the
 				cursor and insert the longest common part
 |c_<CR>|	<CR>		execute entered command
-|c_<CR>|	CTRL-M		same as <CR>
+|c_CTRL-M|	CTRL-M		same as <CR>
 |c_CTRL-N|	CTRL-N		after using 'wildchar' with multiple matches:
 				go to next match, otherwise: same as <Down>
 		CTRL-O		not used
@@ -1007,7 +1017,7 @@ tag		command	      action in Command-line editing mode	~
 				insert the contents of a register or object
 				under the cursor literally
 		CTRL-S		(used for terminal control flow)
-		CTRL-T		not used
+|c_CTRL-T|	CTRL-T		previous match when 'incsearch' is active
 |c_CTRL-U|	CTRL-U		remove all characters
 |c_CTRL-V|	CTRL-V		insert next non-digit literally, insert three
 				digit decimal number as a single byte.
@@ -1016,7 +1026,7 @@ tag		command	      action in Command-line editing mode	~
 		CTRL-Y		copy (yank) modeless selection
 		CTRL-Z		not used (reserved for suspend)
 |c_<Esc>|	<Esc>		abandon command-line without executing it
-|c_<Esc>|	CTRL-[		same as <Esc>
+|c_CTRL-[|	CTRL-[		same as <Esc>
 |c_CTRL-\_CTRL-N| CTRL-\ CTRL-N	go to Normal mode, abandon command-line
 |c_CTRL-\_CTRL-G| CTRL-\ CTRL-G	go to mode specified with 'insertmode',
 				abandon command-line
@@ -1050,7 +1060,7 @@ tag		command	      action in Command-line editing mode	~
 |c_<Insert>|	<Insert>	toggle insert/overstrike mode
 |c_<LeftMouse>|	<LeftMouse>	cursor at mouse click
 
-You found it, Arthur!				*holy-grail*
+You found it, Arthur!				*holy-grail* *:smile*
 
 ==============================================================================
 5. EX commands					*ex-cmd-index* *:index*
@@ -1129,10 +1139,13 @@ tag	      command	      action ~
 |:caddfile|	:caddf[ile]	add error message to current quickfix list
 |:call|		:cal[l]		call a function
 |:catch|	:cat[ch]	part of a :try command
+|:cbottom|	:cbo[ttom]	scroll to the bottom of the quickfix window
 |:cbuffer|	:cb[uffer]	parse error messages and jump to first error
 |:cc|		:cc		go to specific error
 |:cclose|	:ccl[ose]	close quickfix window
 |:cd|		:cd		change directory
+|:cdo|		:cdo		execute command in each valid error list entry
+|:cfdo|		:cfd[o]		execute command in each file in error list
 |:center|	:ce[nter]	format lines at the center
 |:cexpr|	:cex[pr]	read errors from expr and jump to first
 |:cfile|	:cf[ile]	read file with error messages and jump to first
@@ -1144,8 +1157,10 @@ tag	      command	      action ~
 |:chdir|	:chd[ir]	change directory
 |:checkpath|	:che[ckpath]	list included files
 |:checktime|	:checkt[ime]	check timestamp of loaded buffers
-|:clist|	:cl[ist]	list all errors
+|:chistory|	:chi[story]	list the error lists
 |:clast|	:cla[st]	go to the specified error, default last one
+|:clearjumps|	:cle[arjumps]	clear the jump list
+|:clist|	:cl[ist]	list all errors
 |:close|	:clo[se]	close current window
 |:cmap|		:cm[ap]		like ":map" but for Command-line mode
 |:cmapclear|	:cmapc[lear]	clear all mappings for Command-line mode
@@ -1169,7 +1184,7 @@ tag	      command	      action ~
 |:cpfile|	:cpf[ile]	go to last error in previous file
 |:cquit|	:cq[uit]	quit Vim with an error code
 |:crewind|	:cr[ewind]	go to the specified error, default first one
-|:cscope|	:cs[cope]       execute cscope command
+|:cscope|	:cs[cope]	execute cscope command
 |:cstag|	:cst[ag]	use cscope to jump to a tag
 |:cunmap|	:cu[nmap]	like ":unmap" but for Command-line mode
 |:cunabbrev|	:cuna[bbrev]	like ":unabbrev" but for Command-line mode
@@ -1192,7 +1207,7 @@ tag	      command	      action ~
 |:display|	:di[splay]	display registers
 |:djump|	:dj[ump]	jump to #define
 |:dl|		:dl		short for |:delete| with the 'l' flag
-|:dl|		:del[ete]l	short for |:delete| with the 'l' flag
+|:del|		:del[ete]l	short for |:delete| with the 'l' flag
 |:dlist|	:dli[st]	list #defines
 |:doautocmd|	:do[autocmd]	apply autocommands to current buffer
 |:doautoall|	:doautoa[ll]	apply autocommands for all loaded buffers
@@ -1224,6 +1239,7 @@ tag	      command	      action ~
 |:file|		:f[ile]		show or set the current file name
 |:files|	:files		list all files in the buffer list
 |:filetype|	:filet[ype]	switch file type detection on/off
+|:filter|	:filt[er]	filter output of following command
 |:find|		:fin[d]		find file in 'path' and edit it
 |:finally|	:fina[lly]	part of a :try command
 |:finish|	:fini[sh]	quit sourcing a Vim script
@@ -1244,6 +1260,7 @@ tag	      command	      action ~
 |:gvim|		:gv[im]		start the GUI
 |:hardcopy|	:ha[rdcopy]	send text to the printer
 |:help|		:h[elp]		open a help window
+|:helpclose|	:helpc[lose]	close one help window
 |:helpfind|	:helpf[ind]	dialog to open a help window
 |:helpgrep|	:helpg[rep]	like ":grep" but searches help files
 |:helptags|	:helpt[ags]	generate help tags for a directory
@@ -1285,11 +1302,14 @@ tag	      command	      action ~
 |:last|		:la[st]		go to the last file in the argument list
 |:language|	:lan[guage]	set the language (locale)
 |:later|	:lat[er]	go to newer change, redo
+|:lbottom|	:lbo[ttom]	scroll to the bottom of the location window
 |:lbuffer|	:lb[uffer]	parse locations and jump to first location
 |:lcd|		:lc[d]		change directory locally
 |:lchdir|	:lch[dir]	change directory locally
 |:lclose|	:lcl[ose]	close location window
-|:lcscope|	:lcs[cope]      like ":cscope" but uses location list
+|:lcscope|	:lcs[cope]	like ":cscope" but uses location list
+|:ldo|		:ld[o]		execute command in valid location list entries
+|:lfdo|		:lfd[o]		execute command in each file in location list
 |:left|		:le[ft]		left align lines
 |:leftabove|	:lefta[bove]	make split window appear left or above
 |:let|		:let		assign a value to a variable or option
@@ -1302,6 +1322,7 @@ tag	      command	      action ~
 |:lgrep|	:lgr[ep]	run 'grepprg' and jump to first match
 |:lgrepadd|	:lgrepa[dd]	like :grep, but append to current list
 |:lhelpgrep|	:lh[elpgrep]	like ":helpgrep" but uses location list
+|:lhistory|	:lhi[story]	list the location lists
 |:ll|		:ll		go to specific location
 |:llast|	:lla[st]	go to the specified location, default last one
 |:llist|	:lli[st]	list all locations
@@ -1343,7 +1364,7 @@ tag	      command	      action ~
 |:marks|	:marks		list all marks
 |:match|	:mat[ch]	define a match to highlight
 |:menu|		:me[nu]		enter a new menu item
-|:menutranslate| :menut[ranslate] add a menu translation item
+|:menutranslate|  :menut[ranslate] add a menu translation item
 |:messages|	:mes[sages]	view previously displayed messages
 |:mkexrc|	:mk[exrc]	write current mappings and settings to a file
 |:mksession|	:mks[ession]	write session info to a file
@@ -1386,6 +1407,8 @@ tag	      command	      action ~
 |:ounmap|	:ou[nmap]	like ":unmap" but for Operator-pending mode
 |:ounmenu|	:ounme[nu]	remove menu for Operator-pending mode
 |:ownsyntax|	:ow[nsyntax]	set new local syntax highlight for this window
+|:packadd|	:pa[ckadd]	add a plugin from 'packpath'
+|:packloadall|	:packl[oadall]	load all packages under 'packpath'
 |:pclose|	:pc[lose]	close preview window
 |:pedit|	:ped[it]	edit file in the preview window
 |:perl|		:pe[rl]		execute Perl command
@@ -1466,7 +1489,7 @@ tag	      command	      action ~
 				buffer list
 |:sbrewind|	:sbr[ewind]	split window and go to first file in the
 				buffer list
-|:scriptnames|	:scrip[tnames]	list names of all sourced Vim scripts
+|:scriptnames|	:scr[iptnames]	list names of all sourced Vim scripts
 |:scriptencoding| :scripte[ncoding]	encoding used in sourced Vim script
 |:scscope|	:scs[cope]	split window and execute cscope command
 |:set|		:se[t]		show or set options
@@ -1487,9 +1510,9 @@ tag	      command	      action ~
 |:smap|		:smap		like ":map" but for Select mode
 |:smapclear|	:smapc[lear]	remove all mappings for Select mode
 |:smenu|	:sme[nu]	add menu for Select mode
+|:smile|	:smi[le]	make the user happy
 |:snext|	:sn[ext]	split window and go to next file in the
 				argument list
-|:sniff|	:sni[ff]	send request to sniff
 |:snomagic|	:sno[magic]	:substitute with 'nomagic'
 |:snoremap|	:snor[emap]	like ":noremap" but for Select mode
 |:snoremenu|	:snoreme[nu]	like ":noremenu" but for Select mode
@@ -1509,7 +1532,7 @@ tag	      command	      action ~
 |:stop|		:st[op]		suspend the editor or escape to a shell
 |:stag|		:sta[g]		split window and jump to a tag
 |:startinsert|	:star[tinsert]	start Insert mode
-|:startgreplace| :startg[replace] start Virtual Replace mode
+|:startgreplace|  :startg[replace] start Virtual Replace mode
 |:startreplace|	:startr[eplace]	start Replace mode
 |:stopinsert|	:stopi[nsert]	stop Insert mode
 |:stjump|	:stj[ump]	do ":tjump" and split window
@@ -1530,14 +1553,14 @@ tag	      command	      action ~
 |:tabdo|	:tabdo		execute command in each tab page
 |:tabedit|	:tabe[dit]	edit a file in a new tab page
 |:tabfind|	:tabf[ind]	find file in 'path', edit it in a new tab page
-|:tabfirst|	:tabfir[st]	got to first tab page
-|:tablast|	:tabl[ast]	got to last tab page
+|:tabfirst|	:tabfir[st]	go to first tab page
+|:tablast|	:tabl[ast]	go to last tab page
 |:tabmove|	:tabm[ove]	move tab page to other position
 |:tabnew|	:tabnew		edit a file in a new tab page
 |:tabnext|	:tabn[ext]	go to next tab page
 |:tabonly|	:tabo[nly]	close all tab pages except the current one
 |:tabprevious|	:tabp[revious]	go to previous tab page
-|:tabrewind|	:tabr[ewind]	got to first tab page
+|:tabrewind|	:tabr[ewind]	go to first tab page
 |:tabs|		:tabs		list the tab pages and what they contain
 |:tab|		:tab		create new tab when opening new window
 |:tag|		:ta[g]		jump to tag

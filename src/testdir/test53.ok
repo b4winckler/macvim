@@ -11,6 +11,7 @@ voo "zzzzzzzzzzzzzzzzzzzzzzzzzzzzsd
 -<b></b>-
 -<b>asdfasdf</b>-
 --
+-<b></b>
 </begin>
 b
 bc
@@ -41,24 +42,4 @@ a
 3
 -1
 SEARCH:
-searchmatch
-abcdx |  | abcdx
-join lines
-zerowidth pattern
-elete first and last char
- uniquepattern
-my very excellent mongoose just served us nachos
-for (j=0; i<=10; i++)
-
-text
-Y
---1
-
---2
-
---3
-DEPP
---4
-DEPP
---5
 end:

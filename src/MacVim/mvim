@@ -17,7 +17,19 @@ if [ -z "$VIM_APP_DIR" ]
 then
 	myDir="`dirname "$0"`"
 	myAppDir="$myDir/../Applications"
-	for i in ~/Applications ~/Applications/vim $myDir $myDir/vim $myAppDir $myAppDir/vim /Applications /Applications/vim /Applications/Utilities /Applications/Utilities/vim; do
+	suspects=(
+		/Applications
+		~/Applications
+		/Applications/vim
+		~/Applications/vim
+		$myDir
+		$myDir/vim
+		$myAppDir
+		$myAppDir/vim
+		/Applications/Utilities
+		/Applications/Utilities/vim
+	)
+	for i in ${suspects[@]}; do
 		if [ -x "$i/MacVim.app" ]; then
 			VIM_APP_DIR="$i"
 			break
@@ -40,6 +52,11 @@ opts=
 
 # GUI mode, implies forking
 case "$name" in m*|g*|rm*|rg*) gui=true ;; esac
+
+# Logged in over SSH? No gui.
+if [ -n "${SSH_CONNECTION}" ]; then
+	gui=
+fi
 
 # Restricted mode
 case "$name" in r*) opts="$opts -Z";; esac

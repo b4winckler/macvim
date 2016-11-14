@@ -2,7 +2,7 @@
 " You can also use this as a start for your own set of menus.
 "
 " Maintainer:	Bram Moolenaar <Bram@vim.org>
-" Last Change:	2014 May 22
+" Last Change:	2016 Jul 27
 
 " Note that ":an" (short for ":anoremenu") is often used to make a menu work
 " in all modes and avoid side effects from mappings defined by the user.
@@ -17,7 +17,7 @@ if !exists("did_install_default_menus")
 let did_install_default_menus = 1
 
 
-if (exists("v:lang") || &langmenu != "")
+if exists("v:lang") || &langmenu != ""
   " Try to find a menu translation file for the current language.
   if &langmenu != ""
     if &langmenu =~ "none"
@@ -205,7 +205,7 @@ inoremenu <script> <silent> 20.400 &Edit.&Select\ All<Tab>ggVG	<C-O>:call <SID>S
 cnoremenu <script> <silent> 20.400 &Edit.&Select\ All<Tab>ggVG	<C-U>call <SID>SelectAll()<CR>
 
 an 20.405	 &Edit.-SEP2-				<Nop>
-if has("win32") || has("win16") || has("gui_gtk") || has("gui_kde") || has("gui_motif")
+if has("win32")  || has("win16") || has("gui_gtk") || has("gui_kde") || has("gui_motif")
   an 20.410	 &Edit.&Find\.\.\.			:promptfind<CR>
   vunmenu	 &Edit.&Find\.\.\.
   vnoremenu <silent>	 &Edit.&Find\.\.\.		y:promptfind <C-R>=<SID>FixFText()<CR><CR>
@@ -233,7 +233,7 @@ an 20.435	 &Edit.Startup\ &Settings		:call <SID>EditVimrc()<CR>
 fun! s:EditVimrc()
   if $MYVIMRC != ''
     let fname = $MYVIMRC
-  elseif has("win32") || has("dos32") || has("dos16") || has("os2")
+  elseif has("win32")
     if $HOME != ''
       let fname = $HOME . "/_vimrc"
     else
@@ -394,13 +394,41 @@ let s:n = globpath(&runtimepath, "colors/*.vim")
 let s:names = sort(map(split(s:n, "\n"), 'substitute(v:val, "\\c.*[/\\\\:\\]]\\([^/\\\\:]*\\)\\.vim", "\\1", "")'), 1)
 
 " define all the submenu entries
-let s:idx = 100
+let s:cs_idx = 100
 for s:name in s:names
-  exe "an 20.450." . s:idx . ' &Edit.C&olor\ Scheme.' . s:name . " :colors " . s:name . "<CR>"
-  let s:idx = s:idx + 10
+  exe "an 20.450." . s:cs_idx . ' &Edit.C&olor\ Scheme.' . s:name . " :colors " . s:name . "<CR>"
+  let s:cs_idx = s:cs_idx + 10
 endfor
-unlet s:name s:names s:n s:idx
+exe "an 20.450." . s:cs_idx . ' &Edit.C&olor\ Scheme.-SEP- <Nop>'
+let s:cs_idx = s:cs_idx + 10
+exe "an <silent> 20.450." . s:cs_idx '&Edit.C&olor\ Scheme.Find\ More\ Color\ Schemes' ":call <SID>Colorschemes()<CR>"
+let s:cs_idx = s:cs_idx + 10
+unlet s:name s:names s:n
 
+let s:undo_colorschemes = ['aun &Edit.C&olor\ Scheme.Find\ More\ Color\ Schemes']
+func! s:Colorschemes()
+  for cmd in s:undo_colorschemes
+    exe "silent! " . cmd
+  endfor
+  let s:undo_colorschemes = []
+
+  let s = globpath(&packpath, "pack/*/{opt,start}/*/colors/*.vim")
+  let names = sort(map(split(s, "\n"), 'substitute(v:val, "\\c.*[/\\\\:\\]]\\([^/\\\\:]*\\)\\.vim", "\\1", "")'), 1)
+  let n = s:cs_idx
+  for name in names
+    let menuname = '&Edit.C&olor\ Scheme.' . name
+    exe 'an 20.450.' . n . ' ' . menuname . " :colors " . name . "<CR>"
+    let s:undo_colorschemes += ['aun ' . menuname]
+    let n += 10
+  endfor
+  if empty(names)
+    echomsg "Could not find other color schemes"
+  elseif len(names) == 1
+    echomsg "Found color scheme " . names[0]
+  else
+    echomsg "Found " . len(names) . " more color schemes"
+  endif
+endfun
 
 " Setup the Edit.Keymap submenu
 if has("keymap")
@@ -436,7 +464,7 @@ elseif has("gui_macvim")
   an 20.475.20 &Edit.Font.-SEP5-               <Nop>
   an 20.475.30 &Edit.Font.Bigger               <Nop>
   an 20.475.40 &Edit.Font.Smaller              <Nop>
-  an 20.480 &Edit.Special\ Characters\.\.\.    <Nop>
+  an 20.480 &Edit.Emoji\ &&\ Symbols           <Nop>
 endif
 
 " Programming menu
@@ -618,7 +646,7 @@ endfun
 func! s:XxdFind()
   if !exists("g:xxdprogram")
     " On the PC xxd may not be in the path but in the install directory
-    if (has("win32") || has("dos32")) && !executable("xxd")
+    if has("win32") && !executable("xxd")
       let g:xxdprogram = $VIMRUNTIME . (&shellslash ? '/' : '\') . "xxd.exe"
     else
       let g:xxdprogram = "xxd"
@@ -1208,7 +1236,7 @@ if has("gui_macvim")
   macm Edit.Font.Show\ Fonts			action=orderFrontFontPanel:
   macm Edit.Font.Bigger				key=<D-=> action=fontSizeUp:
   macm Edit.Font.Smaller			key=<D--> action=fontSizeDown:
-  macm Edit.Special\ Characters\.\.\.		key=<D-M-t> action=orderFrontCharacterPalette:
+  macm Edit.Emoji\ &&\ Symbols			key=<D-C-Space> action=orderFrontCharacterPalette:
 
   macm Tools.Spelling.To\ Next\ error<Tab>]s	key=<D-;>
   macm Tools.Spelling.Suggest\ Corrections<Tab>z=   key=<D-:>

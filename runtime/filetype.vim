@@ -1,7 +1,7 @@
 " Vim support file to detect file types
 "
 " Maintainer:	Bram Moolenaar <Bram@vim.org>
-" Last Change:	2014 Jul 23
+" Last Change:	2016 Oct 31
 
 " Listen very carefully, I will say this only once
 if exists("did_load_filetypes")
@@ -17,7 +17,7 @@ augroup filetypedetect
 
 " Ignored extensions
 if exists("*fnameescape")
-au BufNewFile,BufRead ?\+.orig,?\+.bak,?\+.old,?\+.new,?\+.dpkg-dist,?\+.dpkg-old,?\+.dpkg-new,?\+.dpkg-bak,?\+.rpmsave,?\+.rpmnew
+au BufNewFile,BufRead ?\+.orig,?\+.bak,?\+.old,?\+.new,?\+.dpkg-dist,?\+.dpkg-old,?\+.dpkg-new,?\+.dpkg-bak,?\+.rpmsave,?\+.rpmnew,?\+.pacsave,?\+.pacnew
 	\ exe "doau filetypedetect BufRead " . fnameescape(expand("<afile>:r"))
 au BufNewFile,BufRead *~
 	\ let s:name = expand("<afile>") |
@@ -143,7 +143,7 @@ au BufNewFile,BufRead .arch-inventory,=tagging-method	setf arch
 au BufNewFile,BufRead *.art			setf art
 
 " AsciiDoc
-au BufNewFile,BufRead *.asciidoc		setf asciidoc
+au BufNewFile,BufRead *.asciidoc,*.adoc		setf asciidoc
 
 " ASN.1
 au BufNewFile,BufRead *.asn,*.asn1		setf asn
@@ -307,6 +307,9 @@ au BufNewFile,BufRead *.bl			setf blank
 
 " Blkid cache file
 au BufNewFile,BufRead */etc/blkid.tab,*/etc/blkid.tab.old   setf xml
+
+" Bazel (http://bazel.io)
+autocmd BufRead,BufNewFile *.bzl,BUILD,WORKSPACE setfiletype bzl
 
 " C or lpc
 au BufNewFile,BufRead *.c			call s:FTlpc()
@@ -499,7 +502,7 @@ au BufNewFile,BufRead *.prg
 	\ endif
 
 " Clojure
-au BufNewFile,BufRead *.clj,*.cljs		setf clojure
+au BufNewFile,BufRead *.clj,*.cljs,*.cljx,*.cljc		setf clojure
 
 " Cmake
 au BufNewFile,BufRead CMakeLists.txt,*.cmake,*.cmake.in		setf cmake
@@ -529,6 +532,9 @@ au BufNewFile,BufRead configure.in,configure.ac setf config
 
 " CUDA  Cumpute Unified Device Architecture
 au BufNewFile,BufRead *.cu			setf cuda
+
+" Dockerfile
+au BufNewFile,BufRead Dockerfile,*.Dockerfile	setf dockerfile
 
 " WildPackets EtherPeek Decoder
 au BufNewFile,BufRead *.dcd			setf dcd
@@ -670,6 +676,9 @@ au BufNewFile,BufRead *.dts,*.dtsi		setf dts
 " EDIF (*.edf,*.edif,*.edn,*.edo)
 au BufNewFile,BufRead *.ed\(f\|if\|n\|o\)	setf edif
 
+" EditorConfig (close enough to dosini)
+au BufNewFile,BufRead .editorconfig		setf dosini
+
 " Embedix Component Description
 au BufNewFile,BufRead *.ecd			setf ecd
 
@@ -686,8 +695,8 @@ func! s:FTe()
     let n = 1
     while n < 100 && n < line("$")
       if getline(n) =~ "^\\s*\\(<'\\|'>\\)\\s*$"
-        setf specman
-        return
+	setf specman
+	return
       endif
       let n = n + 1
     endwhile
@@ -773,12 +782,13 @@ au BufNewFile,BufRead *.mo,*.gdmo		setf gdmo
 au BufNewFile,BufRead *.ged,lltxxxxx.txt	setf gedcom
 
 " Git
-au BufNewFile,BufRead *.git/COMMIT_EDITMSG	setf gitcommit
-au BufNewFile,BufRead *.git/MERGE_MSG		setf gitcommit
+au BufNewFile,BufRead COMMIT_EDITMSG,MERGE_MSG,TAG_EDITMSG setf gitcommit
 au BufNewFile,BufRead *.git/config,.gitconfig,.gitmodules setf gitconfig
-au BufNewFile,BufRead *.git/modules/*/COMMIT_EDITMSG setf gitcommit
 au BufNewFile,BufRead *.git/modules/*/config	setf gitconfig
 au BufNewFile,BufRead */.config/git/config	setf gitconfig
+if !empty($XDG_CONFIG_HOME)
+  au BufNewFile,BufRead $XDG_CONFIG_HOME/git/config	setf gitconfig
+endif
 au BufNewFile,BufRead git-rebase-todo		setf gitrebase
 au BufNewFile,BufRead .msg.[0-9]*
       \ if getline(1) =~ '^From.*# This line is ignored.$' |
@@ -799,6 +809,10 @@ au BufNewFile,BufRead *.gp,.gprc		setf gp
 au BufNewFile,BufRead */.gnupg/options		setf gpg
 au BufNewFile,BufRead */.gnupg/gpg.conf		setf gpg
 au BufNewFile,BufRead */usr/*/gnupg/options.skel setf gpg
+if !empty($GNUPGHOME)
+  au BufNewFile,BufRead $GNUPGHOME/options	setf gpg
+  au BufNewFile,BufRead $GNUPGHOME/gpg.conf	setf gpg
+endif
 
 " gnash(1) configuration files
 au BufNewFile,BufRead gnashrc,.gnashrc,gnashpluginrc,.gnashpluginrc setf gnash
@@ -811,6 +825,9 @@ au BufNewFile,BufRead {,.}gitolite.rc,example.gitolite.rc	setf perl
 " Gnuplot scripts
 au BufNewFile,BufRead *.gpi			setf gnuplot
 
+" Go (Google)
+au BufNewFile,BufRead *.go			setf go
+
 " GrADS scripts
 au BufNewFile,BufRead *.gs			setf grads
 
@@ -818,7 +835,7 @@ au BufNewFile,BufRead *.gs			setf grads
 au BufNewFile,BufRead *.gretl			setf gretl
 
 " Groovy
-au BufNewFile,BufRead *.groovy			setf groovy
+au BufNewFile,BufRead *.gradle,*.groovy		setf groovy
 
 " GNU Server Pages
 au BufNewFile,BufRead *.gsp			setf gsp
@@ -845,7 +862,7 @@ au BufNewFile,BufRead *.ht			setf haste
 au BufNewFile,BufRead *.htpp			setf hastepreproc
 
 " Hercules
-au BufNewFile,BufRead *.vc,*.ev,*.rs,*.sum,*.errsum	setf hercules
+au BufNewFile,BufRead *.vc,*.ev,*.sum,*.errsum	setf hercules
 
 " HEX (Intel)
 au BufNewFile,BufRead *.hex,*.h32		setf hex
@@ -864,7 +881,7 @@ func! s:FThtml()
       setf xhtml
       return
     endif
-    if getline(n) =~ '{%\s*\(extends\|block\|load\)\>'
+    if getline(n) =~ '{%\s*\(extends\|block\|load\)\>\|{#\s\+'
       setf htmldjango
       return
     endif
@@ -1008,7 +1025,7 @@ au BufNewFile,BufRead *.jgr			setf jgraph
 au BufNewFile,BufRead *.jov,*.j73,*.jovial	setf jovial
 
 " JSON
-au BufNewFile,BufRead *.json			setf json
+au BufNewFile,BufRead *.json,*.jsonp,*.webmanifest	setf json
 
 " Kixtart
 au BufNewFile,BufRead *.kix			setf kix
@@ -1042,6 +1059,9 @@ au BufNewFile,BufRead *.ldif			setf ldif
 
 " Ld loader
 au BufNewFile,BufRead *.ld			setf ld
+
+" Less
+au BufNewFile,BufRead *.less			setf less
 
 " Lex
 au BufNewFile,BufRead *.lex,*.l,*.lxx,*.l++	setf lex
@@ -1098,6 +1118,9 @@ au BufNewFile,BufRead *.lou,*.lout		setf lout
 " Lua
 au BufNewFile,BufRead *.lua			setf lua
 
+" Luarocks
+au BufNewFile,BufRead *.rockspec		setf lua
+
 " Linden Scripting Language (Second Life)
 au BufNewFile,BufRead *.lsl			setf lsl
 
@@ -1142,10 +1165,10 @@ au BufNewFile,BufRead *.mv,*.mpl,*.mws		setf maple
 au BufNewFile,BufRead *.map			setf map
 
 " Markdown
-au BufNewFile,BufRead *.markdown,*.mdown,*.mkd,*.mkdn,*.mdwn,README.md  setf markdown
+au BufNewFile,BufRead *.markdown,*.mdown,*.mkd,*.mkdn,*.mdwn,*.md  setf markdown
 
 " Mason
-au BufNewFile,BufRead *.mason,*.mhtml		setf mason
+au BufNewFile,BufRead *.mason,*.mhtml,*.comp	setf mason
 
 " Matlab or Objective C
 au BufNewFile,BufRead *.m			call s:FTm()
@@ -1154,7 +1177,7 @@ func! s:FTm()
   let n = 1
   while n < 10
     let line = getline(n)
-    if line =~ '^\s*\(#\s*\(include\|import\)\>\|/\*\|//\)'
+    if line =~ '^\s*\(#\s*\(include\|import\)\>\|@import\>\|/\*\|//\)'
       setf objc
       return
     endif
@@ -1234,8 +1257,8 @@ au BufNewFile,BufRead *.mod
 	\   setf modsim3 |
 	\ endif
 
-" Modula 2
-au BufNewFile,BufRead *.m2,*.DEF,*.MOD,*.md,*.mi setf modula2
+" Modula 2  (.md removed in favor of Markdown)
+au BufNewFile,BufRead *.m2,*.DEF,*.MOD,*.mi	setf modula2
 
 " Modula 3 (.m3, .i3, .mg, .ig)
 au BufNewFile,BufRead *.[mi][3g]		setf modula3
@@ -1252,8 +1275,8 @@ au BufNewFile,BufRead */etc/modules.conf,*/etc/modules,*/etc/conf.modules setf m
 " Mplayer config
 au BufNewFile,BufRead mplayer.conf,*/.mplayer/config	setf mplayerconf
 
-" Moterola S record
-au BufNewFile,BufRead *.s19,*.s28,*.s37		setf srec
+" Motorola S record
+au BufNewFile,BufRead *.s19,*.s28,*.s37,*.mot,*.srec	setf srec
 
 " Mrxvtrc
 au BufNewFile,BufRead mrxvtrc,.mrxvtrc		setf mrxvtrc
@@ -1280,7 +1303,7 @@ au BufNewFile,BufRead *.mush			setf mush
 au BufNewFile,BufRead Mutt{ng,}rc		setf muttrc
 
 " Nano
-au BufNewFile,BufRead */etc/nanorc,.nanorc	setf nanorc
+au BufNewFile,BufRead */etc/nanorc,*.nanorc  	setf nanorc
 
 " Nastran input/DMAP
 "au BufNewFile,BufRead *.dat			setf nastran
@@ -1322,7 +1345,7 @@ func! s:FTmm()
   let n = 1
   while n < 10
     let line = getline(n)
-    if line =~ '^\s*\(#\s*\(include\|import\)\>\|/\*\)'
+    if line =~ '^\s*\(#\s*\(include\|import\)\>\|@import\>\|/\*\)'
       setf objcpp
       return
     endif
@@ -1383,7 +1406,7 @@ else
   au BufNewFile,BufRead *.pl			call s:FTpl()
 endif
 au BufNewFile,BufRead *.plx,*.al		setf perl
-au BufNewFile,BufRead *.p6,*.pm6		setf perl6
+au BufNewFile,BufRead *.p6,*.pm6,*.pl6		setf perl6
 
 func! s:FTpl()
   if exists("g:filetype_pl")
@@ -1412,6 +1435,7 @@ au BufNewFile,BufRead *.pm
 
 " Perl POD
 au BufNewFile,BufRead *.pod			setf pod
+au BufNewFile,BufRead *.pod6			setf pod6
 
 " Php, php3, php4, etc.
 " Also Phtml (was used for PHP 2 in the past)
@@ -1603,11 +1627,9 @@ au BufNewFile,BufRead */etc/protocols		setf protocols
 " Pyrex
 au BufNewFile,BufRead *.pyx,*.pxd		setf pyrex
 
-" Python
-au BufNewFile,BufRead *.py,*.pyw		setf python
-
+" Python, Python Shell Startup Files
 " Quixote (Python-based web framework)
-au BufNewFile,BufRead *.ptl			setf python
+au BufNewFile,BufRead *.py,*.pyw,.pythonstartup,.pythonrc,*.ptl  setf python
 
 " Radiance
 au BufNewFile,BufRead *.rad,*.mat		setf radiance
@@ -1738,6 +1760,9 @@ au BufNewFile,BufRead *.rb,*.rbw		setf ruby
 " RubyGems
 au BufNewFile,BufRead *.gemspec			setf ruby
 
+" Rust
+au BufNewFile,BufRead *.rs			setf rust
+
 " Rackup
 au BufNewFile,BufRead *.ru			setf ruby
 
@@ -1764,6 +1789,9 @@ au BufNewFile,BufRead *.sass			setf sass
 
 " Sather
 au BufNewFile,BufRead *.sa			setf sather
+
+" Scala
+au BufNewFile,BufRead *.scala			setf scala
 
 " Scilab
 au BufNewFile,BufRead *.sci,*.sce		setf scilab
@@ -1843,10 +1871,18 @@ au BufNewFile,BufRead catalog			setf catalog
 au BufNewFile,BufRead sgml.catalog*		call s:StarSetf('catalog')
 
 " Shell scripts (sh, ksh, bash, bash2, csh); Allow .profile_foo etc.
-" Gentoo ebuilds are actually bash scripts
-au BufNewFile,BufRead .bashrc*,bashrc,bash.bashrc,.bash_profile*,.bash_logout*,*.bash,*.ebuild call SetFileTypeSH("bash")
+" Gentoo ebuilds and Arch Linux PKGBUILDs are actually bash scripts
+au BufNewFile,BufRead .bashrc*,bashrc,bash.bashrc,.bash[_-]profile*,.bash[_-]logout*,.bash[_-]aliases*,*.bash,*/{,.}bash[_-]completion{,.d,.sh}{,/*},*.ebuild,*.eclass,PKGBUILD* call SetFileTypeSH("bash")
 au BufNewFile,BufRead .kshrc*,*.ksh call SetFileTypeSH("ksh")
 au BufNewFile,BufRead */etc/profile,.profile*,*.sh,*.env call SetFileTypeSH(getline(1))
+
+" Shell script (Arch Linux) or PHP file (Drupal)
+au BufNewFile,BufRead *.install
+	\ if getline(1) =~ '<?php' |
+	\   setf php |
+	\ else |
+	\   call SetFileTypeSH("bash") |
+	\ endif
 
 " Also called from scripts.vim.
 func! SetFileTypeSH(name)
@@ -2014,6 +2050,10 @@ func! s:FTRules()
     setf conf  " Better than hog
     return
   endif
+  if path =~ '^/\(etc\|usr/share\)/polkit-1/rules\.d'
+    setf javascript
+    return
+  endif
   try
     let config_lines = readfile('/etc/udev/udev.conf')
   catch /^Vim\%((\a\+)\)\=:E484/
@@ -2025,7 +2065,7 @@ func! s:FTRules()
     if line =~ s:ft_rules_udev_rules_pattern
       let udev_rules = substitute(line, s:ft_rules_udev_rules_pattern, '\1', "")
       if dir == udev_rules
-        setf udevrules
+	setf udevrules
       endif
       break
     endif
@@ -2096,6 +2136,9 @@ au BufNewFile,BufRead *.cm			setf voscm
 " Sysctl
 au BufNewFile,BufRead */etc/sysctl.conf,*/etc/sysctl.d/*.conf	setf sysctl
 
+" Systemd unit files
+au BufNewFile,BufRead */systemd/*.{automount,mount,path,service,socket,swap,target,timer}	setf systemd
+
 " Synopsys Design Constraints
 au BufNewFile,BufRead *.sdc			setf sdc
 
@@ -2150,6 +2193,9 @@ au BufNewFile,BufRead *.tli			setf tli
 
 " Telix Salt
 au BufNewFile,BufRead *.slt			setf tsalt
+
+" Tera Term Language
+au BufRead,BufNewFile *.ttl			setf teraterm
 
 " Terminfo
 au BufNewFile,BufRead *.ti			setf terminfo
@@ -2211,7 +2257,7 @@ func! s:FTtex()
 endfunc
 
 " ConTeXt
-au BufNewFile,BufRead tex/context/*/*.tex,*.mkii,*.mkiv   setf context
+au BufNewFile,BufRead tex/context/*/*.tex,*.mkii,*.mkiv,*.mkvi   setf context
 
 " Texinfo
 au BufNewFile,BufRead *.texinfo,*.texi,*.txi	setf texinfo
@@ -2268,7 +2314,7 @@ au BufNewFile,BufRead */etc/updatedb.conf	setf updatedb
 au BufNewFile,BufRead */usr/share/upstart/*.conf	       setf upstart
 au BufNewFile,BufRead */usr/share/upstart/*.override	       setf upstart
 au BufNewFile,BufRead */etc/init/*.conf,*/etc/init/*.override  setf upstart
-au BufNewFile,BufRead */.init/*.conf,*/.init/*.override        setf upstart
+au BufNewFile,BufRead */.init/*.conf,*/.init/*.override	       setf upstart
 au BufNewFile,BufRead */.config/upstart/*.conf		       setf upstart
 au BufNewFile,BufRead */.config/upstart/*.override	       setf upstart
 
@@ -2490,6 +2536,8 @@ au BufNewFile,BufRead */etc/yum.conf		setf dosini
 
 " Zimbu
 au BufNewFile,BufRead *.zu			setf zimbu
+" Zimbu Templates
+au BufNewFile,BufRead *.zut			setf zimbutempl
 
 " Zope
 "   dtml (zope dynamic template markup language), pt (zope page template),
@@ -2607,6 +2655,8 @@ au BufNewFile,BufRead [rR]akefile*		call s:StarSetf('ruby')
 " Mail (also matches muttrc.vim, so this is below the other checks)
 au BufNewFile,BufRead mutt[[:alnum:]._-]\\\{6\}	setf mail
 
+au BufNewFile,BufRead reportbug-*		call s:StarSetf('mail')
+
 " Modconf
 au BufNewFile,BufRead */etc/modutils/*
 	\ if executable(expand("<afile>")) != 1
@@ -2620,6 +2670,9 @@ au BufNewFile,BufRead mutt{ng,}rc*,Mutt{ng,}rc*		call s:StarSetf('muttrc')
 
 " Nroff macros
 au BufNewFile,BufRead tmac.*			call s:StarSetf('nroff')
+
+" OpenBSD hostname.if
+au BufNewFile,BufRead /etc/hostname.*		call s:StarSetf('config')
 
 " Pam conf
 au BufNewFile,BufRead */etc/pam.d/*		call s:StarSetf('pamconf')
