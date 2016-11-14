@@ -76,24 +76,27 @@ CTFontDrawGlyphs(CTFontRef fontRef, const CGGlyph glyphs[],
 - (NSRect)rectFromRow:(int)row1 column:(int)col1
                 toRow:(int)row2 column:(int)col2;
 - (NSSize)textAreaSize;
-- (void)batchDrawData:(NSData *)data;
-- (void)drawString:(const UniChar *)chars length:(UniCharCount)length
+- (void)batchDrawData:(NSData *)data
+              context:(CGContextRef)context;
+- (void)drawString:(const UniChar *)chars
+           context:(CGContextRef)context
+            length:(UniCharCount)length
              atRow:(int)row column:(int)col cells:(int)cells
          withFlags:(int)flags foregroundColor:(int)fg
    backgroundColor:(int)bg specialColor:(int)sp;
 - (void)deleteLinesFromRow:(int)row lineCount:(int)count
               scrollBottom:(int)bottom left:(int)left right:(int)right
-                     color:(int)color;
+                     color:(int)color context:(CGContextRef)context;
 - (void)insertLinesAtRow:(int)row lineCount:(int)count
             scrollBottom:(int)bottom left:(int)left right:(int)right
-                   color:(int)color;
+                   color:(int)color context:(CGContextRef)context;
 - (void)clearBlockFromRow:(int)row1 column:(int)col1 toRow:(int)row2
-                   column:(int)col2 color:(int)color;
-- (void)clearAll;
+                   column:(int)col2 color:(int)color context:(CGContextRef)context;
+- (CGContextRef)clearAll:(CGContextRef)context;
 - (void)drawInsertionPointAtRow:(int)row column:(int)col shape:(int)shape
-                       fraction:(int)percent color:(int)color;
+                       fraction:(int)percent color:(int)color context:(CGContextRef)context;
 - (void)drawInvertedRectAtRow:(int)row column:(int)col numRows:(int)nrows
-                   numColumns:(int)ncols;
+                   numColumns:(int)ncols context:(CGContextRef)context;
 @end
 
 
@@ -581,17 +584,54 @@ defaultAdvanceForFont(NSFont *font)
     return NO;
 }
 
+- (void)releaseLayer
+{
+   if ( layer )  {
+      CGLayerRelease(layer);
+      layer = nil;
+      layerContext = nil;
+   }
+}
+- (CGLayerRef)getLayer
+{
+    if ( !layer  ) {
+        NSGraphicsContext *context = [NSGraphicsContext currentContext];
+        NSRect frame = [self frame];
+        layer = CGLayerCreateWithContext([context graphicsPort], frame.size, NULL);
+    }
+    return layer;
+}
+
+- (CGContextRef)getLayerContext
+{
+   if ( !layerContext ) 
+      layerContext = CGLayerGetContext([self getLayer]);
+   
+   return layerContext; 
+}
+
 - (void)drawRect:(NSRect)rect
 {
-    NSGraphicsContext *context = [NSGraphicsContext currentContext];
-    [context setShouldAntialias:antialias];
-
     id data;
     NSEnumerator *e = [drawData objectEnumerator];
-    while ((data = [e nextObject]))
-        [self batchDrawData:data];
+    NSGraphicsContext *context = [NSGraphicsContext currentContext];
 
+    while ((data = [e nextObject]))
+       [self batchDrawData:data context:[self getLayerContext]];
     [drawData removeAllObjects];
+
+    CGLayerRef l = [self getLayer];
+    
+    /* during a live resize, we will have around a stale layer until the 
+     * refresh messages travel back from the vim process.  we push the old
+     * layer in at an offset to get rid of jitter due to lines changing position.  */
+   
+    CGSize layerSize = CGLayerGetSize(l);
+    CGSize frameSize = [self frame].size;
+    NSRect drawRect = NSMakeRect(0, frameSize.height - layerSize.height, layerSize.width, layerSize.height);
+    
+    CGContextDrawLayerInRect([context graphicsPort], drawRect, l); 
+
 }
 
 - (void)performBatchDrawWithData:(NSData *)data
@@ -846,13 +886,13 @@ defaultAdvanceForFont(NSFont *font)
 
 #define MM_DEBUG_DRAWING 0
 
-- (void)batchDrawData:(NSData *)data
+- (void)batchDrawData:(NSData *)data context:(CGContextRef)context
 {
     const void *bytes = [data bytes];
     const void *end = bytes + [data length];
 
 #if MM_DEBUG_DRAWING
-    ASLogNotice(@"====> BEGIN %s", _cmd);
+    ASLogNotice(@"====> BEGIN");
 #endif
     // TODO: Sanity check input
 
@@ -863,7 +903,7 @@ defaultAdvanceForFont(NSFont *font)
 #if MM_DEBUG_DRAWING
             ASLogNotice(@"   Clear all");
 #endif
-            [self clearAll];
+            context = [self clearAll:context];
         } else if (ClearBlockDrawType == type) {
             unsigned color = *((unsigned*)bytes);  bytes += sizeof(unsigned);
             int row1 = *((int*)bytes);  bytes += sizeof(int);
@@ -877,7 +917,7 @@ defaultAdvanceForFont(NSFont *font)
 #endif
             [self clearBlockFromRow:row1 column:col1
                     toRow:row2 column:col2
-                    color:color];
+                    color:color context:context];
         } else if (DeleteLinesDrawType == type) {
             unsigned color = *((unsigned*)bytes);  bytes += sizeof(unsigned);
             int row = *((int*)bytes);  bytes += sizeof(int);
@@ -891,7 +931,7 @@ defaultAdvanceForFont(NSFont *font)
 #endif
             [self deleteLinesFromRow:row lineCount:count
                     scrollBottom:bot left:left right:right
-                           color:color];
+                           color:color context:context];
         } else if (DrawSignDrawType == type) {
             int strSize = *((int*)bytes);  bytes += sizeof(int);
             NSString *imgName =
@@ -944,7 +984,9 @@ defaultAdvanceForFont(NSFont *font)
                 unichars = buffer;
             }
 
-            [self drawString:unichars length:unilength
+            [self drawString:unichars 
+                     context:context
+                      length:unilength
                        atRow:row column:col cells:cells
                               withFlags:flags
                         foregroundColor:fg
@@ -969,7 +1011,7 @@ defaultAdvanceForFont(NSFont *font)
 #endif
             [self insertLinesAtRow:row lineCount:count
                              scrollBottom:bot left:left right:right
-                                    color:color];
+                                    color:color context:context];
         } else if (DrawCursorDrawType == type) {
             unsigned color = *((unsigned*)bytes);  bytes += sizeof(unsigned);
             int row = *((int*)bytes);  bytes += sizeof(int);
@@ -982,7 +1024,8 @@ defaultAdvanceForFont(NSFont *font)
 #endif
             [self drawInsertionPointAtRow:row column:col shape:shape
                                      fraction:percent
-                                        color:color];
+                                        color:color
+                                      context:context];
         } else if (DrawInvertedRectDrawType == type) {
             int row = *((int*)bytes);  bytes += sizeof(int);
             int col = *((int*)bytes);  bytes += sizeof(int);
@@ -995,7 +1038,7 @@ defaultAdvanceForFont(NSFont *font)
                    "ncols=%d", row, col, nr, nc);
 #endif
             [self drawInvertedRectAtRow:row column:col numRows:nr
-                             numColumns:nc];
+                             numColumns:nc context:context];
         } else if (SetCursorPosDrawType == type) {
             // TODO: This is used for Voice Over support in MMTextView,
             // MMCoreTextView currently does not support Voice Over.
@@ -1013,7 +1056,7 @@ defaultAdvanceForFont(NSFont *font)
     }
 
 #if MM_DEBUG_DRAWING
-    ASLogNotice(@"<==== END   %s", _cmd);
+    ASLogNotice(@"<==== END");
 #endif
 }
 
@@ -1289,12 +1332,13 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
     }
 }
 
-- (void)drawString:(const UniChar *)chars length:(UniCharCount)length
+- (void)drawString:(const UniChar *)chars
+           context:(CGContextRef)context
+            length:(UniCharCount)length
              atRow:(int)row column:(int)col cells:(int)cells
          withFlags:(int)flags foregroundColor:(int)fg
    backgroundColor:(int)bg specialColor:(int)sp
 {
-    CGContextRef context = [[NSGraphicsContext currentContext] graphicsPort];
     NSRect frame = [self bounds];
     float x = col*cellSize.width + insetSize.width;
     float y = frame.size.height - insetSize.height - (1+row)*cellSize.height;
@@ -1410,15 +1454,29 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
     CGContextRestoreGState(context);
 }
 
-- (void)scrollRect:(NSRect)rect lineCount:(int)count
+- (void)scrollRect:(NSRect)rect lineCount:(int)count context:(CGContextRef)context
 {
-    NSSize delta={0, -count * cellSize.height};
-    [self scrollRect:rect by:delta];
+    int yOffset = count * cellSize.height;
+    NSRect clipRect = rect;
+    clipRect.origin.y -= yOffset;
+
+    /* clone layer */
+    CGLayerRef scrollLayer = CGLayerCreateWithContext(context, [self frame].size, NULL);
+    CGContextRef scrollContext = CGLayerGetContext(scrollLayer);
+    CGContextDrawLayerAtPoint(scrollContext, CGPointMake(0, 0), [self getLayer]);
+   
+    /* now copy entire layer back to clipped original at offset. */
+    CGContextSaveGState(context);
+    CGContextClipToRect(context, clipRect);
+    CGContextDrawLayerAtPoint(context, CGPointMake(0, -yOffset), scrollLayer);
+    CGContextRestoreGState(context);
+
+    CGLayerRelease(scrollLayer);
 }
 
 - (void)deleteLinesFromRow:(int)row lineCount:(int)count
               scrollBottom:(int)bottom left:(int)left right:(int)right
-                     color:(int)color
+                     color:(int)color context:(CGContextRef)context
 {
     NSRect rect = [self rectFromRow:row + count
                              column:left
@@ -1426,17 +1484,18 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
                              column:right];
 
     // move rect up for count lines
-    [self scrollRect:rect lineCount:-count];
+    [self scrollRect:rect lineCount:-count context:context];
     [self clearBlockFromRow:bottom - count + 1
                      column:left
                       toRow:bottom
                      column:right
-                      color:color];
+                      color:color
+                    context:context];
 }
 
 - (void)insertLinesAtRow:(int)row lineCount:(int)count
             scrollBottom:(int)bottom left:(int)left right:(int)right
-                   color:(int)color
+                   color:(int)color context:(CGContextRef)context
 {
     NSRect rect = [self rectFromRow:row
                              column:left
@@ -1444,18 +1503,18 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
                              column:right];
 
     // move rect down for count lines
-    [self scrollRect:rect lineCount:count];
+    [self scrollRect:rect lineCount:count context:context];
     [self clearBlockFromRow:row
                      column:left
                       toRow:row + count - 1
                      column:right
-                      color:color];
+                      color:color
+                    context:context];
 }
 
 - (void)clearBlockFromRow:(int)row1 column:(int)col1 toRow:(int)row2
-                   column:(int)col2 color:(int)color
+                   column:(int)col2 color:(int)color context:(CGContextRef)context
 {
-    CGContextRef context = [[NSGraphicsContext currentContext] graphicsPort];
     NSRect rect = [self rectFromRow:row1 column:col1 toRow:row2 column:col2];
 
     CGContextSetRGBFillColor(context, RED(color), GREEN(color), BLUE(color),
@@ -1466,25 +1525,27 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
     CGContextSetBlendMode(context, kCGBlendModeNormal);
 }
 
-- (void)clearAll
+- (CGContextRef)clearAll:(CGContextRef)context
 {
-    CGContextRef context = [[NSGraphicsContext currentContext] graphicsPort];
     NSRect rect = [self bounds];
     float r = [defaultBackgroundColor redComponent];
     float g = [defaultBackgroundColor greenComponent];
     float b = [defaultBackgroundColor blueComponent];
     float a = [defaultBackgroundColor alphaComponent];
 
+    [self releaseLayer];
+    context = CGLayerGetContext([self getLayer]);
+
     CGContextSetBlendMode(context, kCGBlendModeCopy);
     CGContextSetRGBFillColor(context, r, g, b, a);
     CGContextFillRect(context, *(CGRect*)&rect);
     CGContextSetBlendMode(context, kCGBlendModeNormal);
+    return context;
 }
 
 - (void)drawInsertionPointAtRow:(int)row column:(int)col shape:(int)shape
-                       fraction:(int)percent color:(int)color
+                       fraction:(int)percent color:(int)color context:(CGContextRef)context
 {
-    CGContextRef context = [[NSGraphicsContext currentContext] graphicsPort];
     NSRect rect = [self rectForRow:row column:col numRows:1 numColumns:1];
 
     CGContextSaveGState(context);
@@ -1530,10 +1591,9 @@ recurseDraw(const unichar *chars, CGGlyph *glyphs, CGPoint *positions,
 }
 
 - (void)drawInvertedRectAtRow:(int)row column:(int)col numRows:(int)nrows
-                   numColumns:(int)ncols
+                   numColumns:(int)ncols context:(CGContextRef)cgctx
 {
     // TODO: THIS CODE HAS NOT BEEN TESTED!
-    CGContextRef cgctx = [[NSGraphicsContext currentContext] graphicsPort];
     CGContextSaveGState(cgctx);
     CGContextSetBlendMode(cgctx, kCGBlendModeDifference);
     CGContextSetRGBFillColor(cgctx, 1.0, 1.0, 1.0, 1.0);
