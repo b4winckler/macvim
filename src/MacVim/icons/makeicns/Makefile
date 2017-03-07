@@ -1,4 +1,4 @@
-CFLAGS = -fpascal-strings -O2
+CFLAGS = -fpascal-strings -O2 -Wno-deprecated-declarations -Wno-format
 
 .PHONY: clean dist
 
