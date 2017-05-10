@@ -228,6 +228,13 @@ KeyboardInputSourcesEqual(TISInputSourceRef a, TISInputSourceRef b)
         // automatically, hence the explicit unmarkText: call here.
         [self unmarkText];
     }
+    if (!imControl) {
+        // We got called by Cocoa, but we really don't have a reason to be here, because we are
+        // not an input method, so just go the normal key route. This can happen at least with the
+        // Dvorak-Qwerty CMD layout, and likely others.
+        interpretKeyEventsSwallowedKey = NO;
+        return;
+    }
 
     // NOTE: 'string' is either an NSString or an NSAttributedString.  Since we
     // do not support attributes, simply pass the corresponding NSString in the
