@@ -24,7 +24,7 @@ all: make_icons.py vim-noshadow-512.png loadfont.so
 	/usr/bin/python make_icons.py "$(OUTDIR)"
 
 loadfont.so: loadfont.c
-	/usr/bin/python setup.py install --install-lib .
+	ARCHFLAGS='-arch x86_64 -arch i386' /usr/bin/python setup.py install --install-lib .
 
 getenvy: Envy\ Code\ R\ Bold.ttf
 
