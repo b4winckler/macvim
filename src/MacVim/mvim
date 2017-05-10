@@ -57,7 +57,6 @@ case "$name" in
 		;;
 esac
 
-# Last step:  fire up vim.
 # The program should fork by default when started in GUI mode, but it does
 # not; we work around this when this script is invoked as "gvim" or "rgview"
 # etc., but not when it is invoked as "vim -g".
@@ -66,7 +65,15 @@ if [ "$gui" ]; then
 	# terminal instead of the console log.
 	# But if you use open instead, you will need to fully qualify the
 	# path names for any filenames you specify, which is hard.
-	exec "$binary" -g $opts ${1:+"$@"}
-else
-	exec "$binary" $opts ${1:+"$@"}
+	opts="-g $opts"
 fi
+
+args=${1:+"$@"}
+if [ -z "$args" -a "$(tty)" == 'not a tty' ]
+then
+	# If no arguments were supplied, read from stdin. This allows you to do things like git diff | mvimdiff
+	args="-"
+fi
+
+# Last step:  fire up vim.
+exec "$binary" $opts $args
