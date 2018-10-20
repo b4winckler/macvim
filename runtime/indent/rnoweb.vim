@@ -1,7 +1,8 @@
 " Vim indent file
 " Language:	Rnoweb
 " Author:	Jakson Alves de Aquino <jalvesaq@gmail.com>
-" Last Change:	Wed Jul 09, 2014  07:28PM
+" Homepage:     https://github.com/jalvesaq/R-Vim-runtime
+" Last Change:	Fri Apr 15, 2016  10:58PM
 
 
 " Only load this indent file when no other was loaded.
@@ -9,7 +10,17 @@ if exists("b:did_indent")
   finish
 endif
 runtime indent/tex.vim
-let s:TeXIndent = function(substitute(&indentexpr, "()", "", ""))
+
+function! s:NoTeXIndent()
+  return indent(line("."))
+endfunction
+
+if &indentexpr == "" || &indentexpr == "GetRnowebIndent()"
+  let s:TeXIndent = function("s:NoTeXIndent")
+else
+  let s:TeXIndent = function(substitute(&indentexpr, "()", "", ""))
+endif
+
 unlet b:did_indent
 runtime indent/r.vim
 let s:RIndent = function(substitute(&indentexpr, "()", "", ""))
@@ -23,7 +34,8 @@ if exists("*GetRnowebIndent")
 endif
 
 function GetRnowebIndent()
-  if getline(".") =~ "^<<.*>>=$"
+  let curline = getline(".")
+  if curline =~ '^<<.*>>=$' || curline =~ '^\s*@$'
     return 0
   endif
   if search("^<<", "bncW") > search("^@", "bncW")

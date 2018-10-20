@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved	by Bram Moolenaar
  *
@@ -8,49 +8,58 @@
 
 /*
  * macros.h: macro definitions for often used code
+ *
+ * Macros should be ALL_CAPS.  An exception is for where a function is
+ * replaced and an argument is not used more than once.
  */
 
 /*
- * pchar(lp, c) - put character 'c' at position 'lp'
+ * PCHAR(lp, c) - put character 'c' at position 'lp'
  */
-#define pchar(lp, c) (*(ml_get_buf(curbuf, (lp).lnum, TRUE) + (lp).col) = (c))
+#define PCHAR(lp, c) (*(ml_get_buf(curbuf, (lp).lnum, TRUE) + (lp).col) = (c))
 
 /*
  * Position comparisons
  */
 #ifdef FEAT_VIRTUALEDIT
-# define lt(a, b) (((a).lnum != (b).lnum) \
+# define LT_POS(a, b) (((a).lnum != (b).lnum) \
 		   ? (a).lnum < (b).lnum \
 		   : (a).col != (b).col \
 		       ? (a).col < (b).col \
 		       : (a).coladd < (b).coladd)
-# define ltp(a, b) (((a)->lnum != (b)->lnum) \
+# define LT_POSP(a, b) (((a)->lnum != (b)->lnum) \
 		   ? (a)->lnum < (b)->lnum \
 		   : (a)->col != (b)->col \
 		       ? (a)->col < (b)->col \
 		       : (a)->coladd < (b)->coladd)
-# define equalpos(a, b) (((a).lnum == (b).lnum) && ((a).col == (b).col) && ((a).coladd == (b).coladd))
-# define clearpos(a) {(a)->lnum = 0; (a)->col = 0; (a)->coladd = 0;}
+# define EQUAL_POS(a, b) (((a).lnum == (b).lnum) && ((a).col == (b).col) && ((a).coladd == (b).coladd))
+# define CLEAR_POS(a) {(a)->lnum = 0; (a)->col = 0; (a)->coladd = 0;}
 #else
-# define lt(a, b) (((a).lnum != (b).lnum) \
+# define LT_POS(a, b) (((a).lnum != (b).lnum) \
 		   ? ((a).lnum < (b).lnum) : ((a).col < (b).col))
-# define ltp(a, b) (((a)->lnum != (b)->lnum) \
+# define LT_POSP(a, b) (((a)->lnum != (b)->lnum) \
 		   ? ((a)->lnum < (b)->lnum) : ((a)->col < (b)->col))
-# define equalpos(a, b) (((a).lnum == (b).lnum) && ((a).col == (b).col))
-# define clearpos(a) {(a)->lnum = 0; (a)->col = 0;}
+# define EQUAL_POS(a, b) (((a).lnum == (b).lnum) && ((a).col == (b).col))
+# define CLEAR_POS(a) {(a)->lnum = 0; (a)->col = 0;}
 #endif
 
-#define ltoreq(a, b) (lt(a, b) || equalpos(a, b))
+#define LTOREQ_POS(a, b) (LT_POS(a, b) || EQUAL_POS(a, b))
 
 /*
- * lineempty() - return TRUE if the line is empty
+ * VIM_ISWHITE() is used for "^" and the like. It differs from isspace()
+ * because it doesn't include <CR> and <LF> and the like.
  */
-#define lineempty(p) (*ml_get(p) == NUL)
+#define VIM_ISWHITE(x)	((x) == ' ' || (x) == '\t')
 
 /*
- * bufempty() - return TRUE if the current buffer is empty
+ * LINEEMPTY() - return TRUE if the line is empty
  */
-#define bufempty() (curbuf->b_ml.ml_line_count == 1 && *ml_get((linenr_T)1) == NUL)
+#define LINEEMPTY(p) (*ml_get(p) == NUL)
+
+/*
+ * BUFEMPTY() - return TRUE if the current buffer is empty
+ */
+#define BUFEMPTY() (curbuf->b_ml.ml_line_count == 1 && *ml_get((linenr_T)1) == NUL)
 
 /*
  * toupper() and tolower() that use the current locale.
@@ -118,23 +127,26 @@
 # define ASCII_ISALNUM(c) (ASCII_ISALPHA(c) || VIM_ISDIGIT(c))
 #endif
 
-/* macro version of chartab().
- * Only works with values 0-255!
- * Doesn't work for UTF-8 mode with chars >= 0x80. */
-#define CHARSIZE(c)	(chartab[c] & CT_CELL_MASK)
+/* Returns empty string if it is NULL. */
+#define EMPTY_IF_NULL(x) ((x) ? (x) : (char_u *)"")
 
 #ifdef FEAT_LANGMAP
 /*
  * Adjust chars in a language according to 'langmap' option.
  * NOTE that there is no noticeable overhead if 'langmap' is not set.
  * When set the overhead for characters < 256 is small.
- * Don't apply 'langmap' if the character comes from the Stuff buffer.
+ * Don't apply 'langmap' if the character comes from the Stuff buffer or from
+ * a mapping and the langnoremap option was set.
  * The do-while is just to ignore a ';' after the macro.
  */
 # ifdef FEAT_MBYTE
 #  define LANGMAP_ADJUST(c, condition) \
     do { \
-	if (*p_langmap && (condition) && !KeyStuffed && (c) >= 0) \
+	if (*p_langmap \
+		&& (condition) \
+		&& (p_lrm || (!p_lrm && KeyTyped)) \
+		&& !KeyStuffed \
+		&& (c) >= 0) \
 	{ \
 	    if ((c) < 256) \
 		c = langmap_mapchar[c]; \
@@ -145,7 +157,11 @@
 # else
 #  define LANGMAP_ADJUST(c, condition) \
     do { \
-	if (*p_langmap && (condition) && !KeyStuffed && (c) >= 0 && (c) < 256) \
+	if (*p_langmap \
+		&& (condition) \
+		&& (p_lrm || (!p_lrm && KeyTyped)) \
+		&& !KeyStuffed \
+		&& (c) >= 0 && (c) < 256) \
 	    c = langmap_mapchar[c]; \
     } while (0)
 # endif
@@ -154,10 +170,10 @@
 #endif
 
 /*
- * vim_isbreak() is used very often if 'linebreak' is set, use a macro to make
- * it work fast.
+ * VIM_ISBREAK() is used very often if 'linebreak' is set, use a macro to make
+ * it work fast.  Only works for single byte characters!
  */
-#define vim_isbreak(c) (breakat_flags[(char_u)(c)])
+#define VIM_ISBREAK(c) ((c) < 256 && breakat_flags[(char_u)(c)])
 
 /*
  * On VMS file names are different and require a translation.
@@ -170,6 +186,7 @@
 # define mch_fstat(n, p)	fstat(vms_fixfilename(n), (p))
 	/* VMS does not have lstat() */
 # define mch_stat(n, p)		stat(vms_fixfilename(n), (p))
+# define mch_rmdir(n)		rmdir(vms_fixfilename(n))
 #else
 # ifndef WIN32
 #   define mch_access(n, p)	access((n), (p))
@@ -182,9 +199,7 @@
 #  define mch_stat(n, p)	vim_stat((n), (p))
 # else
 #  ifdef STAT_IGNORES_SLASH
-    /* On Solaris stat() accepts "file/" as if it was "file".  Return -1 if
-     * the name ends in "/" and it's not a directory. */
-#   define mch_stat(n, p)	(illegal_slash(n) ? -1 : stat((n), (p)))
+#   define mch_stat(n, p)	vim_stat((n), (p))
 #  else
 #   define mch_stat(n, p)	stat((n), (p))
 #  endif
@@ -219,7 +234,7 @@
 #if defined(UNIX) || defined(VMS)  /* open in rw------- mode */
 # define mch_open_rw(n, f)	mch_open((n), (f), (mode_t)0600)
 #else
-# if defined(MSDOS) || defined(MSWIN) || defined(OS2)  /* open read/write */
+# if defined(MSWIN)  /* open read/write */
 #  define mch_open_rw(n, f)	mch_open((n), (f), S_IREAD | S_IWRITE)
 # else
 #  define mch_open_rw(n, f)	mch_open((n), (f), 0)
@@ -250,24 +265,24 @@
 #endif
 
 /*
- * mb_ptr_adv(): advance a pointer to the next character, taking care of
+ * MB_PTR_ADV(): advance a pointer to the next character, taking care of
  * multi-byte characters if needed.
- * mb_ptr_back(): backup a pointer to the previous character, taking care of
+ * MB_PTR_BACK(): backup a pointer to the previous character, taking care of
  * multi-byte characters if needed.
  * MB_COPY_CHAR(f, t): copy one char from "f" to "t" and advance the pointers.
  * PTR2CHAR(): get character from pointer.
  */
 #ifdef FEAT_MBYTE
 /* Get the length of the character p points to */
-# define MB_PTR2LEN(p)		(has_mbyte ? (*mb_ptr2len)(p) : 1)
+# define MB_PTR2LEN(p)	    (has_mbyte ? (*mb_ptr2len)(p) : 1)
 /* Advance multi-byte pointer, skip over composing chars. */
-# define mb_ptr_adv(p)	    p += has_mbyte ? (*mb_ptr2len)(p) : 1
+# define MB_PTR_ADV(p)	    p += has_mbyte ? (*mb_ptr2len)(p) : 1
 /* Advance multi-byte pointer, do not skip over composing chars. */
-# define mb_cptr_adv(p)	    p += enc_utf8 ? utf_ptr2len(p) : has_mbyte ? (*mb_ptr2len)(p) : 1
+# define MB_CPTR_ADV(p)	    p += enc_utf8 ? utf_ptr2len(p) : has_mbyte ? (*mb_ptr2len)(p) : 1
 /* Backup multi-byte pointer. Only use with "p" > "s" ! */
-# define mb_ptr_back(s, p)  p -= has_mbyte ? ((*mb_head_off)(s, p - 1) + 1) : 1
+# define MB_PTR_BACK(s, p)  p -= has_mbyte ? ((*mb_head_off)(s, p - 1) + 1) : 1
 /* get length of multi-byte char, not including composing chars */
-# define mb_cptr2len(p)	    (enc_utf8 ? utf_ptr2len(p) : (*mb_ptr2len)(p))
+# define MB_CPTR2LEN(p)	    (enc_utf8 ? utf_ptr2len(p) : (*mb_ptr2len)(p))
 
 # define MB_COPY_CHAR(f, t) if (has_mbyte) mb_copy_char(&f, &t); else *t++ = *f++
 # define MB_CHARLEN(p)	    (has_mbyte ? mb_charlen(p) : (int)STRLEN(p))
@@ -275,9 +290,10 @@
 # define PTR2CHAR(p)	    (has_mbyte ? mb_ptr2char(p) : (int)*(p))
 #else
 # define MB_PTR2LEN(p)		1
-# define mb_ptr_adv(p)		++p
-# define mb_cptr_adv(p)		++p
-# define mb_ptr_back(s, p)	--p
+# define MB_CPTR2LEN(p)		1
+# define MB_PTR_ADV(p)		++p
+# define MB_CPTR_ADV(p)		++p
+# define MB_PTR_BACK(s, p)	--p
 # define MB_COPY_CHAR(f, t)	*t++ = *f++
 # define MB_CHARLEN(p)		STRLEN(p)
 # define MB_CHAR2LEN(c)		1
@@ -303,3 +319,64 @@
 #  endif
 # endif
 #endif
+
+#ifdef FEAT_DIFF
+# define PLINES_NOFILL(x) plines_nofill(x)
+#else
+# define PLINES_NOFILL(x) plines(x)
+#endif
+
+#if defined(FEAT_JOB_CHANNEL) || defined(FEAT_CLIENTSERVER)
+# define MESSAGE_QUEUE
+#endif
+
+#if defined(FEAT_EVAL) && defined(FEAT_FLOAT)
+# include <float.h>
+# if defined(HAVE_MATH_H)
+   /* for isnan() and isinf() */
+#  include <math.h>
+# endif
+# ifdef USING_FLOAT_STUFF
+#  if defined(WIN32)
+#   ifndef isnan
+#    define isnan(x) _isnan(x)
+     static __inline int isinf(double x) { return !_finite(x) && !_isnan(x); }
+#   endif
+#  else
+#   ifndef HAVE_ISNAN
+     static inline int isnan(double x) { return x != x; }
+#   endif
+#   ifndef HAVE_ISINF
+     static inline int isinf(double x) { return !isnan(x) && isnan(x - x); }
+#   endif
+#  endif
+#  if !defined(INFINITY)
+#   if defined(DBL_MAX)
+#    ifdef VMS
+#     define INFINITY DBL_MAX
+#    else
+#     define INFINITY (DBL_MAX+DBL_MAX)
+#    endif
+#   else
+#    define INFINITY (1.0 / 0.0)
+#   endif
+#  endif
+#  if !defined(NAN)
+#   define NAN (INFINITY-INFINITY)
+#  endif
+#  if !defined(DBL_EPSILON)
+#   define DBL_EPSILON 2.2204460492503131e-16
+#  endif
+# endif
+#endif
+
+/*
+ * In a hashtab item "hi_key" points to "di_key" in a dictitem.
+ * This avoids adding a pointer to the hashtab item.
+ * DI2HIKEY() converts a dictitem pointer to a hashitem key pointer.
+ * HIKEY2DI() converts a hashitem key pointer to a dictitem pointer.
+ * HI2DI() converts a hashitem pointer to a dictitem pointer.
+ */
+# define DI2HIKEY(di) ((di)->di_key)
+# define HIKEY2DI(p)  ((dictitem_T *)(p - offsetof(dictitem_T, di_key)))
+# define HI2DI(hi)     HIKEY2DI((hi)->hi_key)

@@ -1,4 +1,4 @@
-*motion.txt*    For Vim version 7.4.  Last change: 2014 Feb 11
+*motion.txt*    For Vim version 8.0.  Last change: 2017 Mar 12
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -172,6 +172,8 @@ CTRL-H		or					*CTRL-H* *<BS>*
 l		or					*l*
 <Right>		or					*<Right>* *<Space>*
 <Space>			[count] characters to the right.  |exclusive| motion.
+			See the 'whichwrap' option for adjusting the behavior
+			at end of line
 
 							*0*
 0			To the first character of the line.  |exclusive|
@@ -191,7 +193,7 @@ l		or					*l*
 
 							*$* *<End>* *<kEnd>*
 $  or <End>		To the end of the line.  When a count is given also go
-			[count - 1] lines downward |inclusive|.
+			[count - 1] lines downward. |inclusive| motion.
 			In Visual mode the cursor goes to just after the last
 			character in the line.
 			When 'virtualedit' is active, "$" may move the cursor
@@ -584,7 +586,7 @@ i[			"inner [] block", select [count] '[' ']' blocks.  This
 			When used in Visual mode it is made characterwise.
 
 a)							*v_a)* *a)* *a(*
-a(							*v_ab* *v_a(* *ab*
+a(							*vab* *v_ab* *v_a(* *ab*
 ab			"a block", select [count] blocks, from "[count] [(" to
 			the matching ')', including the '(' and ')' (see
 			|[(|).  Does not include white space outside of the
@@ -592,7 +594,7 @@ ab			"a block", select [count] blocks, from "[count] [(" to
 			When used in Visual mode it is made characterwise.
 
 i)							*v_i)* *i)* *i(*
-i(							*v_ib* *v_i(* *ib*
+i(							*vib* *v_ib* *v_i(* *ib*
 ib			"inner block", select [count] blocks, from "[count] [("
 			to the matching ')', excluding the '(' and ')' (see
 			|[(|).
@@ -913,6 +915,7 @@ was made yet in the current file.
 			then the position can be near the end of what the
 			command changed.  For example when inserting a word,
 			the position will be on the last character.
+			To jump to older changes use |g;|.
 			{not in Vi}
 
 							*'(* *`(*
@@ -1025,7 +1028,8 @@ unless the line containing that position was changed or deleted.
 
 							*CTRL-O*
 CTRL-O			Go to [count] Older cursor position in jump list
-			(not a motion command).  {not in Vi}
+			(not a motion command).
+			{not in Vi}
 			{not available without the |+jumplist| feature}
 
 <Tab>		or					*CTRL-I* *<Tab>*
@@ -1035,8 +1039,14 @@ CTRL-I			Go to [count] newer cursor position in jump list
 			{not available without the |+jumplist| feature}
 
 							*:ju* *:jumps*
-:ju[mps]		Print the jump list (not a motion command).  {not in
-			Vi} {not available without the |+jumplist| feature}
+:ju[mps]		Print the jump list (not a motion command).
+			{not in Vi}
+			{not available without the |+jumplist| feature}
+
+							*:cle* *:clearjumps*
+:cle[arjumps]		Clear the jump list of the current window.
+			{not in Vi}
+			{not available without the |+jumplist| feature}
 
 							*jumplist*
 Jumps are remembered in a jump list.  With the CTRL-O and CTRL-I command you

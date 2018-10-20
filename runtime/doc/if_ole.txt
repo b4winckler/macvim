@@ -1,4 +1,4 @@
-*if_ole.txt*    For Vim version 7.4.  Last change: 2008 Aug 16
+*if_ole.txt*    For Vim version 8.0.  Last change: 2008 Aug 16
 
 
 		  VIM REFERENCE MANUAL    by Paul Moore
@@ -41,9 +41,9 @@ instance), code similar to the following should be used:
 	$vim = new Win32::OLE 'Vim.Application';
 
 [C#] >
-        // Add a reference to VIM in your project. 
+        // Add a reference to Vim in your project. 
         // Choose the COM tab.
-        // Select "VIM Ole Interface 1.1 Type Library"
+        // Select "Vim Ole Interface 1.1 Type Library"
 	Vim.Vim vimobj = new Vim.Vim();
 
 Vim does not support acting as a "hidden" OLE server, like some other OLE
@@ -197,7 +197,7 @@ files in it.
 --remote-silent "+call cursor(10, 27)"
 	      - Places the cursor on line 10 column 27
 In Vim >
-   :h --remote-silent for mor details
+   :h --remote-silent for more details
 
 [.Net remarks provided by Dave Fishburn and Brian Sturk]
 

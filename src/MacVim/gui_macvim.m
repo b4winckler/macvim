@@ -36,6 +36,7 @@ static int MMDefaultFontSize       = 11;
 static int MMMinFontSize           = 6;
 static int MMMaxFontSize           = 100;
 
+static BOOL MMShareFindPboard      = YES;
 
 static GuiFont gui_macvim_font_with_name(char_u *name);
 static int specialKeyToNSKey(int key);
@@ -176,6 +177,20 @@ gui_macvim_after_fork_init()
     val = CFPreferencesGetAppIntegerValue((CFStringRef)MMRendererKey,
                                             kCFPreferencesCurrentApplication,
                                             &keyValid);
+    if (!keyValid) {
+        // If MMRendererKey is not valid in the defaults, it means MacVim uses
+        // the Core Text Renderer.
+        keyValid = YES;
+        val = MMRendererCoreText;
+    }
+    if (val != MMRendererDefault && val != MMRendererCoreText) {
+        // Migrate from the old value to the Core Text Renderer.
+        val = MMRendererCoreText;
+        CFPreferencesSetAppValue((CFStringRef)MMRendererKey,
+                                (CFPropertyListRef)[NSNumber numberWithInt:val],
+                                kCFPreferencesCurrentApplication);
+        CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication);
+    }
     if (keyValid) {
         ASLogInfo(@"Use renderer=%ld", val);
         use_gui_macvim_draw_string = (val != MMRendererCoreText);
@@ -183,6 +198,15 @@ gui_macvim_after_fork_init()
         // For now only the Core Text renderer knows how to render graphical
         // signs.
         use_graphical_sign = (val == MMRendererCoreText);
+    }
+
+    // Check to use the Find Pasteboard.
+    MMShareFindPboard = CFPreferencesGetAppBooleanValue((CFStringRef)MMShareFindPboardKey,
+                                                        kCFPreferencesCurrentApplication,
+                                                        &keyValid);
+    if (!keyValid) {
+        // Share text via the Find Pasteboard by default.
+        MMShareFindPboard = YES;
     }
 }
 
@@ -238,6 +262,7 @@ gui_mch_init(void)
     // Ensure 'linespace' option is passed along to MacVim in case it was set
     // in [g]vimrc.
     gui_mch_adjust_charheight();
+    gui_mch_adjust_charwidth();
 
     if (!MMNoMRU && GARGCOUNT > 0) {
         // Add files passed on command line to MRU.
@@ -392,9 +417,8 @@ gui_mch_wait_for_chars(int wtime)
     // called, so force a flush of the command queue here.
     [[MMBackend sharedInstance] flushQueue:YES];
 
-#if defined(FEAT_NETBEANS_INTG)
-    /* Process any queued netbeans messages. */
-    netbeans_parse_messages();
+#ifdef MESSAGE_QUEUE
+    parse_queued_messages();
 #endif
 
     return [[MMBackend sharedInstance] waitForInput:wtime];
@@ -1184,6 +1208,20 @@ gui_mch_draw_part_cursor(int w, int h, guicolor_T color)
 }
 
 
+    int
+gui_mch_is_blinking(void)
+{
+    return FALSE;
+}
+
+
+    int
+gui_mch_is_blink_off(void)
+{
+    return FALSE;
+}
+
+
 /*
  * Cursor blink functions.
  *
@@ -1378,6 +1416,17 @@ gui_mch_adjust_charheight(void)
 }
 
 
+/*
+ * Adjust gui.char_width (after 'columnspace' was changed).
+ */
+    int
+gui_mch_adjust_charwidth(void)
+{
+    [[MMBackend sharedInstance] adjustColumnspace:p_columnspace];
+    return OK;
+}
+
+
     void
 gui_mch_beep(void)
 {
@@ -1480,9 +1529,9 @@ gui_mch_dialog(
     // Ensure no data is on the output queue before presenting the dialog.
     gui_macvim_force_flush();
 
-    int style = NSInformationalAlertStyle;
-    if (VIM_WARNING == type) style = NSWarningAlertStyle;
-    else if (VIM_ERROR == type) style = NSCriticalAlertStyle;
+    int style = NSAlertStyleInformational;
+    if (VIM_WARNING == type) style = NSAlertStyleWarning;
+    else if (VIM_ERROR == type) style = NSAlertStyleCritical;
 
     NSMutableDictionary *attr = [NSMutableDictionary
                         dictionaryWithObject:[NSNumber numberWithInt:style]
@@ -1549,6 +1598,9 @@ gui_mch_flash(int msec)
     guicolor_T
 gui_mch_get_color(char_u *name)
 {
+    if (![MMBackend sharedInstance])
+	return INVALCOLOR;
+
 #ifdef FEAT_MBYTE
     name = CONVERT_TO_UTF8(name);
 #endif
@@ -1567,7 +1619,7 @@ gui_mch_get_color(char_u *name)
 /*
  * Return the RGB value of a pixel as long.
  */
-    long_u
+    guicolor_T
 gui_mch_get_rgb(guicolor_T pixel)
 {
     // This is only implemented so that vim can guess the correct value for
@@ -1774,7 +1826,8 @@ gui_macvim_add_to_find_pboard(char_u *pat)
     // The second entry will be used by other applications when taking entries
     // off the Find pasteboard, whereas MacVim will use the first if present.
     [pb setString:s forType:VimFindPboardType];
-    [pb setString:[s stringByRemovingFindPatterns] forType:NSStringPboardType];
+    if (MMShareFindPboard)
+        [pb setString:[s stringByRemovingFindPatterns] forType:NSStringPboardType];
 }
 
     void
@@ -1783,6 +1836,16 @@ gui_macvim_set_antialias(int antialias)
     [[MMBackend sharedInstance] setAntialias:antialias];
 }
 
+    void
+gui_macvim_set_ligatures(int ligatures)
+{
+    [[MMBackend sharedInstance] setLigatures:ligatures];
+}
+    void
+gui_macvim_set_thinstrokes(int thinStrokes)
+{
+    [[MMBackend sharedInstance] setThinStrokes:thinStrokes];
+}
 
     void
 gui_macvim_wait_for_startup()
@@ -1857,7 +1920,7 @@ serverRegisterName(char_u *name)
  */
     int
 serverSendToVim(char_u *name, char_u *cmd, char_u **result,
-        int *port, int asExpr, int silent)
+        int *port, int asExpr, int timeout, int silent)
 {
 #ifdef FEAT_MBYTE
     name = CONVERT_TO_UTF8(name);
@@ -2207,31 +2270,43 @@ static int vimModMaskToEventModifierFlags(int mods)
     int flags = 0;
 
     if (mods & MOD_MASK_SHIFT)
-        flags |= NSShiftKeyMask;
+        flags |= NSEventModifierFlagShift;
     if (mods & MOD_MASK_CTRL)
-        flags |= NSControlKeyMask;
+        flags |= NSEventModifierFlagControl;
     if (mods & MOD_MASK_ALT)
-        flags |= NSAlternateKeyMask;
+        flags |= NSEventModifierFlagOption;
     if (mods & MOD_MASK_CMD)
-        flags |= NSCommandKeyMask;
+        flags |= NSEventModifierFlagCommand;
 
     return flags;
 }
 
 
 
-// -- NetBeans Support ------------------------------------------------------
+// -- Channel Support ------------------------------------------------------
 
-#ifdef FEAT_NETBEANS_INTG
-
-/* Set NetBeans socket to CFRunLoop */
-    void
-gui_macvim_set_netbeans_socket(int socket)
+    void *
+gui_macvim_add_channel(channel_T *channel, ch_part_T part)
 {
-    [[MMBackend sharedInstance] setNetbeansSocket:socket];
+    dispatch_source_t s =
+        dispatch_source_create(DISPATCH_SOURCE_TYPE_READ,
+                               channel->ch_part[part].ch_fd,
+                               0,
+                               dispatch_get_main_queue());
+    dispatch_source_set_event_handler(s, ^{
+        channel_read(channel, part, "gui_macvim_add_channel");
+    });
+    dispatch_resume(s);
+    return s;
 }
 
-#endif // FEAT_NETBEANS_INTG
+    void
+gui_macvim_remove_channel(void *cookie)
+{
+    dispatch_source_t s = (dispatch_source_t)cookie;
+    dispatch_source_cancel(s);
+    dispatch_release(s);
+}
 
 
 
@@ -2290,13 +2365,6 @@ gui_mch_destroy_sign(void *sign)
     [imgName release];
 }
 
-# ifdef FEAT_NETBEANS_INTG
-    void
-netbeans_draw_multisign_indicator(int row)
-{
-}
-# endif // FEAT_NETBEANS_INTG
-
 #endif // FEAT_SIGN_ICONS
 
 
@@ -2309,7 +2377,7 @@ netbeans_draw_multisign_indicator(int row)
 gui_mch_create_beval_area(target, mesg, mesgCB, clientData)
     void	*target;
     char_u	*mesg;
-    void	(*mesgCB)__ARGS((BalloonEval *, int));
+    void	(*mesgCB)(BalloonEval *, int);
     void	*clientData;
 {
     BalloonEval	*beval;
@@ -2359,3 +2427,9 @@ gui_mch_post_balloon(beval, mesg)
 }
 
 #endif // FEAT_BEVAL
+
+    void
+gui_macvim_set_blur(int radius)
+{
+    [[MMBackend sharedInstance] setBlurRadius:radius];
+}

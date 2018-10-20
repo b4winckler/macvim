@@ -1,6 +1,7 @@
 /* vim: set cin ts=4 sw=4 : */
 
-Test for 'cindent'
+Test for 'cindent'.
+For new tests, consider putting them in test_cindent.vim.
 
 STARTTEST
 :so small.vim
@@ -464,6 +465,14 @@ label:  if (asdf &&
 	asdfasdf
 }
 
+{
+for ( int i = 0;
+	i < 10; i++ )
+{
+}
+	i = 0;
+}
+
 class bob
 {
 	int foo() {return 1;}
@@ -652,6 +661,13 @@ Constructor::Constructor(int a,
 Constructor::Constructor(int a,
                          int b ) /*x*/ : /*x*/ BaseClass(a),
                                                member(b)
+{
+}
+
+A::A(int a, int b)
+: aa(a),
+bb(b),
+cc(c)
 {
 }
 
@@ -883,10 +899,79 @@ namespace111111111
   111111111111111111;
 }
 
+void getstring() {
+/* Raw strings */
+const char* s = R"(
+  test {
+    # comment
+    field: 123
+  }
+ )";
+     }
+
+void getstring() {
+const char* s = R"foo(
+  test {
+    # comment
+    field: 123
+  }
+    )foo";
+     }
+
+{
+int a[4] = {
+[0] = 0,
+[1] = 1,
+[2] = 2,
+[3] = 3,
+};
+}
+
+{
+a = b[2]
++ 3;
+}
+
+{
+if (1)
+/* aaaaa
+* bbbbb
+*/
+a = 1;
+}
+
+void func()
+{
+switch (foo)
+{
+case (bar):
+if (baz())
+quux();
+break;
+case (shmoo):
+if (!bar)
+{
+}
+case (foo1):
+switch (bar)
+{
+case baz:
+baz_f();
+break;
+}
+break;
+default:
+baz();
+baz();
+break;
+}
+}
+
 /* end of AUTO */
 
 STARTTEST
-:set tw=0 wm=60 columns=80 noai fo=croq
+:set tw=0 noai fo=croq
+:let &wm = &columns - 20
 /serious/e
 a about life, the universe, and the rest
 ENDTEST
@@ -1849,6 +1934,26 @@ namespace test
 {
   111111111111111111;
 }
+namespace test::cpp17
+{
+  111111111111111111;
+}
+namespace ::incorrectcpp17
+{
+  111111111111111111;
+}
+namespace test::incorrectcpp17::
+{
+  111111111111111111;
+}
+namespace test:incorrectcpp17
+{
+  111111111111111111;
+}
+namespace test:::incorrectcpp17
+{
+  111111111111111111;
+}
 namespace{
   111111111111111111;
 }
@@ -2055,6 +2160,183 @@ return true;
 }
 })(jQuery);
 JSEND
+
+STARTTEST
+:set cino=j1,J1,+2
+/^JSSTART
+=/^JSEND
+ENDTEST
+
+JSSTART
+// Results of JavaScript indent
+// 1
+(function(){
+var a = [
+'a',
+'b',
+'c',
+'d',
+'e',
+'f',
+'g',
+'h',
+'i'
+];
+}())
+
+// 2
+(function(){
+var a = [
+0 +
+5 *
+9 *
+'a',
+'b',
+0 +
+5 *
+9 *
+'c',
+'d',
+'e',
+'f',
+'g',
+'h',
+'i'
+];
+}())
+
+// 3
+(function(){
+var a = [
+0 +
+// comment 1
+5 *
+/* comment 2 */
+9 *
+'a',
+'b',
+0 +
+5 *
+9 *
+'c',
+'d',
+'e',
+'f',
+'g',
+'h',
+'i'
+];
+}())
+
+// 4
+{
+var a = [
+0,
+1
+];
+var b;
+var c;
+}
+
+// 5
+{
+var a = [
+[
+0
+],
+2,
+3
+];
+}
+
+// 6
+{
+var a = [
+[
+0,
+1
+],
+2,
+3
+];
+}
+
+// 7
+{
+var a = [
+// [
+0,
+// 1
+// ],
+2,
+3
+];
+}
+
+// 8
+var x = [
+(function(){
+var a,
+b,
+c,
+d,
+e,
+f,
+g,
+h,
+i;
+})
+];
+
+// 9
+var a = [
+0 +
+5 *
+9 *
+'a',
+'b',
+0 +
+5 *
+9 *
+'c',
+'d',
+'e',
+'f',
+'g',
+'h',
+'i'
+];
+
+// 10
+var a,
+b,
+c,
+d,
+e,
+f,
+g,
+h,
+i;
+JSEND
+
+STARTTEST
+:set cin cino&
+/start of define
+=/end of define
+ENDTEST
+
+/* start of define */
+{
+}
+#define AAA \
+BBB\
+CCC
+
+#define CNT \
+1 + \
+2 + \
+4
+/* end of define */
 
 STARTTEST
 :g/^STARTTEST/.,/^ENDTEST/d

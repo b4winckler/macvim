@@ -9,9 +9,6 @@
  */
 
 #import <Cocoa/Cocoa.h>
-#import "Miscellaneous.h" // Defines MM_ENABLE_ATSUI
-
-#if !MM_ENABLE_ATSUI
 
 @class MMTextViewHelper;
 
@@ -25,12 +22,16 @@
     NSFont                      *font;
     NSFont                      *fontWide;
     float                       linespace;
+    float                       columnspace;
 
     // From NSTextView
     NSSize                      insetSize;
 
     float                       fontDescent;
     BOOL                        antialias;
+    BOOL                        ligatures;
+    BOOL                        thinStrokes;
+    BOOL                        drawPending;
     NSMutableArray              *drawData;
 
     MMTextViewHelper            *helper;
@@ -39,6 +40,11 @@
     CGGlyph                     *glyphs;
     CGPoint                     *positions;
     NSMutableArray              *fontCache;
+
+    BOOL                        cgLayerEnabled;
+    CGLayerRef                  cgLayer;
+    CGContextRef                cgLayerContext;
+    NSLock                      *cgLayerLock;
 
     // These are used in MMCoreTextView+ToolTip.m
     id trackingRectOwner_;              // (not retained)
@@ -78,20 +84,23 @@
 - (void)setPreEditRow:(int)row column:(int)col;
 - (void)setMouseShape:(int)shape;
 - (void)setAntialias:(BOOL)state;
+- (void)setLigatures:(BOOL)state;
+- (void)setThinStrokes:(BOOL)state;
 - (void)setImControl:(BOOL)enable;
 - (void)activateIm:(BOOL)enable;
 - (void)checkImState;
 - (BOOL)convertPoint:(NSPoint)point toRow:(int *)row column:(int *)column;
 - (NSRect)rectForRow:(int)row column:(int)column numRows:(int)nr
           numColumns:(int)nc;
+- (void)setCGLayerEnabled:(BOOL)enabled;
 
 //
 // NSTextView methods
 //
+- (void)setFrameSize:(NSSize)newSize;
 - (void)keyDown:(NSEvent *)event;
 - (void)insertText:(id)string;
 - (void)doCommandBySelector:(SEL)selector;
-- (BOOL)performKeyEquivalent:(NSEvent *)event;
 
 //
 // NSTextContainer methods
@@ -114,5 +123,3 @@
 @interface MMCoreTextView (ToolTip)
 - (void)setToolTipAtMousePoint:(NSString *)string;
 @end
-
-#endif // !MM_ENABLE_ATSUI

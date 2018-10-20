@@ -1,25 +1,32 @@
-README.txt for version 7.4 of Vim: Vi IMproved.
+README.txt for version 8.0 of Vim: Vi IMproved.
 
 
-WHAT IS VIM
+WHAT IS VIM?
 
-Vim is an almost compatible version of the UNIX editor Vi.  Many new features
-have been added: multi-level undo, syntax highlighting, command line history,
-on-line help, spell checking, filename completion, block operations, etc.
-There is also a Graphical User Interface (GUI) available.  See
-"runtime/doc/vi_diff.txt" for differences with Vi.
+Vim is a greatly improved version of the good old UNIX editor Vi.  Many new
+features have been added: multi-level undo, syntax highlighting, command line
+history, on-line help, spell checking, filename completion, block operations,
+script language, etc.  There is also a Graphical User Interface (GUI)
+available.  Still, Vi compatibility is maintained, those who have Vi "in the
+fingers" will feel at home.  See "runtime/doc/vi_diff.txt" for differences with
+Vi.
 
 This editor is very useful for editing programs and other plain text files.
 All commands are given with normal keyboard characters, so those who can type
 with ten fingers can work very fast.  Additionally, function keys can be
-defined by the user, and the mouse can be used.
+mapped to commands by the user, and the mouse can be used.
 
-Vim runs under Amiga DOS, MS-DOS, MS-Windows (95, 98, Me, NT, 2000, XP, Vista,
-7), Atari MiNT, Macintosh, BeOS, VMS, RISC OS, OS/2 and almost all flavours of
-UNIX.  Porting to other systems should not be very difficult.
+Vim runs under MS-Windows (NT, 2000, XP, Vista, 7, 8, 10), Macintosh, VMS and
+almost all flavours of UNIX.  Porting to other systems should not be very
+difficult.  Older versions of Vim run on MS-DOS, MS-Windows 95/98/Me, Amiga
+DOS, Atari MiNT, BeOS, RISC OS and OS/2.  These are no longer maintained.
 
 
 DISTRIBUTION
+
+You can often use your favorite package manager to install Vim.  On Mac and
+Linux a small version of Vim is pre-installed, you still need to install Vim
+if you want more features.
 
 There are separate distributions for Unix, PC, Amiga and some other systems.
 This README.txt file comes with the runtime archive.  It includes the
@@ -29,10 +36,38 @@ Which one you need depends on the system you want to run it on and whether you
 want or must compile it yourself.  Check "http://www.vim.org/download.php" for
 an overview of currently available distributions.
 
+Some popular places to get the latest Vim:
+* Check out the git repository from github: https://github.com/vim/vim.
+* Get the source code as an archive: https://github.com/vim/vim/releases.
+* Get a Windows executable from the vim-win32-installer repository:
+  https://github.com/vim/vim-win32-installer/releases.
+
+
+COMPILING
+
+If you obtained a binary distribution you don't need to compile Vim.  If you
+obtained a source distribution, all the stuff for compiling Vim is in the
+"src" directory.  See src/INSTALL for instructions.
+
+
+INSTALLATION
+
+See one of these files for system-specific instructions.  Either in the
+READMEdir directory (in the repository) or the top directory (if you unpack an
+archive):
+
+README_ami.txt		Amiga
+README_unix.txt		Unix
+README_dos.txt		MS-DOS and MS-Windows
+README_mac.txt		Macintosh
+README_vms.txt		VMS
+
+There are more README_*.txt files, depending on the distribution you used.
+
 
 DOCUMENTATION
 
-The vim tutor is a one hour training course for beginners.  Mostly it can be
+The Vim tutor is a one hour training course for beginners.  Often it can be
 started as "vimtutor".  See ":help tutor" for more information.
 
 The best is to use ":help" in Vim.  If you don't have an executable yet, read
@@ -69,24 +104,9 @@ For the most recent information about sponsoring look on the Vim web site:
 	http://www.vim.org/sponsor/
 
 
-COMPILING
+CONTRIBUTING
 
-If you obtained a binary distribution you don't need to compile Vim.  If you
-obtained a source distribution, all the stuff for compiling Vim is in the
-"src" directory.  See src/INSTALL for instructions.
-
-
-INSTALLATION
-
-See one of these files for system-specific instructions:
-README_ami.txt		Amiga
-README_unix.txt		Unix
-README_dos.txt		MS-DOS and MS-Windows
-README_os2.txt		OS/2
-README_mac.txt		Macintosh
-README_vms.txt		VMS
-
-There are more README_*.txt files, depending on the distribution you used.
+If you would like to help making Vim better, see the CONTRIBUTING.md file.
 
 
 INFORMATION
@@ -94,8 +114,9 @@ INFORMATION
 The latest news about Vim can be found on the Vim home page:
 	http://www.vim.org/
 
-If you have problems, have a look at the Vim FAQ:
-	http://vimdoc.sf.net/vimfaq.html
+If you have problems, have a look at the Vim documentation or tips:
+	http://www.vim.org/docs.php
+	http://vim.wikia.com/wiki/Vim_Tips_Wiki
 
 If you still have problems or any other questions, use one of the mailing
 lists to discuss them with Vim users and developers:
@@ -110,6 +131,3 @@ MAIN AUTHOR
 Send any other comments, patches, flowers and suggestions to:
 
 	Bram Moolenaar		E-mail:	Bram@vim.org
-	Finsterruetihof 1
-	8134 Adliswil
-	Switzerland

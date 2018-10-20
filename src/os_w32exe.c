@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved		by Bram Moolenaar
  *				GUI support by Robert Webb
@@ -27,7 +27,7 @@ VimMain
 #else
     main
 #endif
-	__ARGS((int argc, char **argv));
+	(int argc, char **argv);
 static int (_cdecl *pmain)(int, char **);
 
 #ifndef PROTO
@@ -38,13 +38,12 @@ void _cdecl SaveInst(HINSTANCE hInst);
 static void (_cdecl *pSaveInst)(HINSTANCE);
 #endif
 
-/*ARGSUSED*/
     int WINAPI
 WinMain(
-    HINSTANCE	hInstance,
-    HINSTANCE	hPrevInst,
+    HINSTANCE	hInstance UNUSED,
+    HINSTANCE	hPrevInst UNUSED,
     LPSTR	lpszCmdLine,
-    int		nCmdShow)
+    int		nCmdShow UNUSED)
 {
     int		argc = 0;
     char	**argv;
@@ -69,7 +68,7 @@ WinMain(
 
 #ifdef DYNAMIC_GETTEXT
     /* Initialize gettext library */
-    dyn_libintl_init(NULL);
+    dyn_libintl_init();
 #endif
 
 #ifdef VIMDLL

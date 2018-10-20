@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved	by Bram Moolenaar
  *
@@ -17,13 +17,13 @@ static char_u	*username = NULL; /* cached result of mch_get_user_name() */
 static char_u	*ff_expand_buffer = NULL; /* used for expanding filenames */
 
 #if defined(FEAT_VIRTUALEDIT) || defined(PROTO)
-static int coladvance2 __ARGS((pos_T *pos, int addspaces, int finetune, colnr_T wcol));
+static int coladvance2(pos_T *pos, int addspaces, int finetune, colnr_T wcol);
 
 /*
  * Return TRUE if in the current mode we need to use virtual.
  */
     int
-virtual_active()
+virtual_active(void)
 {
     /* While an operator is being executed we return "virtual_op", because
      * VIsual_active has already been reset, thus we can't check for "block"
@@ -39,7 +39,7 @@ virtual_active()
  * Get the screen position of the cursor.
  */
     int
-getviscol()
+getviscol(void)
 {
     colnr_T	x;
 
@@ -51,9 +51,7 @@ getviscol()
  * Get the screen position of character col with a coladd in the cursor line.
  */
     int
-getviscol2(col, coladd)
-    colnr_T	col;
-    colnr_T	coladd;
+getviscol2(colnr_T col, colnr_T coladd)
 {
     colnr_T	x;
     pos_T	pos;
@@ -71,8 +69,7 @@ getviscol2(col, coladd)
  * The caller must have saved the cursor line for undo!
  */
     int
-coladvance_force(wcol)
-    colnr_T wcol;
+coladvance_force(colnr_T wcol)
 {
     int rc = coladvance2(&curwin->w_cursor, TRUE, FALSE, wcol);
 
@@ -98,8 +95,7 @@ coladvance_force(wcol)
  * return OK if desired column is reached, FAIL if not
  */
     int
-coladvance(wcol)
-    colnr_T	wcol;
+coladvance(colnr_T wcol)
 {
     int rc = getvpos(&curwin->w_cursor, wcol);
 
@@ -119,20 +115,18 @@ coladvance(wcol)
  * return OK if desired column is reached, FAIL if not
  */
     int
-getvpos(pos, wcol)
-    pos_T   *pos;
-    colnr_T wcol;
+getvpos(pos_T *pos, colnr_T wcol)
 {
 #ifdef FEAT_VIRTUALEDIT
     return coladvance2(pos, FALSE, virtual_active(), wcol);
 }
 
     static int
-coladvance2(pos, addspaces, finetune, wcol)
-    pos_T	*pos;
-    int		addspaces;	/* change the text to achieve our goal? */
-    int		finetune;	/* change char offset for the exact column */
-    colnr_T	wcol;		/* column to move to */
+coladvance2(
+    pos_T	*pos,
+    int		addspaces,	/* change the text to achieve our goal? */
+    int		finetune,	/* change char offset for the exact column */
+    colnr_T	wcol)		/* column to move to */
 {
 #endif
     int		idx;
@@ -175,7 +169,7 @@ coladvance2(pos, addspaces, finetune, wcol)
 
 	if (finetune
 		&& curwin->w_p_wrap
-# ifdef FEAT_VERTSPLIT
+# ifdef FEAT_WINDOWS
 		&& curwin->w_width != 0
 # endif
 		&& wcol >= (colnr_T)width)
@@ -202,7 +196,7 @@ coladvance2(pos, addspaces, finetune, wcol)
 	    /* Count a tab for what it's worth (if list mode not on) */
 #ifdef FEAT_LINEBREAK
 	    csize = win_lbr_chartabsize(curwin, line, ptr, col, &head);
-	    mb_ptr_adv(ptr);
+	    MB_PTR_ADV(ptr);
 #else
 	    csize = lbr_chartabsize_adv(line, &ptr, col);
 #endif
@@ -341,7 +335,7 @@ coladvance2(pos, addspaces, finetune, wcol)
  * Increment the cursor position.  See inc() for return values.
  */
     int
-inc_cursor()
+inc_cursor(void)
 {
     return inc(&curwin->w_cursor);
 }
@@ -354,8 +348,7 @@ inc_cursor()
  * Return 0 otherwise.
  */
     int
-inc(lp)
-    pos_T  *lp;
+inc(pos_T *lp)
 {
     char_u  *p = ml_get_pos(lp);
 
@@ -392,8 +385,7 @@ inc(lp)
  * incl(lp): same as inc(), but skip the NUL at the end of non-empty lines
  */
     int
-incl(lp)
-    pos_T    *lp;
+incl(pos_T *lp)
 {
     int	    r;
 
@@ -409,14 +401,13 @@ incl(lp)
  * Return 1 when crossing a line, -1 when at start of file, 0 otherwise.
  */
     int
-dec_cursor()
+dec_cursor(void)
 {
     return dec(&curwin->w_cursor);
 }
 
     int
-dec(lp)
-    pos_T  *lp;
+dec(pos_T *lp)
 {
     char_u	*p;
 
@@ -453,8 +444,7 @@ dec(lp)
  * decl(lp): same as dec(), but skip the NUL at the end of non-empty lines
  */
     int
-decl(lp)
-    pos_T    *lp;
+decl(pos_T *lp)
 {
     int	    r;
 
@@ -469,9 +459,9 @@ decl(lp)
  * can be visible, folded lines don't count.
  */
     linenr_T
-get_cursor_rel_lnum(wp, lnum)
-    win_T	*wp;
-    linenr_T	lnum;		    /* line number to get the result for */
+get_cursor_rel_lnum(
+    win_T	*wp,
+    linenr_T	lnum)		    /* line number to get the result for */
 {
     linenr_T	cursor = wp->w_cursor.lnum;
     linenr_T	retval = 0;
@@ -515,10 +505,32 @@ get_cursor_rel_lnum(wp, lnum)
 }
 
 /*
+ * Make sure "pos.lnum" and "pos.col" are valid in "buf".
+ * This allows for the col to be on the NUL byte.
+ */
+    void
+check_pos(buf_T *buf, pos_T *pos)
+{
+    char_u *line;
+    colnr_T len;
+
+    if (pos->lnum > buf->b_ml.ml_line_count)
+	pos->lnum = buf->b_ml.ml_line_count;
+
+    if (pos->col > 0)
+    {
+	line = ml_get_buf(buf, pos->lnum, FALSE);
+	len = (colnr_T)STRLEN(line);
+	if (pos->col > len)
+	    pos->col = len;
+    }
+}
+
+/*
  * Make sure curwin->w_cursor.lnum is valid.
  */
     void
-check_cursor_lnum()
+check_cursor_lnum(void)
 {
     if (curwin->w_cursor.lnum > curbuf->b_ml.ml_line_count)
     {
@@ -538,7 +550,7 @@ check_cursor_lnum()
  * Make sure curwin->w_cursor.col is valid.
  */
     void
-check_cursor_col()
+check_cursor_col(void)
 {
     check_cursor_col_win(curwin);
 }
@@ -547,8 +559,7 @@ check_cursor_col()
  * Make sure win->w_cursor.col is valid.
  */
     void
-check_cursor_col_win(win)
-    win_T *win;
+check_cursor_col_win(win_T *win)
 {
     colnr_T len;
 #ifdef FEAT_VIRTUALEDIT
@@ -606,7 +617,7 @@ check_cursor_col_win(win)
  * make sure curwin->w_cursor in on a valid character
  */
     void
-check_cursor()
+check_cursor(void)
 {
     check_cursor_lnum();
     check_cursor_col();
@@ -618,7 +629,7 @@ check_cursor()
  * Allow it when in Visual mode and 'selection' is not "old".
  */
     void
-adjust_cursor_col()
+adjust_cursor_col(void)
 {
     if (curwin->w_cursor.col > 0
 	    && (!VIsual_active || *p_sel == 'o')
@@ -632,7 +643,7 @@ adjust_cursor_col()
  * Return TRUE if the cursor was moved.
  */
     int
-leftcol_changed()
+leftcol_changed(void)
 {
     long	lastcol;
     colnr_T	s, e;
@@ -699,29 +710,27 @@ static long_u mem_peak;
 static long_u num_alloc;
 static long_u num_freed;
 
-static void mem_pre_alloc_s __ARGS((size_t *sizep));
-static void mem_pre_alloc_l __ARGS((long_u *sizep));
-static void mem_post_alloc __ARGS((void **pp, size_t size));
-static void mem_pre_free __ARGS((void **pp));
+static void mem_pre_alloc_s(size_t *sizep);
+static void mem_pre_alloc_l(long_u *sizep);
+static void mem_post_alloc(void **pp, size_t size);
+static void mem_pre_free(void **pp);
 
     static void
-mem_pre_alloc_s(sizep)
-    size_t *sizep;
+mem_pre_alloc_s(size_t *sizep)
 {
     *sizep += sizeof(size_t);
 }
 
     static void
-mem_pre_alloc_l(sizep)
-    long_u *sizep;
+mem_pre_alloc_l(long_u *sizep)
 {
     *sizep += sizeof(size_t);
 }
 
     static void
-mem_post_alloc(pp, size)
-    void **pp;
-    size_t size;
+mem_post_alloc(
+    void **pp,
+    size_t size)
 {
     if (*pp == NULL)
 	return;
@@ -739,8 +748,7 @@ mem_post_alloc(pp, size)
 }
 
     static void
-mem_pre_free(pp)
-    void **pp;
+mem_pre_free(void **pp)
 {
     long_u size;
 
@@ -758,7 +766,7 @@ mem_pre_free(pp)
  * called on exit via atexit()
  */
     void
-vim_mem_profile_dump()
+vim_mem_profile_dump(void)
 {
     int i, j;
 
@@ -797,16 +805,29 @@ vim_mem_profile_dump()
 
 #endif /* MEM_PROFILE */
 
+#ifdef FEAT_EVAL
+static int alloc_does_fail(long_u size);
+
+    static int
+alloc_does_fail(long_u size)
+{
+    if (alloc_fail_countdown == 0)
+    {
+	if (--alloc_fail_repeat <= 0)
+	    alloc_fail_id = 0;
+	do_outofmem_msg(size);
+	return TRUE;
+    }
+    --alloc_fail_countdown;
+    return FALSE;
+}
+#endif
+
 /*
  * Some memory is reserved for error messages and for being able to
  * call mf_release_all(), which needs some memory for mf_trans_add().
  */
-#if defined(MSDOS) && !defined(DJGPP)
-# define SMALL_MEM
-# define KEEP_ROOM 8192L
-#else
-# define KEEP_ROOM (2 * 8192L)
-#endif
+#define KEEP_ROOM (2 * 8192L)
 #define KEEP_ROOM_KB (KEEP_ROOM / 1024L)
 
 /*
@@ -814,9 +835,21 @@ vim_mem_profile_dump()
  * Use lalloc for larger blocks.
  */
     char_u *
-alloc(size)
-    unsigned	    size;
+alloc(unsigned size)
 {
+    return (lalloc((long_u)size, TRUE));
+}
+
+/*
+ * alloc() with an ID for alloc_fail().
+ */
+    char_u *
+alloc_id(unsigned size, alloc_id_T id UNUSED)
+{
+#ifdef FEAT_EVAL
+    if (alloc_fail_id == id && alloc_does_fail((long_u)size))
+	return NULL;
+#endif
     return (lalloc((long_u)size, TRUE));
 }
 
@@ -824,8 +857,7 @@ alloc(size)
  * Allocate memory and set all bytes to zero.
  */
     char_u *
-alloc_clear(size)
-    unsigned	    size;
+alloc_clear(unsigned size)
 {
     char_u *p;
 
@@ -839,10 +871,9 @@ alloc_clear(size)
  * alloc() with check for maximum line length
  */
     char_u *
-alloc_check(size)
-    unsigned	    size;
+alloc_check(unsigned size)
 {
-#if !defined(UNIX) && !defined(__EMX__)
+#if !defined(UNIX)
     if (sizeof(int) == 2 && size > 0x7fff)
     {
 	/* Don't hide this message */
@@ -858,9 +889,7 @@ alloc_check(size)
  * Allocate memory like lalloc() and set all bytes to zero.
  */
     char_u *
-lalloc_clear(size, message)
-    long_u	size;
-    int		message;
+lalloc_clear(long_u size, int message)
 {
     char_u *p;
 
@@ -875,14 +904,12 @@ lalloc_clear(size, message)
  * This is used often, KEEP IT FAST!
  */
     char_u *
-lalloc(size, message)
-    long_u	size;
-    int		message;
+lalloc(long_u size, int message)
 {
     char_u	*p;		    /* pointer to new storage space */
     static int	releasing = FALSE;  /* don't do mf_release_all() recursive */
     int		try_again;
-#if defined(HAVE_AVAIL_MEM) && !defined(SMALL_MEM)
+#if defined(HAVE_AVAIL_MEM)
     static long_u allocated = 0;    /* allocated since last avail check */
 #endif
 
@@ -891,18 +918,12 @@ lalloc(size, message)
     {
 	/* Don't hide this message */
 	emsg_silent = 0;
-	EMSGN(_("E341: Internal error: lalloc(%ld, )"), size);
+	IEMSGN(_("E341: Internal error: lalloc(%ld, )"), size);
 	return NULL;
     }
 
 #ifdef MEM_PROFILE
     mem_pre_alloc_l(&size);
-#endif
-
-#if defined(MSDOS) && !defined(DJGPP)
-    if (size >= 0xfff0)		/* in MSDOS we can't deal with >64K blocks */
-	p = NULL;
-    else
 #endif
 
     /*
@@ -924,14 +945,13 @@ lalloc(size, message)
 	    /* 1. No check for available memory: Just return. */
 	    goto theend;
 #else
-# ifndef SMALL_MEM
 	    /* 2. Slow check for available memory: call mch_avail_mem() after
 	     *    allocating (KEEP_ROOM / 2) amount of memory. */
 	    allocated += size;
 	    if (allocated < KEEP_ROOM / 2)
 		goto theend;
 	    allocated = 0;
-# endif
+
 	    /* 3. check for available memory: call mch_avail_mem() */
 	    if (mch_avail_mem(TRUE) < KEEP_ROOM_KB && !releasing)
 	    {
@@ -950,11 +970,8 @@ lalloc(size, message)
 	    break;
 	releasing = TRUE;
 
-	clear_sb_text();	      /* free any scrollback text */
+	clear_sb_text(TRUE);	      /* free any scrollback text */
 	try_again = mf_release_all(); /* release as many blocks as possible */
-#ifdef FEAT_EVAL
-	try_again |= garbage_collect(); /* cleanup recursive lists/dicts */
-#endif
 
 	releasing = FALSE;
 	if (!try_again)
@@ -971,14 +988,25 @@ theend:
     return p;
 }
 
+/*
+ * lalloc() with an ID for alloc_fail().
+ */
+    char_u *
+lalloc_id(long_u size, int message, alloc_id_T id UNUSED)
+{
+#ifdef FEAT_EVAL
+    if (alloc_fail_id == id && alloc_does_fail(size))
+	return NULL;
+#endif
+    return (lalloc((long_u)size, message));
+}
+
 #if defined(MEM_PROFILE) || defined(PROTO)
 /*
  * realloc() with memory profiling.
  */
     void *
-mem_realloc(ptr, size)
-    void *ptr;
-    size_t size;
+mem_realloc(void *ptr, size_t size)
 {
     void *p;
 
@@ -998,8 +1026,7 @@ mem_realloc(ptr, size)
 * Did_outofmem_msg is reset when a character is read.
 */
     void
-do_outofmem_msg(size)
-    long_u	size;
+do_outofmem_msg(long_u size)
 {
     if (!did_outofmem_msg)
     {
@@ -1017,7 +1044,7 @@ do_outofmem_msg(size)
 #if defined(EXITFREE) || defined(PROTO)
 
 # if defined(FEAT_SEARCHPATH)
-static void free_findfile __ARGS((void));
+static void free_findfile(void);
 # endif
 
 /*
@@ -1028,19 +1055,19 @@ static void free_findfile __ARGS((void));
  * Some things can't be freed, esp. things local to a library function.
  */
     void
-free_all_mem()
+free_all_mem(void)
 {
     buf_T	*buf, *nextbuf;
-    static int	entered = FALSE;
 
     /* When we cause a crash here it is caught and Vim tries to exit cleanly.
      * Don't try freeing everything again. */
-    if (entered)
+    if (entered_free_all_mem)
 	return;
-    entered = TRUE;
+    entered_free_all_mem = TRUE;
 
 # ifdef FEAT_AUTOCMD
-    block_autocmds();	    /* don't want to trigger autocommands here */
+    /* Don't want to trigger autocommands from here on. */
+    block_autocmds();
 # endif
 
 # ifdef FEAT_WINDOWS
@@ -1048,7 +1075,7 @@ free_all_mem()
     p_ea = FALSE;
     if (first_tabpage->tp_next != NULL)
 	do_cmdline_cmd((char_u *)"tabonly!");
-    if (firstwin != lastwin)
+    if (!ONE_WINDOW)
 	do_cmdline_cmd((char_u *)"only!");
 # endif
 
@@ -1121,7 +1148,7 @@ free_all_mem()
 # ifdef FEAT_DIFF
     diff_clear(curtab);
 # endif
-    clear_sb_text();	      /* free any scrollback text */
+    clear_sb_text(TRUE);	      /* free any scrollback text */
 
     /* Free some global vars. */
     vim_free(username);
@@ -1168,9 +1195,12 @@ free_all_mem()
 #endif
     for (buf = firstbuf; buf != NULL; )
     {
+	bufref_T    bufref;
+
+	set_bufref(&bufref, buf);
 	nextbuf = buf->b_next;
 	close_buffer(NULL, buf, DOBUF_WIPE, FALSE);
-	if (buf_valid(buf))
+	if (bufref_valid(&bufref))
 	    buf = nextbuf;	/* didn't work, try next one */
 	else
 	    buf = firstbuf;
@@ -1209,8 +1239,19 @@ free_all_mem()
 	if (delete_first_msg() == FAIL)
 	    break;
 
+# ifdef FEAT_JOB_CHANNEL
+    channel_free_all();
+# endif
+#ifdef FEAT_TIMERS
+    timer_free_all();
+#endif
 # ifdef FEAT_EVAL
+    /* must be after channel_free_all() with unrefs partials */
     eval_clear();
+# endif
+# ifdef FEAT_JOB_CHANNEL
+    /* must be after eval_clear() with unrefs jobs */
+    job_free_all();
 # endif
 
     free_termoptions();
@@ -1235,8 +1276,7 @@ free_all_mem()
  * Copy "string" into newly allocated memory.
  */
     char_u *
-vim_strsave(string)
-    char_u	*string;
+vim_strsave(char_u *string)
 {
     char_u	*p;
     unsigned	len;
@@ -1255,9 +1295,7 @@ vim_strsave(string)
  * shorter.
  */
     char_u *
-vim_strnsave(string, len)
-    char_u	*string;
-    int		len;
+vim_strnsave(char_u *string, int len)
 {
     char_u	*p;
 
@@ -1275,9 +1313,7 @@ vim_strnsave(string, len)
  * by a backslash.
  */
     char_u *
-vim_strsave_escaped(string, esc_chars)
-    char_u	*string;
-    char_u	*esc_chars;
+vim_strsave_escaped(char_u *string, char_u *esc_chars)
 {
     return vim_strsave_escaped_ext(string, esc_chars, '\\', FALSE);
 }
@@ -1288,11 +1324,11 @@ vim_strsave_escaped(string, esc_chars)
  * Escape the characters with "cc".
  */
     char_u *
-vim_strsave_escaped_ext(string, esc_chars, cc, bsl)
-    char_u	*string;
-    char_u	*esc_chars;
-    int		cc;
-    int		bsl;
+vim_strsave_escaped_ext(
+    char_u	*string,
+    char_u	*esc_chars,
+    int		cc,
+    int		bsl)
 {
     char_u	*p;
     char_u	*p2;
@@ -1349,7 +1385,7 @@ vim_strsave_escaped_ext(string, esc_chars, cc, bsl)
  * Return TRUE when 'shell' has "csh" in the tail.
  */
     int
-csh_like_shell()
+csh_like_shell(void)
 {
     return (strstr((char *)gettail(p_sh), "csh") != NULL);
 }
@@ -1365,10 +1401,7 @@ csh_like_shell()
  * Returns the result in allocated memory, NULL if we have run out.
  */
     char_u *
-vim_strsave_shellescape(string, do_special, do_newline)
-    char_u	*string;
-    int		do_special;
-    int		do_newline;
+vim_strsave_shellescape(char_u *string, int do_special, int do_newline)
 {
     unsigned	length;
     char_u	*p;
@@ -1385,9 +1418,9 @@ vim_strsave_shellescape(string, do_special, do_newline)
 
     /* First count the number of extra bytes required. */
     length = (unsigned)STRLEN(string) + 3;  /* two quotes and a trailing NUL */
-    for (p = string; *p != NUL; mb_ptr_adv(p))
+    for (p = string; *p != NUL; MB_PTR_ADV(p))
     {
-# if defined(WIN32) || defined(WIN16) || defined(DOS)
+# ifdef WIN32
 	if (!p_ssl)
 	{
 	    if (*p == '"')
@@ -1418,7 +1451,7 @@ vim_strsave_shellescape(string, do_special, do_newline)
 	d = escaped_string;
 
 	/* add opening quote */
-# if defined(WIN32) || defined(WIN16) || defined(DOS)
+# ifdef WIN32
 	if (!p_ssl)
 	    *d++ = '"';
 	else
@@ -1427,7 +1460,7 @@ vim_strsave_shellescape(string, do_special, do_newline)
 
 	for (p = string; *p != NUL; )
 	{
-# if defined(WIN32) || defined(WIN16) || defined(DOS)
+# ifdef WIN32
 	    if (!p_ssl)
 	    {
 		if (*p == '"')
@@ -1470,7 +1503,7 @@ vim_strsave_shellescape(string, do_special, do_newline)
 	}
 
 	/* add terminating quote and finish with a NUL */
-# if defined(WIN32) || defined(WIN16) || defined(DOS)
+# ifdef WIN32
 	if (!p_ssl)
 	    *d++ = '"';
 	else
@@ -1487,8 +1520,7 @@ vim_strsave_shellescape(string, do_special, do_newline)
  * This uses ASCII lower-to-upper case translation, language independent.
  */
     char_u *
-vim_strsave_up(string)
-    char_u	*string;
+vim_strsave_up(char_u *string)
 {
     char_u *p1;
 
@@ -1502,9 +1534,7 @@ vim_strsave_up(string)
  * This uses ASCII lower-to-upper case translation, language independent.
  */
     char_u *
-vim_strnsave_up(string, len)
-    char_u	*string;
-    int		len;
+vim_strnsave_up(char_u *string, int len)
 {
     char_u *p1;
 
@@ -1517,8 +1547,8 @@ vim_strnsave_up(string, len)
  * ASCII lower-to-upper case translation, language independent.
  */
     void
-vim_strup(p)
-    char_u	*p;
+vim_strup(
+    char_u	*p)
 {
     char_u  *p2;
     int	    c;
@@ -1542,8 +1572,7 @@ vim_strup(p)
  * Returns NULL when out of memory.
  */
     char_u *
-strup_save(orig)
-    char_u	*orig;
+strup_save(char_u *orig)
 {
     char_u	*p;
     char_u	*res;
@@ -1573,7 +1602,10 @@ strup_save(orig)
 		{
 		    s = alloc((unsigned)STRLEN(res) + 1 + newl - l);
 		    if (s == NULL)
-			break;
+		    {
+			vim_free(res);
+			return NULL;
+		    }
 		    mch_memmove(s, res, p - res);
 		    STRCPY(s + (p - res) + newl, p + l);
 		    p = s + (p - res);
@@ -1596,39 +1628,68 @@ strup_save(orig)
 
     return res;
 }
-#endif
 
 /*
- * copy a space a number of times
+ * Make string "s" all lower-case and return it in allocated memory.
+ * Handles multi-byte characters as well as possible.
+ * Returns NULL when out of memory.
  */
-    void
-copy_spaces(ptr, count)
-    char_u	*ptr;
-    size_t	count;
+    char_u *
+strlow_save(char_u *orig)
 {
-    size_t	i = count;
-    char_u	*p = ptr;
+    char_u	*p;
+    char_u	*res;
 
-    while (i--)
-	*p++ = ' ';
-}
+    res = p = vim_strsave(orig);
 
-#if defined(FEAT_VISUALEXTRA) || defined(PROTO)
-/*
- * Copy a character a number of times.
- * Does not work for multi-byte characters!
- */
-    void
-copy_chars(ptr, count, c)
-    char_u	*ptr;
-    size_t	count;
-    int		c;
-{
-    size_t	i = count;
-    char_u	*p = ptr;
+    if (res != NULL)
+	while (*p != NUL)
+	{
+# ifdef FEAT_MBYTE
+	    int		l;
 
-    while (i--)
-	*p++ = c;
+	    if (enc_utf8)
+	    {
+		int	c, lc;
+		int	newl;
+		char_u	*s;
+
+		c = utf_ptr2char(p);
+		lc = utf_tolower(c);
+
+		/* Reallocate string when byte count changes.  This is rare,
+		 * thus it's OK to do another malloc()/free(). */
+		l = utf_ptr2len(p);
+		newl = utf_char2len(lc);
+		if (newl != l)
+		{
+		    s = alloc((unsigned)STRLEN(res) + 1 + newl - l);
+		    if (s == NULL)
+		    {
+			vim_free(res);
+			return NULL;
+		    }
+		    mch_memmove(s, res, p - res);
+		    STRCPY(s + (p - res) + newl, p + l);
+		    p = s + (p - res);
+		    vim_free(res);
+		    res = s;
+		}
+
+		utf_char2bytes(lc, p);
+		p += newl;
+	    }
+	    else if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
+		p += l;		/* skip multi-byte character */
+	    else
+# endif
+	    {
+		*p = TOLOWER_LOC(*p); /* note that tolower() can be a macro */
+		p++;
+	    }
+	}
+
+    return res;
 }
 #endif
 
@@ -1636,13 +1697,12 @@ copy_chars(ptr, count, c)
  * delete spaces at the end of a string
  */
     void
-del_trailing_spaces(ptr)
-    char_u	*ptr;
+del_trailing_spaces(char_u *ptr)
 {
     char_u	*q;
 
     q = ptr + STRLEN(ptr);
-    while (--q > ptr && vim_iswhite(q[0]) && q[-1] != '\\' && q[-1] != Ctrl_V)
+    while (--q > ptr && VIM_ISWHITE(q[0]) && q[-1] != '\\' && q[-1] != Ctrl_V)
 	*q = NUL;
 }
 
@@ -1651,10 +1711,7 @@ del_trailing_spaces(ptr)
  * "to" must be "len + 1" long!
  */
     void
-vim_strncpy(to, from, len)
-    char_u	*to;
-    char_u	*from;
-    size_t	len;
+vim_strncpy(char_u *to, char_u *from, size_t len)
 {
     STRNCPY(to, from, len);
     to[len] = NUL;
@@ -1662,13 +1719,10 @@ vim_strncpy(to, from, len)
 
 /*
  * Like strcat(), but make sure the result fits in "tosize" bytes and is
- * always NUL terminated.
+ * always NUL terminated. "from" and "to" may overlap.
  */
     void
-vim_strcat(to, from, tosize)
-    char_u	*to;
-    char_u	*from;
-    size_t	tosize;
+vim_strcat(char_u *to, char_u *from, size_t tosize)
 {
     size_t tolen = STRLEN(to);
     size_t fromlen = STRLEN(from);
@@ -1679,7 +1733,7 @@ vim_strcat(to, from, tosize)
 	to[tosize - 1] = NUL;
     }
     else
-	STRCPY(to + tolen, from);
+	mch_memmove(to + tolen, from, fromlen + 1);
 }
 
 /*
@@ -1690,11 +1744,11 @@ vim_strcat(to, from, tosize)
  * The length is returned.
  */
     int
-copy_option_part(option, buf, maxlen, sep_chars)
-    char_u	**option;
-    char_u	*buf;
-    int		maxlen;
-    char	*sep_chars;
+copy_option_part(
+    char_u	**option,
+    char_u	*buf,
+    int		maxlen,
+    char	*sep_chars)
 {
     int	    len = 0;
     char_u  *p = *option;
@@ -1729,8 +1783,7 @@ copy_option_part(option, buf, maxlen, sep_chars)
  * signal that was caused by a crash in free().
  */
     void
-vim_free(x)
-    void *x;
+vim_free(void *x)
 {
     if (x != NULL && !really_exiting)
     {
@@ -1743,69 +1796,13 @@ vim_free(x)
 
 #ifndef HAVE_MEMSET
     void *
-vim_memset(ptr, c, size)
-    void    *ptr;
-    int	    c;
-    size_t  size;
+vim_memset(void *ptr, int c, size_t size)
 {
     char *p = ptr;
 
     while (size-- > 0)
 	*p++ = c;
     return ptr;
-}
-#endif
-
-#ifdef VIM_MEMCMP
-/*
- * Return zero when "b1" and "b2" are the same for "len" bytes.
- * Return non-zero otherwise.
- */
-    int
-vim_memcmp(b1, b2, len)
-    void    *b1;
-    void    *b2;
-    size_t  len;
-{
-    char_u  *p1 = (char_u *)b1, *p2 = (char_u *)b2;
-
-    for ( ; len > 0; --len)
-    {
-	if (*p1 != *p2)
-	    return 1;
-	++p1;
-	++p2;
-    }
-    return 0;
-}
-#endif
-
-#ifdef VIM_MEMMOVE
-/*
- * Version of memmove() that handles overlapping source and destination.
- * For systems that don't have a function that is guaranteed to do that (SYSV).
- */
-    void
-mch_memmove(dst_arg, src_arg, len)
-    void    *src_arg, *dst_arg;
-    size_t  len;
-{
-    /*
-     * A void doesn't have a size, we use char pointers.
-     */
-    char *dst = dst_arg, *src = src_arg;
-
-					/* overlap, copy backwards */
-    if (dst > src && dst < src + len)
-    {
-	src += len;
-	dst += len;
-	while (len-- > 0)
-	    *--dst = *--src;
-    }
-    else				/* copy forwards */
-	while (len-- > 0)
-	    *dst++ = *src++;
 }
 #endif
 
@@ -1816,9 +1813,7 @@ mch_memmove(dst_arg, src_arg, len)
  * return 0 for match, < 0 for smaller, > 0 for bigger
  */
     int
-vim_stricmp(s1, s2)
-    char	*s1;
-    char	*s2;
+vim_stricmp(char *s1, char *s2)
 {
     int		i;
 
@@ -1843,10 +1838,7 @@ vim_stricmp(s1, s2)
  * return 0 for match, < 0 for smaller, > 0 for bigger
  */
     int
-vim_strnicmp(s1, s2, len)
-    char	*s1;
-    char	*s2;
-    size_t	len;
+vim_strnicmp(char *s1, char *s2, size_t len)
 {
     int		i;
 
@@ -1871,9 +1863,7 @@ vim_strnicmp(s1, s2, len)
  * pointer to the NUL at the end of the string.
  */
     char_u  *
-vim_strchr(string, c)
-    char_u	*string;
-    int		c;
+vim_strchr(char_u *string, int c)
 {
     char_u	*p;
     int		b;
@@ -1884,9 +1874,12 @@ vim_strchr(string, c)
     {
 	while (*p != NUL)
 	{
-	    if (utf_ptr2char(p) == c)
+	    int l = utfc_ptr2len(p);
+
+	    /* Avoid matching an illegal byte here. */
+	    if (utf_ptr2char(p) == c && l > 1)
 		return p;
-	    p += (*mb_ptr2len)(p);
+	    p += l;
 	}
 	return NULL;
     }
@@ -1929,9 +1922,7 @@ vim_strchr(string, c)
  * pointer to the NUL at the end of the string.
  */
     char_u  *
-vim_strbyte(string, c)
-    char_u	*string;
-    int		c;
+vim_strbyte(char_u *string, int c)
 {
     char_u	*p = string;
 
@@ -1950,9 +1941,7 @@ vim_strbyte(string, c)
  * Does not handle multi-byte char for "c"!
  */
     char_u  *
-vim_strrchr(string, c)
-    char_u	*string;
-    int		c;
+vim_strrchr(char_u *string, int c)
 {
     char_u	*retval = NULL;
     char_u	*p = string;
@@ -1961,7 +1950,7 @@ vim_strrchr(string, c)
     {
 	if (*p == c)
 	    retval = p;
-	mb_ptr_adv(p);
+	MB_PTR_ADV(p);
     }
     return retval;
 }
@@ -1976,15 +1965,13 @@ vim_strrchr(string, c)
 #   undef vim_strpbrk
 #  endif
     char_u *
-vim_strpbrk(s, charset)
-    char_u	*s;
-    char_u	*charset;
+vim_strpbrk(char_u *s, char_u *charset)
 {
     while (*s)
     {
 	if (vim_strchr(charset, *s) != NULL)
 	    return s;
-	mb_ptr_adv(s);
+	MB_PTR_ADV(s);
     }
     return NULL;
 }
@@ -1996,8 +1983,7 @@ vim_strpbrk(s, charset)
  * can't handle characters above 128.
  */
     int
-vim_isspace(x)
-    int	    x;
+vim_isspace(int x)
 {
     return ((x >= 9 && x <= 13) || x == ' ');
 }
@@ -2010,8 +1996,7 @@ vim_isspace(x)
  * Clear an allocated growing array.
  */
     void
-ga_clear(gap)
-    garray_T *gap;
+ga_clear(garray_T *gap)
 {
     vim_free(gap->ga_data);
     ga_init(gap);
@@ -2021,8 +2006,7 @@ ga_clear(gap)
  * Clear a growing array that contains a list of strings.
  */
     void
-ga_clear_strings(gap)
-    garray_T *gap;
+ga_clear_strings(garray_T *gap)
 {
     int		i;
 
@@ -2036,8 +2020,7 @@ ga_clear_strings(gap)
  * ga_growsize!  Or use ga_init2().
  */
     void
-ga_init(gap)
-    garray_T *gap;
+ga_init(garray_T *gap)
 {
     gap->ga_data = NULL;
     gap->ga_maxlen = 0;
@@ -2045,10 +2028,7 @@ ga_init(gap)
 }
 
     void
-ga_init2(gap, itemsize, growsize)
-    garray_T	*gap;
-    int		itemsize;
-    int		growsize;
+ga_init2(garray_T *gap, int itemsize, int growsize)
 {
     ga_init(gap);
     gap->ga_itemsize = itemsize;
@@ -2060,9 +2040,7 @@ ga_init2(gap, itemsize, growsize)
  * Return FAIL for failure, OK otherwise.
  */
     int
-ga_grow(gap, n)
-    garray_T	*gap;
-    int		n;
+ga_grow(garray_T *gap, int n)
 {
     size_t	old_len;
     size_t	new_len;
@@ -2091,9 +2069,7 @@ ga_grow(gap, n)
  * Returns NULL when out of memory.
  */
     char_u *
-ga_concat_strings(gap, sep)
-    garray_T *gap;
-    char     *sep;
+ga_concat_strings(garray_T *gap, char *sep)
 {
     int		i;
     int		len = 0;
@@ -2123,17 +2099,39 @@ ga_concat_strings(gap, sep)
     return s;
 }
 
+#if defined(FEAT_VIMINFO) || defined(FEAT_EVAL) || defined(PROTO)
+/*
+ * Make a copy of string "p" and add it to "gap".
+ * When out of memory nothing changes.
+ */
+    void
+ga_add_string(garray_T *gap, char_u *p)
+{
+    char_u *cp = vim_strsave(p);
+
+    if (cp != NULL)
+    {
+	if (ga_grow(gap, 1) == OK)
+	    ((char_u **)(gap->ga_data))[gap->ga_len++] = cp;
+	else
+	    vim_free(cp);
+    }
+}
+#endif
+
 /*
  * Concatenate a string to a growarray which contains characters.
+ * When "s" is NULL does not do anything.
  * Note: Does NOT copy the NUL at the end!
  */
     void
-ga_concat(gap, s)
-    garray_T	*gap;
-    char_u	*s;
+ga_concat(garray_T *gap, char_u *s)
 {
-    int    len = (int)STRLEN(s);
+    int    len;
 
+    if (s == NULL || *s == NUL)
+	return;
+    len = (int)STRLEN(s);
     if (ga_grow(gap, len) == OK)
     {
 	mch_memmove((char *)gap->ga_data + gap->ga_len, s, (size_t)len);
@@ -2145,9 +2143,7 @@ ga_concat(gap, s)
  * Append one byte to a growarray which contains bytes.
  */
     void
-ga_append(gap, c)
-    garray_T	*gap;
-    int		c;
+ga_append(garray_T *gap, int c)
 {
     if (ga_grow(gap, 1) == OK)
     {
@@ -2162,8 +2158,7 @@ ga_append(gap, c)
  * Append the text in "gap" below the cursor line and clear "gap".
  */
     void
-append_ga_line(gap)
-    garray_T	*gap;
+append_ga_line(garray_T *gap)
 {
     /* Remove trailing CR. */
     if (gap->ga_len > 0
@@ -2205,6 +2200,7 @@ static struct modmasktable
     /* 'A' must be the last one */
     {MOD_MASK_ALT,		MOD_MASK_ALT,		(char_u)'A'},
     {0, 0, NUL}
+    /* NOTE: when adding an entry, update MAX_KEY_NAME_LEN! */
 };
 
 /*
@@ -2337,6 +2333,8 @@ static struct key_name_entry
     {K_XDOWN,		(char_u *)"xDown"},
     {K_XLEFT,		(char_u *)"xLeft"},
     {K_XRIGHT,		(char_u *)"xRight"},
+    {K_PS,		(char_u *)"PasteStart"},
+    {K_PE,		(char_u *)"PasteEnd"},
 
     {K_F1,		(char_u *)"F1"},
     {K_F2,		(char_u *)"F2"},
@@ -2440,6 +2438,7 @@ static struct key_name_entry
 #endif
 #ifdef FEAT_MOUSE_SGR
     {K_SGR_MOUSE,	(char_u *)"SgrMouse"},
+    {K_SGR_MOUSERELEASE, (char_u *)"SgrMouseRelelase"},
 #endif
     {K_LEFTMOUSE,	(char_u *)"LeftMouse"},
     {K_LEFTMOUSE_NM,	(char_u *)"LeftMouseNM"},
@@ -2470,6 +2469,7 @@ static struct key_name_entry
     {K_SNR,		(char_u *)"SNR"},
 #endif
     {K_PLUG,		(char_u *)"Plug"},
+    {K_CURSORHOLD,	(char_u *)"CursorHold"},
 #ifdef FEAT_GUI_MACVIM
     {K_SWIPELEFT,	(char_u *)"SwipeLeft"},
     {K_SWIPERIGHT,	(char_u *)"SwipeRight"},
@@ -2477,6 +2477,7 @@ static struct key_name_entry
     {K_SWIPEDOWN,	(char_u *)"SwipeDown"},
 #endif
     {0,			NULL}
+    /* NOTE: When adding a long name update MAX_KEY_NAME_LEN. */
 };
 
 #define KEY_NAMES_TABLE_LEN (sizeof(key_names_table) / sizeof(struct key_name_entry))
@@ -2524,8 +2525,7 @@ static struct mousetable
  * modifier name ('S' for Shift, 'C' for Ctrl etc).
  */
     int
-name_to_mod_mask(c)
-    int	    c;
+name_to_mod_mask(int c)
 {
     int	    i;
 
@@ -2541,9 +2541,7 @@ name_to_mod_mask(c)
  * modifiers specified.
  */
     int
-simplify_key(key, modifiers)
-    int	    key;
-    int	    *modifiers;
+simplify_key(int key, int *modifiers)
 {
     int	    i;
     int	    key0;
@@ -2576,8 +2574,7 @@ simplify_key(key, modifiers)
  * Change <xHome> to <Home>, <xUp> to <Up>, etc.
  */
     int
-handle_x_keys(key)
-    int	    key;
+handle_x_keys(int key)
 {
     switch (key)
     {
@@ -2606,9 +2603,7 @@ handle_x_keys(key)
  * modifiers are down.
  */
     char_u *
-get_special_key_name(c, modifiers)
-    int	    c;
-    int	    modifiers;
+get_special_key_name(int c, int modifiers)
 {
     static char_u string[MAX_KEY_NAME_LEN + 1];
 
@@ -2711,8 +2706,13 @@ get_special_key_name(c, modifiers)
     }
     else		/* use name of special key */
     {
-	STRCPY(string + idx, key_names_table[table_idx].name);
-	idx = (int)STRLEN(string);
+	size_t len = STRLEN(key_names_table[table_idx].name);
+
+	if (len + idx + 2 <= MAX_KEY_NAME_LEN)
+	{
+	    STRCPY(string + idx, key_names_table[table_idx].name);
+	    idx += (int)len;
+	}
     }
     string[idx++] = '>';
     string[idx] = NUL;
@@ -2726,16 +2726,17 @@ get_special_key_name(c, modifiers)
  * dst[] must be big enough to hold the result (up to six characters)!
  */
     int
-trans_special(srcp, dst, keycode)
-    char_u	**srcp;
-    char_u	*dst;
-    int		keycode; /* prefer key code, e.g. K_DEL instead of DEL */
+trans_special(
+    char_u	**srcp,
+    char_u	*dst,
+    int		keycode, /* prefer key code, e.g. K_DEL instead of DEL */
+    int		in_string) /* TRUE when inside a double quoted string */
 {
     int		modifiers = 0;
     int		key;
     int		dlen = 0;
 
-    key = find_special_key(srcp, &modifiers, keycode, FALSE);
+    key = find_special_key(srcp, &modifiers, keycode, FALSE, in_string);
     if (key == 0)
 	return 0;
 
@@ -2771,11 +2772,12 @@ trans_special(srcp, dst, keycode)
  * returns 0 if there is no match.
  */
     int
-find_special_key(srcp, modp, keycode, keep_x_key)
-    char_u	**srcp;
-    int		*modp;
-    int		keycode;     /* prefer key code, e.g. K_DEL instead of DEL */
-    int		keep_x_key;  /* don't translate xHome to Home key */
+find_special_key(
+    char_u	**srcp,
+    int		*modp,
+    int		keycode,     /* prefer key code, e.g. K_DEL instead of DEL */
+    int		keep_x_key,  /* don't translate xHome to Home key */
+    int		in_string)   /* TRUE in string, double quote is escaped */
 {
     char_u	*last_dash;
     char_u	*end_of_name;
@@ -2784,7 +2786,7 @@ find_special_key(srcp, modp, keycode, keep_x_key)
     int		modifiers;
     int		bit;
     int		key;
-    unsigned long n;
+    uvarnumber_T	n;
     int		l;
 
     src = *srcp;
@@ -2806,15 +2808,21 @@ find_special_key(srcp, modp, keycode, keep_x_key)
 		else
 #endif
 		    l = 1;
-		if (bp[l + 1] == '>')
-		    bp += l;	/* anything accepted, like <C-?> */
+		/* Anything accepted, like <C-?>.
+		 * <C-"> or <M-"> are not special in strings as " is
+		 * the string delimiter. With a backslash it works: <M-\"> */
+		if (!(in_string && bp[1] == '"') && bp[2] == '>')
+		    bp += l;
+		else if (in_string && bp[1] == '\\' && bp[2] == '"'
+							       && bp[3] == '>')
+		    bp += 2;
 	    }
 	}
 	if (bp[0] == 't' && bp[1] == '_' && bp[2] && bp[3])
 	    bp += 3;	/* skip t_xx, xx may be '-' or '>' */
 	else if (STRNICMP(bp, "char-", 5) == 0)
 	{
-	    vim_str2nr(bp + 5, NULL, &l, TRUE, TRUE, NULL, NULL);
+	    vim_str2nr(bp + 5, NULL, &l, STR2NR_ALL, NULL, NULL, 0);
 	    bp += l + 5;
 	    break;
 	}
@@ -2846,25 +2854,27 @@ find_special_key(srcp, modp, keycode, keep_x_key)
 						 && VIM_ISDIGIT(last_dash[6]))
 	    {
 		/* <Char-123> or <Char-033> or <Char-0x33> */
-		vim_str2nr(last_dash + 6, NULL, NULL, TRUE, TRUE, NULL, &n);
+		vim_str2nr(last_dash + 6, NULL, NULL, STR2NR_ALL, NULL, &n, 0);
 		key = (int)n;
 	    }
 	    else
 	    {
-		/*
-		 * Modifier with single letter, or special key name.
-		 */
+		int off = 1;
+
+		/* Modifier with single letter, or special key name.  */
+		if (in_string && last_dash[1] == '\\' && last_dash[2] == '"')
+		    off = 2;
 #ifdef FEAT_MBYTE
 		if (has_mbyte)
-		    l = mb_ptr2len(last_dash + 1);
+		    l = mb_ptr2len(last_dash + off);
 		else
 #endif
 		    l = 1;
-		if (modifiers != 0 && last_dash[l + 1] == '>')
-		    key = PTR2CHAR(last_dash + 1);
+		if (modifiers != 0 && last_dash[l + off] == '>')
+		    key = PTR2CHAR(last_dash + off);
 		else
 		{
-		    key = get_special_key_code(last_dash + 1);
+		    key = get_special_key_code(last_dash + off);
 		    if (!keep_x_key)
 			key = handle_x_keys(key);
 		}
@@ -2911,9 +2921,7 @@ find_special_key(srcp, modp, keycode, keep_x_key)
  * Changes "Shift-a" to 'A', "Alt-A" to 0xc0, etc.
  */
     int
-extract_modifiers(key, modp)
-    int	    key;
-    int	    *modp;
+extract_modifiers(int key, int *modp)
 {
     int	modifiers = *modp;
 
@@ -2967,8 +2975,7 @@ extract_modifiers(key, modp)
  * Return the index when found, -1 when not found.
  */
     int
-find_special_key_in_table(c)
-    int	    c;
+find_special_key_in_table(int c)
 {
     int	    i;
 
@@ -2988,8 +2995,7 @@ find_special_key_in_table(c)
  * Return the key code, or 0 if not found.
  */
     int
-get_special_key_code(name)
-    char_u  *name;
+get_special_key_code(char_u *name)
 {
     char_u  *table_name;
     char_u  string[3];
@@ -3021,8 +3027,7 @@ get_special_key_code(name)
 
 #if defined(FEAT_CMDL_COMPL) || defined(PROTO)
     char_u *
-get_key_name(i)
-    int	    i;
+get_key_name(int i)
 {
     if (i >= (int)KEY_NAMES_TABLE_LEN)
 	return NULL;
@@ -3036,10 +3041,7 @@ get_key_name(i)
  * arguments.  Return which button is down or was released.
  */
     int
-get_mouse_button(code, is_click, is_drag)
-    int	    code;
-    int	    *is_click;
-    int	    *is_drag;
+get_mouse_button(int code, int *is_click, int *is_drag)
 {
     int	    i;
 
@@ -3059,10 +3061,10 @@ get_mouse_button(code, is_click, is_drag)
  * mouse was clicked, dragged or released.
  */
     int
-get_pseudo_mouse_code(button, is_click, is_drag)
-    int	    button;	/* eg MOUSE_LEFT */
-    int	    is_click;
-    int	    is_drag;
+get_pseudo_mouse_code(
+    int	    button,	/* eg MOUSE_LEFT */
+    int	    is_click,
+    int	    is_drag)
 {
     int	    i;
 
@@ -3097,8 +3099,7 @@ get_pseudo_mouse_code(button, is_click, is_drag)
  * Return the current end-of-line type: EOL_DOS, EOL_UNIX or EOL_MAC.
  */
     int
-get_fileformat(buf)
-    buf_T	*buf;
+get_fileformat(buf_T *buf)
 {
     int		c = *buf->b_p_ff;
 
@@ -3114,9 +3115,9 @@ get_fileformat(buf)
  * argument.
  */
     int
-get_fileformat_force(buf, eap)
-    buf_T	*buf;
-    exarg_T	*eap;	    /* can be NULL! */
+get_fileformat_force(
+    buf_T	*buf,
+    exarg_T	*eap)	    /* can be NULL! */
 {
     int		c;
 
@@ -3142,9 +3143,9 @@ get_fileformat_force(buf, eap)
  * Note: Does _not_ set global value of 'textmode'!
  */
     void
-set_fileformat(t, opt_flags)
-    int		t;
-    int		opt_flags;	/* OPT_LOCAL and/or OPT_GLOBAL */
+set_fileformat(
+    int		t,
+    int		opt_flags)	/* OPT_LOCAL and/or OPT_GLOBAL */
 {
     char	*p = NULL;
 
@@ -3181,7 +3182,7 @@ set_fileformat(t, opt_flags)
  * Return the default fileformat from 'fileformats'.
  */
     int
-default_fileformat()
+default_fileformat(void)
 {
     switch (*p_ffs)
     {
@@ -3195,9 +3196,7 @@ default_fileformat()
  * Call shell.	Calls mch_call_shell, with 'shellxquote' added.
  */
     int
-call_shell(cmd, opt)
-    char_u	*cmd;
-    int		opt;
+call_shell(char_u *cmd, int opt)
 {
     char_u	*ncmd;
     int		retval;
@@ -3293,7 +3292,7 @@ call_shell(cmd, opt)
  * NORMAL State with a condition.  This function returns the real State.
  */
     int
-get_real_state()
+get_real_state(void)
 {
     if (State & NORMAL)
     {
@@ -3316,9 +3315,7 @@ get_real_state()
  * "b" must point to the start of the file name
  */
     int
-after_pathsep(b, p)
-    char_u	*b;
-    char_u	*p;
+after_pathsep(char_u *b, char_u *p)
 {
     return p > b && vim_ispathsep(p[-1])
 			     && (!has_mbyte || (*mb_head_off)(b, p - 1) == 0);
@@ -3330,9 +3327,7 @@ after_pathsep(b, p)
  * "f1" may be a short name, "f2" must be a full path.
  */
     int
-same_directory(f1, f2)
-    char_u	*f1;
-    char_u	*f2;
+same_directory(char_u *f1, char_u *f2)
 {
     char_u	ffname[MAXPATHL];
     char_u	*t1;
@@ -3360,8 +3355,7 @@ same_directory(f1, f2)
  * Return OK or FAIL.
  */
     int
-vim_chdirfile(fname)
-    char_u	*fname;
+vim_chdirfile(char_u *fname)
 {
     char_u	dir[MAXPATHL];
 
@@ -3377,9 +3371,8 @@ vim_chdirfile(fname)
  * Used for systems where stat() ignores a trailing slash on a file name.
  * The Vim code assumes a trailing slash is only ignored for a directory.
  */
-    int
-illegal_slash(name)
-    char *name;
+    static int
+illegal_slash(const char *name)
 {
     if (name[0] == NUL)
 	return FALSE;	    /* no file name is not illegal */
@@ -3388,6 +3381,17 @@ illegal_slash(name)
     if (mch_isdir((char_u *)name))
 	return FALSE;	    /* trailing slash for a directory */
     return TRUE;
+}
+
+/*
+ * Special implementation of mch_stat() for Solaris.
+ */
+    int
+vim_stat(const char *name, stat_T *stp)
+{
+    /* On Solaris stat() accepts "file/" as if it was "file".  Return -1 if
+     * the name ends in "/" and it's not a directory. */
+    return illegal_slash(name) ? -1 : stat(name, stp);
 }
 #endif
 
@@ -3454,8 +3458,7 @@ static char * mshape_names[] =
  * Returns error message for an illegal option, NULL otherwise.
  */
     char_u *
-parse_shape_opt(what)
-    int		what;
+parse_shape_opt(int what)
 {
     char_u	*modep;
     char_u	*colonp;
@@ -3487,11 +3490,12 @@ parse_shape_opt(what)
 	while (*modep != NUL)
 	{
 	    colonp = vim_strchr(modep, ':');
-	    if (colonp == NULL)
+	    commap = vim_strchr(modep, ',');
+
+	    if (colonp == NULL || (commap != NULL && commap < colonp))
 		return (char_u *)N_("E545: Missing colon");
 	    if (colonp == modep)
 		return (char_u *)N_("E546: Illegal mode");
-	    commap = vim_strchr(modep, ',');
 
 	    /*
 	     * Repeat for all mode's before the colon.
@@ -3701,8 +3705,7 @@ parse_shape_opt(what)
  * When "mouse" is TRUE, consider indexes valid for the mouse pointer.
  */
     int
-get_shape_idx(mouse)
-    int	mouse;
+get_shape_idx(int mouse)
 {
 #ifdef FEAT_MOUSESHAPE
     if (mouse && (State == HITRETURN || State == ASKMORE))
@@ -3717,7 +3720,7 @@ get_shape_idx(mouse)
     }
     if (mouse && drag_status_line)
 	return SHAPE_IDX_SDRAG;
-# ifdef FEAT_VERTSPLIT
+# ifdef FEAT_WINDOWS
     if (mouse && drag_sep_line)
 	return SHAPE_IDX_VDRAG;
 # endif
@@ -3764,8 +3767,7 @@ static int old_mouse_shape = 0;
  * when the mouse moves off the status or command line).
  */
     void
-update_mouseshape(shape_idx)
-    int	shape_idx;
+update_mouseshape(int shape_idx)
 {
     int new_mouse_shape;
 
@@ -3808,322 +3810,6 @@ update_mouseshape(shape_idx)
 
 #endif /* CURSOR_SHAPE */
 
-
-#ifdef FEAT_CRYPT
-/*
- * Optional encryption support.
- * Mohsin Ahmed, mosh@sasi.com, 98-09-24
- * Based on zip/crypt sources.
- *
- * NOTE FOR USA: Since 2000 exporting this code from the USA is allowed to
- * most countries.  There are a few exceptions, but that still should not be a
- * problem since this code was originally created in Europe and India.
- *
- * Blowfish addition originally made by Mohsin Ahmed,
- * http://www.cs.albany.edu/~mosh 2010-03-14
- * Based on blowfish by Bruce Schneier (http://www.schneier.com/blowfish.html)
- * and sha256 by Christophe Devine.
- */
-
-/* from zip.h */
-
-typedef unsigned short ush;	/* unsigned 16-bit value */
-typedef unsigned long  ulg;	/* unsigned 32-bit value */
-
-static void make_crc_tab __ARGS((void));
-
-static ulg crc_32_tab[256];
-
-/*
- * Fill the CRC table.
- */
-    static void
-make_crc_tab()
-{
-    ulg		s,t,v;
-    static int	done = FALSE;
-
-    if (done)
-	return;
-    for (t = 0; t < 256; t++)
-    {
-	v = t;
-	for (s = 0; s < 8; s++)
-	    v = (v >> 1) ^ ((v & 1) * (ulg)0xedb88320L);
-	crc_32_tab[t] = v;
-    }
-    done = TRUE;
-}
-
-#define CRC32(c, b) (crc_32_tab[((int)(c) ^ (b)) & 0xff] ^ ((c) >> 8))
-
-static ulg keys[3]; /* keys defining the pseudo-random sequence */
-
-/*
- * Return the next byte in the pseudo-random sequence.
- */
-#define DECRYPT_BYTE_ZIP(t) { \
-    ush temp; \
- \
-    temp = (ush)keys[2] | 2; \
-    t = (int)(((unsigned)(temp * (temp ^ 1U)) >> 8) & 0xff); \
-}
-
-/*
- * Update the encryption keys with the next byte of plain text.
- */
-#define UPDATE_KEYS_ZIP(c) { \
-    keys[0] = CRC32(keys[0], (c)); \
-    keys[1] += keys[0] & 0xff; \
-    keys[1] = keys[1] * 134775813L + 1; \
-    keys[2] = CRC32(keys[2], (int)(keys[1] >> 24)); \
-}
-
-static int crypt_busy = 0;
-static ulg saved_keys[3];
-static int saved_crypt_method;
-
-/*
- * Return int value for crypt method string:
- * 0 for "zip", the old method.  Also for any non-valid value.
- * 1 for "blowfish".
- */
-    int
-crypt_method_from_string(s)
-    char_u  *s;
-{
-    return *s == 'b' ? 1 : 0;
-}
-
-/*
- * Get the crypt method for buffer "buf" as a number.
- */
-    int
-get_crypt_method(buf)
-    buf_T *buf;
-{
-    return crypt_method_from_string(*buf->b_p_cm == NUL ? p_cm : buf->b_p_cm);
-}
-
-/*
- * Set the crypt method for buffer "buf" to "method" using the int value as
- * returned by crypt_method_from_string().
- */
-    void
-set_crypt_method(buf, method)
-    buf_T   *buf;
-    int	    method;
-{
-    free_string_option(buf->b_p_cm);
-    buf->b_p_cm = vim_strsave((char_u *)(method == 0 ? "zip" : "blowfish"));
-}
-
-/*
- * Prepare for initializing encryption.  If already doing encryption then save
- * the state.
- * Must always be called symmetrically with crypt_pop_state().
- */
-    void
-crypt_push_state()
-{
-    if (crypt_busy == 1)
-    {
-	/* save the state */
-	if (use_crypt_method == 0)
-	{
-	    saved_keys[0] = keys[0];
-	    saved_keys[1] = keys[1];
-	    saved_keys[2] = keys[2];
-	}
-	else
-	    bf_crypt_save();
-	saved_crypt_method = use_crypt_method;
-    }
-    else if (crypt_busy > 1)
-	EMSG2(_(e_intern2), "crypt_push_state()");
-    ++crypt_busy;
-}
-
-/*
- * End encryption.  If doing encryption before crypt_push_state() then restore
- * the saved state.
- * Must always be called symmetrically with crypt_push_state().
- */
-    void
-crypt_pop_state()
-{
-    --crypt_busy;
-    if (crypt_busy == 1)
-    {
-	use_crypt_method = saved_crypt_method;
-	if (use_crypt_method == 0)
-	{
-	    keys[0] = saved_keys[0];
-	    keys[1] = saved_keys[1];
-	    keys[2] = saved_keys[2];
-	}
-	else
-	    bf_crypt_restore();
-    }
-}
-
-/*
- * Encrypt "from[len]" into "to[len]".
- * "from" and "to" can be equal to encrypt in place.
- */
-    void
-crypt_encode(from, len, to)
-    char_u	*from;
-    size_t	len;
-    char_u	*to;
-{
-    size_t	i;
-    int		ztemp, t;
-
-    if (use_crypt_method == 0)
-	for (i = 0; i < len; ++i)
-	{
-	    ztemp = from[i];
-	    DECRYPT_BYTE_ZIP(t);
-	    UPDATE_KEYS_ZIP(ztemp);
-	    to[i] = t ^ ztemp;
-	}
-    else
-	bf_crypt_encode(from, len, to);
-}
-
-/*
- * Decrypt "ptr[len]" in place.
- */
-    void
-crypt_decode(ptr, len)
-    char_u	*ptr;
-    long	len;
-{
-    char_u *p;
-
-    if (use_crypt_method == 0)
-	for (p = ptr; p < ptr + len; ++p)
-	{
-	    ush temp;
-
-	    temp = (ush)keys[2] | 2;
-	    temp = (int)(((unsigned)(temp * (temp ^ 1U)) >> 8) & 0xff);
-	    UPDATE_KEYS_ZIP(*p ^= temp);
-	}
-    else
-	bf_crypt_decode(ptr, len);
-}
-
-/*
- * Initialize the encryption keys and the random header according to
- * the given password.
- * If "passwd" is NULL or empty, don't do anything.
- */
-    void
-crypt_init_keys(passwd)
-    char_u *passwd;		/* password string with which to modify keys */
-{
-    if (passwd != NULL && *passwd != NUL)
-    {
-	if (use_crypt_method == 0)
-	{
-	    char_u *p;
-
-	    make_crc_tab();
-	    keys[0] = 305419896L;
-	    keys[1] = 591751049L;
-	    keys[2] = 878082192L;
-	    for (p = passwd; *p!= NUL; ++p)
-	    {
-		UPDATE_KEYS_ZIP((int)*p);
-	    }
-	}
-	else
-	    bf_crypt_init_keys(passwd);
-    }
-}
-
-/*
- * Free an allocated crypt key.  Clear the text to make sure it doesn't stay
- * in memory anywhere.
- */
-    void
-free_crypt_key(key)
-    char_u *key;
-{
-    char_u *p;
-
-    if (key != NULL)
-    {
-	for (p = key; *p != NUL; ++p)
-	    *p = 0;
-	vim_free(key);
-    }
-}
-
-/*
- * Ask the user for a crypt key.
- * When "store" is TRUE, the new key is stored in the 'key' option, and the
- * 'key' option value is returned: Don't free it.
- * When "store" is FALSE, the typed key is returned in allocated memory.
- * Returns NULL on failure.
- */
-    char_u *
-get_crypt_key(store, twice)
-    int		store;
-    int		twice;	    /* Ask for the key twice. */
-{
-    char_u	*p1, *p2 = NULL;
-    int		round;
-
-    for (round = 0; ; ++round)
-    {
-	cmdline_star = TRUE;
-	cmdline_row = msg_row;
-	p1 = getcmdline_prompt(NUL, round == 0
-		? (char_u *)_("Enter encryption key: ")
-		: (char_u *)_("Enter same key again: "), 0, EXPAND_NOTHING,
-		NULL);
-	cmdline_star = FALSE;
-
-	if (p1 == NULL)
-	    break;
-
-	if (round == twice)
-	{
-	    if (p2 != NULL && STRCMP(p1, p2) != 0)
-	    {
-		MSG(_("Keys don't match!"));
-		free_crypt_key(p1);
-		free_crypt_key(p2);
-		p2 = NULL;
-		round = -1;		/* do it again */
-		continue;
-	    }
-
-	    if (store)
-	    {
-		set_option_value((char_u *)"key", 0L, p1, OPT_LOCAL);
-		free_crypt_key(p1);
-		p1 = curbuf->b_p_key;
-	    }
-	    break;
-	}
-	p2 = p1;
-    }
-
-    /* since the user typed this, no need to wait for return */
-    if (msg_didout)
-	msg_putchar('\n');
-    need_wait_return = FALSE;
-    msg_didout = FALSE;
-
-    free_crypt_key(p2);
-    return p1;
-}
-
-#endif /* FEAT_CRYPT */
 
 /* TODO: make some #ifdef for this */
 /*--------[ file searching ]-------------------------------------------------*/
@@ -4305,28 +3991,28 @@ typedef struct ff_search_ctx_T
 
 /* locally needed functions */
 #ifdef FEAT_PATH_EXTRA
-static int ff_check_visited __ARGS((ff_visited_T **, char_u *, char_u *));
+static int ff_check_visited(ff_visited_T **, char_u *, char_u *);
 #else
-static int ff_check_visited __ARGS((ff_visited_T **, char_u *));
+static int ff_check_visited(ff_visited_T **, char_u *);
 #endif
-static void vim_findfile_free_visited_list __ARGS((ff_visited_list_hdr_T **list_headp));
-static void ff_free_visited_list __ARGS((ff_visited_T *vl));
-static ff_visited_list_hdr_T* ff_get_visited_list __ARGS((char_u *, ff_visited_list_hdr_T **list_headp));
+static void vim_findfile_free_visited_list(ff_visited_list_hdr_T **list_headp);
+static void ff_free_visited_list(ff_visited_T *vl);
+static ff_visited_list_hdr_T* ff_get_visited_list(char_u *, ff_visited_list_hdr_T **list_headp);
 #ifdef FEAT_PATH_EXTRA
-static int ff_wc_equal __ARGS((char_u *s1, char_u *s2));
+static int ff_wc_equal(char_u *s1, char_u *s2);
 #endif
 
-static void ff_push __ARGS((ff_search_ctx_T *search_ctx, ff_stack_T *stack_ptr));
-static ff_stack_T *ff_pop __ARGS((ff_search_ctx_T *search_ctx));
-static void ff_clear __ARGS((ff_search_ctx_T *search_ctx));
-static void ff_free_stack_element __ARGS((ff_stack_T *stack_ptr));
+static void ff_push(ff_search_ctx_T *search_ctx, ff_stack_T *stack_ptr);
+static ff_stack_T *ff_pop(ff_search_ctx_T *search_ctx);
+static void ff_clear(ff_search_ctx_T *search_ctx);
+static void ff_free_stack_element(ff_stack_T *stack_ptr);
 #ifdef FEAT_PATH_EXTRA
-static ff_stack_T *ff_create_stack_element __ARGS((char_u *, char_u *, int, int));
+static ff_stack_T *ff_create_stack_element(char_u *, char_u *, int, int);
 #else
-static ff_stack_T *ff_create_stack_element __ARGS((char_u *, int, int));
+static ff_stack_T *ff_create_stack_element(char_u *, int, int);
 #endif
 #ifdef FEAT_PATH_EXTRA
-static int ff_path_in_stoplist __ARGS((char_u *, int, char_u **));
+static int ff_path_in_stoplist(char_u *, int, char_u **);
 #endif
 
 static char_u e_pathtoolong[] = N_("E854: path too long for completion");
@@ -4340,10 +4026,7 @@ static char_u e_pathtoolong[] = N_("E854: path too long for completion");
 static void *ff_fn_search_context = NULL;
 
     char_u *
-vim_findfirst(path, filename, level)
-    char_u	*path;
-    char_u	*filename;
-    int		level;
+vim_findfirst(char_u *path, char_u *filename, int level)
 {
     ff_fn_search_context =
 	vim_findfile_init(path, filename, NULL, level, TRUE, FALSE,
@@ -4355,7 +4038,7 @@ vim_findfirst(path, filename, level)
 }
 
     char_u *
-vim_findnext()
+vim_findnext(void)
 {
     char_u *ret = vim_findfile(ff_fn_search_context);
 
@@ -4421,17 +4104,16 @@ vim_findnext()
  * limited functionality then.
  */
     void *
-vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what,
-					   search_ctx_arg, tagfile, rel_fname)
-    char_u	*path;
-    char_u	*filename;
-    char_u	*stopdirs UNUSED;
-    int		level;
-    int		free_visited;
-    int		find_what;
-    void	*search_ctx_arg;
-    int		tagfile;	/* expanding names of tags files */
-    char_u	*rel_fname;	/* file name to use for "." */
+vim_findfile_init(
+    char_u	*path,
+    char_u	*filename,
+    char_u	*stopdirs UNUSED,
+    int		level,
+    int		free_visited,
+    int		find_what,
+    void	*search_ctx_arg,
+    int		tagfile,	/* expanding names of tags files */
+    char_u	*rel_fname)	/* file name to use for "." */
 {
 #ifdef FEAT_PATH_EXTRA
     char_u		*wc_part;
@@ -4720,21 +4402,20 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what,
 		temp = alloc((int)(STRLEN(search_ctx->ffsc_wc_path)
 				 + STRLEN(search_ctx->ffsc_fix_path + len)
 				 + 1));
-	    }
+		if (temp == NULL || wc_path == NULL)
+		{
+		    vim_free(buf);
+		    vim_free(temp);
+		    vim_free(wc_path);
+		    goto error_return;
+		}
 
-	    if (temp == NULL || wc_path == NULL)
-	    {
-		vim_free(buf);
-		vim_free(temp);
+		STRCPY(temp, search_ctx->ffsc_fix_path + len);
+		STRCAT(temp, search_ctx->ffsc_wc_path);
+		vim_free(search_ctx->ffsc_wc_path);
 		vim_free(wc_path);
-		goto error_return;
+		search_ctx->ffsc_wc_path = temp;
 	    }
-
-	    STRCPY(temp, search_ctx->ffsc_fix_path + len);
-	    STRCAT(temp, search_ctx->ffsc_wc_path);
-	    vim_free(search_ctx->ffsc_wc_path);
-	    vim_free(wc_path);
-	    search_ctx->ffsc_wc_path = temp;
 	}
 #endif
 	vim_free(buf);
@@ -4772,8 +4453,7 @@ error_return:
  * Get the stopdir string.  Check that ';' is not escaped.
  */
     char_u *
-vim_findfile_stopdir(buf)
-    char_u	*buf;
+vim_findfile_stopdir(char_u *buf)
 {
     char_u	*r_ptr = buf;
 
@@ -4803,8 +4483,7 @@ vim_findfile_stopdir(buf)
  * Clean up the given search context. Can handle a NULL pointer.
  */
     void
-vim_findfile_cleanup(ctx)
-    void	*ctx;
+vim_findfile_cleanup(void *ctx)
 {
     if (ctx == NULL)
 	return;
@@ -4827,8 +4506,7 @@ vim_findfile_cleanup(ctx)
  * top of the list).
  */
     char_u *
-vim_findfile(search_ctx_arg)
-    void	*search_ctx_arg;
+vim_findfile(void *search_ctx_arg)
 {
     char_u	*file_path;
 #ifdef FEAT_PATH_EXTRA
@@ -4966,13 +4644,23 @@ vim_findfile(search_ctx_arg)
 		if (!vim_isAbsName(stackp->ffs_fix_path)
 						&& search_ctx->ffsc_start_dir)
 		{
-		    STRCPY(file_path, search_ctx->ffsc_start_dir);
-		    add_pathsep(file_path);
+		    if (STRLEN(search_ctx->ffsc_start_dir) + 1 < MAXPATHL)
+		    {
+			STRCPY(file_path, search_ctx->ffsc_start_dir);
+			add_pathsep(file_path);
+		    }
+		    else
+			goto fail;
 		}
 
 		/* append the fix part of the search path */
-		STRCAT(file_path, stackp->ffs_fix_path);
-		add_pathsep(file_path);
+		if (STRLEN(file_path) + STRLEN(stackp->ffs_fix_path) + 1 < MAXPATHL)
+		{
+		    STRCAT(file_path, stackp->ffs_fix_path);
+		    add_pathsep(file_path);
+		}
+		else
+		    goto fail;
 
 #ifdef FEAT_PATH_EXTRA
 		rest_of_wildcards = stackp->ffs_wc_path;
@@ -4989,7 +4677,10 @@ vim_findfile(search_ctx_arg)
 			if (*p > 0)
 			{
 			    (*p)--;
-			    file_path[len++] = '*';
+			    if (len + 1 < MAXPATHL)
+				file_path[len++] = '*';
+			    else
+				goto fail;
 			}
 
 			if (*p == 0)
@@ -5017,7 +4708,10 @@ vim_findfile(search_ctx_arg)
 		     */
 		    while (*rest_of_wildcards
 			    && !vim_ispathsep(*rest_of_wildcards))
-			file_path[len++] = *rest_of_wildcards++;
+			if (len + 1 < MAXPATHL)
+			    file_path[len++] = *rest_of_wildcards++;
+			else
+			    goto fail;
 
 		    file_path[len] = NUL;
 		    if (vim_ispathsep(*rest_of_wildcards))
@@ -5078,9 +4772,15 @@ vim_findfile(search_ctx_arg)
 
 			/* prepare the filename to be checked for existence
 			 * below */
-			STRCPY(file_path, stackp->ffs_filearray[i]);
-			add_pathsep(file_path);
-			STRCAT(file_path, search_ctx->ffsc_file_to_search);
+			if (STRLEN(stackp->ffs_filearray[i]) + 1
+				+ STRLEN(search_ctx->ffsc_file_to_search) < MAXPATHL)
+			{
+			    STRCPY(file_path, stackp->ffs_filearray[i]);
+			    add_pathsep(file_path);
+			    STRCAT(file_path, search_ctx->ffsc_file_to_search);
+			}
+			else
+			    goto fail;
 
 			/*
 			 * Try without extra suffix and then with suffixes
@@ -5253,9 +4953,15 @@ vim_findfile(search_ctx_arg)
 	    if (*search_ctx->ffsc_start_dir == 0)
 		break;
 
-	    STRCPY(file_path, search_ctx->ffsc_start_dir);
-	    add_pathsep(file_path);
-	    STRCAT(file_path, search_ctx->ffsc_fix_path);
+	    if (STRLEN(search_ctx->ffsc_start_dir) + 1
+		    + STRLEN(search_ctx->ffsc_fix_path) < MAXPATHL)
+	    {
+		STRCPY(file_path, search_ctx->ffsc_start_dir);
+		add_pathsep(file_path);
+		STRCAT(file_path, search_ctx->ffsc_fix_path);
+	    }
+	    else
+		goto fail;
 
 	    /* create a new stack entry */
 	    sptr = ff_create_stack_element(file_path,
@@ -5269,6 +4975,7 @@ vim_findfile(search_ctx_arg)
     }
 #endif
 
+fail:
     vim_free(file_path);
     return NULL;
 }
@@ -5278,8 +4985,7 @@ vim_findfile(search_ctx_arg)
  * Can handle it if the passed search_context is NULL;
  */
     void
-vim_findfile_free_visited(search_ctx_arg)
-    void	*search_ctx_arg;
+vim_findfile_free_visited(void *search_ctx_arg)
 {
     ff_search_ctx_T *search_ctx;
 
@@ -5292,8 +4998,7 @@ vim_findfile_free_visited(search_ctx_arg)
 }
 
     static void
-vim_findfile_free_visited_list(list_headp)
-    ff_visited_list_hdr_T	**list_headp;
+vim_findfile_free_visited_list(ff_visited_list_hdr_T **list_headp)
 {
     ff_visited_list_hdr_T *vp;
 
@@ -5310,8 +5015,7 @@ vim_findfile_free_visited_list(list_headp)
 }
 
     static void
-ff_free_visited_list(vl)
-    ff_visited_T *vl;
+ff_free_visited_list(ff_visited_T *vl)
 {
     ff_visited_T *vp;
 
@@ -5332,9 +5036,9 @@ ff_free_visited_list(vl)
  * allocates a new one.
  */
     static ff_visited_list_hdr_T*
-ff_get_visited_list(filename, list_headp)
-    char_u			*filename;
-    ff_visited_list_hdr_T	**list_headp;
+ff_get_visited_list(
+    char_u			*filename,
+    ff_visited_list_hdr_T	**list_headp)
 {
     ff_visited_list_hdr_T  *retptr = NULL;
 
@@ -5405,11 +5109,11 @@ ff_get_visited_list(filename, list_headp)
  *    '**\20' is equal to '**\24'
  */
     static int
-ff_wc_equal(s1, s2)
-    char_u	*s1;
-    char_u	*s2;
+ff_wc_equal(char_u *s1, char_u *s2)
 {
-    int		i;
+    int		i, j;
+    int		c1 = NUL;
+    int		c2 = NUL;
     int		prev1 = NUL;
     int		prev2 = NUL;
 
@@ -5419,21 +5123,21 @@ ff_wc_equal(s1, s2)
     if (s1 == NULL || s2 == NULL)
 	return FALSE;
 
-    if (STRLEN(s1) != STRLEN(s2))
-	return FAIL;
-
-    for (i = 0; s1[i] != NUL && s2[i] != NUL; i += MB_PTR2LEN(s1 + i))
+    for (i = 0, j = 0; s1[i] != NUL && s2[j] != NUL;)
     {
-	int c1 = PTR2CHAR(s1 + i);
-	int c2 = PTR2CHAR(s2 + i);
+	c1 = PTR2CHAR(s1 + i);
+	c2 = PTR2CHAR(s2 + j);
 
 	if ((p_fic ? MB_TOLOWER(c1) != MB_TOLOWER(c2) : c1 != c2)
 		&& (prev1 != '*' || prev2 != '*'))
-	    return FAIL;
+	    return FALSE;
 	prev2 = prev1;
 	prev1 = c1;
+
+        i += MB_PTR2LEN(s1 + i);
+        j += MB_PTR2LEN(s2 + j);
     }
-    return TRUE;
+    return s1[i] == s2[j];
 }
 #endif
 
@@ -5447,20 +5151,17 @@ ff_wc_equal(s1, s2)
  *	    never.
  */
     static int
-ff_check_visited(visited_list, fname
+ff_check_visited(
+    ff_visited_T	**visited_list,
+    char_u		*fname
 #ifdef FEAT_PATH_EXTRA
-	, wc_path
+    , char_u		*wc_path
 #endif
-	)
-    ff_visited_T	**visited_list;
-    char_u		*fname;
-#ifdef FEAT_PATH_EXTRA
-    char_u		*wc_path;
-#endif
+    )
 {
     ff_visited_T	*vp;
 #ifdef UNIX
-    struct stat		st;
+    stat_T		st;
     int			url = FALSE;
 #endif
 
@@ -5547,17 +5248,13 @@ ff_check_visited(visited_list, fname
  * create stack element from given path pieces
  */
     static ff_stack_T *
-ff_create_stack_element(fix_part,
+ff_create_stack_element(
+    char_u	*fix_part,
 #ifdef FEAT_PATH_EXTRA
-	wc_part,
+    char_u	*wc_part,
 #endif
-	level, star_star_empty)
-    char_u	*fix_part;
-#ifdef FEAT_PATH_EXTRA
-    char_u	*wc_part;
-#endif
-    int		level;
-    int		star_star_empty;
+    int		level,
+    int		star_star_empty)
 {
     ff_stack_T	*new;
 
@@ -5571,7 +5268,7 @@ ff_create_stack_element(fix_part,
     new->ffs_filearray_cur  = 0;
     new->ffs_stage	   = 0;
     new->ffs_level	   = level;
-    new->ffs_star_star_empty = star_star_empty;;
+    new->ffs_star_star_empty = star_star_empty;
 
     /* the following saves NULL pointer checks in vim_findfile */
     if (fix_part == NULL)
@@ -5601,9 +5298,7 @@ ff_create_stack_element(fix_part,
  * Push a dir on the directory stack.
  */
     static void
-ff_push(search_ctx, stack_ptr)
-    ff_search_ctx_T *search_ctx;
-    ff_stack_T	    *stack_ptr;
+ff_push(ff_search_ctx_T *search_ctx, ff_stack_T *stack_ptr)
 {
     /* check for NULL pointer, not to return an error to the user, but
      * to prevent a crash */
@@ -5619,8 +5314,7 @@ ff_push(search_ctx, stack_ptr)
  * Returns NULL if stack is empty.
  */
     static ff_stack_T *
-ff_pop(search_ctx)
-    ff_search_ctx_T *search_ctx;
+ff_pop(ff_search_ctx_T *search_ctx)
 {
     ff_stack_T  *sptr;
 
@@ -5635,8 +5329,7 @@ ff_pop(search_ctx)
  * free the given stack element
  */
     static void
-ff_free_stack_element(stack_ptr)
-    ff_stack_T  *stack_ptr;
+ff_free_stack_element(ff_stack_T *stack_ptr)
 {
     /* vim_free handles possible NULL pointers */
     vim_free(stack_ptr->ffs_fix_path);
@@ -5654,8 +5347,7 @@ ff_free_stack_element(stack_ptr)
  * Clear the search context, but NOT the visited list.
  */
     static void
-ff_clear(search_ctx)
-    ff_search_ctx_T *search_ctx;
+ff_clear(ff_search_ctx_T *search_ctx)
 {
     ff_stack_T   *sptr;
 
@@ -5701,10 +5393,7 @@ ff_clear(search_ctx)
  * returns TRUE if yes else FALSE
  */
     static int
-ff_path_in_stoplist(path, path_len, stopdirs_v)
-    char_u	*path;
-    int		path_len;
-    char_u	**stopdirs_v;
+ff_path_in_stoplist(char_u *path, int path_len, char_u **stopdirs_v)
 {
     int		i = 0;
 
@@ -5765,12 +5454,12 @@ ff_path_in_stoplist(path, path_len, stopdirs_v)
  *
  */
     char_u *
-find_file_in_path(ptr, len, options, first, rel_fname)
-    char_u	*ptr;		/* file name */
-    int		len;		/* length of file name */
-    int		options;
-    int		first;		/* use count'th matching file name */
-    char_u	*rel_fname;	/* file name searching relative to */
+find_file_in_path(
+    char_u	*ptr,		/* file name */
+    int		len,		/* length of file name */
+    int		options,
+    int		first,		/* use count'th matching file name */
+    char_u	*rel_fname)	/* file name searching relative to */
 {
     return find_file_in_path_option(ptr, len, options, first,
 	    *curbuf->b_p_path == NUL ? p_path : curbuf->b_p_path,
@@ -5782,7 +5471,7 @@ static void	*fdip_search_ctx = NULL;
 
 #if defined(EXITFREE)
     static void
-free_findfile()
+free_findfile(void)
 {
     vim_free(ff_file_to_find);
     vim_findfile_cleanup(fdip_search_ctx);
@@ -5794,32 +5483,33 @@ free_findfile()
  *
  * options:
  * FNAME_MESS	    give error message when not found
+ * FNAME_UNESC	    unescape backslashes.
  *
  * Uses NameBuff[]!
  *
  * Returns an allocated string for the file name.  NULL for error.
  */
     char_u *
-find_directory_in_path(ptr, len, options, rel_fname)
-    char_u	*ptr;		/* file name */
-    int		len;		/* length of file name */
-    int		options;
-    char_u	*rel_fname;	/* file name searching relative to */
+find_directory_in_path(
+    char_u	*ptr,		/* file name */
+    int		len,		/* length of file name */
+    int		options,
+    char_u	*rel_fname)	/* file name searching relative to */
 {
     return find_file_in_path_option(ptr, len, options, TRUE, p_cdpath,
 				       FINDFILE_DIR, rel_fname, (char_u *)"");
 }
 
     char_u *
-find_file_in_path_option(ptr, len, options, first, path_option, find_what, rel_fname, suffixes)
-    char_u	*ptr;		/* file name */
-    int		len;		/* length of file name */
-    int		options;
-    int		first;		/* use count'th matching file name */
-    char_u	*path_option;	/* p_path or p_cdpath */
-    int		find_what;	/* FINDFILE_FILE, _DIR or _BOTH */
-    char_u	*rel_fname;	/* file name we are looking relative to. */
-    char_u	*suffixes;	/* list of suffixes, 'suffixesadd' option */
+find_file_in_path_option(
+    char_u	*ptr,		/* file name */
+    int		len,		/* length of file name */
+    int		options,
+    int		first,		/* use count'th matching file name */
+    char_u	*path_option,	/* p_path or p_cdpath */
+    int		find_what,	/* FINDFILE_FILE, _DIR or _BOTH */
+    char_u	*rel_fname,	/* file name we are looking relative to. */
+    char_u	*suffixes)	/* list of suffixes, 'suffixesadd' option */
 {
     static char_u	*dir;
     static int		did_findfile_init = FALSE;
@@ -5840,7 +5530,7 @@ find_file_in_path_option(ptr, len, options, first, path_option, find_what, rel_f
 	/* copy file name into NameBuff, expanding environment variables */
 	save_char = ptr[len];
 	ptr[len] = NUL;
-	expand_env(ptr, NameBuff, MAXPATHL);
+	expand_env_esc(ptr, NameBuff, MAXPATHL, FALSE, TRUE, NULL);
 	ptr[len] = save_char;
 
 	vim_free(ff_file_to_find);
@@ -5849,6 +5539,13 @@ find_file_in_path_option(ptr, len, options, first, path_option, find_what, rel_f
 	{
 	    file_name = NULL;
 	    goto theend;
+	}
+	if (options & FNAME_UNESC)
+	{
+	    /* Change all "\ " to " ". */
+	    for (ptr = ff_file_to_find; *ptr != NUL; ++ptr)
+		if (ptr[0] == '\\' && ptr[1] == ' ')
+		    mch_memmove(ptr, ptr + 1, STRLEN(ptr));
 	}
     }
 
@@ -5861,7 +5558,7 @@ find_file_in_path_option(ptr, len, options, first, path_option, find_what, rel_f
     if (vim_isAbsName(ff_file_to_find)
 	    /* "..", "../path", "." and "./path": don't use the path_option */
 	    || rel_to_curdir
-#if defined(MSWIN) || defined(MSDOS) || defined(OS2)
+#if defined(MSWIN)
 	    /* handle "\tmp" as absolute path */
 	    || vim_ispathsep(ff_file_to_find[0])
 	    /* handle "c:name" as absolute path */
@@ -5915,18 +5612,10 @@ find_file_in_path_option(ptr, len, options, first, path_option, find_what, rel_f
 		buf = suffixes;
 		for (;;)
 		{
-		    if (
-#ifdef DJGPP
-			    /* "C:" by itself will fail for mch_getperm(),
-			     * assume it's always valid. */
-			    (find_what != FINDFILE_FILE && NameBuff[0] != NUL
-				  && NameBuff[1] == ':'
-				  && NameBuff[2] == NUL) ||
-#endif
-			    (mch_getperm(NameBuff) >= 0
+		    if (mch_getperm(NameBuff) >= 0
 			     && (find_what == FINDFILE_BOTH
 				 || ((find_what == FINDFILE_DIR)
-						    == mch_isdir(NameBuff)))))
+						    == mch_isdir(NameBuff))))
 		    {
 			file_name = vim_strsave(NameBuff);
 			goto theend;
@@ -6034,8 +5723,7 @@ theend:
  * 'cdpath' for relative directory names, otherwise just mch_chdir().
  */
     int
-vim_chdir(new_dir)
-    char_u	*new_dir;
+vim_chdir(char_u *new_dir)
 {
 #ifndef FEAT_SEARCHPATH
     return mch_chdir((char *)new_dir);
@@ -6061,9 +5749,7 @@ vim_chdir(new_dir)
  * Returns OK or FAIL.
  */
     int
-get_user_name(buf, len)
-    char_u	*buf;
-    int		len;
+get_user_name(char_u *buf, int len)
 {
     if (username == NULL)
     {
@@ -6082,11 +5768,11 @@ get_user_name(buf, len)
  * It's simple and slow.  From the K&R C book.
  */
     void
-qsort(base, elm_count, elm_size, cmp)
-    void	*base;
-    size_t	elm_count;
-    size_t	elm_size;
-    int (*cmp) __ARGS((const void *, const void *));
+qsort(
+    void	*base,
+    size_t	elm_count,
+    size_t	elm_size,
+    int (*cmp)(const void *, const void *))
 {
     char_u	*buf;
     char_u	*p1;
@@ -6124,23 +5810,21 @@ static int
 #ifdef __BORLANDC__
 _RTLENTRYF
 #endif
-sort_compare __ARGS((const void *s1, const void *s2));
+sort_compare(const void *s1, const void *s2);
 
     static int
 #ifdef __BORLANDC__
 _RTLENTRYF
 #endif
-sort_compare(s1, s2)
-    const void	*s1;
-    const void	*s2;
+sort_compare(const void *s1, const void *s2)
 {
     return STRCMP(*(char **)s1, *(char **)s2);
 }
 
     void
-sort_strings(files, count)
-    char_u	**files;
-    int		count;
+sort_strings(
+    char_u	**files,
+    int		count)
 {
     qsort((void *)files, (size_t)count, sizeof(char_u *), sort_compare);
 }
@@ -6152,18 +5836,16 @@ sort_strings(files, count)
  * Return value like strcmp(p, q), but consider path separators.
  */
     int
-pathcmp(p, q, maxlen)
-    const char *p, *q;
-    int maxlen;
+pathcmp(const char *p, const char *q, int maxlen)
 {
-    int		i;
+    int		i, j;
     int		c1, c2;
     const char	*s = NULL;
 
-    for (i = 0; maxlen < 0 || i < maxlen; i += MB_PTR2LEN((char_u *)p + i))
+    for (i = 0, j = 0; maxlen < 0 || (i < maxlen && j < maxlen);)
     {
 	c1 = PTR2CHAR((char_u *)p + i);
-	c2 = PTR2CHAR((char_u *)q + i);
+	c2 = PTR2CHAR((char_u *)q + j);
 
 	/* End of "p": check if "q" also ends or just has a slash. */
 	if (c1 == NUL)
@@ -6171,6 +5853,7 @@ pathcmp(p, q, maxlen)
 	    if (c2 == NUL)  /* full match */
 		return 0;
 	    s = q;
+            i = j;
 	    break;
 	}
 
@@ -6196,8 +5879,11 @@ pathcmp(p, q, maxlen)
 	    return p_fic ? MB_TOUPPER(c1) - MB_TOUPPER(c2)
 		    : c1 - c2;  /* no match */
 	}
+
+	i += MB_PTR2LEN((char_u *)p + i);
+	j += MB_PTR2LEN((char_u *)q + j);
     }
-    if (s == NULL)	/* "i" ran into "maxlen" */
+    if (s == NULL)	/* "i" or "j" ran into "maxlen" */
 	return 0;
 
     c1 = PTR2CHAR((char_u *)s + i);
@@ -6255,13 +5941,12 @@ extern
 #endif
        char **environ;		/* the global which is your env. */
 
-static int  findenv __ARGS((char *name)); /* look for a name in the env. */
-static int  newenv __ARGS((void));	/* copy env. from stack to heap */
-static int  moreenv __ARGS((void));	/* incr. size of env. */
+static int  findenv(char *name); /* look for a name in the env. */
+static int  newenv(void);	/* copy env. from stack to heap */
+static int  moreenv(void);	/* incr. size of env. */
 
     int
-putenv(string)
-    const char *string;
+putenv(const char *string)
 {
     int	    i;
     char    *p;
@@ -6300,8 +5985,7 @@ putenv(string)
 }
 
     static int
-findenv(name)
-    char *name;
+findenv(char *name)
 {
     char    *namechar, *envchar;
     int	    i, found;
@@ -6322,7 +6006,7 @@ findenv(name)
 }
 
     static int
-newenv()
+newenv(void)
 {
     char    **env, *elem;
     int	    i, esize;
@@ -6357,7 +6041,7 @@ newenv()
 }
 
     static int
-moreenv()
+moreenv(void)
 {
     int	    esize;
     char    **env;
@@ -6373,8 +6057,7 @@ moreenv()
 
 # ifdef USE_VIMPTY_GETENV
     char_u *
-vimpty_getenv(string)
-    const char_u *string;
+vimpty_getenv(const char_u *string)
 {
     int i;
     char_u *p;
@@ -6400,8 +6083,7 @@ vimpty_getenv(string)
  * rights to write into.
  */
     int
-filewritable(fname)
-    char_u	*fname;
+filewritable(char_u *fname)
 {
     int		retval = 0;
 #if defined(UNIX) || defined(VMS)
@@ -6432,46 +6114,12 @@ filewritable(fname)
 }
 #endif
 
-/*
- * Print an error message with one or two "%s" and one or two string arguments.
- * This is not in message.c to avoid a warning for prototypes.
- */
-    int
-emsg3(s, a1, a2)
-    char_u *s, *a1, *a2;
-{
-    if (emsg_not_now())
-	return TRUE;		/* no error messages at the moment */
-#ifdef HAVE_STDARG_H
-    vim_snprintf((char *)IObuff, IOSIZE, (char *)s, a1, a2);
-#else
-    vim_snprintf((char *)IObuff, IOSIZE, (char *)s, (long_u)a1, (long_u)a2);
-#endif
-    return emsg(IObuff);
-}
-
-/*
- * Print an error message with one "%ld" and one long int argument.
- * This is not in message.c to avoid a warning for prototypes.
- */
-    int
-emsgn(s, n)
-    char_u	*s;
-    long	n;
-{
-    if (emsg_not_now())
-	return TRUE;		/* no error messages at the moment */
-    vim_snprintf((char *)IObuff, IOSIZE, (char *)s, n);
-    return emsg(IObuff);
-}
-
 #if defined(FEAT_SPELL) || defined(FEAT_PERSISTENT_UNDO) || defined(PROTO)
 /*
  * Read 2 bytes from "fd" and turn them into an int, MSB first.
  */
     int
-get2c(fd)
-    FILE	*fd;
+get2c(FILE *fd)
 {
     int		n;
 
@@ -6484,8 +6132,7 @@ get2c(fd)
  * Read 3 bytes from "fd" and turn them into an int, MSB first.
  */
     int
-get3c(fd)
-    FILE	*fd;
+get3c(FILE *fd)
 {
     int		n;
 
@@ -6499,8 +6146,7 @@ get3c(fd)
  * Read 4 bytes from "fd" and turn them into an int, MSB first.
  */
     int
-get4c(fd)
-    FILE	*fd;
+get4c(FILE *fd)
 {
     /* Use unsigned rather than int otherwise result is undefined
      * when left-shift sets the MSB. */
@@ -6514,13 +6160,12 @@ get4c(fd)
 }
 
 /*
- * Read 8 bytes from "fd" and turn them into a time_t, MSB first.
+ * Read 8 bytes from "fd" and turn them into a time_T, MSB first.
  */
-    time_t
-get8ctime(fd)
-    FILE	*fd;
+    time_T
+get8ctime(FILE *fd)
 {
-    time_t	n = 0;
+    time_T	n = 0;
     int		i;
 
     for (i = 0; i < 8; ++i)
@@ -6533,9 +6178,7 @@ get8ctime(fd)
  * Returns NULL when out of memory or unable to read that many bytes.
  */
     char_u *
-read_string(fd, cnt)
-    FILE	*fd;
-    int		cnt;
+read_string(FILE *fd, int cnt)
 {
     char_u	*str;
     int		i;
@@ -6565,10 +6208,7 @@ read_string(fd, cnt)
  * Write a number to file "fd", MSB first, in "len" bytes.
  */
     int
-put_bytes(fd, nr, len)
-    FILE    *fd;
-    long_u  nr;
-    int	    len;
+put_bytes(FILE *fd, long_u nr, int len)
 {
     int	    i;
 
@@ -6587,29 +6227,41 @@ put_bytes(fd, nr, len)
 #endif
 
 /*
- * Write time_t to file "fd" in 8 bytes.
+ * Write time_T to file "fd" in 8 bytes.
+ * Returns FAIL when the write failed.
+ */
+    int
+put_time(FILE *fd, time_T the_time)
+{
+    char_u	buf[8];
+
+    time_to_bytes(the_time, buf);
+    return fwrite(buf, (size_t)8, (size_t)1, fd) == 1 ? OK : FAIL;
+}
+
+/*
+ * Write time_T to "buf[8]".
  */
     void
-put_time(fd, the_time)
-    FILE	*fd;
-    time_t	the_time;
+time_to_bytes(time_T the_time, char_u *buf)
 {
     int		c;
     int		i;
-    time_t	wtime = the_time;
+    int		bi = 0;
+    time_T	wtime = the_time;
 
-    /* time_t can be up to 8 bytes in size, more than long_u, thus we
+    /* time_T can be up to 8 bytes in size, more than long_u, thus we
      * can't use put_bytes() here.
      * Another problem is that ">>" may do an arithmetic shift that keeps the
      * sign.  This happens for large values of wtime.  A cast to long_u may
-     * truncate if time_t is 8 bytes.  So only use a cast when it is 4 bytes,
+     * truncate if time_T is 8 bytes.  So only use a cast when it is 4 bytes,
      * it's safe to assume that long_u is 4 bytes or more and when using 8
      * bytes the top bit won't be set. */
     for (i = 7; i >= 0; --i)
     {
-	if (i + 1 > (int)sizeof(time_t))
+	if (i + 1 > (int)sizeof(time_T))
 	    /* ">>" doesn't work well when shifting more bits than avail */
-	    putc(0, fd);
+	    buf[bi++] = 0;
 	else
 	{
 #if defined(SIZEOF_TIME_T) && SIZEOF_TIME_T > 4
@@ -6617,7 +6269,7 @@ put_time(fd, the_time)
 #else
 	    c = (int)((long_u)wtime >> (i * 8));
 #endif
-	    putc(c, fd);
+	    buf[bi++] = c;
 	}
     }
 }
@@ -6637,8 +6289,7 @@ put_time(fd, the_time)
  * When "s" is NULL FALSE is returned.
  */
     int
-has_non_ascii(s)
-    char_u	*s;
+has_non_ascii(char_u *s)
 {
     char_u	*p;
 
@@ -6648,4 +6299,71 @@ has_non_ascii(s)
 		return TRUE;
     return FALSE;
 }
+#endif
+
+#if defined(MESSAGE_QUEUE) || defined(PROTO)
+/*
+ * Process messages that have been queued for netbeans or clientserver.
+ * Also check if any jobs have ended.
+ * These functions can call arbitrary vimscript and should only be called when
+ * it is safe to do so.
+ */
+    void
+parse_queued_messages(void)
+{
+    /* For Win32 mch_breakcheck() does not check for input, do it here. */
+# if defined(WIN32) && defined(FEAT_JOB_CHANNEL)
+    channel_handle_events();
+# endif
+
+# ifdef FEAT_NETBEANS_INTG
+    /* Process the queued netbeans messages. */
+    netbeans_parse_messages();
+# endif
+# ifdef FEAT_JOB_CHANNEL
+    /* Write any buffer lines still to be written. */
+    channel_write_any_lines();
+
+    /* Process the messages queued on channels. */
+    channel_parse_messages();
+# endif
+# if defined(FEAT_CLIENTSERVER) && defined(FEAT_X11)
+    /* Process the queued clientserver messages. */
+    server_parse_messages();
+# endif
+# ifdef FEAT_JOB_CHANNEL
+    /* Check if any jobs have ended. */
+    job_check_ended();
+# endif
+}
+#endif
+
+#ifndef PROTO  /* proto is defined in vim.h */
+# ifdef ELAPSED_TIMEVAL
+/*
+ * Return time in msec since "start_tv".
+ */
+    long
+elapsed(struct timeval *start_tv)
+{
+    struct timeval  now_tv;
+
+    gettimeofday(&now_tv, NULL);
+    return (now_tv.tv_sec - start_tv->tv_sec) * 1000L
+	 + (now_tv.tv_usec - start_tv->tv_usec) / 1000L;
+}
+# endif
+
+# ifdef ELAPSED_TICKCOUNT
+/*
+ * Return time in msec since "start_tick".
+ */
+    long
+elapsed(DWORD start_tick)
+{
+    DWORD	now = GetTickCount();
+
+    return (long)now - (long)start_tick;
+}
+# endif
 #endif

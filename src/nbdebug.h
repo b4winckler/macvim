@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=8 sw=8:
+/* vi:set ts=8 sw=8 noet:
  *
  * VIM - Vi IMproved	by Bram Moolenaar
  *			Visual Workshop integration by Gordon Prieur
@@ -44,8 +44,8 @@ typedef enum {
 
 void		 nbdbg(char *, ...);
 
-void nbdebug_wait __ARGS((u_int wait_flags, char *wait_var, u_int wait_secs));
-void nbdebug_log_init __ARGS((char *log_var, char *level_var));
+void nbdebug_wait(u_int wait_flags, char *wait_var, u_int wait_secs);
+void nbdebug_log_init(char *log_var, char *level_var);
 
 extern FILE	*nb_debug;
 extern u_int	 nb_dlevel;		/* nb_debug verbosity level */

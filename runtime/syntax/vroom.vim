@@ -1,13 +1,10 @@
 " Vim syntax file
 " Language:	Vroom (vim testing and executable documentation)
-" Maintainer:	David Barnett (https://github.com/google/vim-ft.vroom)
+" Maintainer:	David Barnett (https://github.com/google/vim-ft-vroom)
 " Last Change:	2014 Jul 23
 
-" For version 5.x: Clear all syntax items.
-" For version 6.x and later: Quit when a syntax file was already loaded.
-if v:version < 600
-  syntax clear
-elseif exists('b:current_syntax')
+" quit when a syntax file was already loaded
+if exists('b:current_syntax')
   finish
 endif
 

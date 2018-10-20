@@ -478,7 +478,7 @@ Nota: ¡Esto es muy útil en la detección de errores en un programa con
 
   1. Ctrl-g  muestra la posición del cursor en el fichero y su estado.
      Mayu-G mueve el cursor al final del fichero. Un número de línea
-     sewguido de Mayu-G mueve el cursor a la línea con ese número.
+     seguido de Mayu-G mueve el cursor a la línea con ese número.
 
   2. Pulsando  /  seguido de una frase busca la frase hacia ADELANTE.
      Pulsando  ?  seguido de una frase busca la frase hacia ATRÁS.
@@ -542,7 +542,7 @@ Nota: ¡Esto es muy útil en la detección de errores en un programa con
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	       Lección 5.3: UN MANDATO DE ESCRITURA SELECTIVO
 
-   ** Para guardar parte del fuchero escriba   :#,# NOMBRE_DEL_FICHERO **
+   ** Para guardar parte del fichero escriba   :#,# NOMBRE_DEL_FICHERO **
 
 
   1. Escriba de nuevo, una vez más,  :!dir  o  :!ls  para obtener una lista

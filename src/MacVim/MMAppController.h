@@ -31,9 +31,7 @@
     NSMutableDictionary *inputQueues;
     int                 processingFlag;
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED > MAC_OS_X_VERSION_10_4)
     FSEventStreamRef    fsEventStream;
-#endif
 }
 
 + (MMAppController *)sharedInstance;
@@ -55,5 +53,8 @@
 - (IBAction)openWebsite:(id)sender;
 - (IBAction)showVimHelp:(id)sender;
 - (IBAction)zoomAll:(id)sender;
+- (IBAction)stayInFront:(id)sender;
+- (IBAction)stayInBack:(id)sender;
+- (IBAction)stayLevelNormal:(id)sender;
 
 @end

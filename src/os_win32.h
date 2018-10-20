@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved	by Bram Moolenaar
  *
@@ -49,9 +49,6 @@
 #ifndef HAVE_FCNTL_H
 # define HAVE_FCNTL_H
 #endif
-#ifndef HAVE_STDARG_H
-# define HAVE_STDARG_H
-#endif
 #define HAVE_QSORT
 #define HAVE_ST_MODE		/* have stat.st_mode */
 
@@ -77,6 +74,8 @@
 #ifndef FEAT_GUI_W32		/* GUI works different */
 # define BREAKCHECK_SKIP    1	/* call mch_breakcheck() each time, it's fast */
 #endif
+
+#define HAVE_TOTAL_MEM
 
 #define HAVE_PUTENV		/* at least Bcc 5.2 and MSC have it */
 
@@ -203,7 +202,9 @@ Trace(char *pszFormat, ...);
 #define ASSERT_NULL_OR_POINTER(p, type) \
     ASSERT(((p) == NULL)  ||  IsValidAddress((p), sizeof(type), FALSE))
 
-#define mch_setenv(name, val, x) setenv(name, val, x)
+#ifndef HAVE_SETENV
+# define HAVE_SETENV
+#endif
 #define mch_getenv(x) (char_u *)getenv((char *)(x))
 #ifdef __BORLANDC__
 # define vim_mkdir(x, y) mkdir(x)
@@ -211,20 +212,15 @@ Trace(char *pszFormat, ...);
 # define vim_mkdir(x, y) mch_mkdir(x)
 #endif
 
-#ifndef PROTO
-
 /* Enable common dialogs input unicode from IME if possible. */
 #ifdef FEAT_MBYTE
-    /* The variables are defined in os_win32.c. */
-extern LRESULT (WINAPI *pDispatchMessage)(CONST MSG *);
-extern BOOL (WINAPI *pGetMessage)(LPMSG, HWND, UINT, UINT);
-extern BOOL (WINAPI *pIsDialogMessage)(HWND, LPMSG);
-extern BOOL (WINAPI *pPeekMessage)(LPMSG, HWND, UINT, UINT, UINT);
+# define pDispatchMessage DispatchMessageW
+# define pGetMessage GetMessageW
+# define pIsDialogMessage IsDialogMessageW
+# define pPeekMessage PeekMessageW
 #else
 # define pDispatchMessage DispatchMessage
 # define pGetMessage GetMessage
 # define pIsDialogMessage IsDialogMessage
 # define pPeekMessage PeekMessage
 #endif
-
-#endif /* PROTO */

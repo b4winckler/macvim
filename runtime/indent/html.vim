@@ -2,7 +2,7 @@
 " Header: "{{{
 " Maintainer:	Bram Moolenaar
 " Original Author: Andy Wokula <anwoku@yahoo.de>
-" Last Change:	2014 Jul 04
+" Last Change:	2017 Jun 13
 " Version:	1.0
 " Description:	HTML indent script with cached state for faster indenting on a
 "		range of lines.
@@ -25,27 +25,22 @@
 if exists("b:did_indent") "{{{
   finish
 endif
+
+" Load the Javascript indent script first, it defines GetJavascriptIndent().
+" Undo the rest.
+" Load base python indent.
+if !exists('*GetJavascriptIndent')
+  runtime! indent/javascript.vim
+endif
 let b:did_indent = 1
 
 setlocal indentexpr=HtmlIndent()
 setlocal indentkeys=o,O,<Return>,<>>,{,},!^F
 
-" "j1" is included to make cindent() work better with Javascript.
-setlocal cino=j1
-" "J1" should be included, but it doen't work properly before 7.4.355.
-if has("patch-7.4.355")
-  setlocal cino+=J1
-endif
-" Before patch 7.4.355 indenting after "(function() {" does not work well, add
-" )2 to limit paren search.
-if !has("patch-7.4.355")
-  setlocal cino+=)2
-endif
-
 " Needed for % to work when finding start/end of a tag.
 setlocal matchpairs+=<:>
 
-let b:undo_indent = "setlocal inde< indk< cino<"
+let b:undo_indent = "setlocal inde< indk<"
 
 " b:hi_indent keeps state to speed up indenting consecutive lines.
 let b:hi_indent = {"lnum": -1}
@@ -54,15 +49,6 @@ let b:hi_indent = {"lnum": -1}
 if exists("*HtmlIndent") && !exists('g:force_reload_html')
   call HtmlIndent_CheckUserSettings()
   finish
-endif
-
-" shiftwidth() exists since patch 7.3.694
-if exists('*shiftwidth')
-  let s:ShiftWidth = function('shiftwidth')
-else
-  func! s:ShiftWidth()
-    return &shiftwidth
-  endfunc
 endif
 
 " Allow for line continuation below.
@@ -94,7 +80,7 @@ func! HtmlIndent_CheckUserSettings()
     let autotags = g:html_indent_autotags
   endif
   let b:hi_removed_tags = {}
-  if autotags
+  if len(autotags) > 0
     call s:RemoveITags(b:hi_removed_tags, split(autotags, ","))
   endif
 
@@ -128,7 +114,7 @@ func! HtmlIndent_CheckUserSettings()
 
   let indone = {"zero": 0
               \,"auto": "indent(prevnonblank(v:lnum-1))"
-              \,"inc": "b:hi_indent.blocktagind + s:ShiftWidth()"}
+              \,"inc": "b:hi_indent.blocktagind + shiftwidth()"}
 
   let script1 = ''
   if exists("b:html_indent_script1")
@@ -178,13 +164,15 @@ let s:countonly = 0
 " 3   "script"
 " 4   "style"
 " 5   comment start
+" 6   conditional comment start
 " -1  closing tag
 " -2  "/pre"
 " -3  "/script"
 " -4  "/style"
 " -5  comment end
+" -6  conditional comment end
 let s:indent_tags = {}
-let s:endtags = [0,0,0,0,0,0]   " long enough for the highest index
+let s:endtags = [0,0,0,0,0,0,0]   " long enough for the highest index
 "}}}
 
 " Add a list of tag names for a pair of <tag> </tag> to "tags".
@@ -238,13 +226,17 @@ call s:AddITags(s:indent_tags, [
     \ 'sup', 'table', 'textarea', 'title', 'tt', 'u', 'ul', 'var', 'th', 'td',
     \ 'tr', 'tbody', 'tfoot', 'thead'])
 
-" Tags added 2011 Sep 09 (especially HTML5 tags):
+" New HTML5 elements:
 call s:AddITags(s:indent_tags, [
     \ 'area', 'article', 'aside', 'audio', 'bdi', 'canvas',
-    \ 'command', 'datalist', 'details', 'embed', 'figure', 'footer',
-    \ 'header', 'group', 'keygen', 'mark', 'math', 'meter', 'nav', 'output',
-    \ 'progress', 'ruby', 'section', 'svg', 'texture', 'time', 'video',
-    \ 'wbr', 'text'])
+    \ 'command', 'data', 'datalist', 'details', 'embed', 'figcaption',
+    \ 'figure', 'footer', 'header', 'keygen', 'mark', 'meter', 'nav', 'output',
+    \ 'progress', 'rp', 'rt', 'ruby', 'section', 'source', 'summary', 'svg', 
+    \ 'time', 'track', 'video', 'wbr'])
+
+" Tags added for web components:
+call s:AddITags(s:indent_tags, [
+    \ 'content', 'shadow', 'template'])
 "}}}
 
 " Add Block Tags: these contain alien content
@@ -253,6 +245,7 @@ call s:AddBlockTag('pre', 2)
 call s:AddBlockTag('script', 3)
 call s:AddBlockTag('style', 4)
 call s:AddBlockTag('<!--', 5, '-->')
+call s:AddBlockTag('<!--[', 6, '![endif]-->')
 "}}}
 
 " Return non-zero when "tagname" is an opening tag, not being a block tag, for
@@ -287,7 +280,7 @@ func! s:CountITags(text)
   let s:nextrel = 0  " relative indent steps for next line [unit &sw]:
   let s:block = 0		" assume starting outside of a block
   let s:countonly = 1	" don't change state
-  call substitute(a:text, '<\zs/\=\w\+\>\|<!--\|-->', '\=s:CheckTag(submatch(0))', 'g')
+  call substitute(a:text, '<\zs/\=\w\+\(-\w\+\)*\>\|<!--\[\|\[endif\]-->\|<!--\|-->', '\=s:CheckTag(submatch(0))', 'g')
   let s:countonly = 0
 endfunc "}}}
 
@@ -299,7 +292,7 @@ func! s:CountTagsAndState(text)
   let s:nextrel = 0  " relative indent steps for next line [unit &sw]:
 
   let s:block = b:hi_newstate.block
-  let tmp = substitute(a:text, '<\zs/\=\w\+\>\|<!--\|-->', '\=s:CheckTag(submatch(0))', 'g')
+  let tmp = substitute(a:text, '<\zs/\=\w\+\(-\w\+\)*\>\|<!--\[\|\[endif\]-->\|<!--\|-->', '\=s:CheckTag(submatch(0))', 'g')
   if s:block == 3
     let b:hi_newstate.scripttype = s:GetScriptType(matchstr(tmp, '\C.*<SCRIPT\>\zs[^>]*'))
   endif
@@ -311,6 +304,9 @@ func! s:CheckTag(itag)
   "{{{
   " Returns an empty string or "SCRIPT".
   " a:itag can be "tag" or "/tag" or "<!--" or "-->"
+  if (s:CheckCustomTag(a:itag))
+    return ""
+  endif
   let ind = s:get_tag(a:itag)
   if ind == -1
     " closing tag
@@ -353,7 +349,7 @@ func! s:CheckBlockTag(blocktag, ind)
     endif
     let b:hi_newstate.blocklnr = v:lnum
     " save allover indent for the endtag
-    let b:hi_newstate.blocktagind = b:hi_indent.baseindent + (s:nextrel + s:curind) * s:ShiftWidth()
+    let b:hi_newstate.blocktagind = b:hi_indent.baseindent + (s:nextrel + s:curind) * shiftwidth()
     if a:ind == 3
       return "SCRIPT"    " all except this must be lowercase
       " line is to be checked again for the type attribute
@@ -363,6 +359,36 @@ func! s:CheckBlockTag(blocktag, ind)
     " we get here if starting and closing a block-tag on the same line
   endif
   return ""
+endfunc "}}}
+
+" Used by s:CheckTag().
+func! s:CheckCustomTag(ctag)
+  "{{{
+  " Returns 1 if ctag is the tag for a custom element, 0 otherwise.
+  " a:ctag can be "tag" or "/tag" or "<!--" or "-->"
+  let pattern = '\%\(\w\+-\)\+\w\+'
+  if match(a:ctag, pattern) == -1
+    return 0
+  endif
+  if matchstr(a:ctag, '\/\ze.\+') == "/"
+    " closing tag
+    if s:block != 0
+      " ignore ctag within a block
+      return 1
+    endif
+    if s:nextrel == 0
+      let s:curind -= 1
+    else
+      let s:nextrel -= 1
+    endif
+  else
+    " opening tag
+    if s:block != 0
+      return 1
+    endif
+    let s:nextrel += 1
+  endif
+  return 1
 endfunc "}}}
 
 " Return the <script> type: either "javascript" or ""
@@ -388,7 +414,7 @@ func! s:FreshState(lnum)
   " State:
   "	lnum		last indented line == prevnonblank(a:lnum - 1)
   "	block = 0	a:lnum located within special tag: 0:none, 2:<pre>,
-  "			3:<script>, 4:<style>, 5:<!--
+  "			3:<script>, 4:<style>, 5:<!--, 6:<!--[
   "	baseindent	use this indent for line a:lnum as a start - kind of
   "			autoindent (if block==0)
   "	scripttype = ''	type attribute of a script tag (if block==3)
@@ -427,10 +453,13 @@ func! s:FreshState(lnum)
   " FI
 
   " look back for a blocktag
-  call cursor(a:lnum, 1)
-  let [stopline, stopcol] = searchpos('\c<\zs\/\=\%(pre\>\|script\>\|style\>\)', "bW")
-  if stopline > 0
-    " fugly ... why isn't there searchstr()
+  let stopline2 = v:lnum + 1
+  if has_key(b:hi_indent, 'block') && b:hi_indent.block > 5
+    let [stopline2, stopcol2] = searchpos('<!--', 'bnW')
+  endif
+  let [stopline, stopcol] = searchpos('\c<\zs\/\=\%(pre\>\|script\>\|style\>\)', "bnW")
+  if stopline > 0 && stopline < stopline2
+    " ugly ... why isn't there searchstr()
     let tagline = tolower(getline(stopline))
     let blocktag = matchstr(tagline, '\/\=\%(pre\>\|script\>\|style\>\)', stopcol - 1)
     if blocktag[0] != "/"
@@ -442,7 +471,7 @@ func! s:FreshState(lnum)
       let state.blocklnr = stopline
       " check preceding tags in the line:
       call s:CountITags(tagline[: stopcol-2])
-      let state.blocktagind = indent(stopline) + (s:curind + s:nextrel) * s:ShiftWidth()
+      let state.blocktagind = indent(stopline) + (s:curind + s:nextrel) * shiftwidth()
       return state
     elseif stopline == state.lnum
       " handle special case: previous line (= state.lnum) contains a
@@ -450,24 +479,30 @@ func! s:FreshState(lnum)
       " blocktag == "/..."
       let swendtag = match(tagline, '^\s*</') >= 0
       if !swendtag
-        let [bline, bcol] = searchpos('<'.blocktag[1:].'\>', "bW")
+        let [bline, bcol] = searchpos('<'.blocktag[1:].'\>', "bnW")
         call s:CountITags(tolower(getline(bline)[: bcol-2]))
-        let state.baseindent = indent(bline) + (s:curind + s:nextrel) * s:ShiftWidth()
+        let state.baseindent = indent(bline) + (s:curind + s:nextrel) * shiftwidth()
         return state
       endif
     endif
   endif
+  if stopline > stopline2
+    let stopline = stopline2
+    let stopcol = stopcol2
+  endif
 
   " else look back for comment
-  call cursor(a:lnum, 1)
-  let [comlnum, comcol, found] = searchpos('\(<!--\)\|-->', 'bpW', stopline)
-  if found == 2
+  let [comlnum, comcol, found] = searchpos('\(<!--\[\)\|\(<!--\)\|-->', 'bpnW', stopline)
+  if found == 2 || found == 3
     " comment opener found, assume a:lnum within comment
-    let state.block = 5
+    let state.block = (found == 3 ? 5 : 6)
     let state.blocklnr = comlnum
     " check preceding tags in the line:
     call s:CountITags(tolower(getline(comlnum)[: comcol-2]))
-    let state.blocktagind = indent(comlnum) + (s:curind + s:nextrel) * s:ShiftWidth()
+    if found == 2
+      let state.baseindent = b:hi_indent.baseindent
+    endif
+    let state.blocktagind = indent(comlnum) + (s:curind + s:nextrel) * shiftwidth()
     return state
   endif
 
@@ -486,7 +521,7 @@ func! s:FreshState(lnum)
       let text = tolower(getline(comlnum)[: comcol-2])
     endif
     call s:CountITags(text)
-    let state.baseindent = indent(comlnum) + (s:curind + s:nextrel) * s:ShiftWidth()
+    let state.baseindent = indent(comlnum) + (s:curind + s:nextrel) * shiftwidth()
     " TODO check tags that follow "-->"
     return state
   endif
@@ -497,7 +532,7 @@ func! s:FreshState(lnum)
   " If previous line ended in a closing tag, line up with the opening tag.
   if !swendtag && text =~ '</\w\+\s*>\s*$'
     call cursor(state.lnum, 99999)
-    normal F<
+    normal! F<
     let start_lnum = HtmlIndent_FindStartTag()
     if start_lnum > 0
       let state.baseindent = indent(start_lnum)
@@ -506,9 +541,9 @@ func! s:FreshState(lnum)
         let text = getline(start_lnum)
         let swendtag = match(text, '^\s*</') >= 0
         call s:CountITags(text[: col('.') - 2])
-        let state.baseindent += s:nextrel * s:ShiftWidth()
+        let state.baseindent += s:nextrel * shiftwidth()
         if !swendtag
-          let state.baseindent += s:curind * s:ShiftWidth()
+          let state.baseindent += s:curind * shiftwidth()
         endif
       endif
       return state
@@ -521,9 +556,9 @@ func! s:FreshState(lnum)
   let text = getline(state.lnum)
   let swendtag = match(text, '^\s*</') >= 0
   call s:CountITags(tolower(text))
-  let state.baseindent = indent(state.lnum) + s:nextrel * s:ShiftWidth()
+  let state.baseindent = indent(state.lnum) + s:nextrel * shiftwidth()
   if !swendtag
-    let state.baseindent += s:curind * s:ShiftWidth()
+    let state.baseindent += s:curind * shiftwidth()
   endif
   return state
 endfunc "}}}
@@ -547,7 +582,7 @@ func! s:Alien3()
     return eval(b:hi_js1indent)
   endif
   if b:hi_indent.scripttype == "javascript"
-    return cindent(v:lnum)
+    return GetJavascriptIndent()
   else
     return -1
   endif
@@ -602,7 +637,7 @@ func! s:CSSIndent()
 
   " add indent after {
   let brace_counts = HtmlIndent_CountBraces(prev_lnum)
-  let extra = brace_counts.c_open * s:ShiftWidth()
+  let extra = brace_counts.c_open * shiftwidth()
 
   let prev_text = getline(prev_lnum)
   let below_end_brace = prev_text =~ '}\s*$'
@@ -619,7 +654,7 @@ func! s:CSSIndent()
       " if the current line is not a comment or starts with @ (used by template
       " systems) reduce indent if previous line is a continuation line
       if !prev_hasfield && !prev_special
-        let extra = -s:ShiftWidth()
+        let extra = -shiftwidth()
       endif
     else
       let cur_hasfield = curtext =~ '^\s*[a-zA-Z0-9-]\+:'
@@ -627,14 +662,14 @@ func! s:CSSIndent()
       if !cur_hasfield && (prev_hasfield || prev_unfinished)
         " Continuation line has extra indent if the previous line was not a
         " continuation line.
-        let extra = s:ShiftWidth()
+        let extra = shiftwidth()
         " Align with @if
         if prev_text =~ '^\s*@if '
           let extra = 4
         endif
       elseif cur_hasfield && !prev_hasfield && !prev_special
         " less indent below a continuation line
-        let extra = -s:ShiftWidth()
+        let extra = -shiftwidth()
       endif
     endif
   endif
@@ -655,10 +690,10 @@ func! s:CSSIndent()
     if special
       " do not reduce indent below @{ ... }
       if extra < 0
-        let extra += s:ShiftWidth()
+        let extra += shiftwidth()
       endif
     else
-      let extra -= (brace_counts.c_close - (prev_text =~ '^\s*}')) * s:ShiftWidth()
+      let extra -= (brace_counts.c_close - (prev_text =~ '^\s*}')) * shiftwidth()
     endif
   endif
 
@@ -666,10 +701,10 @@ func! s:CSSIndent()
   if extra == 0
     if brace_counts.p_open > brace_counts.p_close
       " previous line has more ( than ): add a shiftwidth
-      let extra = s:ShiftWidth()
+      let extra = shiftwidth()
     elseif brace_counts.p_open < brace_counts.p_close
       " previous line has more ) than (: subtract a shiftwidth
-      let extra = -s:ShiftWidth()
+      let extra = -shiftwidth()
     endif
   endif
 
@@ -700,7 +735,7 @@ func! s:CssPrevNonComment(lnum, stopline)
   while 1
     let ccol = match(getline(lnum), '\*/')
     if ccol < 0
-      " No comment end thus its something else.
+      " No comment end thus it's something else.
       return lnum
     endif
     call cursor(lnum, ccol + 1)
@@ -772,7 +807,7 @@ func! s:Alien5()
   let idx = match(prevtext, '^\s*\zs<!--')
   if idx >= 0
     " just below comment start, add a shiftwidth
-    return idx + s:ShiftWidth()
+    return idx + shiftwidth()
   endif
 
   " Some files add 4 spaces just below a TODO line.  It's difficult to detect
@@ -780,6 +815,20 @@ func! s:Alien5()
 
   " Align with the previous non-blank line.
   return indent(prevlnum)
+endfunc "}}}
+
+" Return the indent for conditional comment: <!--[ ![endif]-->
+func! s:Alien6()
+  "{{{
+  let curtext = getline(v:lnum)
+  if curtext =~ '\s*\zs<!\[endif\]-->'
+    " current line starts with end of comment, line up with comment start.
+    let lnum = search('<!--', 'bn')
+    if lnum > 0
+      return indent(lnum)
+    endif
+  endif
+  return b:hi_indent.baseindent + shiftwidth()
 endfunc "}}}
 
 " When the "lnum" line ends in ">" find the line containing the matching "<".
@@ -883,13 +932,13 @@ endfunc "}}}
 " THE MAIN INDENT FUNCTION. Return the amount of indent for v:lnum.
 func! HtmlIndent()
   "{{{
-  if prevnonblank(v:lnum - 1) <= 1
+  if prevnonblank(v:lnum - 1) < 1
     " First non-blank line has no indent.
     return 0
   endif
 
   let curtext = tolower(getline(v:lnum))
-  let indentunit = s:ShiftWidth()
+  let indentunit = shiftwidth()
 
   let b:hi_newstate = {}
   let b:hi_newstate.lnum = v:lnum
@@ -898,7 +947,7 @@ func! HtmlIndent()
   " a tag works very differently. Do not do this when the line starts with
   " "<", it gets the "htmlTag" ID but we are not inside a tag then.
   if curtext !~ '^\s*<'
-    normal ^
+    normal! ^
     let stack = synstack(v:lnum, col('.'))  " assumes there are no tabs
     let foundHtmlString = 0
     for synid in reverse(stack)
@@ -972,9 +1021,9 @@ func! HtmlIndent()
         if col('.') > 2
           let swendtag = match(text, '^\s*</') >= 0
           call s:CountITags(text[: col('.') - 2])
-          let indent += s:nextrel * s:ShiftWidth()
+          let indent += s:nextrel * shiftwidth()
           if !swendtag
-            let indent += s:curind * s:ShiftWidth()
+            let indent += s:curind * shiftwidth()
           endif
         endif
       else

@@ -82,6 +82,8 @@ gui_mch_init_font(char_u *font_name, int fontset);
 gui_mch_set_font(GuiFont font);
     int
 gui_mch_adjust_charheight(void);
+    int
+gui_mch_adjust_charwidth(void);
     void
 gui_mch_beep(void);
     char_u *
@@ -121,7 +123,7 @@ gui_mch_enable_scrollbar(
 gui_mch_flash(int msec);
     guicolor_T
 gui_mch_get_color(char_u *name);
-    long_u
+    guicolor_T
 gui_mch_get_rgb(guicolor_T pixel);
     void
 gui_mch_get_screen_dimensions(int *screen_w, int *screen_h);
@@ -139,6 +141,10 @@ gui_mch_invert_rectangle(int r, int c, int nr, int nc, int invert);
 gui_mch_new_colors(void);
     void
 gui_mch_set_bg_color(guicolor_T color);
+    int
+gui_mch_is_blinking(void);
+    int
+gui_mch_is_blink_off(void);
     void
 gui_mch_set_blinking(long wait, long on, long off);
     void
@@ -193,7 +199,7 @@ ex_macaction(exarg_T *eap);
 gui_make_popup(char_u *path_name, int mouse_pos);
 
 void serverRegisterName(char_u *name);
-int serverSendToVim(char_u *name, char_u *cmd, char_u **result, int *server, int asExpr, int silent);
+int serverSendToVim(char_u *name, char_u *cmd, char_u **result, int *server, int asExpr, int timeout, int silent);
 char_u *serverGetVimNames(void);
 int serverStrToPort(char_u *str);
 int serverPeekReply(int port, char_u **str);
@@ -207,6 +213,9 @@ void gui_mch_fuopt_update(void);
 void gui_macvim_update_modified_flag();
 void gui_macvim_add_to_find_pboard(char_u *pat);
 void gui_macvim_set_antialias(int antialias);
+void gui_macvim_set_ligatures(int ligatures);
+void gui_macvim_set_thinstrokes(int thinStrokes);
+void gui_macvim_set_blur(int blur);
 
 int16_t odb_buffer_close(buf_T *buf);
 int16_t odb_post_buffer_write(buf_T *buf);
@@ -225,8 +234,10 @@ gui_mch_replace_dialog(exarg_T *eap);
     void
 im_set_control(int enable);
 
+    void *
+gui_macvim_add_channel(channel_T *channel, ch_part_T part);
     void
-gui_macvim_set_netbeans_socket(int socket);
+gui_macvim_remove_channel(void *cookie);
 
     void
 gui_mch_drawsign(int row, int col, int typenr);

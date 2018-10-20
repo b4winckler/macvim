@@ -65,9 +65,9 @@ enum {
     // you can't change the style of an existing window in cocoa. create a new
     // window and move the MMTextView into it.
     // (another way would be to make the existing window large enough that the
-    // title bar is off screen. but that doesn't work with multiple screens).  
+    // title bar is off screen. but that doesn't work with multiple screens).
     self = [super initWithContentRect:[screen frame]
-                            styleMask:NSBorderlessWindowMask
+                            styleMask:NSWindowStyleMaskBorderless
                               backing:NSBackingStoreBuffered
                                 defer:YES
                                // since we're passing [screen frame] above,
@@ -104,7 +104,15 @@ enum {
 
     // NOTE: Vim needs to process mouse moved events, so enable them here.
     [self setAcceptsMouseMovedEvents:YES];
+  
+    fadeTime = [[NSUserDefaults standardUserDefaults] doubleForKey:MMFullScreenFadeTimeKey];
 
+    // Each fade goes in and then out, so the fade hardware must be reserved accordingly and the
+    // actual fade time can't exceed half the allowable reservation time... plus some slack to
+    // prevent visual artifacts caused by defaulting on the fade hardware lease.
+    fadeTime = MIN(fadeTime, 0.5 * (kCGMaxDisplayReservationInterval - 1));
+    fadeReservationTime = 2.0 * fadeTime + 1;
+    
     return self;
 }
 
@@ -137,8 +145,8 @@ enum {
     // fade to black
     Boolean didBlend = NO;
     CGDisplayFadeReservationToken token;
-    if (CGAcquireDisplayFadeReservation(.5, &token) == kCGErrorSuccess) {
-        CGDisplayFade(token, .25, kCGDisplayBlendNormal,
+    if (CGAcquireDisplayFadeReservation(fadeReservationTime, &token) == kCGErrorSuccess) {
+        CGDisplayFade(token, fadeTime, kCGDisplayBlendNormal,
             kCGDisplayBlendSolidColor, .0, .0, .0, true);
         didBlend = YES;
     }
@@ -155,12 +163,17 @@ enum {
     [[target windowController] setWindow:self];
 
     oldTabBarStyle = [[view tabBarControl] styleName];
-    [[view tabBarControl] setStyleNamed:@"Unified"];
+
+    NSString *style =
+        shouldUseYosemiteTabBarStyle() ? @"Yosemite" : @"Unified";
+    [[view tabBarControl] setStyleNamed:style];
 
     // add text view
     oldPosition = [view frame].origin;
 
     [view removeFromSuperviewWithoutNeedingDisplay];
+    if (floor(NSAppKitVersionNumber) >= NSAppKitVersionNumber10_12)
+        [[view textView] setCGLayerEnabled:YES];
     [[self contentView] addSubview:view];
     [self setInitialFirstResponder:[view textView]];
     
@@ -189,29 +202,27 @@ enum {
     // dimensions when exiting full-screen.
     startFuFlags = options;
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
     // HACK! Put window on all Spaces to avoid Spaces (available on OS X 10.5
     // and later) from moving the full-screen window to a separate Space from
     // the one the decorated window is occupying.  The collection behavior is
     // restored further down.
     NSWindowCollectionBehavior wcb = [self collectionBehavior];
     [self setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
-#endif
 
     // make us visible and target invisible
     [target orderOut:self];
     [self makeKeyAndOrderFront:self];
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
     // Restore collection behavior (see hack above).
     [self setCollectionBehavior:wcb];
-#endif
 
     // fade back in
     if (didBlend) {
-        CGDisplayFade(token, .25, kCGDisplayBlendSolidColor,
-            kCGDisplayBlendNormal, .0, .0, .0, false);
-        CGReleaseDisplayFadeReservation(token);
+        [NSAnimationContext currentContext].completionHandler = ^{
+            CGDisplayFade(token, fadeTime, kCGDisplayBlendSolidColor,
+                          kCGDisplayBlendNormal, .0, .0, .0, false);
+            CGReleaseDisplayFadeReservation(token);
+        };
     }
 
     state = InFullScreen;
@@ -222,8 +233,8 @@ enum {
     // fade to black
     Boolean didBlend = NO;
     CGDisplayFadeReservationToken token;
-    if (CGAcquireDisplayFadeReservation(.5, &token) == kCGErrorSuccess) {
-        CGDisplayFade(token, .25, kCGDisplayBlendNormal,
+    if (CGAcquireDisplayFadeReservation(fadeReservationTime, &token) == kCGErrorSuccess) {
+        CGDisplayFade(token, fadeTime, kCGDisplayBlendNormal,
             kCGDisplayBlendSolidColor, .0, .0, .0, true);
         didBlend = YES;
     }
@@ -277,11 +288,13 @@ enum {
     [view setFrameOrigin:oldPosition];
     [self close];
 
+    if (floor(NSAppKitVersionNumber) >= NSAppKitVersionNumber10_12)
+        [[view textView] setCGLayerEnabled:NO];
+
     // Set the text view to initial first responder, otherwise the 'plus'
     // button on the tabline steals the first responder status.
     [target setInitialFirstResponder:[view textView]];
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
     // HACK! Put decorated window on all Spaces (available on OS X 10.5 and
     // later) so that the decorated window stays on the same Space as the full
     // screen window (they may occupy different Spaces e.g. if the full-screen
@@ -289,7 +302,7 @@ enum {
     // restored further down.
     NSWindowCollectionBehavior wcb = [target collectionBehavior];
     [target setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
-#endif
+
 #if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
     // HACK! On Mac OS X 10.7 windows animate when makeKeyAndOrderFront: is
     // called.  This is distracting here, so disable the animation and restore
@@ -308,10 +321,9 @@ enum {
     if (NSWindowAnimationBehaviorNone != a)
         [target setAnimationBehavior:a];
 #endif
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+
     // Restore collection behavior (see hack above).
     [target setCollectionBehavior:wcb];
-#endif
 
     // ...but we don't want a focus gained message either, so don't set this
     // sooner
@@ -319,7 +331,7 @@ enum {
 
     // fade back in  
     if (didBlend) {
-        CGDisplayFade(token, .25, kCGDisplayBlendSolidColor,
+        CGDisplayFade(token, fadeTime, kCGDisplayBlendSolidColor,
             kCGDisplayBlendNormal, .0, .0, .0, false);
         CGReleaseDisplayFadeReservation(token);
     }
@@ -371,6 +383,15 @@ enum {
     [self resizeVimView];
 }
 
+- (CGFloat) viewOffset {
+    CGFloat menuBarHeight = 0;
+    if([self screen] != [[NSScreen screens] objectAtIndex:0]) {
+        // Screens other than the primary screen will not hide their menu bar, adjust the visible view down by the menu height
+        menuBarHeight = [[[NSApplication sharedApplication] mainMenu] menuBarHeight]-1;
+    }
+    return menuBarHeight;
+}
+
 - (void)centerView
 {
     NSRect outer = [self frame], inner = [view frame];
@@ -379,7 +400,7 @@ enum {
     // rendering issues may arise (screen looks blurry, each redraw clears the
     // entire window, etc.).
     NSPoint origin = { floor((outer.size.width - inner.size.width)/2),
-                       floor((outer.size.height - inner.size.height)/2) };
+                       floor((outer.size.height - inner.size.height)/2 - [self viewOffset]/2) };
 
     [view setFrameOrigin:origin];
 }
@@ -478,6 +499,8 @@ enum {
     // size since it compensates for menu and dock.
     int maxRows, maxColumns;
     NSSize size = [[self screen] frame].size;
+    size.height -= [self viewOffset];
+    
     [view constrainRows:&maxRows columns:&maxColumns toSize:size];
 
     // Compute current fu size

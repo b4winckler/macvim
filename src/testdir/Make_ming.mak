@@ -10,102 +10,127 @@
 
 ifneq (sh.exe, $(SHELL))
 DEL = rm -f
+DELDIR = rm -rf
 MV = mv
 CP = cp
+CAT = cat
 DIRSLASH = /
 else
 DEL = del
+DELDIR = rd /s /q
 MV = rename
 CP = copy
+CAT = type
 DIRSLASH = \\
 endif
 
 VIMPROG = ..$(DIRSLASH)vim
+
+default: vimall
+
+include Make_all.mak
 
 # Omitted:
 # test2		"\\tmp" doesn't work.
 # test10	'errorformat' is different
 # test12	can't unlink a swap file
 # test25	uses symbolic link
-# test27	can't edit file with "*" in file name
-# test97	\{ and \$ are not escaped characters.
+# test54	doesn't work yet
+# test97	\{ and \$ are not escaped characters
 
-SCRIPTS16 =	test1.out test19.out test20.out test22.out \
-		test23.out test24.out test28.out test29.out \
-		test35.out test36.out test43.out \
-		test44.out test45.out test46.out test47.out \
-		test48.out test51.out test53.out            \
-		test55.out test56.out test57.out test58.out test59.out \
-		test60.out test61.out test62.out test63.out test64.out
+SCRIPTS = $(SCRIPTS_ALL) $(SCRIPTS_MORE1) $(SCRIPTS_MORE4) $(SCRIPTS_WIN32)
 
-# Had to remove test54 which doesn't work yet.
-#		                                 test54.out
+SCRIPTS_BENCH = bench_re_freeze.out
 
-SCRIPTS =	test3.out test4.out test5.out test6.out test7.out \
-		test8.out test9.out test11.out test13.out test14.out \
-		test15.out test17.out test18.out test21.out test26.out \
-		test30.out test31.out test32.out test33.out test34.out \
-		test37.out test38.out test39.out test40.out test41.out \
-		test42.out test52.out test65.out test66.out test67.out \
-		test68.out test69.out test71.out test72.out test73.out \
-		test74.out test75.out test76.out test77.out test78.out \
-		test79.out test80.out test81.out test82.out test83.out \
-		test84.out test85.out test86.out test87.out test88.out \
-		test89.out test90.out test91.out test92.out test93.out \
-		test94.out test95.out test96.out test98.out test99.out \
-		test100.out test101.out test102.out test103.out test104.out \
-		test105.out test106.out test107.out \
-		test_autoformat_join.out \
-		test_breakindent.out \
-		test_listlbr.out \
-		test_listlbr_utf8.out \
-		test_qf_title.out \
-		test_eval.out \
-		test_options.out
+# Must run test1 first to create small.vim.
+$(SCRIPTS) $(SCRIPTS_GUI) $(SCRIPTS_WIN32) $(NEW_TESTS): $(SCRIPTS_FIRST)
 
-SCRIPTS32 =	test50.out test70.out
+.SUFFIXES: .in .out .res .vim
 
-SCRIPTS_GUI = test16.out
+vimall:	fixff $(SCRIPTS_FIRST) $(SCRIPTS) $(SCRIPTS_GUI) $(SCRIPTS_WIN32) newtests
+	@echo ALL DONE
 
-.SUFFIXES: .in .out
+nongui:	fixff nolog $(SCRIPTS_FIRST) $(SCRIPTS) newtests
+	@echo ALL DONE
 
-vimall:	fixff $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS_GUI) $(SCRIPTS32)
-	echo ALL DONE
+benchmark: $(SCRIPTS_BENCH)
 
-nongui:	fixff $(SCRIPTS16) $(SCRIPTS)
-	echo ALL DONE
+small: nolog
+	@echo ALL DONE
 
-small:
-	echo ALL DONE
+gui:	fixff nolog $(SCRIPTS_FIRST) $(SCRIPTS) $(SCRIPTS_GUI) newtests
+	@echo ALL DONE
 
-gui:	fixff $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS_GUI)
-	echo ALL DONE
+win32:	fixff nolog $(SCRIPTS_FIRST) $(SCRIPTS) $(SCRIPTS_WIN32) newtests
+	@echo ALL DONE
 
-win32:	fixff $(SCRIPTS16) $(SCRIPTS) $(SCRIPTS32)
-	echo ALL DONE
-
+# TODO: find a way to avoid changing the distributed files.
 fixff:
-	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=dos|upd" +q *.in *.ok
-	-$(VIMPROG) -u dos.vim --noplugin "+argdo set ff=unix|upd" +q \
-		dotest.in test60.ok test71.ok test74.ok
+	-$(VIMPROG) -u dos.vim $(NO_INITS) "+argdo set ff=dos|upd" +q *.in *.ok
+	-$(VIMPROG) -u dos.vim $(NO_INITS) "+argdo set ff=unix|upd" +q \
+		dotest.in test60.ok test_listchars.ok \
+		test_getcwd.ok test_wordcount.ok
 
 clean:
-	-$(DEL) *.out
-	-$(DEL) test.ok
-	-$(DEL) small.vim
-	-$(DEL) tiny.vim
-	-$(DEL) mbyte.vim
-	-$(DEL) mzscheme.vim
-	-$(DEL) lua.vim
-	-$(DEL) X*
-	-$(DEL) viminfo
+	-@if exist *.out $(DEL) *.out
+	-@if exist *.failed $(DEL) *.failed
+	-@if exist *.res $(DEL) *.res
+	-@if exist test.in $(DEL) test.in
+	-@if exist test.ok $(DEL) test.ok
+	-@if exist small.vim $(DEL) small.vim
+	-@if exist tiny.vim $(DEL) tiny.vim
+	-@if exist mbyte.vim $(DEL) mbyte.vim
+	-@if exist mzscheme.vim $(DEL) mzscheme.vim
+	-@if exist lua.vim $(DEL) lua.vim
+	-@if exist Xdir1 $(DELDIR) Xdir1
+	-@if exist Xfind $(DELDIR) Xfind
+	-@if exist X* $(DEL) X*
+	-@if exist viminfo $(DEL) viminfo
+	-@if exist test.log $(DEL) test.log
+	-@if exist messages $(DEL) messages
+	-@if exist opt_test.vim $(DEL) opt_test.vim
 
 .in.out:
-	$(CP) $*.ok test.ok
-	$(VIMPROG) -u dos.vim -U NONE --noplugin -s dotest.in $*.in
-	diff test.out $*.ok
-	-$(DEL) $*.out
-	$(MV) test.out $*.out
-	-$(DEL) X*
-	-$(DEL) test.ok
-	-$(DEL) viminfo
+	-@if exist $*.ok $(CP) $*.ok test.ok
+	$(VIMPROG) -u dos.vim $(NO_INITS) -s dotest.in $*.in
+	@diff test.out $*.ok
+	-@if exist $*.out $(DEL) $*.out
+	@$(MV) test.out $*.out
+	-@if exist Xdir1 $(DELDIR) Xdir1
+	-@if exist Xfind $(DELDIR) Xfind
+	-@if exist X* $(DEL) X*
+	-@if exist test.ok $(DEL) test.ok
+	-@if exist viminfo $(DEL) viminfo
+
+nolog:
+	-@if exist test.log $(DEL) test.log
+	-@if exist messages $(DEL) messages
+
+bench_re_freeze.out: bench_re_freeze.vim
+	-$(DEL) benchmark.out
+	$(VIMPROG) -u dos.vim $(NO_INITS) $*.in
+	$(CAT) benchmark.out
+
+# New style of tests uses Vim script with assert calls.  These are easier
+# to write and a lot easier to read and debug.
+# Limitation: Only works with the +eval feature.
+
+newtests: $(NEW_TESTS)
+
+.vim.res:
+	@echo "$(VIMPROG)" > vimcmd
+	$(VIMPROG) -u NONE $(NO_INITS) -S runtest.vim $*.vim
+	@$(DEL) vimcmd
+
+test_gui.res: test_gui.vim
+	@echo "$(VIMPROG)" > vimcmd
+	$(VIMPROG) -u NONE $(NO_INITS) -S runtest.vim $<
+	@$(DEL) vimcmd
+
+test_gui_init.res: test_gui_init.vim
+	@echo "$(VIMPROG)" > vimcmd
+	$(VIMPROG) -u gui_preinit.vim -U gui_init.vim $(NO_PLUGINS) -S runtest.vim $<
+	@$(DEL) vimcmd
+
+opt_test.vim: ../option.c gen_opt_test.vim
+	$(VIMPROG) -u NONE -S gen_opt_test.vim --noplugin --not-a-term ../option.c

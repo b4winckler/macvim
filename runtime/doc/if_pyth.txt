@@ -1,4 +1,4 @@
-*if_pyth.txt*   For Vim version 7.4.  Last change: 2014 Jul 23
+*if_pyth.txt*   For Vim version 8.0.  Last change: 2017 Mar 09
 
 
 		  VIM REFERENCE MANUAL    by Paul Moore
@@ -16,6 +16,8 @@ The Python Interface to Vim				*python* *Python*
 8. pyeval(), py3eval() Vim functions		|python-pyeval|
 9. Dynamic loading				|python-dynamic|
 10. Python 3					|python3|
+11. Python X					|python_x|
+12. Building with Python support		|python-building|
 
 {Vi does not have any of these commands}
 
@@ -56,7 +58,11 @@ Example: >
 			print 'EAT ME'
 	EOF
 	endfunction
-<
+
+To see what version of Python you have: >
+	:python import sys
+	:python print(sys.version)
+
 Note: Python is very sensitive to the indenting.  Make sure the "class" line
 and "EOF" do not have any indent.
 
@@ -169,8 +175,8 @@ vim.eval(str)						*python-eval*
 
 	    :py tagList = vim.eval('taglist("eval_expr")')
 <	The latter will return a python list of python dicts, for instance:
-	[{'cmd': '/^eval_expr(arg, nextcmd)$/', 'static': 0, 'name':
-	'eval_expr', 'kind': 'f', 'filename': './src/eval.c'}]
+	[{'cmd': '/^eval_expr(arg, nextcmd)$/', 'static': 0, 'name': ~
+	'eval_expr', 'kind': 'f', 'filename': './src/eval.c'}] ~
 
 vim.bindeval(str)					*python-bindeval*
 	Like |python-eval|, but returns special objects described in 
@@ -653,10 +659,37 @@ vim.List object					*python-List*
         class List(vim.List):		# Subclassing
 
 vim.Function object				*python-Function*
-    Function-like object, acting like vim |Funcref| object. Supports `.name` 
-    attribute and is callable. Accepts special keyword argument `self`, see 
-    |Dictionary-function|. You can also use `vim.Function(name)` constructor, 
-    it is the same as `vim.bindeval('function(%s)'%json.dumps(name))`.
+    Function-like object, acting like vim |Funcref| object. Accepts special 
+    keyword argument `self`, see |Dictionary-function|. You can also use 
+    `vim.Function(name)` constructor, it is the same as 
+    `vim.bindeval('function(%s)'%json.dumps(name))`.
+
+    Attributes (read-only):
+        Attribute    Description ~
+        name         Function name.
+        args         `None` or a |python-List| object with arguments.  Note 
+                     that this is a copy of the arguments list, constructed 
+                     each time you request this attribute. Modifications made 
+                     to the list will be ignored (but not to the containers 
+                     inside argument list: this is like |copy()| and not 
+                     |deepcopy()|).
+        self         `None` or a |python-Dictionary| object with self 
+                     dictionary. Note that explicit `self` keyword used when 
+                     calling resulting object overrides this attribute.
+        auto_rebind  Boolean. True if partial created from this Python object 
+                     and stored in the Vim script dictionary should be
+                     automatically rebound to the dictionary it is stored in
+                     when this dictionary is indexed. Exposes Vim internal
+                     difference between `dict.func` (auto_rebind=True) and
+                     `function(dict.func,dict)` (auto_rebind=False). This
+                     attribute makes no sense if `self` attribute is `None`.
+
+    Constructor additionally accepts `args`, `self` and `auto_rebind` 
+    keywords.  If `args` and/or `self` argument is given then it constructs 
+    a partial, see |function()|.  `auto_rebind` is only used when `self` 
+    argument is given, otherwise it is assumed to be `True` regardless of 
+    whether it was given or not.  If `self` is given then it defaults to 
+    `False`.
 
     Examples: >
         f = vim.Function('tr')			# Constructor
@@ -670,28 +703,48 @@ vim.Function object				*python-Function*
         print f(self={})			# Like call('DictFun', [], {})
         print isinstance(f, vim.Function)	# True
 
+        p = vim.Function('DictFun', self={})
+        print f()
+        p = vim.Function('tr', args=['abc', 'a'])
+        print f('b')
+
 ==============================================================================
 8. pyeval() and py3eval() Vim functions			*python-pyeval*
 
 To facilitate bi-directional interface, you can use |pyeval()| and |py3eval()| 
-functions to evaluate Python expressions and pass their values to VimL.
+functions to evaluate Python expressions and pass their values to Vim script.
+|pyxeval()| is also available.
 
 ==============================================================================
 9. Dynamic loading					*python-dynamic*
 
-On MS-Windows the Python library can be loaded dynamically.  The |:version|
-output then includes |+python/dyn|.
+On MS-Windows and Unix the Python library can be loaded dynamically.  The
+|:version| output then includes |+python/dyn| or |+python3/dyn|.
 
-This means that Vim will search for the Python DLL file only when needed.
-When you don't use the Python interface you don't need it, thus you can use
-Vim without this DLL file.
+This means that Vim will search for the Python DLL or shared library file only
+when needed.  When you don't use the Python interface you don't need it, thus
+you can use Vim without this file.
+
+
+MS-Windows ~
 
 To use the Python interface the Python DLL must be in your search path.  In a
-console window type "path" to see what directories are used.
+console window type "path" to see what directories are used.  The 'pythondll'
+or 'pythonthreedll' option can be also used to specify the Python DLL.
 
-The name of the DLL must match the Python version Vim was compiled with.
-Currently the name is "python24.dll".  That is for Python 2.4.  To know for
-sure edit "gvim.exe" and search for "python\d*.dll\c".
+The name of the DLL should match the Python version Vim was compiled with.
+Currently the name for Python 2 is "python27.dll", that is for Python 2.7.
+That is the default value for 'pythondll'.  For Python 3 it is python35.dll
+(Python 3.5).  To know for sure edit "gvim.exe" and search for
+"python\d*.dll\c".
+
+
+Unix ~
+
+The 'pythondll' or 'pythonthreedll' option can be used to specify the Python
+shared library file instead of DYNAMIC_PYTHON_DLL or DYNAMIC_PYTHON3_DLL file
+what were specified at compile time.  The version of the shared library must
+match the Python 2.x or Python 3 version Vim was compiled with.
 
 ==============================================================================
 10. Python 3						*python3*
@@ -700,9 +753,13 @@ sure edit "gvim.exe" and search for "python\d*.dll\c".
 The `:py3` and `:python3` commands work similar to `:python`.  A simple check
 if the `:py3` command is working: >
 	:py3 print("Hello")
+
+To see what version of Python you have: >
+	:py3 import sys
+	:py3 print(sys.version)
 <							*:py3file*
 The `:py3file` command works similar to `:pyfile`.
-							*:py3do* *E863*
+							*:py3do*
 The `:py3do` command works similar to `:pydo`.
 
 
@@ -758,6 +815,92 @@ Note however, that when Python 2 and 3 are both available and loaded
 dynamically, these has() calls will try to load them.  If only one can be
 loaded at a time, just checking if Python 2 or 3 are available will prevent
 the other one from being available.
+
+==============================================================================
+11. Python X						*python_x* *pythonx*
+
+Because most python code can be written so that it works with python 2.6+ and
+python 3 the pyx* functions and commands have been written.  They work exactly
+the same as the Python 2 and 3 variants, but select the Python version using
+the 'pyxversion' setting.
+
+You should set 'pyxversion' in your |.vimrc| to prefer Python 2 or Python 3
+for Python commands. If you change this setting at runtime you may risk that
+state of plugins (such as initialization) may be lost.
+
+If you want to use a module, you can put it in the {rtp}/pythonx directory.
+See |pythonx-directory|.
+
+							*:pyx* *:pythonx*
+The `:pyx` and `:pythonx` commands work similar to `:python`.  A simple check
+if the `:pyx` command is working: >
+	:pyx print("Hello")
+
+To see what version of Python is being used: >
+	:pyx import sys
+	:pyx print(sys.version)
+<
+					*:pyxfile* *python_x-special-comments*
+The `:pyxfile` command works similar to `:pyfile`.  However you can add one of
+these comments to force Vim using `:pyfile` or `:py3file`: >
+  #!/any string/python2		" Shebang. Must be the first line of the file.
+  #!/any string/python3		" Shebang. Must be the first line of the file.
+  # requires python 2.x		" Maximum lines depend on 'modelines'.
+  # requires python 3.x		" Maximum lines depend on 'modelines'.
+Unlike normal modelines, the bottom of the file is not checked.
+If none of them are found, the 'pyxversion' setting is used.
+							*W20* *W21*
+If Vim does not support the selected Python version a silent message will be
+printed.  Use `:messages` to read them.
+
+							*:pyxdo*
+The `:pyxdo` command works similar to `:pydo`.
+
+							*has-pythonx*
+You can test if pyx* commands are available with: >
+	if has('pythonx')
+	  echo 'pyx* commands are available. (Python ' . &pyx . ')'
+	endif
+
+When compiled with only one of |+python| or |+python3|, the has() returns 1.
+When compiled with both |+python| and |+python3|, the test depends on the
+'pyxversion' setting.  If 'pyxversion' is 0, it tests Python 3 first, and if
+it is not available then Python 2.  If 'pyxversion' is 2 or 3, it tests only
+Python 2 or 3 respectively.
+
+Note that for `has('pythonx')` to work it may try to dynamically load Python 3
+or 2.  This may have side effects, especially when Vim can only load one of
+the two.
+
+If a user prefers Python 2 and want to fallback to Python 3, he needs to set
+'pyxversion' explicitly in his |.vimrc|.  E.g.: >
+	if has('python')
+	  set pyx=2
+	elseif has('python3')
+	  set pyx=3
+	endif
+
+==============================================================================
+12. Building with Python support			*python-building*
+
+A few hints for building with Python 2 or 3 support.
+
+UNIX
+
+See src/Makefile for how to enable including the Python interface.
+
+On Ubuntu you will want to install these packages for Python 2:
+	python
+	python-dev
+For Python 3:
+	python3
+	pytyon3-dev
+For Python 3.6:
+	python3.6
+	pytyon3.6-dev
+
+If you have more than one version of Python 3, you need to link python3 to the
+one you prefer, before running configure.
 
 ==============================================================================
  vim:tw=78:ts=8:ft=help:norl:

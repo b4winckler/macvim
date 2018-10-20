@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved	by Bram Moolenaar
  *
@@ -112,6 +112,7 @@
 
 /* Used for the sgr mouse. */
 #define KS_SGR_MOUSE		237
+#define KS_SGR_MOUSE_RELEASE		236 /* Release */
 
 /*
  * Filler used after KS_SPECIAL and others
@@ -210,8 +211,6 @@ enum key_extra
 
     , KE_TAB		/* unshifted TAB key */
     , KE_S_TAB_OLD	/* shifted TAB key (no longer used) */
-
-    , KE_SNIFF		/* SNiFF+ input waiting */
 
     , KE_XF1		/* extra vt100 function keys for xterm */
     , KE_XF2
@@ -400,6 +399,8 @@ enum key_extra
 #define K_KMULTIPLY	TERMCAP2KEY('K', '9')	/* keypad * */
 #define K_KENTER	TERMCAP2KEY('K', 'A')	/* keypad Enter */
 #define K_KPOINT	TERMCAP2KEY('K', 'B')	/* keypad . or ,*/
+#define K_PS		TERMCAP2KEY('P', 'S')	/* paste start */
+#define K_PE		TERMCAP2KEY('P', 'E')	/* paste end */
 
 #define K_K0		TERMCAP2KEY('K', 'C')	/* keypad 0 */
 #define K_K1		TERMCAP2KEY('K', 'D')	/* keypad 1 */
@@ -423,6 +424,7 @@ enum key_extra
 #define K_PTERM_MOUSE	TERMCAP2KEY(KS_PTERM_MOUSE, KE_FILLER)
 #define K_URXVT_MOUSE	TERMCAP2KEY(KS_URXVT_MOUSE, KE_FILLER)
 #define K_SGR_MOUSE	TERMCAP2KEY(KS_SGR_MOUSE, KE_FILLER)
+#define K_SGR_MOUSERELEASE TERMCAP2KEY(KS_SGR_MOUSE_RELEASE, KE_FILLER)
 
 #define K_SELECT	TERMCAP2KEY(KS_SELECT, KE_FILLER)
 #define K_TEAROFF	TERMCAP2KEY(KS_TEAROFF, KE_FILLER)
@@ -455,8 +457,6 @@ enum key_extra
 
 #define K_IGNORE	TERMCAP2KEY(KS_EXTRA, KE_IGNORE)
 #define K_NOP		TERMCAP2KEY(KS_EXTRA, KE_NOP)
-
-#define K_SNIFF		TERMCAP2KEY(KS_EXTRA, KE_SNIFF)
 
 #define K_MOUSEDOWN	TERMCAP2KEY(KS_EXTRA, KE_MOUSEDOWN)
 #define K_MOUSEUP	TERMCAP2KEY(KS_EXTRA, KE_MOUSEUP)
@@ -498,9 +498,10 @@ enum key_extra
 
 /*
  * The length of the longest special key name, including modifiers.
- * Current longest is <M-C-S-T-4-MiddleRelease> (length includes '<' and '>').
+ * Current longest is <M-C-S-T-D-A-4-ScrollWheelRight> (length includes '<' and
+ * '>').
  */
-#define MAX_KEY_NAME_LEN    25
+#define MAX_KEY_NAME_LEN    32
 
 /* Maximum length of a special key event as tokens.  This includes modifiers.
  * The longest event is something like <M-C-S-T-4-LeftDrag> which would be the

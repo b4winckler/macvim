@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved    by Bram Moolenaar
  *
@@ -51,6 +51,15 @@
 # undef F_BLANK
 #endif
 
+#ifdef HAVE_STRFTIME
+# undef HAVE_STRFTIME
+#endif
+#ifdef HAVE_STRING_H
+# undef HAVE_STRING_H
+#endif
+#ifdef HAVE_PUTENV
+# undef HAVE_PUTENV
+#endif
 #ifdef HAVE_STDARG_H
 # undef HAVE_STDARG_H   /* Python's config.h defines it as well. */
 #endif
@@ -686,16 +695,16 @@ py3_runtime_link_init(char *libname, int verbose)
     int
 python3_enabled(int verbose)
 {
-    return py3_runtime_link_init(DYNAMIC_PYTHON3_DLL, verbose) == OK;
+    return py3_runtime_link_init((char *)p_py3dll, verbose) == OK;
 }
 
 /* Load the standard Python exceptions - don't import the symbols from the
  * DLL, as this can cause errors (importing data symbols is not reliable).
  */
-static void get_py3_exceptions __ARGS((void));
+static void get_py3_exceptions(void);
 
     static void
-get_py3_exceptions()
+get_py3_exceptions(void)
 {
     PyObject *exmod = PyImport_ImportModule("builtins");
     PyObject *exdict = PyModule_GetDict(exmod);
@@ -800,7 +809,7 @@ static PyObject *Py3Init_vim(void);
  */
 
     void
-python3_end()
+python3_end(void)
 {
     static int recurse = 0;
 
@@ -828,9 +837,9 @@ python3_end()
     --recurse;
 }
 
-#if (defined(DYNAMIC_PYTHON) && defined(FEAT_PYTHON)) || defined(PROTO)
+#if (defined(DYNAMIC_PYTHON3) && defined(DYNAMIC_PYTHON) && defined(FEAT_PYTHON) && defined(UNIX)) || defined(PROTO)
     int
-python3_loaded()
+python3_loaded(void)
 {
     return (hinstPy3 != 0);
 }
@@ -851,9 +860,26 @@ Python3_Init(void)
 
 	init_structs();
 
-
-#ifdef PYTHON3_HOME
+#ifdef DYNAMIC_PYTHON3
+	if (*p_py3home != '\0')
+	{
+	    int len;
+	    wchar_t *buf;
+	    len = mbstowcs(NULL, (char *)p_py3home, 0) + 1;
+	    buf = (wchar_t *)alloc(len * sizeof(wchar_t));
+	    if (buf && mbstowcs(buf, (char *)p_py3home, len) != (size_t)-1) {
+		Py_SetPythonHome(buf);
+		/* We must keep buf for Py_SetPythonHome */
+	    }
+	}
+# ifdef PYTHON3_HOME
+	else if (mch_getenv((char_u *)"PYTHONHOME") == NULL)
+	    Py_SetPythonHome(PYTHON3_HOME);
+# endif
+#else
+# ifdef PYTHON3_HOME
 	Py_SetPythonHome(PYTHON3_HOME);
+# endif
 #endif
 
 	PyImport_AppendInittab("vim", Py3Init_vim);
@@ -992,6 +1018,9 @@ ex_py3(exarg_T *eap)
 {
     char_u *script;
 
+    if (p_pyx == 0)
+	p_pyx = 3;
+
     script = script_get(eap, eap->arg);
     if (!eap->skip)
     {
@@ -1015,6 +1044,9 @@ ex_py3file(exarg_T *eap)
     const char *file;
     char *p;
     int i;
+
+    if (p_pyx == 0)
+	p_pyx = 3;
 
     /* Have to do it like this. PyRun_SimpleFile requires you to pass a
      * stdio file pointer, but Vim and the Python DLL are compiled with
@@ -1068,6 +1100,9 @@ ex_py3file(exarg_T *eap)
     void
 ex_py3do(exarg_T *eap)
 {
+    if (p_pyx == 0)
+	p_pyx = 3;
+
     DoPyCommand((char *)eap->arg,
 	    (rangeinitializer)init_range_cmd,
 	    (runner)run_do,
@@ -1088,6 +1123,10 @@ OutputGetattro(PyObject *self, PyObject *nameobj)
 
     if (strcmp(name, "softspace") == 0)
 	return PyLong_FromLong(((OutputObject *)(self))->softspace);
+    else if (strcmp(name, "errors") == 0)
+	return PyString_FromString("strict");
+    else if (strcmp(name, "encoding") == 0)
+	return PyString_FromString(ENC_OPT);
 
     return PyObject_GenericGetAttr(self, nameobj);
 }
@@ -1516,14 +1555,16 @@ ListSetattro(PyObject *self, PyObject *nameobj, PyObject *val)
     static PyObject *
 FunctionGetattro(PyObject *self, PyObject *nameobj)
 {
+    PyObject		*r;
     FunctionObject	*this = (FunctionObject *)(self);
 
     GET_ATTR_STRING(name, nameobj);
 
-    if (strcmp(name, "name") == 0)
-	return PyUnicode_FromString((char *)(this->name));
-
-    return PyObject_GenericGetAttr(self, nameobj);
+    r = FunctionAttr(this, name);
+    if (r || PyErr_Occurred())
+	return r;
+    else
+	return PyObject_GenericGetAttr(self, nameobj);
 }
 
 /* External interface
@@ -1642,15 +1683,23 @@ do_py3eval (char_u *str, typval_T *rettv)
 	case VAR_DICT: ++rettv->vval.v_dict->dv_refcount; break;
 	case VAR_LIST: ++rettv->vval.v_list->lv_refcount; break;
 	case VAR_FUNC: func_ref(rettv->vval.v_string);    break;
+	case VAR_PARTIAL: ++rettv->vval.v_partial->pt_refcount; break;
 	case VAR_UNKNOWN:
 	    rettv->v_type = VAR_NUMBER;
 	    rettv->vval.v_number = 0;
 	    break;
+	case VAR_NUMBER:
+	case VAR_STRING:
+	case VAR_FLOAT:
+	case VAR_SPECIAL:
+	case VAR_JOB:
+	case VAR_CHANNEL:
+	    break;
     }
 }
 
-    void
+    int
 set_ref_in_python3 (int copyID)
 {
-    set_ref_in_py(copyID);
+    return set_ref_in_py(copyID);
 }

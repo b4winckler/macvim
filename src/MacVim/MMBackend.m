@@ -163,8 +163,6 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
 @end
 
 
-
-
 @interface MMBackend (Private)
 - (void)clearDrawData;
 - (void)didChangeWholeLine;
@@ -196,11 +194,12 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
 - (void)redrawScreen;
 - (void)handleFindReplace:(NSDictionary *)args;
 - (void)handleMarkedText:(NSData *)data;
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 - (void)handleGesture:(NSData *)data;
-#endif
 #ifdef FEAT_BEVAL
 - (void)bevalCallback:(id)sender;
+#endif
+#ifdef MESSAGE_QUEUE
+- (void)checkForProcessEvents:(NSTimer *)timer;
 #endif
 @end
 
@@ -683,13 +682,26 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
 
     // Only start the run loop if the input queue is empty, otherwise process
     // the input first so that the input on queue isn't delayed.
-    if ([inputQueue count]) {
+    if ([inputQueue count] || input_available()) {
         inputReceived = YES;
     } else {
         // Wait for the specified amount of time, unless 'milliseconds' is
         // negative in which case we wait "forever" (1e6 seconds translates to
         // approximately 11 days).
         CFTimeInterval dt = (milliseconds >= 0 ? .001*milliseconds : 1e6);
+        NSTimer *timer = nil;
+
+        // Set interval timer which checks for the events of job and channel
+        // when there is any pending job or channel.
+        if (dt > 0.1 && (has_any_channel() || has_pending_job())) {
+            timer = [NSTimer scheduledTimerWithTimeInterval:0.1
+                                                     target:self
+                                                   selector:@selector(checkForProcessEvents:)
+                                                   userInfo:nil
+                                                    repeats:YES];
+            [[NSRunLoop currentRunLoop] addTimer:timer
+                                         forMode:NSDefaultRunLoopMode];
+        }
 
         while (CFRunLoopRunInMode(kCFRunLoopDefaultMode, dt, true)
                 == kCFRunLoopRunHandledSource) {
@@ -699,6 +711,11 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
             dt = 0.0;
             inputReceived = YES;
         }
+
+        if (input_available())
+            inputReceived = YES;
+
+        [timer invalidate];
     }
 
     // The above calls may have placed messages on the input queue so process
@@ -1078,6 +1095,13 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
     [self queueMessage:AdjustLinespaceMsgID data:data];
 }
 
+- (void)adjustColumnspace:(int)columnspace
+{
+    NSMutableData *data = [NSMutableData data];
+    [data appendBytes:&columnspace length:sizeof(int)];
+    [self queueMessage:AdjustColumnspaceMsgID data:data];
+}
+
 - (void)activate
 {
     [self queueMessage:ActivateMsgID data:nil];
@@ -1178,6 +1202,28 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
     int msgid = antialias ? EnableAntialiasMsgID : DisableAntialiasMsgID;
 
     [self queueMessage:msgid data:nil];
+}
+
+- (void)setLigatures:(BOOL)ligatures
+{
+    int msgid = ligatures ? EnableLigaturesMsgID : DisableLigaturesMsgID;
+
+    [self queueMessage:msgid data:nil];
+}
+
+- (void)setThinStrokes:(BOOL)thinStrokes
+{
+    int msgid = thinStrokes ? EnableThinStrokesMsgID : DisableThinStrokesMsgID;
+
+    [self queueMessage:msgid data:nil];
+}
+
+- (void)setBlurRadius:(int)radius
+{
+    NSMutableData *data = [NSMutableData data];
+    [data appendBytes:&radius length:sizeof(int)];
+
+    [self queueMessage:SetBlurRadiusMsgID data:data];
 }
 
 - (void)updateModifiedFlag
@@ -1662,51 +1708,6 @@ extern GuiFont gui_mch_retain_font(GuiFont font);
     [self flushQueue:YES];
 }
 
-static void netbeansReadCallback(CFSocketRef s,
-                                 CFSocketCallBackType callbackType,
-                                 CFDataRef address,
-                                 const void *data,
-                                 void *info)
-{
-    // NetBeans socket is readable.
-    [[MMBackend sharedInstance] messageFromNetbeans];
-}
-
-- (void)messageFromNetbeans
-{
-    [inputQueue addObject:[NSNumber numberWithInt:NetBeansMsgID]];
-    [inputQueue addObject:[NSNull null]];
-}
-
-- (void)setNetbeansSocket:(int)socket
-{
-    if (netbeansSocket) {
-        CFRelease(netbeansSocket);
-        netbeansSocket = NULL;
-    }
-
-    if (netbeansRunLoopSource) {
-        CFRunLoopSourceInvalidate(netbeansRunLoopSource);
-        netbeansRunLoopSource = NULL;
-    }
-
-    if (socket == -1)
-        return;
-
-    // Tell CFRunLoop that we are interested in NetBeans socket input.
-    netbeansSocket = CFSocketCreateWithNative(kCFAllocatorDefault,
-                                              socket,
-                                              kCFSocketReadCallBack,
-                                              &netbeansReadCallback,
-                                              NULL);
-    netbeansRunLoopSource = CFSocketCreateRunLoopSource(NULL,
-                                                        netbeansSocket,
-                                                        0);
-    CFRunLoopAddSource(CFRunLoopGetCurrent(),
-                       netbeansRunLoopSource,
-                       kCFRunLoopCommonModes);
-}
-
 #ifdef FEAT_BEVAL
 - (void)setLastToolTip:(NSString *)toolTip
 {
@@ -1825,6 +1826,7 @@ static void netbeansReadCallback(CFSocketRef s,
         [NSNumber numberWithBool:mmta], @"p_mmta",
         [NSNumber numberWithInt:numTabs], @"numTabs",
         [NSNumber numberWithInt:fuoptions_flags], @"fullScreenOptions",
+        [NSNumber numberWithLong:p_mouset], @"p_mouset",
         nil];
 
     // Put the state before all other messages.
@@ -1913,12 +1915,12 @@ static void netbeansReadCallback(CFSocketRef s,
         int col = *((int*)bytes);  bytes += sizeof(int);
         int button = *((int*)bytes);  bytes += sizeof(int);
         int flags = *((int*)bytes);  bytes += sizeof(int);
-        int count = *((int*)bytes);  bytes += sizeof(int);
+        int repeat = *((int*)bytes);  bytes += sizeof(int);
 
         button = eventButtonNumberToVimMouseButton(button);
         if (button >= 0) {
             flags = eventModifierFlagsToVimMouseModMask(flags);
-            gui_send_mouse_event(button, col, row, count>1, flags);
+            gui_send_mouse_event(button, col, row, repeat, flags);
         }
     } else if (MouseUpMsgID == msgid) {
         if (!data) return;
@@ -1981,8 +1983,10 @@ static void netbeansReadCallback(CFSocketRef s,
         const void *bytes = [data bytes];
         int idx = *((int*)bytes) + 1;
         send_tabline_menu_event(idx, TABLINE_MENU_CLOSE);
+        [self redrawScreen];
     } else if (AddNewTabMsgID == msgid) {
         send_tabline_menu_event(0, TABLINE_MENU_NEW);
+        [self redrawScreen];
     } else if (DraggedTabMsgID == msgid) {
         if (!data) return;
         const void *bytes = [data bytes];
@@ -2059,10 +2063,6 @@ static void netbeansReadCallback(CFSocketRef s,
         [self handleOpenWithArguments:[NSDictionary dictionaryWithData:data]];
     } else if (FindReplaceMsgID == msgid) {
         [self handleFindReplace:[NSDictionary dictionaryWithData:data]];
-    } else if (NetBeansMsgID == msgid) {
-#ifdef FEAT_NETBEANS_INTG
-        netbeans_read();
-#endif
     } else if (ZoomMsgID == msgid) {
         if (!data) return;
         const void *bytes = [data bytes];
@@ -2085,9 +2085,7 @@ static void netbeansReadCallback(CFSocketRef s,
         winposY = *((int*)bytes);  bytes += sizeof(int);
         ASLogDebug(@"SetWindowPositionMsgID: x=%d y=%d", winposX, winposY);
     } else if (GestureMsgID == msgid) {
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
         [self handleGesture:data];
-#endif
     } else if (ActivatedImMsgID == msgid) {
         [self setImState:YES];
     } else if (DeactivatedImMsgID == msgid) {
@@ -2982,7 +2980,6 @@ static void netbeansReadCallback(CFSocketRef s,
     }
 }
 
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 - (void)handleGesture:(NSData *)data
 {
     const void *bytes = [data bytes];
@@ -3010,7 +3007,6 @@ static void netbeansReadCallback(CFSocketRef s,
         add_to_input_buf(string, 6);
     }
 }
-#endif
 
 #ifdef FEAT_BEVAL
 - (void)bevalCallback:(id)sender
@@ -3033,6 +3029,24 @@ static void netbeansReadCallback(CFSocketRef s,
                                         forKey:@"toolTip"]];
         [self flushQueue:YES];
     }
+}
+#endif
+
+#ifdef MESSAGE_QUEUE
+- (void)checkForProcessEvents:(NSTimer *)timer
+{
+# ifdef FEAT_TIMERS
+    did_add_timer = FALSE;
+# endif
+
+    parse_queued_messages();
+
+    if (input_available()
+# ifdef FEAT_TIMERS
+            || did_add_timer
+# endif
+            )
+        CFRunLoopStop(CFRunLoopGetCurrent());
 }
 #endif
 
@@ -3205,13 +3219,13 @@ static int eventModifierFlagsToVimModMask(int modifierFlags)
 {
     int modMask = 0;
 
-    if (modifierFlags & NSShiftKeyMask)
+    if (modifierFlags & NSEventModifierFlagShift)
         modMask |= MOD_MASK_SHIFT;
-    if (modifierFlags & NSControlKeyMask)
+    if (modifierFlags & NSEventModifierFlagControl)
         modMask |= MOD_MASK_CTRL;
-    if (modifierFlags & NSAlternateKeyMask)
+    if (modifierFlags & NSEventModifierFlagOption)
         modMask |= MOD_MASK_ALT;
-    if (modifierFlags & NSCommandKeyMask)
+    if (modifierFlags & NSEventModifierFlagCommand)
         modMask |= MOD_MASK_CMD;
 
     return modMask;
@@ -3221,11 +3235,11 @@ static int eventModifierFlagsToVimMouseModMask(int modifierFlags)
 {
     int modMask = 0;
 
-    if (modifierFlags & NSShiftKeyMask)
+    if (modifierFlags & NSEventModifierFlagShift)
         modMask |= MOUSE_SHIFT;
-    if (modifierFlags & NSControlKeyMask)
+    if (modifierFlags & NSEventModifierFlagControl)
         modMask |= MOUSE_CTRL;
-    if (modifierFlags & NSAlternateKeyMask)
+    if (modifierFlags & NSEventModifierFlagOption)
         modMask |= MOUSE_ALT;
 
     return modMask;

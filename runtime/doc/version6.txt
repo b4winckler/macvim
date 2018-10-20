@@ -1,4 +1,4 @@
-*version6.txt*  For Vim version 7.4.  Last change: 2013 Jul 28
+*version6.txt*  For Vim version 8.0.  Last change: 2014 Aug 29
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -886,7 +886,7 @@ Adjusted test2 for this.
 Allow using a URL in 'path'.  Makes ":find index.html" work.
 
 GTK: Allow dropping a http:// and ftp:// URL on Vim.  The netrw plugin takes
-care of downloading the file. (MiKael Berthe)
+care of downloading the file. (Mikael Berthe)
 
 
 Window for command-line editing				*new-cmdwin*
@@ -5388,7 +5388,7 @@ Files:	    src/os_win32.c
 
 Patch 6.0.256 (extra)
 Problem:    Win32: ":highlight Comment guifg=asdf" does not give an error
-	    message. (Randall W.  Morris)  Also for other systems.
+	    message. (Randall W. Morris)  Also for other systems.
 Solution:   Add gui_get_color() to give one error message for all systems.
 Files:	    src/gui.c, src/gui_amiga.c, src/gui_athena.c, src/gui_motif.c,
 	    src/gui_riscos.c, src/gui_x11.c, src/gui_gtk_x11.c,
@@ -7816,7 +7816,7 @@ Files:	    src/buffer.c, src/eval.c, src/ex_docmd.c, src/fileio.c,
 Patch 6.1.212
 Problem:    When Vim was started with "-R" ":new" creates a buffer
 	    'noreadonly' while ":enew" has 'readonly' set. (Preben Guldberg)
-Solution:   Don't set 'readonly in a new empty buffer for ":enew".
+Solution:   Don't set 'readonly' in a new empty buffer for ":enew".
 Files:	    src/ex_docmd.c
 
 Patch 6.1.213
@@ -9250,7 +9250,7 @@ Files:	    runtime/doc/various.txt, src/ex_cmds.h, src/ex_docmd.c,
 	    src/proto/quickfix.pro, src/quickfix.c
 
 Patch 6.1.424 (extra)
-Problem:    Win32: Gvim compiled with VC++ 7.0 run on Windows 95 does not show
+Problem:    Win32: gvim compiled with VC++ 7.0 run on Windows 95 does not show
 	    menu items.
 Solution:   Define $WINVER to avoid an extra item is added to MENUITEMINFO.
 	    (Muraoka Taro)
@@ -9955,7 +9955,7 @@ Use "copy /y" in Make_bc5.mak to avoid a prompt for overwriting.
 
 Patch 6.2.001
 Problem:    The ":stopinsert" command doesn't have a help tag.
-Solution:   Add the tag. (Antoine J.  Mechelynck)
+Solution:   Add the tag. (Antoine J. Mechelynck)
 Files:	    runtime/doc/insert.txt, runtime/doc/tags
 
 Patch 6.2.002
@@ -12319,7 +12319,7 @@ Solution:   Don't ignore the WM_SYSKEYUP event when the menu is disabled.
 Files:	    src/gui_w32.c
 
 Patch 6.2.362 (extra, after 6.2.347)
-Problem:    Win32: The manifest causes Gvim not to work. (Dave Roberts)
+Problem:    Win32: The manifest causes gvim not to work. (Dave Roberts)
 Solution:   Change "x86" to "X86". (Serge Pirotte)
 Files:	    src/gvim.exe.mnf
 

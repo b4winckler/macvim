@@ -1,4 +1,4 @@
-*pattern.txt*   For Vim version 7.4.  Last change: 2014 May 28
+*pattern.txt*   For Vim version 8.0.  Last change: 2017 Jun 05
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -59,6 +59,8 @@ explanations are in chapter 27 |usr_27.txt|.
 
 							*n*
 n			Repeat the latest "/" or "?" [count] times.
+			If the cursor doesn't move the search is repeated with
+			count + 1.
 			|last-pattern| {Vi: no count}
 
 							*N*
@@ -353,8 +355,8 @@ For starters, read chapter 27 of the user manual |usr_27.txt|.
 				*/\%#=* *two-engines* *NFA*
 Vim includes two regexp engines:
 1. An old, backtracking engine that supports everything.
-2. A new, NFA engine that works much faster on some patterns, but does not
-   support everything.
+2. A new, NFA engine that works much faster on some patterns, possibly slower
+   on some patterns.
 
 Vim will automatically select the right engine for you.  However, if you run
 into a problem or want to specifically select one engine or the other, you can
@@ -391,8 +393,8 @@ Use of "\M" makes the pattern after it be interpreted as if 'nomagic' is used.
 Use of "\v" means that in the pattern after it all ASCII characters except
 '0'-'9', 'a'-'z', 'A'-'Z' and '_' have a special meaning.  "very magic"
 
-Use of "\V" means that in the pattern after it only the backslash has a
-special meaning.  "very nomagic"
+Use of "\V" means that in the pattern after it only the backslash and the
+terminating character (/ or ?) has a special meaning.  "very nomagic"
 
 Examples:
 after:	  \v	   \m	    \M	     \V		matches ~
@@ -400,6 +402,7 @@ after:	  \v	   \m	    \M	     \V		matches ~
 	  $	   $	    $	     \$		matches end-of-line
 	  .	   .	    \.	     \.		matches any character
 	  *	   *	    \*	     \*		any number of the previous atom
+	  ~	   ~	    \~	     \~		latest substitute string
 	  ()	   \(\)     \(\)     \(\)	grouping into an atom
 	  |	   \|	    \|	     \|		separating alternatives
 	  \a	   \a	    \a	     \a		alphabetic character
@@ -478,6 +481,7 @@ More explanation and examples below, follow the links.
 |/\%v|	\%23v	\%23v	in virtual column 23 |/zero-width|
 
 Character classes {not in Vi}:				*/character-classes*
+      magic   nomagic	matches ~
 |/\i|	\i	\i	identifier character (see 'isident' option)
 |/\I|	\I	\I	like "\i", but excluding digits
 |/\k|	\k	\k	keyword character (see 'iskeyword' option)
@@ -508,6 +512,7 @@ Character classes {not in Vi}:				*/character-classes*
 			class with end-of-line included
 (end of character classes)
 
+      magic   nomagic	matches ~
 |/\e|	\e	\e	<Esc>
 |/\t|	\t	\t	<Tab>
 |/\r|	\r	\r	<CR>
@@ -533,6 +538,7 @@ Character classes {not in Vi}:				*/character-classes*
 |/\Z|	\Z	\Z	ignore differences in Unicode "combining characters".
 			Useful when searching voweled Hebrew or Arabic text.
 
+      magic   nomagic	matches ~
 |/\m|	\m	\m	'magic' on for the following chars in the pattern
 |/\M|	\M	\M	'magic' off for the following chars in the pattern
 |/\v|	\v	\v	the following chars in the pattern are "very magic"
@@ -570,7 +576,7 @@ An atom can be followed by an indication of how many times the atom can be
 matched and in what way.  This is called a multi.  See |/multi| for an
 overview.
 
-						*/star* */\star* *E56*
+							*/star* */\star*
 *	(use \* when 'magic' is not set)
 	Matches 0 or more of the preceding atom, as many as possible.
 	Example  'nomagic'	matches ~
@@ -590,7 +596,7 @@ overview.
 	the end of the file and then tries matching "END", backing up one
 	character at a time.
 
-							*/\+* *E57*
+							*/\+*
 \+	Matches 1 or more of the preceding atom, as many as possible. {not in
 	Vi}
 	Example		matches ~
@@ -606,7 +612,7 @@ overview.
 \?	Just like \=.  Cannot be used when searching backwards with the "?"
 	command. {not in Vi}
 
-					*/\{* *E58* *E60* *E554* *E870*
+					*/\{* *E60* *E554* *E870*
 \{n,m}	Matches n to m of the preceding atom, as many as possible
 \{n}	Matches n of the preceding atom
 \{n,}	Matches at least n of the preceding atom, as many as possible
@@ -706,11 +712,18 @@ overview.
 	But to limit the time needed, only the line where what follows matches
 	is searched, and one line before that (if there is one).  This should
 	be sufficient to match most things and not be too slow.
-	The part of the pattern after "\@<=" and "\@<!" are checked for a
-	match first, thus things like "\1" don't work to reference \(\) inside
-	the preceding atom.  It does work the other way around:
-	Example			matches ~
-	\1\@<=,\([a-z]\+\)	",abc" in "abc,abc"
+
+	In the old regexp engine the part of the pattern after "\@<=" and
+	"\@<!" are checked for a match first, thus things like "\1" don't work
+	to reference \(\) inside the preceding atom.  It does work the other
+	way around:
+	Bad example			matches ~
+	\%#=1\1\@<=,\([a-z]\+\)		",abc" in "abc,abc"
+
+	However, the new regexp engine works differently, it is better to not
+	rely on this behavior, do not use \@<= if it can be avoided:
+	Example				matches ~
+	\([a-z]\+\)\zs,\1		",abc" in "abc,abc"
 
 \@123<=
 	Like "\@<=" but only look back 123 bytes. This avoids trying lots
@@ -822,6 +835,7 @@ $	At end of pattern or in front of "\|", "\)" or "\n" ('magic' on):
 	branch is used.  Example: >
 		/\(.\{-}\zsFab\)\{3}
 <	Finds the third occurrence of "Fab".
+	This cannot be followed by a multi. *E888*
 	{not in Vi} {not available when compiled without the |+syntax| feature}
 							*/\ze*
 \ze	Matches at any position, and sets the end of the match there: The
@@ -830,6 +844,7 @@ $	At end of pattern or in front of "\|", "\)" or "\n" ('magic' on):
 	branch is used.
 	Example: "end\ze\(if\|for\)" matches the "end" in "endif" and
 	"endfor".
+	This cannot be followed by a multi. |E888|
 	{not in Vi} {not available when compiled without the |+syntax| feature}
 
 						*/\%^* *start-of-file*
@@ -854,10 +869,13 @@ $	At end of pattern or in front of "\|", "\)" or "\n" ('magic' on):
 \%V	Match inside the Visual area.  When Visual mode has already been
 	stopped match in the area that |gv| would reselect.
 	This is a |/zero-width| match.  To make sure the whole pattern is
-	inside the Visual area put it at the start and end of the pattern,
-	e.g.: >
+	inside the Visual area put it at the start and just before the end of
+	the pattern, e.g.: >
+		/\%Vfoo.*ba\%Vr
+<	This also works if only "foo bar" was Visually selected. This: >
 		/\%Vfoo.*bar\%V
-<	Only works for the current buffer.
+<	would match "foo bar" if the Visual selection continues after the "r".
+	Only works for the current buffer.
 
 						*/\%#* *cursor-position*
 \%#	Matches with the cursor position.  Only works when matching in a
@@ -939,14 +957,18 @@ $	At end of pattern or in front of "\|", "\)" or "\n" ('magic' on):
 <	When 'hlsearch' is set and you move the cursor around and make changes
 	this will clearly show when the match is updated or not.
 	To match the text up to column 17: >
-		/.*\%17v
-<	Column 17 is included, because that's where the "\%17v" matches,
-	even though this is a |/zero-width| match.  Adding a dot to match the
-	next character has the same result: >
-		/.*\%17v.
+		/^.*\%17v
+<	Column 17 is not included, because this is a |/zero-width| match. To
+	include the column use: >
+		/^.*\%17v.
 <	This command does the same thing, but also matches when there is no
 	character in column 17: >
-		/.*\%<18v.
+		/^.*\%<18v.
+<	Note that without the "^" to anchor the match in the first column,
+	this will also highlight column 17: >
+		/.*\%17v
+<	Column 17 is highlighted by 'hlsearch' because there is another match
+	where ".*" matches zero characters.
 <
 
 Character classes: {not in Vi}
@@ -1049,42 +1071,62 @@ x	A single character, with no special meaning, matches itself
 								*E769*
 	When the ']' is not there Vim will not give an error message but
 	assume no collection is used.  Useful to search for '['.  However, you
-	do get E769 for internal searching.
+	do get E769 for internal searching.  And be aware that in a
+	`:substitute` command the whole command becomes the pattern.  E.g.
+	":s/[/x/" searches for "[/x" and replaces it with nothing.  It does
+	not search for "[" and replaces it with "x"!
 
+								*E944* *E945*
 	If the sequence begins with "^", it matches any single character NOT
 	in the collection: "[^xyz]" matches anything but 'x', 'y' and 'z'.
 	- If two characters in the sequence are separated by '-', this is
 	  shorthand for the full list of ASCII characters between them.  E.g.,
-	  "[0-9]" matches any decimal digit.  Non-ASCII characters can be
-	  used, but the character values must not be more than 256 apart.
+	  "[0-9]" matches any decimal digit. If the starting character exceeds
+	  the ending character, e.g. [c-a], E944 occurs. Non-ASCII characters
+	  can be used, but the character values must not be more than 256 apart
+	  in the old regexp engine. For example, searching by [\u3000-\u4000]
+	  after setting re=1 emits a E945 error. Prepending \%#=2 will fix it.
 	- A character class expression is evaluated to the set of characters
 	  belonging to that character class.  The following character classes
 	  are supported:
-			  Name		Contents ~
-*[:alnum:]*		  [:alnum:]     letters and digits
-*[:alpha:]*		  [:alpha:]     letters
-*[:blank:]*		  [:blank:]     space and tab characters
-*[:cntrl:]*		  [:cntrl:]     control characters
-*[:digit:]*		  [:digit:]     decimal digits
-*[:graph:]*		  [:graph:]     printable characters excluding space
-*[:lower:]*		  [:lower:]     lowercase letters (all letters when
+		  Name	      Func	Contents ~
+*[:alnum:]*	  [:alnum:]   isalnum	ASCII letters and digits
+*[:alpha:]*	  [:alpha:]   isalpha  	ASCII letters
+*[:blank:]*	  [:blank:]     	space and tab
+*[:cntrl:]*	  [:cntrl:]   iscntrl 	ASCII control characters
+*[:digit:]*	  [:digit:]     	decimal digits '0' to '9'
+*[:graph:]*	  [:graph:]   isgraph	ASCII printable characters excluding
+					space
+*[:lower:]*	  [:lower:]   (1)	lowercase letters (all letters when
 					'ignorecase' is used)
-*[:print:]*		  [:print:]     printable characters including space
-*[:punct:]*		  [:punct:]     punctuation characters
-*[:space:]*		  [:space:]     whitespace characters
-*[:upper:]*		  [:upper:]     uppercase letters (all letters when
+*[:print:]*	  [:print:]   (2) 	printable characters including space
+*[:punct:]*	  [:punct:]   ispunct	ASCII punctuation characters
+*[:space:]*	  [:space:]     	whitespace characters: space, tab, CR,
+					NL, vertical tab, form feed
+*[:upper:]*	  [:upper:]   (3)	uppercase letters (all letters when
 					'ignorecase' is used)
-*[:xdigit:]*		  [:xdigit:]    hexadecimal digits
-*[:return:]*		  [:return:]	the <CR> character
-*[:tab:]*		  [:tab:]	the <Tab> character
-*[:escape:]*		  [:escape:]	the <Esc> character
-*[:backspace:]*		  [:backspace:]	the <BS> character
+*[:xdigit:]*	  [:xdigit:]    	hexadecimal digits: 0-9, a-f, A-F
+*[:return:]*	  [:return:]		the <CR> character
+*[:tab:]*	  [:tab:]		the <Tab> character
+*[:escape:]*	  [:escape:]		the <Esc> character
+*[:backspace:]*	  [:backspace:]		the <BS> character
 	  The brackets in character class expressions are additional to the
 	  brackets delimiting a collection.  For example, the following is a
 	  plausible pattern for a UNIX filename: "[-./[:alnum:]_~]\+" That is,
 	  a list of at least one character, each of which is either '-', '.',
 	  '/', alphabetic, numeric, '_' or '~'.
-	  These items only work for 8-bit characters.
+	  These items only work for 8-bit characters, except [:lower:] and
+	  [:upper:] also work for multi-byte characters when using the new
+	  regexp engine.  See |two-engines|.  In the future these items may
+	  work for multi-byte characters.  For now, to get all "alpha"
+	  characters you can use: [[:lower:][:upper:]].
+
+	  The "Func" column shows what library function is used.  The
+	  implementation depends on the system.  Otherwise:
+	  (1) Uses islower() for ASCII and Vim builtin rules for other
+	  characters when built with the |+multi_byte| feature.
+	  (2) Uses Vim builtin rules
+	  (3) As with (1) but using isupper()
 							*/[[=* *[==]*
 	- An equivalence class.  This means that characters are matched that
 	  have almost the same meaning, e.g., when ignoring accents.  This

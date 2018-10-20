@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4: */
+/* vi:set ts=8 sts=4 sw=4 noet: */
 /* MODIFIED ATHENA SCROLLBAR (USING ARROWHEADS AT ENDS OF TRAVEL) */
 /* Modifications Copyright 1992 by Mitch Trachtenberg		  */
 /* Rights, permissions, and disclaimer of warranty are as in the  */
@@ -94,7 +94,7 @@ typedef struct _ScrollbarClassRec *ScrollbarWidgetClass;
 
 extern WidgetClass vim_scrollbarWidgetClass;
 
-extern void vim_XawScrollbarSetThumb __ARGS((Widget, double, double, double));
+extern void vim_XawScrollbarSetThumb(Widget, double, double, double);
 
 typedef struct
 {

@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved		by Bram Moolenaar
  *				Motif support by Robert Webb
@@ -16,7 +16,7 @@
 # include <X11/StringDefs.h>
 #endif
 
-#ifdef FEAT_BEVAL
+#if defined(FEAT_BEVAL) || defined(PROTO)
 # include "gui_beval.h"
 #endif
 
@@ -41,7 +41,7 @@
 # include <Events.h>
 # include <Menus.h>
 # if !(defined (TARGET_API_MAC_CARBON) && (TARGET_API_MAC_CARBON))
-#   include <Windows.h>
+#  include <Windows.h>
 # endif
 # include <Controls.h>
 /*# include <TextEdit.h>*/
@@ -151,13 +151,8 @@
 #define TEAR_LEN		(9)	/* length of above string */
 
 /* for the toolbar */
-#ifdef FEAT_GUI_W16
-# define TOOLBAR_BUTTON_HEIGHT	15
-# define TOOLBAR_BUTTON_WIDTH	16
-#else
-# define TOOLBAR_BUTTON_HEIGHT	18
-# define TOOLBAR_BUTTON_WIDTH	18
-#endif
+#define TOOLBAR_BUTTON_HEIGHT	18
+#define TOOLBAR_BUTTON_WIDTH	18
 #define TOOLBAR_BORDER_HEIGHT	12  /* room above+below buttons for MSWindows */
 
 #ifdef FEAT_GUI_MSWIN
@@ -187,7 +182,7 @@ typedef struct GuiScrollbar
     /* Values measured in characters: */
     int		top;		/* Top of scroll bar (chars from row 0) */
     int		height;		/* Current height of scroll bar in rows */
-#ifdef FEAT_VERTSPLIT
+#ifdef FEAT_WINDOWS
     int		width;		/* Current width of scroll bar in cols */
 #endif
     int		status_height;	/* Height of status line */
@@ -372,7 +367,9 @@ typedef struct Gui
 #endif
 
 #ifdef FEAT_GUI_GTK
+# ifndef USE_GTK3
     int		visibility;	    /* Is shell partially/fully obscured? */
+# endif
     GdkCursor	*blank_pointer;	    /* Blank pointer */
 
     /* X Resources */
@@ -391,10 +388,21 @@ typedef struct Gui
     GtkWidget	*menubar_h;	    /* menubar handle */
     GtkWidget	*toolbar_h;	    /* toolbar handle */
 # endif
+# ifdef USE_GTK3
+    GdkRGBA	*fgcolor;	    /* GDK-styled foreground color */
+    GdkRGBA	*bgcolor;	    /* GDK-styled background color */
+    GdkRGBA	*spcolor;	    /* GDK-styled special color */
+# else
     GdkColor	*fgcolor;	    /* GDK-styled foreground color */
     GdkColor	*bgcolor;	    /* GDK-styled background color */
     GdkColor	*spcolor;	    /* GDK-styled special color */
+# endif
+# ifdef USE_GTK3
+    cairo_surface_t *surface;       /* drawarea surface */
+    gboolean	     by_signal;     /* cause of draw operation */
+# else
     GdkGC	*text_gc;	    /* cached GC for normal text */
+# endif
     PangoContext     *text_context; /* the context used for all text */
     PangoFont	     *ascii_font;   /* cached font for ASCII strings */
     PangoGlyphString *ascii_glyphs; /* cached code point -> glyph map */
@@ -544,4 +552,30 @@ typedef enum
 # define CONVERT_TO_UTF8_FREE(String) ((String) = (char_u *)NULL)
 # define CONVERT_FROM_UTF8(String) (String)
 # define CONVERT_FROM_UTF8_FREE(String) ((String) = (char_u *)NULL)
+#endif /* FEAT_GUI_GTK */
+
+#ifdef FEAT_GUI_GTK
+/*
+ * The second parameter of g_signal_handlers_disconnect_by_func() is supposed
+ * to be a function pointer which was passed to g_signal_connect_*() somewhere
+ * previously, and hence it must be of type GCallback, i.e., void (*)(void).
+ *
+ * Meanwhile, g_signal_handlers_disconnect_by_func() is a macro calling
+ * g_signal_handlers_disconnect_matched(), and the second parameter of the
+ * former is to be passed to the sixth parameter of the latter the type of
+ * which, however, is declared as void * in the function signature.
+ *
+ * While the ISO C Standard does not require that function pointers be
+ * interconvertible to void *, widely-used compilers such as gcc and clang
+ * do such conversion implicitly and automatically on some platforms without
+ * issuing any warning.
+ *
+ * For Solaris Studio, that is not the case.  An explicit type cast is needed
+ * to suppress warnings on that particular conversion.
+ */
+# if defined(__SUNPRO_C) && defined(USE_GTK3)
+#  define FUNC2GENERIC(func) (void *)(func)
+# else
+#  define FUNC2GENERIC(func) G_CALLBACK(func)
+# endif
 #endif /* FEAT_GUI_GTK */

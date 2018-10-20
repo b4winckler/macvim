@@ -9,21 +9,74 @@
  */
 
 #import <Cocoa/Cocoa.h>
-#import <asl.h>
-
 
 // Taken from /usr/include/AvailabilityMacros.h
-#ifndef MAC_OS_X_VERSION_10_4
-# define MAC_OS_X_VERSION_10_4 1040
-#endif
-#ifndef MAC_OS_X_VERSION_10_5
-# define MAC_OS_X_VERSION_10_5 1050
-#endif
-#ifndef MAC_OS_X_VERSION_10_6
-# define MAC_OS_X_VERSION_10_6 1060
-#endif
 #ifndef MAC_OS_X_VERSION_10_7
 # define MAC_OS_X_VERSION_10_7 1070
+#endif
+#ifndef MAC_OS_X_VERSION_10_8
+# define MAC_OS_X_VERSION_10_8 1080
+#endif
+#ifndef MAC_OS_X_VERSION_10_9
+# define MAC_OS_X_VERSION_10_9 1090
+#endif
+#ifndef MAC_OS_X_VERSION_10_10
+# define MAC_OS_X_VERSION_10_10 101000
+#endif
+#ifndef MAC_OS_X_VERSION_10_11
+# define MAC_OS_X_VERSION_10_11 101100
+#endif
+#ifndef MAC_OS_X_VERSION_10_12
+# define MAC_OS_X_VERSION_10_12 101200
+#endif
+
+#ifndef NSAppKitVersionNumber10_10
+# define NSAppKitVersionNumber10_10 1343
+#endif
+#ifndef NSAppKitVersionNumber10_10_Max
+# define NSAppKitVersionNumber10_10_Max 1349
+#endif
+#ifndef NSAppKitVersionNumber10_12
+# define NSAppKitVersionNumber10_12 1504
+#endif
+
+#if MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
+// Deprecated constants in 10.12 SDK
+# define NSAlertStyleCritical NSCriticalAlertStyle
+# define NSAlertStyleInformational NSInformationalAlertStyle
+# define NSAlertStyleWarning NSWarningAlertStyle
+# define NSCompositingOperationSourceOver NSCompositeSourceOver
+# define NSControlSizeRegular NSRegularControlSize
+# define NSEventModifierFlagCapsLock NSAlphaShiftKeyMask
+# define NSEventModifierFlagCommand NSCommandKeyMask
+# define NSEventModifierFlagControl NSControlKeyMask
+# define NSEventModifierFlagDeviceIndependentFlagsMask NSDeviceIndependentModifierFlagsMask
+# define NSEventModifierFlagHelp NSHelpKeyMask
+# define NSEventModifierFlagNumericPad NSNumericPadKeyMask
+# define NSEventModifierFlagOption NSAlternateKeyMask
+# define NSEventModifierFlagShift NSShiftKeyMask
+# define NSEventTypeApplicationDefined NSApplicationDefined
+# define NSEventTypeKeyDown NSKeyDown
+# define NSEventTypeKeyUp NSKeyUp
+# define NSEventTypeLeftMouseUp NSLeftMouseUp
+# define NSEventTypeMouseEntered NSMouseEntered
+# define NSEventTypeMouseExited NSMouseExited
+# define NSEventTypeRightMouseDown NSRightMouseDown
+# define NSWindowStyleMaskBorderless NSBorderlessWindowMask
+# define NSWindowStyleMaskClosable NSClosableWindowMask
+# define NSWindowStyleMaskFullScreen NSFullScreenWindowMask
+# define NSWindowStyleMaskMiniaturizable NSMiniaturizableWindowMask
+# define NSWindowStyleMaskResizable NSResizableWindowMask
+# define NSWindowStyleMaskTexturedBackground NSTexturedBackgroundWindowMask
+# define NSWindowStyleMaskTitled NSTitledWindowMask
+# define NSWindowStyleMaskUnifiedTitleAndToolbar NSUnifiedTitleAndToolbarWindowMask
+#endif
+
+#import <asl.h>
+#if MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
+# define MM_USE_ASL
+#else
+# import <os/log.h>
 #endif
 
 
@@ -157,6 +210,7 @@ enum {
     MouseMovedMsgID,
     SetMouseShapeMsgID,
     AdjustLinespaceMsgID,
+    AdjustColumnspaceMsgID,
     ActivateMsgID,
     SetServerNameMsgID,
     EnterFullScreenMsgID,
@@ -183,7 +237,6 @@ enum {
     DeactivatedImMsgID,
     BrowseForFileMsgID,
     ShowDialogMsgID,
-    NetBeansMsgID,
     SetMarkedTextMsgID,
     ZoomMsgID,
     SetWindowPositionMsgID,
@@ -193,6 +246,11 @@ enum {
     GestureMsgID,
     AddToMRUMsgID,
     BackingPropertiesChangedMsgID,
+    SetBlurRadiusMsgID,
+    EnableLigaturesMsgID,
+    DisableLigaturesMsgID,
+    EnableThinStrokesMsgID,
+    DisableThinStrokesMsgID,
     LastMsgID   // NOTE: MUST BE LAST MESSAGE IN ENUM!
 };
 
@@ -256,13 +314,15 @@ extern NSString *MMLogToStdErrKey;
 // (techincally this is a user default but should not be used as such).
 extern NSString *MMNoWindowKey;
 
+// Argument used to control MacVim sharing search text via the Find Pasteboard.
+extern NSString *MMShareFindPboardKey;
+
 extern NSString *MMAutosaveRowsKey;
 extern NSString *MMAutosaveColumnsKey;
 extern NSString *MMRendererKey;
 
 enum {
     MMRendererDefault = 0,
-    MMRendererATSUI,
     MMRendererCoreText
 };
 
@@ -312,37 +372,6 @@ extern NSString *VimFindPboardType;
 #define keyMMUntitledWindow       'MMuw'
 
 
-
-
-#ifndef NSINTEGER_DEFINED
-// NSInteger was introduced in 10.5
-# if __LP64__ || NS_BUILD_32_LIKE_64
-typedef long NSInteger;
-typedef unsigned long NSUInteger;
-# else
-typedef int NSInteger;
-typedef unsigned int NSUInteger;
-# endif
-# define NSINTEGER_DEFINED 1
-#endif
-
-#ifndef NSAppKitVersionNumber10_4  // Needed for pre-10.5 SDK
-# define NSAppKitVersionNumber10_4 824
-#endif
-
-#ifndef CGFLOAT_DEFINED
-    // On Leopard, CGFloat is float on 32bit and double on 64bit. On Tiger,
-    // we can't use this anyways, so it's just here to keep the compiler happy.
-    // However, when we're compiling for Tiger and running on Leopard, we
-    // might need the correct typedef, so this piece is copied from ATSTypes.h
-# ifdef __LP64__
-    typedef double CGFloat;
-# else
-    typedef float CGFloat;
-# endif
-#endif
-
-
 // Logging related functions and macros.
 //
 // This is a very simplistic logging facility built on top of ASL.  Two user
@@ -377,7 +406,10 @@ extern int ASLogLevel;
 
 void ASLInit();
 
-#define ASLog(level, fmt, ...) \
+#if defined(MM_USE_ASL)
+
+# define MM_ASL_LEVEL_DEFAULT ASL_LEVEL_NOTICE
+# define ASLog(level, fmt, ...) \
     if (level <= ASLogLevel) { \
         asl_log(NULL, NULL, level, "%s@%d: %s", \
             __PRETTY_FUNCTION__, __LINE__, \
@@ -386,10 +418,47 @@ void ASLInit();
 
 // Note: These macros are used like ASLogErr(@"text num=%d", 42).  Objective-C
 // style specifiers (%@) are supported.
-#define ASLogCrit(fmt, ...)   ASLog(ASL_LEVEL_CRIT,    fmt, ##__VA_ARGS__)
-#define ASLogErr(fmt, ...)    ASLog(ASL_LEVEL_ERR,     fmt, ##__VA_ARGS__)
-#define ASLogWarn(fmt, ...)   ASLog(ASL_LEVEL_WARNING, fmt, ##__VA_ARGS__)
-#define ASLogNotice(fmt, ...) ASLog(ASL_LEVEL_NOTICE,  fmt, ##__VA_ARGS__)
-#define ASLogInfo(fmt, ...)   ASLog(ASL_LEVEL_INFO,    fmt, ##__VA_ARGS__)
-#define ASLogDebug(fmt, ...)  ASLog(ASL_LEVEL_DEBUG,   fmt, ##__VA_ARGS__)
-#define ASLogTmp(fmt, ...)    ASLog(ASL_LEVEL_NOTICE,  fmt, ##__VA_ARGS__)
+# define ASLogCrit(fmt, ...)   ASLog(ASL_LEVEL_CRIT,    fmt, ##__VA_ARGS__)
+# define ASLogErr(fmt, ...)    ASLog(ASL_LEVEL_ERR,     fmt, ##__VA_ARGS__)
+# define ASLogWarn(fmt, ...)   ASLog(ASL_LEVEL_WARNING, fmt, ##__VA_ARGS__)
+# define ASLogNotice(fmt, ...) ASLog(ASL_LEVEL_NOTICE,  fmt, ##__VA_ARGS__)
+# define ASLogInfo(fmt, ...)   ASLog(ASL_LEVEL_INFO,    fmt, ##__VA_ARGS__)
+# define ASLogDebug(fmt, ...)  ASLog(ASL_LEVEL_DEBUG,   fmt, ##__VA_ARGS__)
+# define ASLogTmp(fmt, ...)    ASLog(ASL_LEVEL_NOTICE,  fmt, ##__VA_ARGS__)
+
+#else
+
+# define MM_ASL_LEVEL_DEFAULT OS_LOG_TYPE_DEFAULT
+# define ASLog(level, fmt, ...) \
+    if (level <= ASLogLevel) { \
+        if (floor(NSAppKitVersionNumber) >= NSAppKitVersionNumber10_12) { \
+            os_log_with_type(OS_LOG_DEFAULT, level, "%s@%d: %s", \
+                __PRETTY_FUNCTION__, __LINE__, \
+                [[NSString stringWithFormat:fmt, ##__VA_ARGS__] UTF8String]); \
+        } else { \
+            int logLevel; \
+            switch (level) { \
+            case OS_LOG_TYPE_FAULT: logLevel = ASL_LEVEL_CRIT; break; \
+            case OS_LOG_TYPE_ERROR: logLevel = ASL_LEVEL_ERR; break; \
+            case OS_LOG_TYPE_INFO: logLevel = ASL_LEVEL_INFO; break; \
+            case OS_LOG_TYPE_DEBUG: logLevel = ASL_LEVEL_DEBUG; break; \
+            default: logLevel = ASL_LEVEL_NOTICE; break; \
+            } \
+            _Pragma("clang diagnostic push") \
+            _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") \
+            asl_log(NULL, NULL, logLevel, "%s@%d: %s", \
+                __PRETTY_FUNCTION__, __LINE__, \
+                [[NSString stringWithFormat:fmt, ##__VA_ARGS__] UTF8String]); \
+            _Pragma("clang diagnostic pop") \
+        } \
+    }
+
+# define ASLogCrit(fmt, ...)   ASLog(OS_LOG_TYPE_FAULT,   fmt, ##__VA_ARGS__)
+# define ASLogErr(fmt, ...)    ASLog(OS_LOG_TYPE_ERROR,   fmt, ##__VA_ARGS__)
+# define ASLogWarn(fmt, ...)   ASLog(OS_LOG_TYPE_DEFAULT, fmt, ##__VA_ARGS__)
+# define ASLogNotice(fmt, ...) ASLog(OS_LOG_TYPE_DEFAULT, fmt, ##__VA_ARGS__)
+# define ASLogInfo(fmt, ...)   ASLog(OS_LOG_TYPE_INFO,    fmt, ##__VA_ARGS__)
+# define ASLogDebug(fmt, ...)  ASLog(OS_LOG_TYPE_DEBUG,   fmt, ##__VA_ARGS__)
+# define ASLogTmp(fmt, ...)    ASLog(OS_LOG_TYPE_DEFAULT, fmt, ##__VA_ARGS__)
+
+#endif

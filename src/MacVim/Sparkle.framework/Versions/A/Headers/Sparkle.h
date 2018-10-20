@@ -2,21 +2,24 @@
 //  Sparkle.h
 //  Sparkle
 //
-//  Created by Andy Matuschak on 3/16/06.
+//  Created by Andy Matuschak on 3/16/06. (Modified by CDHW on 23/12/07)
 //  Copyright 2006 Andy Matuschak. All rights reserved.
 //
 
-#import "SUUpdater.h"
-#import "SUUtilities.h"
-#import "SUConstants.h"
+#ifndef SPARKLE_H
+#define SPARKLE_H
+
+#import <Cocoa/Cocoa.h>
+
+// This list should include the shared headers. It doesn't matter if some of them aren't shared (unless
+// there are name-space collisions) so we can list all of them to start with:
+
 #import "SUAppcast.h"
 #import "SUAppcastItem.h"
-#import "SUUpdateAlert.h"
-#import "SUAutomaticUpdateAlert.h"
-#import "SUStatusController.h"
-#import "SUUnarchiver.h"
-#import "SUStatusChecker.h"
+#import "SUStandardVersionComparator.h"
+#import "SUUpdater.h"
+#import "SUVersionComparisonProtocol.h"
+#import "SUVersionDisplayProtocol.h"
+#import "SUErrors.h"
 
-#import "NSApplication+AppCopies.h"
-#import "NSFileManager+Authentication.h"
-#import "NSFileManager+Verification.h"
+#endif

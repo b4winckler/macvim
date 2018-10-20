@@ -12,22 +12,24 @@
 
 #import <Cocoa/Cocoa.h>
 
-#ifndef NSINTEGER_DEFINED
-// NSInteger was introduced in 10.5
-# if __LP64__ || NS_BUILD_32_LIKE_64
-typedef long NSInteger;
-typedef unsigned long NSUInteger;
-# else
-typedef int NSInteger;
-typedef unsigned int NSUInteger;
-# endif
-# define NSINTEGER_DEFINED 1
+#if !defined(MAC_OS_X_VERSION_10_12) || \
+    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
+# define NSCompositingOperationSourceOver NSCompositeSourceOver
+# define NSCompositingOperationSourceAtop NSCompositeSourceAtop
+# define NSTextAlignmentCenter NSCenterTextAlignment
 #endif
-
-#define kPSMTabBarControlHeight 22
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+# define kPSMTabBarControlHeight 25
+#else
+# define kPSMTabBarControlHeight 22
+#endif
 // internal cell border
 #define MARGIN_X        6
-#define MARGIN_Y        3
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+# define MARGIN_Y       5
+#else
+# define MARGIN_Y       3
+#endif
 // padding between objects
 #define kPSMTabBarCellPadding 4
 // fixed size objects

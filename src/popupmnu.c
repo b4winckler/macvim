@@ -1,4 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
+/* vi:set ts=8 sts=4 sw=4 noet:
  *
  * VIM - Vi IMproved	by Bram Moolenaar
  *
@@ -30,7 +30,7 @@ static int pum_col;			/* left column of pum */
 
 static int pum_do_redraw = FALSE;	/* do redraw anyway */
 
-static int pum_set_selected __ARGS((int n, int repeat));
+static int pum_set_selected(int n, int repeat);
 
 #define PUM_DEF_HEIGHT 10
 #define PUM_DEF_WIDTH  15
@@ -42,10 +42,10 @@ static int pum_set_selected __ARGS((int n, int repeat));
  * The menu appears above the screen line "row" or at "row" + "height" - 1.
  */
     void
-pum_display(array, size, selected)
-    pumitem_T	*array;
-    int		size;
-    int		selected;	/* index of initially selected item, none if
+pum_display(
+    pumitem_T	*array,
+    int		size,
+    int		selected)	/* index of initially selected item, none if
 				   out of range */
 {
     int		w;
@@ -54,18 +54,23 @@ pum_display(array, size, selected)
     int		kind_width;
     int		extra_width;
     int		i;
-    int		top_clear;
     int		row;
     int		context_lines;
     int		col;
-    int		above_row = cmdline_row;
+    int		above_row;
+    int		below_row;
     int		redo_count = 0;
+#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+    win_T	*pvwin;
+#endif
 
 redo:
     def_width = PUM_DEF_WIDTH;
     max_width = 0;
     kind_width = 0;
     extra_width = 0;
+    above_row = 0;
+    below_row = cmdline_row;
 
     /* Pretend the pum is already there to avoid that must_redraw is set when
      * 'cuc' is on. */
@@ -75,16 +80,18 @@ redo:
 
     row = curwin->w_wrow + W_WINROW(curwin);
 
-    if (firstwin->w_p_pvw)
-	top_clear = firstwin->w_height;
-    else
-	top_clear = 0;
-
-    /* When the preview window is at the bottom stop just above it.  Also
-     * avoid drawing over the status line so that it's clear there is a window
-     * boundary. */
-    if (lastwin->w_p_pvw)
-	above_row -= lastwin->w_height + lastwin->w_status_height + 1;
+#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+    FOR_ALL_WINDOWS(pvwin)
+	if (pvwin->w_p_pvw)
+	    break;
+    if (pvwin != NULL)
+    {
+	if (W_WINROW(pvwin) < W_WINROW(curwin))
+	    above_row = W_WINROW(pvwin) + pvwin->w_height;
+	else if (W_WINROW(pvwin) > W_WINROW(curwin) + curwin->w_height)
+	    below_row = W_WINROW(pvwin);
+    }
+#endif
 
     /*
      * Figure out the size and position of the pum.
@@ -98,8 +105,8 @@ redo:
 
     /* Put the pum below "row" if possible.  If there are few lines decide on
      * where there is more room. */
-    if (row  + 2 >= above_row - pum_height
-					 && row > (above_row - top_clear) / 2)
+    if (row + 2 >= below_row - pum_height
+			    && row - above_row > (below_row - above_row) / 2)
     {
 	/* pum above "row" */
 
@@ -137,8 +144,8 @@ redo:
 				+ curwin->w_cline_height - curwin->w_wrow;
 
 	pum_row = row + context_lines;
-	if (size > above_row - pum_row)
-	    pum_height = above_row - pum_row;
+	if (size > below_row - pum_row)
+	    pum_height = below_row - pum_row;
 	else
 	    pum_height = size;
 	if (p_ph > 0 && pum_height > p_ph)
@@ -149,14 +156,14 @@ redo:
     if (pum_height < 1 || (pum_height == 1 && size > 1))
 	return;
 
-    /* If there is a preview window at the top avoid drawing over it. */
-    if (firstwin->w_p_pvw
-	    && pum_row < firstwin->w_height
-	    && pum_height > firstwin->w_height + 4)
+#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+    /* If there is a preview window at the above avoid drawing over it. */
+    if (pvwin != NULL && pum_row < above_row && pum_height > above_row)
     {
-	pum_row += firstwin->w_height;
-	pum_height -= firstwin->w_height;
+	pum_row += above_row;
+	pum_height -= above_row;
     }
+#endif
 
     /* Compute the width of the widest match and the widest extra. */
     for (i = 0; i < size; ++i)
@@ -263,7 +270,7 @@ redo:
  * Redraw the popup menu, using "pum_first" and "pum_selected".
  */
     void
-pum_redraw()
+pum_redraw(void)
 {
     int		row = pum_row;
     int		col;
@@ -328,7 +335,7 @@ pum_redraw()
 		case 3: p = pum_array[idx].pum_extra; break;
 	    }
 	    if (p != NULL)
-		for ( ; ; mb_ptr_adv(p))
+		for ( ; ; MB_PTR_ADV(p))
 		{
 		    if (s == NULL)
 			s = p;
@@ -362,7 +369,7 @@ pum_redraw()
 					{
 					    size -= has_mbyte
 						    ? (*mb_ptr2cells)(rt) : 1;
-					    mb_ptr_adv(rt);
+					    MB_PTR_ADV(rt);
 					} while (size > pum_width);
 
 					if (size < pum_width)
@@ -487,9 +494,7 @@ pum_redraw()
  * must be recomputed.
  */
     static int
-pum_set_selected(n, repeat)
-    int	    n;
-    int	    repeat;
+pum_set_selected(int n, int repeat)
 {
     int	    resized = FALSE;
     int	    context = pum_height / 2;
@@ -568,18 +573,24 @@ pum_set_selected(n, repeat)
 	    if (p_pvh > 0 && p_pvh < g_do_tagpreview)
 		g_do_tagpreview = p_pvh;
 	    ++RedrawingDisabled;
+	    /* Prevent undo sync here, if an autocommand syncs undo weird
+	     * things can happen to the undo tree. */
+	    ++no_u_sync;
 	    resized = prepare_tagpreview(FALSE);
+	    --no_u_sync;
 	    --RedrawingDisabled;
 	    g_do_tagpreview = 0;
 
 	    if (curwin->w_p_pvw)
 	    {
-		if (curbuf->b_fname == NULL
+		if (!resized
+			&& curbuf->b_nwindows == 1
+			&& curbuf->b_fname == NULL
 			&& curbuf->b_p_bt[0] == 'n' && curbuf->b_p_bt[2] == 'f'
 			&& curbuf->b_p_bh[0] == 'w')
 		{
 		    /* Already a "wipeout" buffer, make it empty. */
-		    while (!bufempty())
+		    while (!BUFEMPTY())
 			ml_delete((linenr_T)1, FALSE);
 		}
 		else
@@ -659,7 +670,9 @@ pum_set_selected(n, repeat)
 			 * redraw. */
 			if (resized)
 			{
+			    ++no_u_sync;
 			    win_enter(curwin_save, TRUE);
+			    --no_u_sync;
 			    update_topline();
 			}
 
@@ -670,7 +683,11 @@ pum_set_selected(n, repeat)
 			pum_do_redraw = FALSE;
 
 			if (!resized && win_valid(curwin_save))
+			{
+			    ++no_u_sync;
 			    win_enter(curwin_save, TRUE);
+			    --no_u_sync;
+			}
 
 			/* May need to update the screen again when there are
 			 * autocommands involved. */
@@ -694,7 +711,7 @@ pum_set_selected(n, repeat)
  * Undisplay the popup menu (later).
  */
     void
-pum_undisplay()
+pum_undisplay(void)
 {
     pum_array = NULL;
     redraw_all_later(SOME_VALID);
@@ -709,7 +726,7 @@ pum_undisplay()
  * displayed item.
  */
     void
-pum_clear()
+pum_clear(void)
 {
     pum_first = 0;
 }
@@ -719,7 +736,7 @@ pum_clear()
  * Overruled when "pum_do_redraw" is set, used to redraw the status lines.
  */
     int
-pum_visible()
+pum_visible(void)
 {
     return !pum_do_redraw && pum_array != NULL;
 }
@@ -729,7 +746,7 @@ pum_visible()
  * Only valid when pum_visible() returns TRUE!
  */
     int
-pum_get_height()
+pum_get_height(void)
 {
     return pum_height;
 }

@@ -1,6 +1,6 @@
 " Vim plugin for showing matching parens
 " Maintainer:  Bram Moolenaar <Bram@vim.org>
-" Last Change: 2014 Jul 19
+" Last Change: 2016 Feb 16
 
 " Exit quickly when:
 " - this plugin was already loaded (or disabled)
@@ -55,14 +55,19 @@ function! s:Highlight_Matching_Pair()
   let before = 0
 
   let text = getline(c_lnum)
-  let c = text[c_col - 1]
+  let matches = matchlist(text, '\(.\)\=\%'.c_col.'c\(.\=\)')
+  if empty(matches)
+    let [c_before, c] = ['', '']
+  else
+    let [c_before, c] = matches[1:2]
+  endif
   let plist = split(&matchpairs, '.\zs[:,]')
   let i = index(plist, c)
   if i < 0
     " not found, in Insert mode try character before the cursor
     if c_col > 1 && (mode() == 'i' || mode() == 'R')
-      let before = 1
-      let c = text[c_col - 2]
+      let before = strlen(c_before)
+      let c = c_before
       let i = index(plist, c)
     endif
     if i < 0
@@ -98,10 +103,17 @@ function! s:Highlight_Matching_Pair()
     call cursor(c_lnum, c_col - before)
   endif
 
-  " When not in a string or comment ignore matches inside them.
+  " Build an expression that detects whether the current cursor position is in
+  " certain syntax types (string, comment, etc.), for use as searchpairpos()'s
+  " skip argument.
   " We match "escape" for special items, such as lispEscapeSpecial.
-  let s_skip ='synIDattr(synID(line("."), col("."), 0), "name") ' .
-	\ '=~?  "string\\|character\\|singlequote\\|escape\\|comment"'
+  let s_skip = '!empty(filter(map(synstack(line("."), col(".")), ''synIDattr(v:val, "name")''), ' .
+	\ '''v:val =~? "string\\|character\\|singlequote\\|escape\\|comment"''))'
+  " If executing the expression determines that the cursor is currently in
+  " one of the syntax types, then we want searchpairpos() to find the pair
+  " within those syntax types (i.e., not skip).  Otherwise, the cursor is
+  " outside of the syntax types and s_skip should keep its value so we skip any
+  " matching pair inside the syntax types.
   execute 'if' s_skip '| let s_skip = 0 | endif'
 
   " Limit the search to lines visible in the window.
